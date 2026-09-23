@@ -1,3 +1,4 @@
+import { SelectField } from '@/components/ui/select-field'
 import { activeStorageKey } from '@/lib/demoMode'
 import { FolderMaterials } from '@/components/academics/FolderMaterials'
 import { StudentGuide } from './StudentGuide'
@@ -522,7 +523,7 @@ export function WritingTools({ courseId, readingListState, drafts, readings, fee
         <DialogContent><DialogHeader><DialogTitle>{recordEditor?.id ? 'Edit' : 'Add'} {recordEditor?.kind === 'paper' ? 'paper' : 'reading'}</DialogTitle><DialogDescription>Name this item before saving it to your class.</DialogDescription></DialogHeader>
           {recordEditor && <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); saveWritingRecord() }}>
             <label className="block text-sm font-bold">Title<Input autoFocus required value={recordEditor.title} onChange={(event) => setRecordEditor({ ...recordEditor, title: event.target.value })} /></label>
-            {recordEditor.kind === 'reading' ? <label className="block text-sm font-bold">Week<Input value={recordEditor.week} onChange={(event) => setRecordEditor({ ...recordEditor, week: event.target.value })} /></label> : <label className="block text-sm font-bold">Assignment<select className="mt-1 min-h-11 w-full rounded-lg border border-border bg-background px-3" value={recordEditor.assignmentId} onChange={(event) => setRecordEditor({ ...recordEditor, assignmentId: event.target.value })}><option value="">No assignment linked</option>{assignments.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>}
+            {recordEditor.kind === 'reading' ? <label className="block text-sm font-bold">Week<Input value={recordEditor.week} onChange={(event) => setRecordEditor({ ...recordEditor, week: event.target.value })} /></label> : <label className="block text-sm font-bold">Assignment<SelectField aria-label="Assignment" className="mt-1 min-h-11" value={recordEditor.assignmentId} onValueChange={value => setRecordEditor({ ...recordEditor, assignmentId: value })} options={[{ value: '', label: 'No assignment linked' }, ...assignments.map(item => ({ value: item.id, label: item.title }))]} /></label>}
             <div className="flex justify-end gap-2">{recordEditor.id && <Button type="button" variant="ghost" className="mr-auto text-destructive" onClick={() => setConfirmRemove(true)}>Remove</Button>}<Button type="button" variant="ghost" onClick={() => setRecordEditor(undefined)}>Cancel</Button><Button type="submit" disabled={!recordEditor.title.trim()}>Save</Button></div>
           </form>}
         </DialogContent>
@@ -901,7 +902,7 @@ function GuideReference({ courseId, workspace, notes, assignments, contacts, dat
           <DialogContent><DialogHeader><DialogTitle>New reference note</DialogTitle><DialogDescription>Keep a policy, administrative note, or question for this class.</DialogDescription></DialogHeader>
             <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); saveItem() }}>
               <label className="block text-sm font-bold">Title<Input autoFocus value={newTitle} onChange={(event) => setNewTitle(event.target.value)} required /></label>
-              <label className="block text-sm font-bold">Kind<select className="mt-1 min-h-11 w-full rounded-lg border border-border bg-background px-3" value={newKind} onChange={(event) => setNewKind(event.target.value as ClassNote['type'])}><option value="other">Class context</option><option value="exam-review">Exam intel</option><option value="question-log">Question to ask</option></select></label>
+              <label className="block text-sm font-bold">Kind<SelectField aria-label="Kind" className="mt-1 min-h-11" value={newKind} onValueChange={value => setNewKind(value as ClassNote['type'])} options={[{ value: 'other', label: 'Class context' }, { value: 'exam-review', label: 'Exam intel' }, { value: 'question-log', label: 'Question to ask' }]} /></label>
               <label className="block text-sm font-bold">Details<Textarea value={newContent} onChange={(event) => setNewContent(event.target.value)} /></label>
               <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button><Button type="submit" disabled={!newTitle.trim()}>Save item</Button></div>
             </form>

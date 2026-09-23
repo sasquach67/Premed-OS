@@ -1,11 +1,26 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter, useLocation } from 'react-router-dom'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { createInitialDataForMode, useStore } from '@/store/store'
 import type { LectureRecord } from '@/lib/types'
 import { FlashcardPromptPanel } from './FlashcardPromptPanel'
 import { buildFlashcardPrompt } from '@/lib/academics/flashcards/prompt'
+const nativeScrollIntoView = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView')
+beforeAll(() => { if (!nativeScrollIntoView) Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: () => {} }) })
+afterAll(() => { if (!nativeScrollIntoView) Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView') })
+async function openSelect(selector: string) {
+  const trigger = container.querySelector<HTMLButtonElement>(selector)!
+  expect(trigger).toBeTruthy()
+  await act(async () => { trigger.focus(); trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) })
+}
+async function chooseOption(selector: string, label: string) {
+  await openSelect(selector)
+  const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find(item => item.textContent?.trim() === label)!
+  expect(option).toBeTruthy()
+  await act(async () => { option.focus(); option.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) })
+}
+
 
 vi.mock('@/lib/academics/flashcards/prompt', () => ({
   flashcardNotebookEligibility: (lecture: LectureRecord) => ({ eligible: lecture.workspaceState === 'complete', reason: 'Complete and save this Class Journal first.' }),
@@ -41,14 +56,18 @@ it('requires a completed Journal and routes to the existing notebook workflow', 
 it('only offers Journals from the current class and disables unfinished entries', async () => {
   seed([journal('other-class', 'other'), journal('unfinished', 'course', false), journal('ready')]); await render()
   expect(container.textContent).not.toContain('Journal other-class')
-  expect(container.querySelector<HTMLOptionElement>('option[value="unfinished"]')?.disabled).toBe(true)
-  expect(container.querySelector('select')?.value).toBe('ready')
+  expect(container.querySelector('[role="combobox"][aria-label="Class Journal"]')?.textContent).toContain('Journal ready')
+  await openSelect('[role="combobox"][aria-label="Class Journal"]')
+  const options = [...document.querySelectorAll<HTMLElement>('[role="option"]')]
+  expect(options.some(item => item.textContent?.includes('other-class'))).toBe(false)
+  expect(options.find(item => item.textContent?.includes('Journal unfinished'))?.getAttribute('aria-disabled')).toBe('true')
+  await act(async () => document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
   await click('Copy complete prompt')
   expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Complete prompt for ready'))
 })
 it.each(['missing', 'other-class', 'unfinished'])('never substitutes a different Journal for the scoped %s lecture', async id => {
   seed([journal('other-class', 'other'), journal('unfinished', 'course', false), journal('ready')]); await render(id)
-  expect(container.querySelector('select')).toBeNull()
+  expect(container.querySelector('[role="combobox"][aria-label="Class Journal"]')).toBeNull()
   expect(container.textContent).not.toContain('Copy complete prompt')
   expect(buildFlashcardPrompt).not.toHaveBeenCalled()
 })
@@ -76,7 +95,7 @@ it('opens a read-only complete fallback when clipboard access fails', async () =
 })
 it('clears the old copy acknowledgment when a different Journal is selected', async () => {
   seed([journal('first'), journal('second')]); await render(); await click('Copy complete prompt')
-  await act(async () => { const select = container.querySelector('select')!; select.value = 'second'; select.dispatchEvent(new Event('change', { bubbles: true })) })
+  await chooseOption('[role="combobox"][aria-label="Class Journal"]', 'Journal second')
   expect(container.textContent).not.toContain('Complete prompt copied')
   await click('Copy complete prompt')
   expect(writeText).toHaveBeenLastCalledWith(expect.stringContaining('Complete prompt for second'))

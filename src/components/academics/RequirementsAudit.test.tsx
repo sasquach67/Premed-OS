@@ -1,17 +1,29 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { planningProgramLabel, RequirementsAudit } from './RequirementsAudit'
 import { candidatePlanCoverage, planningRequirementSet, UNC_PLANNING_LIBRARY } from '@/lib/academics/uncPlanningLibrary'
 import { createInitialDataForMode, CURRENT_STORE_VERSION, STORAGE_KEY, useStore } from '@/store/store'
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-function selectValue(select: HTMLSelectElement, value: string) {
-  const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set
-  setter?.call(select, value)
-  select.dispatchEvent(new Event('change', { bubbles: true }))
+const nativeScrollIntoView = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView')
+beforeAll(() => {
+  if (!nativeScrollIntoView) Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: () => {} })
+})
+afterAll(() => { if (!nativeScrollIntoView) Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView') })
+
+async function openPrograms() {
+  const trigger = document.querySelector<HTMLButtonElement>('[role="combobox"][aria-label="Degree / track"]')!
+  await act(async () => { trigger.focus(); trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) })
+}
+
+async function selectProgram(value: string) {
+  await openPrograms()
+  const label = planningProgramLabel(UNC_PLANNING_LIBRARY.find((set) => set.id === value)!)
+  const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((item) => item.textContent === label)!
+  await act(async () => option.click())
 }
 
 describe('Requirements Audit planning library', () => {
@@ -49,7 +61,8 @@ describe('Requirements Audit planning library', () => {
 
   it('sorts distinct degree and track records by their student-facing label', async () => {
     await render()
-    const labels = [...(container.querySelector('select') as HTMLSelectElement).options].slice(1).map((option) => option.text)
+    await openPrograms()
+    const labels = [...document.querySelectorAll('[role="option"]')].slice(1).map((option) => option.textContent!)
     expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b)))
     expect(labels).toHaveLength(UNC_PLANNING_LIBRARY.length)
     expect(labels).toContain(planningProgramLabel(UNC_PLANNING_LIBRARY.find((set) => set.id === 'physics-bs-standard')!))
@@ -60,15 +73,13 @@ describe('Requirements Audit planning library', () => {
     useStore.getState().update((draft) => { draft.academics.classCenter = undefined as never })
     await render()
     expect(container.textContent).toContain('No program is assumed')
-    const select = container.querySelector('select') as HTMLSelectElement
-    await act(async () => selectValue(select, 'neuroscience-bs'))
+    await selectProgram('neuroscience-bs')
     expect(useStore.getState().academics.classCenter.planningProgramContext.selectedProgramId).toBe('neuroscience-bs')
   })
 
   it('persists a selected program and presents candidate evidence rather than completion', async () => {
     await render()
-    const select = container.querySelector('select') as HTMLSelectElement
-    await act(async () => selectValue(select, 'neuroscience-bs'))
+    await selectProgram('neuroscience-bs')
 
     expect(useStore.getState().academics.classCenter.planningProgramContext.selectedProgramId).toBe('neuroscience-bs')
     expect(container.textContent).toContain('Course recorded')
@@ -79,8 +90,7 @@ describe('Requirements Audit planning library', () => {
 
   it('restores the selected program and the same derived coverage counts after hydration', async () => {
     await render()
-    const select = container.querySelector('select') as HTMLSelectElement
-    await act(async () => selectValue(select, 'neuroscience-bs'))
+    await selectProgram('neuroscience-bs')
 
     const requirementSet = planningRequirementSet('neuroscience-bs')!
     const courseCodes = useStore.getState().courses.map((course) => course.code)
@@ -96,13 +106,12 @@ describe('Requirements Audit planning library', () => {
     expect(useStore.getState().academics.classCenter.planningProgramContext.selectedProgramId).toBe('neuroscience-bs')
     const restoredCodes = useStore.getState().courses.map((course) => course.code)
     expect(candidatePlanCoverage(requirementSet, restoredCodes).map((item) => item.state)).toEqual(before)
-    expect((container.querySelector('select') as HTMLSelectElement).value).toBe('neuroscience-bs')
+    expect(container.querySelector('[role="combobox"][aria-label="Degree / track"]')?.textContent).toContain(planningProgramLabel(requirementSet))
   })
 
   it('collects Gillings admission context only for an admission-gated B.S.P.H. record', async () => {
     await render()
-    const select = container.querySelector('select') as HTMLSelectElement
-    await act(async () => selectValue(select, 'biostatistics-bsph'))
+    await selectProgram('biostatistics-bsph')
 
     expect(container.textContent).toContain('Gillings admission term (as recorded)')
     expect(container.textContent).toContain('Limited Gillings admission')

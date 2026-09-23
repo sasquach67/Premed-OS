@@ -44,3 +44,13 @@ Variants: generate 2–3 (e.g., a sunrise field, a forest path, a hillside town)
 
 ## Assets pending from Andy
 Final Ghibli banner art (use prompt above) · ram reference pics · (these unblock final theme).
+
+## Shared controls are required
+
+Every new or modified interface must use the existing themed controls in `src/components/ui` for its visible interactions. This applies to dialogs, generated-resource workflows, settings, and secondary forms as well as primary pages. Retain the app's current fonts, colors, focus treatment, and light/dark theme tokens.
+
+- Use `SelectField` for simple option lists, including an explicit empty choice, or the shared `Select` primitives for grouped/custom layouts.
+- Use `DropdownMenu` for actions. When users can enter custom text, keep an editable input and provide themed preset choices rather than a native `datalist`.
+- Do not add raw `<select>` or `<datalist>` elements; the release lint gate enforces this across the app.
+- Check the **opened menu**, not just its closed trigger: light/dark themes, keyboard navigation and Escape, touch access, dialog layering, and long labels on narrow screens.
+- Preserve stored option values, empty/reset choices, labels, disabled states, and form behavior when changing presentation.

@@ -1,3 +1,4 @@
+import { SelectField } from '@/components/ui/select-field'
 import { useState, type ReactNode } from 'react'
 import type { ExperienceCategory, ExperienceEntry } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -213,9 +214,7 @@ function PositionDetail({ entity, onAddDatedHours }: {
           {entity.experienceLogTargets.length > 1 && (
             <label className="mt-2 flex items-center gap-2 text-[11px] font-bold text-muted-foreground">
               <span>Position</span>
-              <select aria-label="Position for this log" value={experienceId} onChange={(event) => setExperienceId(event.target.value)} className="h-8 rounded-md border bg-background px-2 text-foreground">
-                {entity.experienceLogTargets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}
-              </select>
+              <SelectField aria-label="Position for this log" value={experienceId} onValueChange={setExperienceId} className="h-8 rounded-md border bg-background px-2 text-foreground" options={entity.experienceLogTargets.map((target) => ({ value: target.id, label: target.label }))} />
             </label>
           )}
         </div>

@@ -18,6 +18,7 @@ function changeField(field: HTMLInputElement | HTMLTextAreaElement, value: strin
   field.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
+HTMLElement.prototype.scrollIntoView = vi.fn()
 describe('ClassHub unified Guide contract', () => {
   let container: HTMLDivElement
   let root: Root
@@ -75,6 +76,21 @@ describe('ClassHub unified Guide contract', () => {
     await render()
     expect(container.textContent).toContain('Ask about office hours')
     expect(useStore.getState().academics.classCenter.notes.find((note) => note.title === 'Ask about office hours')).toMatchObject({ type: 'other', kind: 'about-class' })
+  })
+
+  it('uses the themed Kind menu and saves its selected note type', async () => {
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('New reference note'))!.click())
+    const trigger = document.querySelector<HTMLButtonElement>('[role="combobox"][aria-label="Kind"]')!
+    expect(trigger).toBeTruthy()
+    await act(async () => trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })))
+    const menu = document.querySelector('[role="listbox"]')!
+    expect(menu.classList.contains('glass-surface')).toBe(true)
+    const option = [...menu.querySelectorAll<HTMLElement>('[role="option"]')].find(item => item.textContent === 'Question to ask')!
+    await act(async () => option.click())
+    expect(trigger.textContent).toContain('Question to ask')
+    await act(async () => changeField(document.querySelector<HTMLInputElement>('[role="dialog"] input')!, 'Ask about grading'))
+    await act(async () => document.querySelector<HTMLFormElement>('[role="dialog"] form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(useStore.getState().academics.classCenter.notes.find(note => note.title === 'Ask about grading')?.type).toBe('question-log')
   })
 
   it('creates source-backed syllabus suggestions and keeps accept/dismiss controls live', async () => {

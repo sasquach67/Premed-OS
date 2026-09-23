@@ -1,3 +1,4 @@
+import { SelectField } from '@/components/ui/select-field'
 import { useStudentGuide } from './UsingStudentGuide'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -66,10 +67,10 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
     <p className="text-sm leading-6">Your lecture’s Class Journal must already be made and saved here. The flashcards use its learning targets and the same original materials as its study guide and Mastery Map.</p>
     {lectureId ? <div className="rounded-lg border p-3"><p className="text-xs font-semibold text-muted-foreground">Selected Class Journal</p><p className="mt-1 font-semibold">{lecture?.title ?? 'Journal unavailable'}</p></div> : <label className="block space-y-2 text-sm font-semibold">
       <span>Class Journal</span>
-      <select className="field-solid w-full rounded-md border p-3" value={selection ?? ''} disabled={copyBusy} onChange={event => setChosenId(event.target.value)}>
-        {!selection && <option value="">No completed Class Journal available</option>}
-        {classLectures.map(item => { const result = flashcardNotebookEligibility(item); return <option key={item.id} value={item.id} disabled={!result.eligible}>{item.title}{result.eligible ? '' : ` — ${result.reason}`}</option> })}
-      </select>
+      <SelectField aria-label="Class Journal" className="field-solid min-h-11 w-full" value={selection ?? ''} disabled={copyBusy} onValueChange={setChosenId} options={[
+        ...(!selection ? [{ value: '', label: 'No completed Class Journal available' }] : []),
+        ...classLectures.map(item => { const result = flashcardNotebookEligibility(item); return { value: item.id, disabled: !result.eligible, label: `${item.title}${result.eligible ? '' : ` — ${result.reason}`}` } }),
+      ]} />
     </label>}
     {eligibility.eligible && guide.preview}
     {!eligibility.eligible ? <div className="space-y-3 rounded-lg border bg-muted/30 p-4">

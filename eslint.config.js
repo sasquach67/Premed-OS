@@ -44,9 +44,19 @@ export default defineConfig([
     },
   },
   {
+    files: ['src/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': ['error', {
+        selector: 'JSXOpeningElement[name.name="select"], JSXOpeningElement[name.name="datalist"]',
+        message: 'Use the themed SelectField/Select or a themed editable picker from components/ui. Native popup menus bypass the app design system.',
+      }],
+    },
+  },
+  {
     files: ['**/*.{test,spec}.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      'no-restricted-syntax': 'off',
     },
   },
   {

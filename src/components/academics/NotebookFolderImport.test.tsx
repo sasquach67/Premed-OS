@@ -4,7 +4,7 @@ import { gzipSync, strFromU8, strToU8 } from 'fflate'
 import { webcrypto } from 'node:crypto'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { NotebookImportPanel } from './NotebookImportPanel'
 import { activateAccountWorkspace, activateGuestWorkspace, createInitialDataForMode, snapshotData, useStore } from '@/store/store'
 import { exportNotebook, saveNotebookEdits } from '@/lib/academics/notebook/import'
@@ -18,6 +18,9 @@ import * as workspaceOptimization from '@/store/workspaceOptimization'
 import { MemoryNotebookAssets, visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
 import { plainNotebookZip } from '@/lib/academics/notebook/notebookFiles.test-fixtures'
 import type { Course } from '@/lib/types'
+const nativeScrollIntoView = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView')
+beforeAll(() => { if (!nativeScrollIntoView) Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: () => {} }) })
+afterAll(() => { if (!nativeScrollIntoView) Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView') })
 const pngBytes = () => new Uint8Array(readFileSync('src/lib/academics/notebook/visual-fixtures/question.png'))
 let repo: MemoryNotebookAssets, root: Root, container: HTMLDivElement
 let recoveryCopies: WorkspaceRecoverySnapshot[] = [], failRecovery = false
@@ -51,7 +54,17 @@ function button(label: string) { return [...container.querySelectorAll('button')
 async function input(selector: string, files: File[]) { const element = container.querySelector<HTMLInputElement>(selector)!; expect(element).toBeTruthy(); await act(async () => { Object.defineProperty(element, 'files', { configurable: true, value: files }); element.dispatchEvent(new Event('change', { bubbles: true })) }); await settled() }
 async function folder(files: File[]) { await input('[aria-label="Choose notebook folder"]', files) }
 async function settled() { await vi.waitFor(async () => { await act(async () => {}); expect(container.querySelector<HTMLInputElement>('[aria-label="Choose notebook folder"]')!.disabled).toBe(false) }, { timeout: 5000 }) }
-async function select(value: string) { await act(async () => { const select = container.querySelector<HTMLSelectElement>('.en-collection-summary select')!; select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })) }) }
+async function openSelect(selector: string) {
+  const trigger = container.querySelector<HTMLButtonElement>(selector)!
+  expect(trigger).toBeTruthy()
+  await act(async () => { trigger.focus(); trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) })
+}
+async function selectOption(label: string) {
+  const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find(item => item.textContent?.trim() === label)!
+  expect(option).toBeTruthy()
+  await act(async () => { option.focus(); option.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) })
+}
+async function select(value: string) { await openSelect('[role="combobox"][aria-label="Notebook JSON"]'); await selectOption(value) }
 function rowsPackage() { const p = visualFixture(); p.assets.push({ ...p.assets[0], id: 'second-image', fileName: 'second.png' }); p.visualReview.candidates.push({ ...p.visualReview.candidates[0], id: 'candidate-second', assetId: 'second-image' }); const figure = p.entries[0].sections.flatMap(s => s.blocks).find(b => b.type === 'figure')!; p.entries[0].sections[0].blocks.push({ ...figure, id: 'second-figure', assetId: 'second-image' }); return p }
 it('defaults to the folder action, imports nested images without manual mapping, and preserves raw JSON through save, reload and duplicate import', async () => {
   expect(button('Choose notebook folder')).toBeTruthy(); expect(container.querySelector<HTMLDetailsElement>('.en-import-inputs')!.open).toBe(false)
@@ -80,9 +93,9 @@ it('shows only the missing image control and cannot partially save otherwise val
 it('requires an explicit path choice for duplicate basenames', async () => {
   await folder([file('Title.json', JSON.stringify(pkg)), file('originals/' + pkg.assets[0].fileName, pngBytes()), file('rendered/' + pkg.assets[0].fileName, pngBytes())])
   expect(container.textContent).toContain('Ambiguous filename'); expect(button('Save editable entry to PSYC 101').disabled).toBe(true)
-  const field = container.querySelector<HTMLSelectElement>('.en-image-problem select')!
-  expect([...field.options].map(o => o.text)).toEqual(['Choose the exact image', 'originals/' + pkg.assets[0].fileName, 'rendered/' + pkg.assets[0].fileName])
-  await act(async () => { field.value = field.options[1].value; field.dispatchEvent(new Event('change', { bubbles: true })) }); await settled()
+  await openSelect('.en-image-problem [role="combobox"]')
+  expect([...document.querySelectorAll('[role="option"]')].map(option => option.textContent)).toEqual(['Choose the exact image', 'originals/' + pkg.assets[0].fileName, 'rendered/' + pkg.assets[0].fileName])
+  await selectOption('originals/' + pkg.assets[0].fileName); await settled()
   expect(container.textContent).toContain('1 of 1 images validated')
 })
 it('requires notebook selection for multiple candidates and rejects material-only folders', async () => {
@@ -97,7 +110,7 @@ it('does not allow a stale candidate read to replace a newer selection', async (
   vi.spyOn(a, 'text').mockResolvedValueOnce(JSON.stringify(pkg)).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
   await folder([a, b, file('images/' + pkg.assets[0].fileName, pngBytes())]); await select('a.json'); await vi.waitFor(() => expect(finish).toBeTypeOf('function'))
   await select('b.json'); await settled(); expect(container.textContent).toContain('Selected B')
-  await act(async () => finish(JSON.stringify(pkg))); await settled(); expect(container.querySelector<HTMLSelectElement>('.en-collection-summary select')!.value).toBe('b.json'); expect(container.textContent).toContain('Selected B')
+  await act(async () => finish(JSON.stringify(pkg))); await settled(); expect(container.querySelector('[role="combobox"][aria-label="Notebook JSON"]')?.textContent).toBe('b.json'); expect(container.textContent).toContain('Selected B')
 })
 it('keeps ordinary compressed ZIP and separate JSON plus image imports working', async () => {
   const zip = plainNotebookZip([['Title.json', new TextEncoder().encode(JSON.stringify(pkg))], ['images/' + pkg.assets[0].fileName, pngBytes()]])

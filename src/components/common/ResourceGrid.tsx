@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ExternalLink, Plus, Trash2, BadgeCheck, FolderOpen } from 'lucide-react'
+import { ExternalLink, Plus, Trash2, BadgeCheck, FolderOpen, ChevronDown } from 'lucide-react'
 import type { ResourceLink } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose,
 } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 
 /** Resources for one pillar, organized into clickable categories.
@@ -101,9 +102,16 @@ function AddResource({ pillar, categories }: { pillar: string; categories: strin
             <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" />
           </div>
           <div className="space-y-1.5">
-            <Label>Category</Label>
-            <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Anki / Exams / Content" list="rg-cats" />
-            <datalist id="rg-cats">{categories.map((c) => <option key={c} value={c} />)}</datalist>
+            <Label htmlFor="resource-category">Category</Label>
+            <div className="flex flex-wrap gap-2">
+              <Input id="resource-category" className="min-w-0 flex-1" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Anki / Exams / Content" />
+              {categories.length > 0 && <DropdownMenu>
+                <DropdownMenuTrigger asChild><Button type="button" variant="outline">Choose category <ChevronDown className="size-4" /></Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {categories.map((item) => <DropdownMenuItem key={item} onSelect={() => setCategory(item)}>{item}</DropdownMenuItem>)}
+                </DropdownMenuContent>
+              </DropdownMenu>}
+            </div>
           </div>
         </div>
         <DialogFooter>

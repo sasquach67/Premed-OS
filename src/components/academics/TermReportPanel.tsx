@@ -1,3 +1,4 @@
+import { SelectField } from '@/components/ui/select-field'
 import { type ReactNode, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ArrowUpRight, Info, Sparkles } from 'lucide-react'
 import type { TermReport, TermReportBlock, TermReportEvidenceItem } from '@/lib/types'
@@ -82,14 +83,13 @@ export function TermReportPanel({
             Term complete<span className="mt-0.5 block normal-case tracking-normal text-muted-foreground">Saved report</span>
           </span>
           {reports.length > 1 && (
-            <select
+            <SelectField
               aria-label="Choose a saved term report"
               value={report.id}
-              onChange={(event) => { setSelectedId(event.target.value); onSelectReport?.(event.target.value) }}
+              onValueChange={(value) => { setSelectedId(value); onSelectReport?.(value) }}
               className="h-9 basis-full rounded-lg border border-border bg-muted px-2 text-xs font-bold"
-            >
-              {reports.slice().reverse().map((item) => <option key={item.id} value={item.id}>{item.term} · {statusLabel(item)}</option>)}
-            </select>
+              options={reports.slice().reverse().map((item) => ({ value: item.id, label: `${item.term} · ${statusLabel(item)}` }))}
+            />
           )}
         </div>
 

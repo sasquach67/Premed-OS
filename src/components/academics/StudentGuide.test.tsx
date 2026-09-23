@@ -1,6 +1,6 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { afterEach, beforeEach, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, expect, it } from 'vitest'
 import { createSeedData } from '@/data/seed'
 import { createInitialDataForMode, CURRENT_STORE_VERSION, snapshotData, STORAGE_KEY, useStore } from '@/store/store'
 import { buildLectureGuideProposal } from '@/lib/academics/guideContract'
@@ -9,6 +9,21 @@ import reviewFixture from '@/lib/academics/notebook/fixtures/fixture-review.json
 import type { NotebookPackage } from '@/lib/academics/notebook/types'
 import { StudentGuide } from './StudentGuide'
 import { useStudentGuide } from './UsingStudentGuide'
+const nativeScrollIntoView = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView')
+beforeAll(() => { if (!nativeScrollIntoView) Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: () => {} }) })
+afterAll(() => { if (!nativeScrollIntoView) Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView') })
+async function openSelect(selector: string) {
+  const trigger = container.querySelector<HTMLButtonElement>(selector)!
+  expect(trigger).toBeTruthy()
+  await act(async () => { trigger.focus(); trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) })
+}
+async function chooseOption(selector: string, label: string) {
+  await openSelect(selector)
+  const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find(item => item.textContent?.trim() === label)!
+  expect(option).toBeTruthy()
+  await act(async () => { option.focus(); option.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) })
+}
+
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
 let root: Root, container: HTMLDivElement, courseId: string
@@ -93,10 +108,7 @@ it('edits with cancel semantics and keeps exam expectations within the selected 
   await click('Cancel')
   await click('Edit Use two sentences.')
   expect(container.querySelector<HTMLInputElement>('[aria-label="Edit Guide headline"]')!.value).toBe('Use two sentences.')
-  await act(async () => {
-    const select = container.querySelector<HTMLSelectElement>('article select')!
-    select.value = `assessment:${exam.id}`; select.dispatchEvent(new Event('change', { bubbles: true }))
-  })
+  await chooseOption('article [role="combobox"][aria-label="Applies to"]', `Exam or assignment · ${exam.title}`)
   await click('Save')
   const notes = useStore.getState().academics.classCenter.notes
   expect(matchingGuideNotes(notes, { courseId })).toEqual([])
@@ -112,11 +124,8 @@ it('requires explicit acceptance of a source-validated lecture suggestion', asyn
     c.guideProposals.push(buildLectureGuideProposal({ center: c, courseId, lectureId: 'lesson', finding: c.lectureFindings.at(-1)! })!)
   }))
   await click('Review as a headline')
-  await act(async () => {
-    const select = container.querySelector<HTMLSelectElement>('[aria-label="Review Guide headlines"] select')!
-    expect(select.value).toBe('')
-    select.value = 'lesson:lesson'; select.dispatchEvent(new Event('change', { bubbles: true }))
-  })
+  expect(container.querySelector('[aria-label="Review Guide headlines"] [role="combobox"][aria-label="Applies to"]')?.textContent).toContain('Whole class')
+  await chooseOption('[aria-label="Review Guide headlines"] [role="combobox"][aria-label="Applies to"]', 'Lesson · Lecture')
   expect(matchingGuideNotes(useStore.getState().academics.classCenter.notes, { courseId, lessonIds: ['lesson'] })).toEqual([])
   await click('Save selected headlines')
   const c = useStore.getState().academics.classCenter

@@ -1,3 +1,4 @@
+import { SelectField } from '@/components/ui/select-field'
 import { useStudentGuide } from './UsingStudentGuide'
 import { preferencesWithGuide, withoutGuideSnapshot } from '@/lib/academics/studentGuide'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -236,7 +237,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision, basel
         <label className="en-field">Class preferences<textarea value={preferences} onChange={e => setPreferences(e.target.value)} placeholder="Instructor terminology, explanation style, connections, writing conventions..." /></label>
         <Button variant="outline" onClick={savePreferences}>Remember preferences for this class</Button>
         <label className="en-field">Term (optional)<input value={term} onChange={e => setTerm(e.target.value)} placeholder="Fall 2026" /></label>
-        <label className="en-field">Help stage<select value={stage} onChange={e => setStage(e.target.value)}>{revision && <option value="">Not specified</option>}{revision && stage && !goalInfo.stages.includes(stage) && <option value={stage}>{stage}</option>}{goalInfo.stages.map(s => <option key={s}>{s}</option>)}</select></label>
+        <label className="en-field">Help stage<SelectField aria-label="Help stage" className="mt-2 min-h-11 w-full bg-background font-normal" value={stage} onValueChange={setStage} options={[...(revision ? [{ value: '', label: 'Not specified' }] : []), ...(revision && stage && !goalInfo.stages.includes(stage) ? [{ value: stage, label: stage }] : []), ...goalInfo.stages.map(value => ({ value, label: value }))]} /></label>
         <label className="en-field">Depth and style<input value={depth} onChange={e => setDepth(e.target.value)} /></label>
       </details>
       <label className="en-field en-flow-request">Additional instructions for your AI<span className="en-muted block">Optional. Included when you copy the prompt.</span><textarea aria-label="Additional instructions for your AI" value={request} onChange={e => setRequest(e.target.value)} /></label>

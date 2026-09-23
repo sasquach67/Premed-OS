@@ -1,3 +1,4 @@
+import { SelectField } from '@/components/ui/select-field'
 import { useConfirm } from '@/components/common/useConfirm'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -256,7 +257,7 @@ export function Settings() {
               <Button variant="outline" onClick={backup.backupNow} disabled={!backup.configured}>Back up now</Button>
               <Button variant="ghost" onClick={() => void chooseDriveBackup()} disabled={!backup.configured}>Choose backup to restore</Button>
             </div>
-            {restoreChoices && <div className="space-y-2 rounded-xl border border-border p-3"><Label htmlFor="drive-restore-point">Restore point (100 most recent verified snapshots)</Label><select id="drive-restore-point" className="w-full rounded-md border border-border bg-card p-2" value={restoreChoice} onChange={event => setRestoreChoice(event.target.value)}>{restoreChoices.map(point => <option key={point.id} value={point.id}>{new Date(point.createdTime).toLocaleString()} — complete backup</option>)}<option value="legacy">Older JSON-only backup — no image files</option></select><div className="flex gap-2"><Button variant="outline" onClick={() => void restoreFromDrive()}>Restore selected backup</Button><Button variant="ghost" onClick={() => setRestoreChoices(null)}>Cancel</Button></div></div>}
+            {restoreChoices && <div className="space-y-2 rounded-xl border border-border p-3"><Label htmlFor="drive-restore-point">Restore point (100 most recent verified snapshots)</Label><SelectField id="drive-restore-point" className="w-full rounded-md border border-border bg-card p-2" value={restoreChoice} onValueChange={setRestoreChoice} options={[...restoreChoices.map(point => ({ value: point.id, label: `${new Date(point.createdTime).toLocaleString()} — complete backup` })), { value: 'legacy', label: 'Older JSON-only backup — no image files' }]} /><div className="flex gap-2"><Button variant="outline" onClick={() => void restoreFromDrive()}>Restore selected backup</Button><Button variant="ghost" onClick={() => setRestoreChoices(null)}>Cancel</Button></div></div>}
             <p className="text-xs text-muted-foreground">
               Drive creates at most one automatic complete snapshot per day while the app is open. Use Back up now for another restore point. Backups include attached files and notebook images; stories marked local-only stay on this device. Earlier complete snapshots and the older JSON backup are retained.
               {backup.lastBackupAt ? <>Last backed up {fmtTimeAgo(backup.lastBackupAt)}.</> : 'Not backed up to Drive yet.'}
