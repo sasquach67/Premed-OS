@@ -30,7 +30,12 @@
 .mf-search > svg { color: var(--muted-foreground); flex-shrink: 0; }
 .mf-search input { outline: none; width: 100%; min-width: 0; background: transparent; font-size: .8rem; }
 .mf-search:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
-.material-folder select { min-width: 0; max-width: 100%; background: var(--background); border: 1px solid var(--border); border-radius: 6px; padding: .45rem .4rem; font-size: .78rem; }
+.mf-type-filter { min-width: 0; max-width: 100%; padding-inline: .5rem; font-size: .78rem; }
+.mf-type-filter > span { overflow: hidden; text-overflow: ellipsis; }
+.mf-select-menu { max-height: min(24rem, var(--radix-select-content-available-height)); min-width: max(11rem, var(--radix-select-trigger-width)); max-width: calc(100vw - 24px); }
+.mf-select-menu [role="option"] { overflow-wrap: anywhere; }
+.mf-edit-value { display: flex; align-items: center; gap: .5rem; }
+.mf-edit-value input { min-width: 0; }
 .mf-back-files { margin-bottom: .4rem; }
 .mf-list { background: transparent; }
 .mf-columns, .mf-row { display: grid; grid-template-columns: minmax(180px, 1fr) 95px 145px 70px 34px; align-items: center; gap: .6rem; padding: 0 .4rem; }

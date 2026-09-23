@@ -1,9 +1,10 @@
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { createRoot, type Root } from 'react-dom/client'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { FolderMaterials } from './FolderMaterials'
 import { scanFolder } from '@/lib/academics/materialFolder/filesystem'
+import * as folderFilesystem from '@/lib/academics/materialFolder/filesystem'
 import { MemoryDirectory } from '@/lib/academics/materialFolder/testing/memoryFilesystem'
 import type { FolderLibrary } from '@/lib/academics/materialFolder/model'
 const mocks = vi.hoisted(() => ({ cloud: { user: null as null | { id: string }, accountReady: false, status: 'idle', conflict: undefined, error: '', pullNow: vi.fn() }, library: undefined as FolderLibrary | undefined, download: vi.fn(), sync: vi.fn(), loadHandle: vi.fn(), fence: vi.fn(), lock: vi.fn(), save: vi.fn(), back: vi.fn() }))
@@ -13,6 +14,12 @@ vi.mock('@/lib/academics/materialFolder/controller', () => ({ captureFolderFence
 vi.mock('@/lib/academics/materialFolder/storage', () => ({ deviceId: () => 'other-device', loadFolderHandle: mocks.loadHandle, saveFolderHandle: vi.fn(), cacheUsage: async () => 0, clearPreviewCache: vi.fn(), cloudBudgetUsed: () => 0, downloadFolderFile: mocks.download, syncFolderFile: mocks.sync }))
 vi.mock('./FolderPdfPreview', () => ({ FolderPdfPreview: ({ name }: { name: string }) => <div data-testid="pdf-preview">{name}</div> }))
 let root: Root, container: HTMLDivElement
+// Radix Select scrolls the focused option; JSDOM does not implement scrolling.
+const nativeScrollIntoView = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView')
+beforeAll(() => {
+  if (!nativeScrollIntoView) Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: () => {} })
+})
+afterAll(() => { if (!nativeScrollIntoView) Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView') })
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview'); vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
@@ -245,4 +252,70 @@ it('opens Trash and legacy materials through More options', async () => {
   await act(async () => menuItem('Previously added materials').click())
   expect(mocks.back).toHaveBeenCalledTimes(1)
   expect(mocks.save).not.toHaveBeenCalled()
+})
+
+
+async function chooseOption(trigger: HTMLButtonElement, text: string) {
+  await openMenu(trigger)
+  const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find(item => item.textContent?.trim() === text)!
+  expect(option).toBeTruthy()
+  await act(async () => { option.focus(); option.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) })
+}
+
+it('filters with the themed type picker and restores every row with All types', async () => {
+  mocks.library!.items = [
+    { id: 'slides', path: 'Lecture slides.pdf', kind: 'file', category: 'Slides', size: 1, modified: 0 },
+    { id: 'notes', path: 'Class notes.txt', kind: 'file', category: 'Notes', size: 1, modified: 0 },
+  ]
+  await render()
+  expect(container.querySelectorAll('.mf-row')).toHaveLength(2)
+  await chooseOption(labeledButton('Filter material type'), 'Slides')
+  expect(container.querySelectorAll('.mf-row')).toHaveLength(1)
+  expect(button('Lecture slides.pdf')).toBeTruthy()
+  expect(button('Class notes.txt')).toBeUndefined()
+  await chooseOption(labeledButton('Filter material type'), 'All types')
+  expect(container.querySelectorAll('.mf-row')).toHaveLength(2)
+  expect(mocks.save).not.toHaveBeenCalled()
+  expect(mocks.download).not.toHaveBeenCalled()
+})
+
+it.each(['root', 'nested'])('keeps %s move destinations and submits only after Save', async destination => {
+  const disk = new MemoryDirectory('Trial')
+  disk.dir('Source').file('First.pdf'); disk.dir('Study').dir('Week 1')
+  mocks.library!.writerDevice = 'other-device'; mocks.library!.items = await scanFolder(disk)
+  mocks.loadHandle.mockResolvedValue(disk); mocks.lock.mockImplementation(async (_id, work) => work())
+  const move = vi.spyOn(folderFilesystem, 'moveEntries').mockRejectedValue(new Error('Synthetic move boundary'))
+  await render()
+  await act(async () => button('Source').click())
+  await openMenu(labeledButton('Actions for First.pdf'))
+  await act(async () => menuItem('Move').click())
+  await chooseOption(labeledButton('Destination folder'), 'Study/Week 1')
+  if (destination === 'root') await chooseOption(labeledButton('Destination folder'), 'Lesson 1')
+  expect(labeledButton('Destination folder').textContent).toContain(destination === 'root' ? 'Lesson 1' : 'Study/Week 1')
+  expect(move).not.toHaveBeenCalled()
+  expect(mocks.save).not.toHaveBeenCalled()
+  expect(document.querySelector('[role="dialog"]')).not.toBeNull()
+  await act(async () => button('Save').click())
+  expect(move).toHaveBeenCalledExactlyOnceWith(disk, [{ from: 'Source/First.pdf', to: destination === 'root' ? 'First.pdf' : 'Study/Week 1/First.pdf' }], 'move', expect.any(Function))
+})
+
+it('fills a preset type without submitting and still saves a custom type', async () => {
+  await connectedFiles(); await render()
+  await openMenu(labeledButton('Actions for First.pdf'))
+  await act(async () => menuItem('Set type').click())
+  const input = document.querySelector<HTMLInputElement>('input[aria-label="Material type"]')!
+  await openMenu(button('Choose type'))
+  await act(async () => menuItem('Worksheet').click())
+  expect(input.value).toBe('Worksheet')
+  expect(mocks.save).not.toHaveBeenCalled()
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, 'My seminar handout')
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  expect(input.value).toBe('My seminar handout')
+  await act(async () => button('Save').click())
+  expect(mocks.save).toHaveBeenCalledTimes(1)
+  const saved = mocks.save.mock.calls[0][1] as FolderLibrary
+  expect(saved.items.find(item => item.path === 'First.pdf')).toMatchObject({ category: 'My seminar handout', categoryConfirmed: true })
+  expect(saved.items.find(item => item.path === 'Second.pdf')?.category).toBe('Other')
 })
