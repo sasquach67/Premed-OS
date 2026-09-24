@@ -38,10 +38,11 @@
 .research-save-state:empty { display:none; }
 .research-week { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px; padding:10px 2px 4px; text-transform:uppercase; letter-spacing:.05em; font-size:10px; font-weight:800; color:var(--muted-foreground); }
 .research-entry,.research-person { background:var(--muted); border-radius:10px; }
+.research-entry>button>svg { order:1; }
 .research-entry-summary { display:grid; grid-template-columns:58px auto minmax(0,1fr); gap:8px; }
 .research-entry time { font-family:var(--font-display); font-weight:800; font-size:11px; }
-.research-hours { align-self:start; font-size:10px; font-weight:800; border-radius:99px; padding:1px 6px; background:color-mix(in srgb,var(--cat-research) 18%,transparent); color:var(--foreground); }
-.research-hours.no-hours { border:1px dashed var(--border); background:transparent; white-space:normal; max-width:74px; }
+.research-hours { align-self:start; justify-self:start; white-space:nowrap; font-size:10px; font-weight:800; border-radius:99px; padding:1px 6px; background:color-mix(in srgb,var(--cat-research) 18%,transparent); color:var(--foreground); }
+.research-hours.no-hours { border:1px dashed var(--border); background:transparent; }
 .research-rail-section h3 { font-family:var(--font-display); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted-foreground); }
 .research-rail-section button,.research-person button { font-size:10.5px; padding:2px 6px; height:28px; }
 .research-person { padding:8px 10px; }
