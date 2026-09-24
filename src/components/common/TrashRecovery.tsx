@@ -24,6 +24,13 @@ export function TrashRecovery() {
   const bulkPatchItems = useStore((state) => state.bulkPatchItems)
   const store = useStore()
   const toast = useToast()
+  const collectionLabel = (key: string) => ({ experienceHourEntries: 'Hour entries', researchUpcomingItems: 'Research upcoming', researchReminders: 'Research reminders', researchTimelineNotes: 'Research timeline', researchMemberships: 'Research people links' }[key] ?? key)
+  const trashLabel = (entry: (typeof trash)[number]) => {
+    if (entry.collection === 'experienceHourEntries') return String(entry.record.note || `${entry.record.hours ?? 0} h · ${entry.record.date || 'Estimate'}`)
+    if (entry.collection === 'researchMemberships') return store.persons.find(person => person.id === entry.record.personId)?.name || 'Research person link'
+    if (entry.collection === 'experiences') return String(entry.record.org || recordLabel(entry.record))
+    return recordLabel(entry.record)
+  }
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [permanentOpen, setPermanentOpen] = useState(false)
   const selected = trash.filter((entry) => selectedIds.has(entry.id))
@@ -108,13 +115,13 @@ export function TrashRecovery() {
           <div className="max-h-96 space-y-4 overflow-y-auto">
             {grouped.map(([collection, entries]) => (
               <section key={collection}>
-                <h4 className="mb-1 text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{collection}</h4>
+                <h4 className="mb-1 text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{collectionLabel(collection)}</h4>
                 <div className="space-y-1">
                   {entries.map((entry) => (
                     <div key={entry.id} className="flex min-h-11 items-center gap-3 rounded-lg bg-card px-3 py-2">
-                      <Checkbox checked={selectedIds.has(entry.id)} onCheckedChange={() => toggle(entry.id)} aria-label={`Select ${recordLabel(entry.record)}`} />
+                      <Checkbox checked={selectedIds.has(entry.id)} onCheckedChange={() => toggle(entry.id)} aria-label={`Select ${trashLabel(entry)}`} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold">{recordLabel(entry.record)}</p>
+                        <p className="truncate text-sm font-bold">{trashLabel(entry)}</p>
                         <p className="text-xs text-muted-foreground">Deleted {new Date(entry.deletedAt).toLocaleString()}</p>
                       </div>
                       <Button size="sm" variant="ghost" onClick={() => restore([entry.id])}><RotateCcw className="size-3.5" /> Restore</Button>

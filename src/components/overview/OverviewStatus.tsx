@@ -81,6 +81,7 @@ export function WhereIStand() {
   ): DomainRow => {
     const totals = totalsForCategory(state.experiences, state.experienceHourEntries, category)
     const current = totals.total
+    const displayedHours = category === 'research' ? current : Math.round(current)
     const hasGoal = goal > 0
     const records = state.experiences
       .filter((entry) => entry.category === category && !entry.deletedAt)
@@ -97,7 +98,7 @@ export function WhereIStand() {
       route,
       icon,
       accent,
-      value: hasGoal ? `${Math.round(current)}/${goal} hrs` : `${Math.round(current)} hrs`,
+      value: hasGoal ? `${displayedHours}/${goal} hrs` : `${displayedHours} hrs`,
       state: !current ? 'not started' : hasGoal ? 'goal set' : 'no goal',
       progress: goalProgress(current, goal),
       records,

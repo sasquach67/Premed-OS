@@ -1,9 +1,11 @@
+import { ExpandableEntryRow as ExpandableShell } from '@/components/common/ExpandableEntryRow'
+import { ContactCard as SharedContactCard } from '@/components/common/ContactCard'
 import { useMemo, useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   AlertTriangle, ArrowLeft, Award, BookOpen, CalendarDays,
-  ChevronDown, ClipboardCheck, Clock, Copy, FileText,
+  ClipboardCheck, Clock, Copy, FileText,
   HeartHandshake,
   ListChecks, Mail, Map as MapIcon, Network, Plus, Search,
   ShieldCheck, Stethoscope, Trash2, TrendingUp, UserRound, Users,
@@ -808,11 +810,8 @@ function ExpandableEntryRow({
   onDelete: () => void
   onDraftStory?: () => void
 }) {
-  const [open, setOpen] = useState(false)
   return (
-    <div className="rounded-xl border bg-card">
-      <button type="button" onClick={() => setOpen((value) => !value)} className="flex w-full items-center gap-3 p-3 text-left">
-        <ChevronDown className={cn('size-4 shrink-0 text-muted-foreground transition', open && 'rotate-180')} />
+    <ExpandableShell triggerClassName="items-center" contentClassName="grid gap-3 md:grid-cols-2" label={entry.org || "Unnamed entry"} summary={<>
         <div className="min-w-0 flex-1">
           <p className="truncate font-bold">{entry.org || 'Unnamed entry'}</p>
           <p className="truncate text-xs font-semibold text-muted-foreground">{entry.role || 'Role TBD'} · {entry.hours || 0}h · {formatDate(entry.startDate)}</p>
@@ -820,9 +819,8 @@ function ExpandableEntryRow({
         <span className={cn('rounded-full px-2 py-1 text-xs font-bold', entry.status === 'active' ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground')}>
           {entry.status}
         </span>
-      </button>
-      {open && (
-        <div className="grid gap-3 border-t border-border p-3 md:grid-cols-2">
+
+    </>}>
           <Field label="Site / org"><Input value={entry.org} onChange={(event) => onPatch({ org: event.target.value })} /></Field>
           <Field label="Role"><Input value={entry.role} onChange={(event) => onPatch({ role: event.target.value })} /></Field>
           <Field label="Date"><DateField value={entry.startDate ?? ''} onChange={(startDate) => onPatch({ startDate })} /></Field>
@@ -835,9 +833,7 @@ function ExpandableEntryRow({
             {onDraftStory && <Button variant="outline" onClick={onDraftStory}><FileText className="size-4" /> Draft the story</Button>}
             <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={onDelete}><Trash2 className="size-4" /> Delete</Button>
           </div>
-        </div>
-      )}
-    </div>
+    </ExpandableShell>
   )
 }
 
@@ -1084,24 +1080,10 @@ function ThemeRollup({ rows, themes }: { rows: ExperienceEntry[]; themes: string
 }
 
 function ContactCard({ name, role, detail, followUp, onLetter, onTouch }: { name: string; role: string; detail?: string; followUp: string; onLetter: () => void; onTouch: () => void }) {
-  return (
-    <div className="rounded-xl border bg-card p-4">
-      <div className="flex items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><UserRound className="size-5" /></span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-bold">{name}</p>
-          <p className="truncate text-xs font-semibold text-muted-foreground">{role}{detail ? ` · ${detail}` : ''}</p>
-        </div>
-      </div>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">{followUp}</span>
-        <div className="flex gap-1">
-          <Button size="sm" variant="outline" onClick={onTouch}>Follow up</Button>
-          <Button size="sm" onClick={onLetter}><Mail className="size-4" /> Letter</Button>
-        </div>
-      </div>
-    </div>
-  )
+  return <SharedContactCard name={name} role={`${role}${detail ? ` · ${detail}` : ''}`} actions={<>
+    <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">{followUp}</span>
+    <div className="flex gap-1"><Button size="sm" variant="outline" onClick={onTouch}>Follow up</Button><Button size="sm" onClick={onLetter}><Mail className="size-4" /> Letter</Button></div>
+  </>} />
 }
 
 function Field({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
