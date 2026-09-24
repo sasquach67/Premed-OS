@@ -1,0 +1,49 @@
+# Isolated disposable S1 stack. Never link this project.
+# Generated with Supabase CLI 2.117.0; reduced to enabled local services.
+project_id = "premed-s1-disposable"
+[api]
+enabled = true
+port = 55431
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+[db]
+port = 55432
+shadow_port = 55430
+major_version = 17
+[db.pooler]
+enabled = false
+port = 55439
+[db.migrations]
+enabled = false
+schema_paths = []
+[db.seed]
+enabled = false
+sql_paths = []
+[realtime]
+enabled = false
+[studio]
+enabled = false
+port = 55433
+api_url = "http://127.0.0.1"
+[local_smtp]
+enabled = false
+port = 55434
+[storage]
+enabled = false
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:55440"
+additional_redirect_urls = []
+jwt_expiry = 3600
+enable_signup = false
+[auth.email]
+# Enable password/email provider; global signup remains disabled. Tests admin-confirm users.
+enable_signup = true
+enable_confirmations = false
+[edge_runtime]
+enabled = false
+inspector_port = 55438
+[analytics]
+enabled = false
+port = 55437

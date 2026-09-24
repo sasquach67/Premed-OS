@@ -1,0 +1,269 @@
+// S1 Revision 3 client acceptance: the ACTUAL useCloudSync / Supabase client /
+// dashboard transport / store of one build (S1_FIXTURE), mounted in jsdom, against
+// the disposable local auth + PostgREST. Nothing is mocked except IndexedDB
+// (fake-indexeddb) and a fetch fence that refuses every non-loopback destination.
+// Copied into a fixture by scripts/s1/hooks.mjs; never collected by the main suite.
+import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
+import { Blob as NodeBlob } from 'node:buffer'
+import { readFileSync } from 'node:fs'
+import { gunzipSync, gzipSync } from 'node:zlib'
+import { randomBytes, randomUUID } from 'node:crypto'
+import { act, createElement, useEffect } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+
+const FIXTURE = 'S1_FIXTURE' as 'old-deployed' | 'old-stale' | 'current'
+const REVISION = 'S1_REVISION'
+const OLD = FIXTURE !== 'current'
+const status = JSON.parse(readFileSync(process.env.S1_STATUS_FILE!, 'utf8')) as { API_URL: string; ANON_KEY: string; SERVICE_ROLE_KEY: string }
+if (process.env.S1_LOCAL_CONFIRMED !== 'yes' || status.API_URL !== 'http://127.0.0.1:55431') throw new Error('Disposable local stack only')
+const nativeFetch = globalThis.fetch.bind(globalThis)
+;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+type Encoding = 'bare' | 'gzip' | 'text'
+type Row = { data: unknown; updated_at: string; cloud_schema: number | null; write_rev: number | null }
+const GZIP = 'premed-os-dashboard-gzip-v1', TEXT = 'premed-os-dashboard-json-text-v1'
+const encode = (value: unknown, as: Encoding) => as === 'gzip' ? { format: GZIP, gzip: gzipSync(Buffer.from(JSON.stringify(value))).toString('base64') }
+  : as === 'text' ? { format: TEXT, json: JSON.stringify(value) } : value
+const decode = (value: unknown): unknown => {
+  const v = value as { format?: string; gzip?: string; json?: string }
+  return v?.format === GZIP ? JSON.parse(gunzipSync(Buffer.from(v.gzip!, 'base64')).toString('utf8')) : v?.format === TEXT ? JSON.parse(v.json!) : value
+}
+const encodingOf = (value: unknown): Encoding => (value as { format?: string })?.format === GZIP ? 'gzip' : (value as { format?: string })?.format === TEXT ? 'text' : 'bare'
+const LARGE = randomBytes(860_000).toString('base64') // ~1.15 MB of JSON text: the transport gzips it
+const ODD = '\uD800 lone surrogate' // JSONB cannot store it: the transport uses text-JSON
+function shape(notes: Record<string, string>, as: Encoding) {
+  delete notes.s1Large; delete notes.s1Odd
+  if (as === 'gzip') notes.s1Large = LARGE
+  if (as === 'text') notes.s1Odd = ODD
+}
+
+async function admin(path: string, method = 'GET', body?: unknown) {
+  const r = await nativeFetch(status.API_URL + path, { method, redirect: 'error', headers: { apikey: status.ANON_KEY, Authorization: `Bearer ${status.SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) })
+  const text = await r.text()
+  if (!r.ok) throw new Error(`fixture ${method} ${path}: ${r.status} ${text}`)
+  return text ? JSON.parse(text) : null
+}
+const readRow = async (id: string): Promise<Row> => (await admin(`/rest/v1/dashboards?user_id=eq.${id}&select=data,updated_at,cloud_schema,write_rev`))[0]
+
+let requests: Array<{ method: string; url: string; status?: number; code?: string; details?: string }> = []
+let dropNextCasResponse = false
+let root: Root | undefined
+const users: string[] = []
+beforeEach(() => {
+  vi.resetModules(); localStorage.clear(); sessionStorage.clear(); requests = []; dropNextCasResponse = false
+  // jsdom's Blob has no stream(); the transport's CompressionStream path needs the platform Blob.
+  vi.stubGlobal('indexedDB', new IDBFactory()); vi.stubGlobal('IDBKeyRange', IDBKeyRange); vi.stubGlobal('Blob', NodeBlob)
+  vi.stubEnv('VITE_SUPABASE_URL', status.API_URL); vi.stubEnv('VITE_SUPABASE_ANON_KEY', status.ANON_KEY)
+  vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+    const request = new Request(input, init)
+    const url = new URL(request.url)
+    if (url.origin !== status.API_URL) throw new Error(`S1 fence blocked ${url.origin}`)
+    const entry: (typeof requests)[number] = { method: request.method, url: url.pathname + url.search }
+    if (url.pathname === '/rest/v1/dashboards') requests.push(entry)
+    const response = await nativeFetch(request, { redirect: 'error' })
+    entry.status = response.status
+    if (!response.ok && response.headers.get('content-type')?.includes('json')) { const e = await response.clone().json(); entry.code = e.code; entry.details = e.details }
+    if (dropNextCasResponse && request.method === 'PATCH' && url.search.includes('write_rev=eq.') && response.ok) {
+      dropNextCasResponse = false
+      throw new TypeError('Failed to fetch') // committed on the server; the browser never saw the answer
+    }
+    return response
+  })
+})
+afterEach(async () => {
+  vi.useRealTimers()
+  if (root) await act(async () => root!.unmount()); root = undefined
+  vi.unstubAllEnvs(); vi.unstubAllGlobals()
+  while (users.length) await admin(`/auth/v1/admin/users/${users.pop()}`, 'DELETE')
+})
+
+async function openAccount(seed: (id: string, email: string) => Promise<void>) {
+  const email = `s1-${FIXTURE}-${randomUUID()}@example.invalid`, password = randomUUID() + randomUUID()
+  const user = await admin('/auth/v1/admin/users', 'POST', { email, password, email_confirm: true }); users.push(user.id)
+  await seed(user.id, email)
+  const { createElement: h } = { createElement }
+  const { useCloudSync } = await import('./useCloudSync')
+  const store = await import('./store')
+  const safety = await import('./accountSyncSafety')
+  const { supabase } = await import('@/lib/supabase')
+  let cloud!: ReturnType<typeof useCloudSync>
+  function Probe() { const value = useCloudSync(); useEffect(() => { cloud = value }, [value]); return null }
+  root = createRoot(document.createElement('div'))
+  await act(async () => root!.render(h(Probe)))
+  const signed = await supabase!.auth.signInWithPassword({ email, password })
+  expect(signed.error).toBeNull()
+  const settle = async () => vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).not.toBe('syncing'); expect(cloud.status).not.toBe('idle') }, { timeout: 30_000, interval: 25 })
+  await settle()
+  return { id: user.id as string, email, get cloud() { return cloud }, store, safety, settle }
+}
+async function seedWorkspace(email: string, as: Encoding) {
+  const { createPersonalInitialData } = await import('@/data/personalInitialData')
+  const doc = createPersonalInitialData() as unknown as Record<string, unknown> & { profile: Record<string, unknown>; settings: Record<string, unknown>; notes: Record<string, string> }
+  doc.profile.name = 'S1 synthetic'; doc.profile.email = email; doc.settings.quotesApi = false
+  doc.notes.s1Seed = 'seed'; shape(doc.notes, as)
+  doc.futureCollection = [{ id: 'opaque', nested: { kept: [1, 2, 3] } }]
+  return doc
+}
+
+const ENCODINGS: Encoding[] = ['bare', 'gzip', 'text']
+const COMBOS = ENCODINGS.flatMap(stored => ENCODINGS.map(written => [stored, written] as const))
+
+it.each(COMBOS)(`${FIXTURE}: claimed row stored %s, edit written %s`, async (stored, written) => {
+  let seed!: Record<string, unknown>
+  const account = await openAccount(async (id, email) => {
+    seed = { ...await seedWorkspace(email, stored), _schema: 1 }
+    await admin('/rest/v1/dashboards', 'POST', { user_id: id, data: encode(seed, stored), updated_at: '2026-01-01T00:00:00+00:00', cloud_schema: 1, write_rev: 1 })
+  })
+  const before = await readRow(account.id)
+  expect(requests.filter(r => r.method !== 'GET')).toEqual([]) // opening never writes a claimed row
+  expect(account.safety.isAccountSyncReady(account.id), account.cloud.error).toBe(true)
+  await act(async () => account.store.useStore.getState().update(d => { (d.notes as Record<string, string>).s1Edit = `${stored}->${written}`; shape(d.notes as Record<string, string>, written) }))
+  const saved = await act(async () => account.cloud.pushNow())
+  const after = await readRow(account.id)
+  if (OLD) {
+    // The deployed app sends {data, updated_at} only: rejected, nothing lost.
+    expect(saved).toBe(false)
+    expect(requests.find(r => r.method === 'PATCH')).toMatchObject({ status: 400, code: 'P0001', details: 'S1_SCHEMA_GUARD' })
+    expect(account.cloud.error).toContain('This tab is out of date. Your recent changes are still on this device.')
+    expect(after).toEqual(before)
+    expect((account.store.snapshotData().notes as Record<string, string>).s1Edit).toBe(`${stored}->${written}`) // the edit stays on the device
+  } else {
+    expect(saved, account.cloud.error).toBe(true)
+    expect(account.cloud.protection).toBe('on')
+    expect(after).toMatchObject({ cloud_schema: 1, write_rev: 2 })
+    expect(encodingOf(after.data)).toBe(written)
+    const decoded = decode(after.data) as Record<string, unknown> & { notes: Record<string, string> }
+    expect(decoded._schema).toBe(1)
+    expect(decoded.notes.s1Edit).toBe(`${stored}->${written}`)
+    expect(decoded.futureCollection).toEqual(seed.futureCollection)
+  }
+}, 60_000)
+
+it.each(COMBOS)(`${FIXTURE}: unclaimed (legacy) row stored %s, edit written %s`, async (stored, written) => {
+  let seed!: Record<string, unknown>
+  const account = await openAccount(async (id, email) => {
+    seed = await seedWorkspace(email, stored)
+    await admin('/rest/v1/dashboards', 'POST', { user_id: id, data: encode(seed, stored), updated_at: '2026-01-01T00:00:00+00:00' })
+  })
+  const loaded = await readRow(account.id)
+  if (OLD) {
+    expect(loaded).toMatchObject({ cloud_schema: null, write_rev: null })
+  } else {
+    // Protection is proven by an explicit claim of exactly the reviewed document.
+    expect(requests.filter(r => r.method === 'PATCH')).toHaveLength(1)
+    expect(loaded).toMatchObject({ cloud_schema: 1, write_rev: 1 })
+    expect(Date.parse(loaded.updated_at)).not.toBe(Date.parse('2026-01-01T00:00:00+00:00'))
+    expect(encodingOf(loaded.data)).toBe(stored)
+    expect(decode(loaded.data)).toEqual({ ...seed, _schema: 1 })
+    expect(account.cloud.protection).toBe('on')
+  }
+  await act(async () => account.store.useStore.getState().update(d => { (d.notes as Record<string, string>).s1Edit = `${stored}->${written}`; shape(d.notes as Record<string, string>, written) }))
+  expect(await act(async () => account.cloud.pushNow()), account.cloud.error).toBe(true)
+  const after = await readRow(account.id)
+  expect(encodingOf(after.data)).toBe(written)
+  const decoded = decode(after.data) as Record<string, unknown> & { notes: Record<string, string> }
+  expect(decoded.notes.s1Edit).toBe(`${stored}->${written}`)
+  if (OLD) {
+    // Unclaimed rows keep today's behavior, including its known loss: the old
+    // snapshot drops sections it does not know. This is the exposure S1 closes
+    // only after a current app claims the row.
+    expect(after).toMatchObject({ cloud_schema: null, write_rev: null })
+    expect(decoded).not.toHaveProperty('futureCollection')
+  } else {
+    expect(after).toMatchObject({ cloud_schema: 1, write_rev: 2 })
+    expect(decoded.futureCollection).toEqual(seed.futureCollection)
+  }
+}, 60_000)
+
+if (OLD) {
+  it(`${FIXTURE}: a rejected save has no idle retry loop, and a later edit is rejected again`, async () => {
+    const account = await openAccount(async (id, email) => {
+      await admin('/rest/v1/dashboards', 'POST', { user_id: id, data: { ...await seedWorkspace(email, 'bare'), _schema: 1 }, updated_at: '2026-01-01T00:00:00+00:00', cloud_schema: 1, write_rev: 1 })
+    })
+    const before = await readRow(account.id)
+    await act(async () => account.store.useStore.getState().update(d => { (d.notes as Record<string, string>).s1Edit = 'first' }))
+    expect(await act(async () => account.cloud.pushNow())).toBe(false)
+    const patches = () => requests.filter(r => r.method === 'PATCH').length
+    const afterFirst = patches()
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    await act(async () => { await vi.advanceTimersByTimeAsync(120_000) })
+    expect(patches()).toBe(afterFirst)
+    vi.useRealTimers()
+    await act(async () => account.store.useStore.getState().update(d => { (d.notes as Record<string, string>).s1Edit = 'second' }))
+    expect(await act(async () => account.cloud.pushNow())).toBe(false)
+    expect(patches()).toBe(afterFirst + 1)
+    expect(await readRow(account.id)).toEqual(before)
+  }, 60_000)
+} else {
+  it('current: an unsupported future cloud_schema is blocked before hydration; nothing is written', async () => {
+    let future!: Record<string, unknown>
+    const account = await openAccount(async (id, email) => {
+      future = { ...await seedWorkspace(email, 'bare'), _schema: 2 }
+      ;(future.profile as Record<string, unknown>).name = 'Future cloud'
+      await admin('/rest/v1/dashboards', 'POST', { user_id: id, data: future, updated_at: '2026-01-01T00:00:00+00:00', cloud_schema: 2, write_rev: 1 })
+    })
+    const before = await readRow(account.id)
+    expect(account.safety.getAccountConflict(account.id)).toMatchObject({ schemaBlocked: true })
+    expect(account.cloud.protection).not.toBe('on')
+    expect(account.store.snapshotData().profile.name).not.toBe('Future cloud')
+    expect(await act(async () => account.cloud.pushNow())).toBe(false)
+    expect(requests.filter(r => r.method !== 'GET')).toEqual([])
+    expect(await readRow(account.id)).toEqual(before)
+  }, 60_000)
+
+  it('current: refuses to claim or hydrate an unmarked Research (T4) row', async () => {
+    const account = await openAccount(async (id, email) => {
+      const doc = await seedWorkspace(email, 'bare')
+      doc.researchReminders = [{ id: 'r', experienceId: 'e', text: 'Synthetic', createdAt: 1, updatedAt: 1 }]
+      doc.persons = [{ id: 'p', name: 'Synthetic PI', bio: 'T4 nested field', createdAt: 1, updatedAt: 1 }]
+      await admin('/rest/v1/dashboards', 'POST', { user_id: id, data: doc, updated_at: '2026-01-01T00:00:00+00:00' })
+    })
+    const before = await readRow(account.id)
+    expect(account.safety.getAccountConflict(account.id)?.message).toContain('Research data')
+    expect(requests.filter(r => r.method !== 'GET')).toEqual([])
+    expect(before).toMatchObject({ cloud_schema: null, write_rev: null })
+    expect(account.cloud.protection).not.toBe('on')
+  }, 60_000)
+
+  it('current: the claim keeps unknown nested fields in known collections exactly', async () => {
+    let seed!: Record<string, unknown>
+    const account = await openAccount(async (id, email) => {
+      seed = await seedWorkspace(email, 'bare')
+      seed.experiences = [{ id: 'x', title: 'Synthetic', org: '', type: 'clinical', status: 'active', tags: [], order: 0, hours: 0, futureNested: { deep: [{ kept: true }] } }]
+      await admin('/rest/v1/dashboards', 'POST', { user_id: id, data: seed, updated_at: '2026-01-01T00:00:00+00:00' })
+    })
+    expect(decode((await readRow(account.id)).data)).toEqual({ ...seed, _schema: 1 })
+  }, 60_000)
+
+  it('current: a committed save whose response was lost is confirmed once, never incremented twice', async () => {
+    const account = await openAccount(async (id, email) => {
+      await admin('/rest/v1/dashboards', 'POST', { user_id: id, data: { ...await seedWorkspace(email, 'bare'), _schema: 1 }, updated_at: '2026-01-01T00:00:00+00:00', cloud_schema: 1, write_rev: 1 })
+    })
+    await act(async () => account.store.useStore.getState().update(d => { (d.notes as Record<string, string>).s1Edit = 'lost ack' }))
+    dropNextCasResponse = true
+    expect(await act(async () => account.cloud.pushNow()), account.cloud.error).toBe(true)
+    const after = await readRow(account.id)
+    expect(after).toMatchObject({ cloud_schema: 1, write_rev: 2 })
+    expect((decode(after.data) as { notes: Record<string, string> }).notes.s1Edit).toBe('lost ack')
+    const patches = requests.filter(r => r.method === 'PATCH')
+    expect(patches).toHaveLength(2) // the original (answer lost) and its identical retry (0 rows)
+    expect(patches.every(r => r.url.includes('write_rev=eq.1'))).toBe(true)
+    expect(account.safety.getAccountConflict(account.id)).toBeUndefined()
+  }, 60_000)
+
+  it.runIf(process.env.S1_MISSING_COLUMNS === 'yes')('current: without the columns there is no fallback writer; edits stay on the device', async () => {
+    const account = await openAccount(async (id, email) => {
+      await admin('/rest/v1/dashboards', 'POST', { user_id: id, data: await seedWorkspace(email, 'bare'), updated_at: '2026-01-01T00:00:00+00:00' })
+    })
+    expect(account.cloud.status).toBe('error')
+    expect(account.cloud.error).toContain('server has not been updated')
+    expect(account.cloud.protection).toBe('unavailable')
+    await act(async () => account.store.useStore.getState().update(d => { (d.notes as Record<string, string>).s1Edit = 'kept on device' }))
+    expect(await act(async () => account.cloud.pushNow())).toBe(false)
+    expect(requests.filter(r => r.method !== 'GET')).toEqual([])
+    expect((account.store.snapshotData().notes as Record<string, string>).s1Edit).toBe('kept on device')
+  }, 60_000)
+}
+
+it(`${FIXTURE} fixture identity`, () => { expect(REVISION).toMatch(/^[0-9a-f]{40}$/) })

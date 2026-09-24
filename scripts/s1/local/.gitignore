@@ -1,0 +1,6 @@
+supabase/.temp/
+supabase/.branches/
+status.json
+.env*
+evidence/
+*-private.log
