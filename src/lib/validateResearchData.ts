@@ -38,6 +38,8 @@ export function validateResearchData(data: RecordValue): string[] {
       if (seen.has(row.id)) fail(key, row, 'duplicate id')
       seen.add(row.id)
       if (key === 'persons' || key === 'organizations') {
+        optional(key, row, ['createdAt', 'updatedAt', 'order', 'deletedAt'], finite)
+        optional(key, row, ['archived'], (value) => typeof value === 'boolean')
         if (!hasText(row.name)) fail(key, row, 'name is required')
         optional(key, row, key === 'persons' ? ['email', 'phone', 'role', 'title', 'organizationId', 'notes', 'bio'] : ['location', 'website', 'notes'])
         if (key === 'persons' && row.tags != null && (!Array.isArray(row.tags) || !row.tags.every(isText))) fail(key, row, 'invalid tags')
@@ -52,8 +54,10 @@ export function validateResearchData(data: RecordValue): string[] {
         if (row.kind === 'logged' && !date(row.date)) fail(key, row, 'logged entries require a valid date')
         if (row.kind === 'estimated' && row.date != null && row.date !== '') fail(key, row, 'estimated entries must remain undated')
         optional(key, row, ['note', 'thoughts', 'periodStart', 'periodEnd'])
-        // Pre-v51 ledgers may contain orphaned historical rows. Keep them intact;
-        // new Research relations below have explicit historical provenance.
+        // Old exports lacked Research containers and may have historical orphans.
+        // v51 records that provenance; new payloads must have a parent or marker.
+        const currentSchema = collections.some((collection) => data[collection] !== undefined)
+        if (currentSchema && !historical(row) && row.parentDeletedAt == null && !parent(row.experienceId) && !trashed('experiences', row.experienceId)) fail(key, row, 'active log requires an experience')
         continue
       }
       const lab = parent(row.experienceId)

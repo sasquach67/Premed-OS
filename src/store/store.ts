@@ -71,6 +71,7 @@ import { migrateNotebookV49 } from '@/store/migrations/notebookV49'
 import { migrateNotebookV50 } from '@/store/migrations/notebookV50'
 import { migrateResearchV51 } from '@/store/migrations/researchV51'
 import { recordResearchDeletion, reconcileResearchRelations } from '@/lib/researchLifecycle'
+import { validateResearchData } from '@/lib/validateResearchData'
 import { migrateJournalIntentV48 } from '@/store/migrations/journalIntentV48'
 import { migrateLectureWorkspaceV41 } from '@/store/migrations/lectureWorkspaceV41'
 import { migrateStaffEmailV42 } from '@/store/migrations/staffEmailV42'
@@ -786,6 +787,8 @@ export const useStore = create<Store>()(
           }
           s.trash = s.trash.filter((entry) => !wanted.has(entry.id))
           reconcileResearchRelations(s as unknown as AppData)
+          const problems = validateResearchData(s as unknown as Record<string, unknown>)
+          if (problems.length) throw new Error(`Could not restore records: ${problems[0]}`)
           if (restoring.some((entry) => entry.collection === 'courses')) syncCurrentTermWorkspaces(s as unknown as AppData)
         }),
 

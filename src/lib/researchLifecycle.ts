@@ -34,7 +34,8 @@ export function reconcileResearchRelations(data: AppData): void {
   const parentIds = new Set(data.experiences.filter((item) => item.deletedAt == null).map((item) => item.id))
   const personIds = new Set(data.persons.filter((item) => item.deletedAt == null).map((item) => item.id))
   for (const child of linkedRows(data)) if (parentIds.has(child.experienceId)) delete child.parentDeletedAt
-  for (const membership of data.researchMemberships) if (personIds.has(membership.personId)) delete membership.personDeletedAt
+  const memberships = [...data.researchMemberships, ...data.trash.filter((item) => item.collection === 'researchMemberships').map((item) => item.record)]
+  for (const membership of memberships) if (personIds.has(String(membership.personId))) delete membership.personDeletedAt
   for (const entry of data.experienceHourEntries) {
     if (entry.deletedAt != null || entry.id !== `experience-hour-legacy-${entry.experienceId}`) continue
     const parent = data.experiences.find((item) => item.id === entry.experienceId)
