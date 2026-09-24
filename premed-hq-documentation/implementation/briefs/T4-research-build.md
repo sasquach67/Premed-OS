@@ -317,3 +317,18 @@ Before T4 can release on top of S1:
 4. Re-verify the deployed revision at release time. Claude's Sep 24 review reports `https://premedos.app/release-assets.json` listing **`d60f682` then `5c7a3e4`**. This is attributed review evidence, not a fresh production check by this task. Keep the exact existing `5c7a3e4` compatibility evidence; include both historical clients where appropriate because old tabs may persist. Do not relabel old test results as tests against `d60f682` or a future release.
 
 S1's own database/old-browser acceptance and production application are separate gates. **No rebase, merge, schema/code change, migration, push, deployment, production unlock or release was performed or authorized by this note.** The current preview and alpha evidence are unchanged.
+
+
+### Andy-reported signed-in alpha and revised S1 blocker — 2026-09-24
+
+**Human alpha feedback:** Andy said **“i already tried, ti's fine”**, then selected **“Signed in (real account)”**. Planning verified Claude user events `364ebbc8-3130-4674-9f91-aac1969efb80` at `2026-09-24T18:42:32.986Z` and `4bd5afde-a43e-4c23-9d20-17b630617678` at `2026-09-24T18:49:18.528Z`. Goal decision 28 at `docs/dev-workflow` revision `3307a8d` records this feedback and was read by this task.
+
+Record this as **Andy-reported local-preview alpha feedback on his real account, before the `3f02a0a` visual fixes**. The exact alpha build revision is **unknown**; the event timestamps date the report, not proof of the tested artifact. It is not an independent observation of login, successful cloud reload/cross-device behavior, backup completion, closure of all live tabs, or every scripted acceptance case. Earlier statements that manual alpha was unperformed are superseded by this human report; the unverified acceptance checks remain unverified. Later automated and signed-out UI evidence for `3f02a0a` remains separate and is not attributed to Andy's earlier test.
+
+**Reported real-row state:** Claude reports that Andy's cloud row contains new Research data without `_schema`. This task has not read or modified that row and has not added a marker. Do not treat the report as permission to inspect, stamp, migrate or otherwise write real account data.
+
+**S1 release protection is unresolved:** Planning reports S1 local acceptance **FAILED at `3883610`** because `dashboardTransport` gzip/text wrappers hide logical schema and keys; old encoded-to-encoded writes can still lose newer data. A contract revision is pending. Revised S1 must explicitly handle existing unmarked rows and encoded rows, with evidence of preservation/refusal for the logical Research data. Merely deploying something called “S1,” or checking an outer marker/key set, does not establish that Andy's specific existing row is protected. Goal decision 28's “until S1 is live” wording therefore must not be treated as a sufficient safety gate by itself.
+
+The prior S1 integration notes remain a record of the then-reviewed proposal. Before any eventual T4 integration/release, reconcile them with the revised approved S1 contract and prove protection across the applicable actual old/S1-era clients and encoded/unmarked formats. Exact historical test revisions remain unchanged; no failed acceptance is relabeled as passing.
+
+No new code, schema, row read/write, rebase, merge, push, deployment, production unlock or release work was performed. This update records human feedback and reported blockers only. Production/release approval and demonstrated compatible protection remain outstanding.
