@@ -223,3 +223,27 @@ One feature per commit (conventional): e.g. `feat(research): …`, `fix(merge): 
 ## 7. Next stage (not in this brief)
 
 Andy tries it on the preview (alpha). Then a **release brief**: production unlock, release authorization, live check. After that, **T4-b: onboarding import** (reminders, key reading, standing meetings, people and checklist from the lab's document).
+
+## Build report
+
+**2026-09-24 · Codex · implementation `c222550` · branch `research/t4-first-release`.** Built in `/Users/andyquach/.codex/worktrees/research-t4-first-release/premed-os`, from production/main base `5c7a3e4`. Approval scope was observed: preview-only flag, no main merge, no release, no real-account data writes. The page remains **unpromoted**, pending authenticated alpha and Claude review.
+
+Implemented the daily log (optional hours, Thoughts, search/range, week grouping, edit/delete/recovery), lab facts/current-lab selection, manual PI contact, Upcoming/reminder/timeline CRUD, reminder reorder, explicit shared Person links, Earlier notes, total-hours goal/pace, and shared Overview hour row. New data is registered through v51 migration, local/remote/import validation, snapshots, merge and local-work detection. Deleted-estimate and historical relation markers preserve lossless delete/restore/purge behavior. All four new collections survive the tested storage/export/account round trips.
+
+`PillarShell` did not exist, and the named entry/contact primitives were private to the old ExperiencePillar. As reported to Planning, minimal shared primitives were extracted, retaining legacy callers, and InlineAddRow gained an additive controlled-form path. Existing PageHeader supplies the shell. No new framework or dependency was added. The fourth review was absent from the pinned commit; its supplemental planning-worktree copy was read and its requirements applied.
+
+Validation:
+
+- **289 test files / 2,177 tests passed**; final recovery-label change additionally checked with 14 passing focused UI/persistence tests.
+- Both flag-off and flag-on TypeScript/Vite builds passed. Flag-off built UI stays reserved, including direct route; flag-on built UI opens Research.
+- Full lint: **0 errors / 55 warnings** in existing files; final changed UI/recovery paths lint clean.
+- Inert-control audit: **32 controls / 0 inert**.
+- Actual local preview: clean signed-out state; add/edit/delete/restore log with recomputed totals; rail and Person CRUD/reload; manual date via keyboard; both themes; **375px client width = 375px scroll width**; keyboard capture; automated short-entry durable confirmation **422ms**.
+- Measured approved B surfaces match in both themes, along with column ratio, gap, panel radius and typography. Header decoration uses the existing shell and is not pixel-identical to the standalone mockup; final fidelity review remains explicit.
+- Detailed acceptance evidence and test-account checklist: [`../evidence/T4-alpha-build.md`](../evidence/T4-alpha-build.md).
+
+**Production blocker (§3e): confirmed.** The actual old production client accepts new data and drops all four new collections on an unrelated write. Reproducible proof and exact old revision are in [`../evidence/T4-old-client-compatibility.md`](../evidence/T4-old-client-compatibility.md). Its passing test asserts the incompatibility; it is not a compatibility pass. Fix requires a separately approved shared-sync brief. No shared sync fix was added here.
+
+**Alpha blocker: separate test account has not been identified or signed in.** Public auth configuration is present, but authenticated cloud save/reload, network-offline/rejected-cloud behavior and live account-switch checks are not verified. Mocked-cloud/real-IndexedDB tests are recorded separately. The local preview is `http://127.0.0.1:53024/#/research`, served with `npm run preview -- --host 127.0.0.1 --port 53024 --outDir dist/research-on`.
+
+Next: Planning receives this revision and evidence, notifies Claude for review, and coordinates test-account alpha. Production unlock/release/main merge remain outside this build's approval. No mockup or board status was promoted.
