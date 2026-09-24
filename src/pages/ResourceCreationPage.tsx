@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { Button } from '@/components/ui/button'
 import { FlashcardPromptPanel } from '@/components/academics/FlashcardPromptPanel'
-import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
+import { RevisedNotesPromptPanel } from '@/components/academics/RevisedNotesPromptPanel'
 import '@/components/academics/externalNotebook.css'
 
 export function ResourceCreationPage() {
@@ -15,7 +15,7 @@ export function ResourceCreationPage() {
   if (!course) return <section className="p-6"><h1>Class not found</h1><Button onClick={() => navigate('/academics')}>Back to Academics</Button></section>
   const classPath = `/academics/classes/${encodeURIComponent(course.id)}`
   if (resource !== 'flashcards' && resource !== 'revised-notes') return <section className="p-6"><h1>Resource not found</h1><Button onClick={() => navigate(classPath)}>Back to class</Button></section>
-  const journalId = resource === 'flashcards' ? params.get('journal') ?? undefined : undefined
+  const journalId = params.get('journal') ?? undefined
   const journalExists = journalId && data.lectures.some(item => item.id === journalId && item.courseId === course.id)
   const back = journalExists ? `${classPath}/journal/${encodeURIComponent(journalId)}` : classPath
   const title = resource === 'flashcards' ? 'Create flashcards' : 'Revise your notes'
@@ -25,12 +25,12 @@ export function ResourceCreationPage() {
       <header className="en-header en-flow-header"><div>
         <p className="en-eyebrow">{course.code} / {resource === 'flashcards' ? 'Flashcards' : 'Revised notes'}</p>
         <h1>{title}</h1>
-        <p className="en-flow-lead">{resource === 'flashcards' ? 'Choose a completed Journal, copy your prompt, and create your Anki deck with your AI.' : 'Choose your notes and the course materials that will support the revision.'}</p>
+        <p className="en-flow-lead">{resource === 'flashcards' ? 'Choose a completed Journal, copy your prompt, and create your Anki deck with your AI.' : 'Choose a saved notebook, copy your prompt, and revise your own notes with your AI.'}</p>
       </div></header>
       <div className="en-stage-content">
         {resource === 'flashcards'
           ? <FlashcardPromptPanel key={`${course.id}-${journalId ?? 'choose'}`} courseId={course.id} courseLabel={course.code} lectureId={journalId} onClose={() => navigate(back)} showHeader={false} />
-          : <RevisedNotesPanel key={course.id} courseId={course.id} files={data.files.filter(file => file.courseId === course.id)} data={data} />}
+          : <RevisedNotesPromptPanel key={`${course.id}-${journalId ?? 'choose'}`} courseId={course.id} courseLabel={course.code} lectureId={journalId} />}
       </div>
     </section>
   </section>

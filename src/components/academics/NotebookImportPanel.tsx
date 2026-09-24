@@ -13,12 +13,12 @@ import { prepareNotebookBundle, type PreparedNotebookBundle } from '@/lib/academ
 import { collectNotebookFolder, matchNotebookImages, type NotebookFileCollection } from '@/lib/academics/notebook/notebookFiles'
 import { classifyNotebookJsonFiles, notebookBundleFromFolder, readNotebookImportZip } from '@/lib/academics/notebook/notebookImportFiles'
 import { NotebookAssetsProvider, NotebookAssetThumbnail } from './NotebookVisuals'
-import type { NotebookUpdateSession } from '@/lib/academics/notebook/types'
+import type { NotebookPackage, NotebookUpdateSession } from '@/lib/academics/notebook/types'
 import { NotebookComparison } from './NotebookComparison'
 import { NotebookImportPreview } from './NotebookImportPreview'
 import { NotebookStorageRecovery, WorkspaceRecoveryDownload } from './NotebookStorageRecovery'
 import { downloadNotebookText, NotebookPackageView, notebookEntryLabel, notebookTransaction } from './ExternalNotebookView'
-export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onRawChange, revision }: { courseId: string; onImported: (id: string) => void; initialRaw?: string; onRawChange?: (raw: string) => void; revision?: NotebookUpdateSession }) {
+export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onRawChange, revision, revisionValidation }: { courseId: string; onImported: (id: string) => void; initialRaw?: string; onRawChange?: (raw: string) => void; revision?: NotebookUpdateSession; revisionValidation?: (baseline: NotebookPackage, proposed: NotebookPackage) => void }) {
   const course = useStore(s => s.courses.find(c => c.id === courseId))
   const center = useStore(s => s.academics.classCenter)
   const [raw, setRawState] = useState(initialRaw)
@@ -59,6 +59,12 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   let updatePlan: ReturnType<typeof inspectNotebookUpdate> | undefined
   if (preview && revision) { try { updatePlan = inspectNotebookUpdate(center, courseId, preview, revision) } catch (failure) { updateError = (failure as Error).message } }
   const blockers = (backup ? [!confirmBackup ? 'confirm restoring the complete backup without overwriting existing entries' : '', wrongCourse && !destination ? 'confirm the different class or term' : ''] : updating ? [updateError, !acceptChanges ? 'review and confirm the changes and practice policy' : '', wrongCourse ? 'resolve the destination class mismatch' : ''] : [wrongCourse && !destination ? 'confirm the different class or term' : '', revised && !revisions ? 'confirm saving revised content separately' : '']).filter(Boolean)
+  if (preview && revisionValidation && revision) {
+    try {
+      if (separate || backup) throw new Error('Use the notebook update import here; separate copies and backups belong in the general notebook importer.')
+      revisionValidation(revision.baseline, preview.package)
+    } catch (failure) { blockers.push((failure as Error).message) }
+  }
   if (preview && preview.package.version !== 2 && !assetPrepared) blockers.push('select and validate every required image')
   function clearPreview() { attempt.current++; setPreview(null); setError(''); setStatus(''); setDestination(false); setRevisions(false); setAcceptChanges(false); setBusy(false); setAssetPrepared(null); setAssetError(''); setImageFiles([]); setMappedImages(new Map()); setBundleFile(null); setBackup(null); setConfirmBackup(false); setCollection(null); setCandidate(''); setReadyImages([]); setImageProblems(new Map()); setBundleUsed([]) }
   function bindingContext(prepared: PreparedNotebook) {
@@ -140,6 +146,10 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
       }
       const validated = await prepareNotebook(raw)
       if (id !== attempt.current) return
+      if (revisionValidation && revision) {
+        if (separate || backup) throw new Error('Revised notes must update the selected notebook through its review step.')
+        revisionValidation(revision.baseline, validated.package)
+      }
       let ids: string[] = []
       const decoded = bundleFile ? await prepareNotebookBundle(bundleFile) : null
       const restored = decoded?.kind === 'backup' ? decoded : null
