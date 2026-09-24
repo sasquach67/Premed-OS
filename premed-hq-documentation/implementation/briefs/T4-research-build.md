@@ -303,3 +303,17 @@ Status: manual real-account alpha is authorized with the required precautions, *
 The hosted redirect observation blocker is resolved. Andy must still complete the real-account full ZIP backup to his Mac and close premedos.app on every device/tab before self sign-in. Neither precaution is yet confirmed complete. He can then sign into `http://127.0.0.1:53024/#/research` himself, requesting/opening the link in the same browser/profile. If prompted about synthetic Guest work, choose **“Use my account workspace and review this later.”** Keep recovery copies and Guest records separate; do not clear browser data.
 
 Actual login, real-account cloud reload, and manual alpha checks remain **unperformed/unverified**. No agent login, sign-in email, account writes, runtime change, new build, merge, push, deployment or production unlock. S1 and separate release approval still block production. The earlier synthetic test evidence is unchanged.
+
+
+### S1 integration prerequisites for a later T4 release — 2026-09-24
+
+Source: Claude's prepared-S1 review at `docs/dev-workflow` revision `2ea9ad8`, `goals/reviews/2026-09-24-claude-S1-prepared-review.md`, relayed by Planning. This records future integration requirements; it does not revise the approved T4 build scope or authorize integration/release work.
+
+Before T4 can release on top of S1:
+
+1. Register `researchUpcomingItems`, `researchReminders`, `researchTimelineNotes`, and `researchMemberships` in S1's **`KNOWN_WORKSPACE_KEYS`** (the source for `DATA_KEYS`).
+2. Set **`CURRENT_CLOUD_SCHEMA = 2`** under S1's contract. Top-level preservation alone does not protect T4's nested additions: hour-entry `thoughts` / `parentDeletedAt`, experience `research` / `estimatedHoursDeletedAt`, and `Person.bio`. Schema-1 clients must be prevented from overwriting schema-2 workspaces and dropping these fields. Cloud schema numbering is separate from T4's local store v51.
+3. Add a regression using an **actual S1-era client** against a T4/schema-2 workspace. Exercise edits to the affected known records and verify full preservation or refusal before any replacement. Record the exact S1 client revision, T4 revision and guard configuration. A newly written T4-only guard test is not evidence that the old client is safe.
+4. Re-verify the deployed revision at release time. Claude's Sep 24 review reports `https://premedos.app/release-assets.json` listing **`d60f682` then `5c7a3e4`**. This is attributed review evidence, not a fresh production check by this task. Keep the exact existing `5c7a3e4` compatibility evidence; include both historical clients where appropriate because old tabs may persist. Do not relabel old test results as tests against `d60f682` or a future release.
+
+S1's own database/old-browser acceptance and production application are separate gates. **No rebase, merge, schema/code change, migration, push, deployment, production unlock or release was performed or authorized by this note.** The current preview and alpha evidence are unchanged.
