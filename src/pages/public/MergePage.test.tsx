@@ -32,23 +32,21 @@ const cloudTree = tree('Account copy', 'cloud-101')
 const upserted: Array<Record<string, unknown>> = []
 const navigated: string[] = []
 
-vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      getSession: async () => ({ data: { session: { user: { id: USER_ID } } } }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
-    },
-    from: () => ({
-      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { data: cloudTree, updated_at: '2026-09-12T00:00:00.000Z' }, error: null }) }) }),
-      update: (row: Record<string, unknown>) => {
-        const query = { eq: () => query, select: () => query, maybeSingle: async () => { upserted.push(row); return { data: { user_id: USER_ID }, error: null } } }
-        return query
+const dashboards = vi.hoisted(() => ({ rows: new Map<string, unknown>(), writes: (_value: unknown, _userId: string) => {} }))
+vi.mock('@/lib/supabase', async () => {
+  const { fakeDashboardsTable } = await import('@/test/fakeDashboards')
+  return {
+    supabase: {
+      auth: {
+        getSession: async () => ({ data: { session: { user: { id: USER_ID } } } }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
       },
-    }),
-  },
-  isSupabaseConfigured: true,
-  authRedirectTo: 'http://localhost/#/auth',
-}))
+      from: () => fakeDashboardsTable(dashboards),
+    },
+    isSupabaseConfigured: true,
+    authRedirectTo: 'http://localhost/#/auth',
+  }
+})
 
 vi.mock('@/components/public/PublicNav', () => ({ PublicNav: () => null }))
 vi.mock('@/components/layout/AccountSyncNotice', () => ({ AccountSyncNotice: () => null }))
@@ -82,6 +80,8 @@ describe('MergePage exits', () => {
   beforeEach(async () => {
     vi.stubGlobal('crypto', webcrypto)
     upserted.length = 0
+    dashboards.rows = new Map([[USER_ID, { data: structuredClone(cloudTree), updated_at: '2026-09-12T00:00:00.000Z' }]])
+    dashboards.writes = (value, userId) => { upserted.push({ ...(value as Record<string, unknown>), user_id: userId }) }
     navigated.length = 0
     localStorage.clear()
     useStore.persist.setOptions({ name: GUEST_STORAGE_KEY })

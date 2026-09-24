@@ -1,3 +1,4 @@
+import { assertSupportedWorkspace } from './workspaceSchema'
 // Pure structural validation; safe during cold store hydration.
 /** Collections that must be arrays of objects-with-string-ids when present. */
 const ARRAY_COLLECTIONS = [
@@ -19,6 +20,7 @@ function isRecord(x: unknown): x is Record<string, unknown> {
 export function validateAppData(x: unknown): string[] {
   if (!isRecord(x)) return ['Backup is not a JSON object.']
   const problems: string[] = []
+  try { assertSupportedWorkspace(x) } catch (error) { problems.push(error instanceof Error ? error.message : 'Unsupported workspace schema.') }
 
   // must look like our data at all (same three keys the old check used)
   for (const key of ['courses', 'profile', 'settings'] as const) {

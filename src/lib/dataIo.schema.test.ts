@@ -14,3 +14,8 @@ it('rejects future and invalid JSON schema markers before restore', async () => 
     await expect(readJsonFile(file({ ...createPersonalInitialData(), _schema }))).rejects.toThrow()
   }
 })
+
+it('S1 refuses to import an unmarked Research (T4) backup into a schema-1 app', async () => {
+  const data = { ...createPersonalInitialData(), researchTimelineNotes: [{ id: 'n', experienceId: 'e', date: '2026-09-01', text: 'x', createdAt: 1, updatedAt: 1 }] }
+  await expect(readJsonFile(file(data))).rejects.toThrow('Research data')
+})

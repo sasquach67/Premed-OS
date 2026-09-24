@@ -1,3 +1,4 @@
+import { CloudColumnsMissingError, isMissingCloudColumnsError, isSchemaGuardError, prepareWorkspaceData, WorkspaceSchemaError } from '@/lib/workspaceSchema'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { activateAccountWorkspace, activateGuestWorkspace, activeAccountWorkspaceId, assertDurableWorkspace, captureDurableWorkspaceCheck, captureWorkspaceIdentity, readWorkspaceData, useStore, snapshotData } from './store'
@@ -12,9 +13,9 @@ import { ACCOUNT_WORKSPACE_READY_EVENT } from '@/lib/accountWorkspace'
 import { syncAcademicOriginals } from '@/lib/academics/sharedMaterialFiles'
 import { syncNotebookImages } from '@/lib/academics/notebook/sharedNotebookAssets'
 import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
-import { allowAccountSync, assertAccountUpload, assertSyncLease, assertSyncSession, captureSyncSession, getAccountConflict, isAccountSyncReady, observeSyncSession, pauseAccountSync, preserveAccountConflict, preserveAccountReplacement, readSyncBaseline, recordSyncBaseline, subscribeAccountConflicts, syncContent, syncDigest, validateRemoteWorkspace } from './accountSyncSafety'
-
-import { cloudRequest, CloudRequestError } from './cloudRequest'
+import { getAccountSchemaBlock, getCloudProtection, pauseAccountForSchema, allowAccountSync, assertAccountUpload, assertSyncLease, assertSyncSession, captureSyncSession, getAccountConflict, isAccountSyncReady, observeSyncSession, pauseAccountSync, preserveAccountConflict, preserveAccountReplacement, readSyncBaseline, recordSyncBaseline, subscribeAccountConflicts, syncContent, syncDigest } from './accountSyncSafety'
+import { DashboardWriteMiss, readDashboard, writeDashboard, type RemoteDashboard } from './dashboardRows'
+import { CloudRequestError } from './cloudRequest'
 
 const DEBOUNCE_MS = 4000
 const reconciliationJobs = new Map<string, Promise<void>>()
@@ -32,9 +33,12 @@ export function useCloudSync() {
   const retryAfterReconnect = useRef(false)
   const conflict = useSyncExternalStore(subscribeAccountConflicts, () => getAccountConflict(user?.id))
   const accountReady = useSyncExternalStore(subscribeAccountConflicts, () => isAccountSyncReady(user?.id))
+  const protection = useSyncExternalStore(subscribeAccountConflicts, () => getCloudProtection(user?.id))
 
   const reconcile = useCallback(async (u: User) => {
     if (!supabase) return
+    const schemaBlock = getAccountSchemaBlock(u.id)
+    if (schemaBlock) { setError(schemaBlock); setStatus('error'); return }
     // An existing two-copy review owns recovery. Another hook or pull must not
     // replace it mid-comparison; the review itself rechecks the latest cloud copy.
     const pendingReview = getAccountConflict(u.id)
@@ -100,27 +104,50 @@ export function useCloudSync() {
         // Preserve the existing first-login review of Guest/legacy device work.
         // A returning account's own cache must still be checked after sign-out.
         if (!local && !hasSeenMerge(u.id) && hasLocalWork(snapshotData())) { setStatus('idle'); return }
-        const { data: row, error: failure } = await cloudRequest(() => supabase!.from('dashboards').select('data, updated_at').eq('user_id', u.id).maybeSingle(), () => { fresh(); assertSyncLease(lease) })
+        const checked = () => { fresh(); assertSyncLease(lease) }
+        // Metadata and version gates run inside the read, before anything hydrates.
+        let remote: RemoteDashboard | null = await readDashboard(supabase!, u.id, checked, { localRaw: before, token })
         fresh()
-        if (failure) throw failure
-        if (!row?.data) {
+        if (!remote) {
           if (local) { await preserveAccountConflict(u.id, before, null, token); fresh(); activateAccountWorkspace(u.id) }
           setStatus('idle')
           return
         }
-        validateRemoteWorkspace(row.data)
-        const remote = row.data
-        const baseline = readSyncBaseline(u.id)
+        let baseline = readSyncBaseline(u.id)
+        // Protection is proven, not assumed (S1 item 14). An unclaimed row is claimed
+        // with exactly the reviewed cloud document, only its portable marker added:
+        // no local edits, defaults, migration or privacy rewrite ride along. Local
+        // edits stay dirty and reconcile below as usual.
+        for (let attempt = 0; !remote.claim; attempt++) {
+          const reviewed: RemoteDashboard = remote
+          setProgress('Turning on cloud protection…')
+          try {
+            remote = await writeDashboard(supabase!, u.id, prepareWorkspaceData(reviewed.data), reviewed, checked)
+          } catch (cause) {
+            if (!(cause instanceof DashboardWriteMiss) || attempt === 2) throw cause
+            remote = await readDashboard(supabase!, u.id, checked, { localRaw: before, token })
+            if (!remote) throw new Error('The cloud copy was removed during the account check. Nothing was replaced; check sync again.', { cause })
+            fresh()
+            continue
+          }
+          fresh()
+          // The claim moved only the server revision. Rebase a baseline that matched it.
+          if (baseline && baseline.updatedAt === reviewed.updatedAt) {
+            await recordSyncBaseline(u.id, { digest: baseline.digest }, remote, lease)
+            baseline = readSyncBaseline(u.id)
+          }
+        }
+        setProgress('Checking your saved account…')
         const localText = local && syncContent(local)
-        const remoteText = syncContent(remote)
+        const remoteText = syncContent(remote.data)
         const localDigest = localText && await syncDigest(localText)
         const remoteDigest = await syncDigest(remoteText)
         fresh()
         const equal = localText === remoteText
         const cleanLocal = baseline && localDigest === baseline.digest
-        const remoteUnchanged = baseline && row.updated_at === baseline.updatedAt && remoteDigest === baseline.digest
+        const remoteUnchanged = baseline && remote.updatedAt === baseline.updatedAt && remoteDigest === baseline.digest
         if (local && !equal && !cleanLocal && !remoteUnchanged) {
-          await preserveAccountConflict(u.id, before, remote, token)
+          await preserveAccountConflict(u.id, before, remote.data, token)
           fresh()
           // Reopen only the saved local account. This does not choose a sync winner.
           activateAccountWorkspace(u.id)
@@ -128,11 +155,11 @@ export function useCloudSync() {
           return
         }
         if (local && !equal && cleanLocal && !remoteUnchanged) {
-          if (!await preserveAccountReplacement(u.id, before!, remote, token)) { setStatus('error'); return }
+          if (!await preserveAccountReplacement(u.id, before!, remote.data, token)) { setStatus('error'); return }
         }
         fresh(); assertSyncLease(lease)
         if (local && (equal || remoteUnchanged)) activateAccountWorkspace(u.id)
-        else activateAccountWorkspace(u.id, remote)
+        else activateAccountWorkspace(u.id, remote.data)
         await flushWorkspaceStorage(key)
         assertDurableWorkspace()
         assertSyncSession(token)
@@ -141,12 +168,15 @@ export function useCloudSync() {
         await syncNotebookImages(hydrated, u.id, notebookAssetRepository(), () => { assertSyncLease(lease); checkImages() }, undefined, (verified, total) => {
           setProgress(total ? `Checking notebook images (${verified} of ${total})…` : 'Finishing account check…')
         })
-        if (!local || equal || cleanLocal) await recordSyncBaseline(u.id, remote, row.updated_at, lease)
+        if (!local || equal || cleanLocal) await recordSyncBaseline(u.id, remote.data, remote, lease)
+        // Dirty local edits over an unchanged cloud keep their baseline digest, but
+        // the next save needs this revision's server metadata, read just now.
+        else if (baseline && remoteUnchanged && (baseline.claim?.writeRev !== remote.claim?.writeRev || baseline.claim?.cloudSchema !== remote.claim?.cloudSchema)) await recordSyncBaseline(u.id, { digest: baseline.digest }, remote, lease)
         assertSyncLease(lease)
         assertDurableWorkspace()
         allowAccountSync(lease)
         lastSig.current = remoteText
-        setStatus('synced'); setProgress(''); setLastSyncAt(Date.parse(row.updated_at))
+        setStatus('synced'); setProgress(''); setLastSyncAt(Date.parse(remote.updatedAt))
       } catch (cause) {
         try { assertSyncSession(token) } catch { return }
         pauseAccountSync(u.id)
@@ -158,8 +188,10 @@ export function useCloudSync() {
             fresh(); if (readWorkspaceData(key)) activateAccountWorkspace(u.id)
           }
         } catch { /* A target that failed to load stays protected; report the original failure below. */ }
-        retryAfterReconnect.current = cause instanceof CloudRequestError && cause.retryable
-        setError(cause instanceof Error ? cause.message : 'Sync stopped before replacing saved data.'); setStatus('error')
+        // Missing columns: no fallback writer. Edits stay on the device; re-read later.
+        const missing = isMissingCloudColumnsError(cause)
+        retryAfterReconnect.current = missing || (cause instanceof CloudRequestError && cause.retryable)
+        setError(missing ? new CloudColumnsMissingError().message : cause instanceof Error ? cause.message : 'Sync stopped before replacing saved data.'); setStatus('error')
       }
     }
     const job = work()
@@ -169,6 +201,8 @@ export function useCloudSync() {
 
   const pushNow = useCallback(async () => {
     if (!supabase || !user || pushing.current) return false
+    const schemaBlock = getAccountSchemaBlock(user.id)
+    if (schemaBlock) { setError(schemaBlock); setStatus('error'); return false }
     pushing.current = true
     const owner = captureWorkspaceIdentity(), snapshot = snapshotData()
     let token = captureSyncSession()
@@ -177,6 +211,10 @@ export function useCloudSync() {
       token = assertAccountUpload(snapshot, owner)
       const baseline = readSyncBaseline(user.id)
       if (!baseline) throw new Error('Check the saved cloud copy before uploading changes.')
+      // A baseline without confirmed claim metadata (recorded before S1, or never
+      // claimed) needs a fresh read and claim first. Never invent a revision.
+      if (!baseline.claim) { pauseAccountSync(user.id); await reconcile(user); return false }
+      const expected = { updatedAt: baseline.updatedAt, claim: baseline.claim }
       setStatus('syncing'); setError(''); retryAfterReconnect.current = false
       await syncAcademicOriginals(snapshot.academics.classCenter.files, user.id)
       // Verify the saved snapshot once for the batch. Every image await still
@@ -190,23 +228,30 @@ export function useCloudSync() {
       await syncNotebookImages(snapshot, user.id, notebookAssetRepository(), imageFence)
       await flushWorkspaceStorage(owner.key)
       assertSyncSession(token); assertAccountUpload(snapshot, owner)
-      const updatedAt = new Date().toISOString()
-      // Compare-and-set: a newer cloud version cannot be overwritten by this upload.
-      const { data, error: failure } = await cloudRequest(() => supabase!.from('dashboards').update({ data: dataForRemote(snapshot), updated_at: updatedAt }).eq('user_id', user.id).eq('updated_at', baseline.updatedAt).select('updated_at').maybeSingle(), () => { assertSyncLease(token); assertAccountUpload(snapshot, owner) })
+      // Compare-and-set on write_rev: a newer cloud version cannot be overwritten.
+      let saved: RemoteDashboard
+      try {
+        saved = await writeDashboard(supabase!, user.id, dataForRemote(prepareWorkspaceData(snapshot)), expected, () => { assertSyncLease(token); assertAccountUpload(snapshot, owner) })
+      } catch (cause) {
+        if (!(cause instanceof DashboardWriteMiss)) throw cause
+        // Ordinary concurrency: check the cloud again, never a permanent pause.
+        assertSyncSession(token); pauseAccountSync(user.id); await reconcile(user); return false
+      }
       assertSyncSession(token)
       const current = captureWorkspaceIdentity()
       if (current.key !== owner.key || current.epoch !== owner.epoch) throw new Error('The workspace changed while sync completed. Its metadata was kept.')
-      if (failure) throw failure
-      if (!data) { pauseAccountSync(user.id); await reconcile(user); return false }
-      await recordSyncBaseline(user.id, snapshot, data.updated_at, token)
+      await recordSyncBaseline(user.id, snapshot, saved, token)
       assertSyncSession(token)
       lastSig.current = syncContent(snapshot)
-      setLastSyncAt(Date.parse(data.updated_at)); setStatus('synced')
+      setLastSyncAt(Date.parse(saved.updatedAt)); setStatus('synced')
       return true
     } catch (cause) {
       try { assertSyncSession(token) } catch { return false }
-      retryAfterReconnect.current = cause instanceof CloudRequestError && cause.retryable
-      setError(cause instanceof Error ? cause.message : 'Sync failed'); setStatus('error'); return false
+      if (isSchemaGuardError(cause) || cause instanceof WorkspaceSchemaError) pauseAccountForSchema(user.id, cause instanceof Error ? cause.message : 'This tab is out of date. Export your changes, then reopen Premed OS.')
+      const missing = isMissingCloudColumnsError(cause)
+      if (missing) pauseAccountSync(user.id)
+      retryAfterReconnect.current = missing || (cause instanceof CloudRequestError && cause.retryable)
+      setError(missing ? new CloudColumnsMissingError().message : cause instanceof Error ? cause.message : 'Sync failed'); setStatus('error'); return false
     } finally { pushing.current = false }
   }, [user, reconcile])
 
@@ -302,5 +347,5 @@ export function useCloudSync() {
     setUser(null); setStatus('idle')
   }, [])
 
-  return { configured: isSupabaseConfigured, user, status, error, progress: status === 'syncing' ? progress : '', lastSyncAt, accountReady: accountReady && !conflict, conflict, signIn, signOut, pushNow, pullNow }
+  return { configured: isSupabaseConfigured, user, status, error, progress: status === 'syncing' ? progress : '', lastSyncAt, accountReady: accountReady && !conflict, conflict, protection, signIn, signOut, pushNow, pullNow }
 }

@@ -3,6 +3,7 @@
    can't silently corrupt the store. Zero new dependencies. */
 import type { AppData } from '@/lib/types'
 import { validateAppData } from './validateAppData'
+import { prepareWorkspaceData } from './workspaceSchema'
 export { validateAppData } from './validateAppData'
 import { snapshotData } from '@/store/store'
 
@@ -35,5 +36,5 @@ export async function readJsonFile(file: File): Promise<AppData> {
   if (problems.length) {
     throw new Error(`That file is not a valid Premed OS backup:\n• ${problems.slice(0, 5).join('\n• ')}`)
   }
-  return parsed as AppData
+  return prepareWorkspaceData(parsed as AppData)
 }

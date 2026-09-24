@@ -19,6 +19,7 @@ import {
 } from '@/lib/accountWorkspace'
 import { markEnteredApp, markMergeSeen, hasLocalWork, hasSeenMerge } from '@/lib/publicLayer'
 import { supabase } from '@/lib/supabase'
+import { readDashboardForReview } from '@/store/dashboardRows'
 import { snapshotData } from '@/store/store'
 import { accountMutationFailure, prepareAccountMutation, type AccountMutation } from '@/store/accountMutationSafety'
 import { AccountSyncNotice } from '@/components/layout/AccountSyncNotice'
@@ -58,17 +59,15 @@ export function FirstLoginSetupPage() {
       }
 
       const currentUser = authData.user
-      const { data: existing, error: dashboardError } = await supabase
-        .from('dashboards')
-        .select('data')
-        .eq('user_id', currentUser.id)
-        .maybeSingle()
-      if (!alive) return
-      if (dashboardError) {
-        setError(dashboardError.message)
+      let existing
+      try { existing = await readDashboardForReview(supabase, currentUser.id) }
+      catch (dashboardError) {
+        if (!alive) return
+        setError(dashboardError instanceof Error ? dashboardError.message : 'Could not read your account.')
         setPhase('error')
         return
       }
+      if (!alive) return
       if (existing && hasCompletedAccountSetup(existing.data, {
         email: currentUser.email,
         metadata: currentUser.user_metadata,

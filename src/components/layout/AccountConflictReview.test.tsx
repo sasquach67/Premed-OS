@@ -54,3 +54,19 @@ it('allows a fresh comparison when a conflict changes during an unfinished check
   expect(container.textContent).toContain('Device only')
   expect(mock.apply).not.toHaveBeenCalled()
 })
+
+it('shows only known-section differences and explains opaque preservation before approval', async () => {
+  const device = { ...createPersonalInitialData(), futureCollection: { secretOpaqueLabel: 'device unknown' }, _schema: 1 }
+  const cloud = { ...createPersonalInitialData(), futureCollection: { secretOpaqueLabel: 'cloud unknown' }, futureOnly: ['opaque'], _schema: 1 }
+  device.notes.changed = 'Known device note'; cloud.notes.changed = 'Known cloud note'
+  expect(compareAccountCopies(device, cloud)).toEqual([{ path: 'notes.changed', device: '"Known device note"', cloud: '"Known cloud note"' }])
+  mock.prepare.mockResolvedValue({ device, cloud, updatedAt: '2026-09-21T00:00:00Z', apply: mock.apply, dispose: mock.dispose })
+  await act(async () => root.render(<AccountConflictReview userId="synthetic" conflict={{ localRaw: '{}', remote: cloud, saved: true, message: '' }} />))
+  await act(async () => button('Compare copies and resume sync').click())
+  expect(container.textContent).toContain('Known device note')
+  expect(container.textContent).toContain('Unknown sections are carried through')
+  expect(container.textContent).toContain('this review cannot delete them')
+  expect(container.textContent).not.toContain('futureCollection')
+  expect(container.textContent).not.toContain('secretOpaqueLabel')
+  expect(container.textContent).not.toContain('does not merge')
+})

@@ -57,3 +57,10 @@ it('uses an explicit HTTP denial over a nested network-looking message', async (
   await expect(cloudRequest(request, () => {})).rejects.toMatchObject({ retryable: false, status: 403, cause: error })
   expect(request).toHaveBeenCalledTimes(1)
 })
+
+it('keeps the stable schema rejection identity and never retries it', async () => {
+  const error = { code: 'P0001', details: 'S1_SCHEMA_GUARD', message: 'This tab is out of date. Export your changes, then reopen Premed OS.' }
+  const request = vi.fn(async () => ({ status: 400, error }))
+  await expect(cloudRequest(request, () => {})).rejects.toMatchObject({ ...error, retryable: false, status: 400 })
+  expect(request).toHaveBeenCalledTimes(1)
+})

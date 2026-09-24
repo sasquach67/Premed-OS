@@ -1,3 +1,4 @@
+import { assertSupportedWorkspace, knownWorkspaceData, opaqueWorkspaceData, prepareWorkspaceData, KNOWN_WORKSPACE_KEYS } from '@/lib/workspaceSchema'
 /* ============================================================
    store.ts — single source of truth.
    zustand + immer + persist:
@@ -107,6 +108,11 @@ export function createResetDataForMode(demoMode: boolean): AppData {
   return migrateAll(demoMode ? createDemoData() : createPersonalInitialData())
 }
 
+export function prepareRestoredStoreData(data: AppData): AppData {
+  assertSupportedWorkspace(data)
+  return migrateAll({ ...createInitialData(), ...data } as AppData)
+}
+
 function createResetData() {
   const reset = createResetDataForMode(DEMO_MODE)
   if (DEMO_MODE) stampDemoNamespace()
@@ -153,17 +159,19 @@ interface Actions {
   resetToSeed: () => void
 }
 
-export type Store = AppData & Actions
+export type Store = AppData & Actions & { workspaceOpaque: Record<string, unknown> }
 
 /** keys that hold the persisted data (functions are never serialized) */
-const DATA_KEYS: (keyof AppData)[] = [
-  'profile', 'goals', 'courses', 'requirements', 'experiences', 'experienceHourEntries', 'tasks', 'timelineMilestones',
-  'persons', 'organizations',
-  'academics', 'letters', 'stories', 'secondaries', 'interviewQs', 'mcat', 'schools',
-  'resources', 'tips', 'focusTargets', 'quarterlyGoals', 'advisingQs',
-  'captures', 'notePages', 'orgs', 'notes', 'settings', 'meta',
-  'trash',
-]
+const DATA_KEYS = KNOWN_WORKSPACE_KEYS
+
+function storeData(data: AppData) {
+  assertSupportedWorkspace(data)
+  return { ...knownWorkspaceData(data), workspaceOpaque: opaqueWorkspaceData(data) }
+}
+
+function snapshotState(state: Store): AppData {
+  return prepareWorkspaceData({ ...state.workspaceOpaque, ...knownWorkspaceData(state) } as AppData)
+}
 
 const TAG_COLORS: AcademicTagColor[] = ['blue', 'green', 'purple', 'orange', 'yellow', 'red', 'pink', 'gray']
 
@@ -559,6 +567,7 @@ export function migrateRequirementMetadata(data: AppData): AppData {
 /** The full hydration chain. Exported so the frozen-input contract can be
  *  tested end to end: every link must be pure, or immer state throws. */
 export function migrateAll(data: AppData): AppData {
+  assertSupportedWorkspace(data)
   let migrated = migrateAcademicTags(data)
   migrated = migrateRequirementMetadata(migrated)
   migrated = migrateOrgReflections(migrated)
@@ -611,7 +620,7 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateClassIdentityV46(migrated)
   migrated = migrateCurrentClassIdentityV47(migrated)
   migrated = migrateJournalIntentV48(migrated)
-  return migrateNotebookV50(migrateNotebookV49(migrated))
+  return prepareWorkspaceData(migrateNotebookV50(migrateNotebookV49(migrated)))
 }
 
 /**
@@ -655,7 +664,7 @@ export const useStore = create<Store>()(
     immer((persistSet) => {
       const set = new Proxy(persistSet, { apply(target, receiver, args) { assertWorkspaceEditable(); return Reflect.apply(target, receiver, args) } })
       return ({
-      ...migrateAll(createInitialData()),
+      ...storeData(migrateAll(createInitialData())),
 
       update: (mutator) => set((s) => {
         mutator(s as unknown as AppData)
@@ -907,7 +916,7 @@ export const useStore = create<Store>()(
         }),
 
       replaceAll: (data) => set(() => ({
-        ...migrateAll({ ...createInitialData(), ...data } as AppData),
+        ...storeData(prepareRestoredStoreData(data)),
       })),
 
       // `replaceAll` migrates because it accepts arbitrary outside data: an
@@ -915,9 +924,9 @@ export const useStore = create<Store>()(
       // read from this browser has already been through the version gate in
       // `readWorkspaceData`, so re-migrating it here would put the whole chain
       // back on every account switch and undo that gate.
-      adoptPreparedWorkspace: (data) => set(() => ({ ...data })),
+      adoptPreparedWorkspace: (data) => set(() => storeData(data)),
 
-      resetToSeed: () => set(() => ({ ...createResetData() })),
+      resetToSeed: () => set((state) => ({ ...storeData(createResetData()), workspaceOpaque: state.workspaceOpaque })),
     }) }),
     {
       name: STORAGE_KEY,
@@ -929,10 +938,12 @@ export const useStore = create<Store>()(
       },
       migrate: (persisted) => migrateAll(persisted as AppData) as unknown as Store,
       partialize: (state) =>
-        Object.fromEntries(DATA_KEYS.map((k) => [k, state[k]])) as unknown as Store,
+        snapshotState(state) as unknown as Store,
       // shallow-merge seed defaults under persisted data so new fields appear after updates
       merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<AppData>
+        const data = (persisted ?? {}) as AppData
+        assertSupportedWorkspace(data)
+        const p = knownWorkspaceData(data) as Partial<AppData>
         const merged = {
           ...current,
           ...p,
@@ -968,7 +979,7 @@ export const useStore = create<Store>()(
           profile: { ...current.profile, ...p.profile },
           goals: { ...current.goals, ...p.goals },
         }
-        return migrateAll(merged as AppData) as unknown as Store
+        return { ...current, ...storeData(migrateAll({ ...opaqueWorkspaceData(data), ...knownWorkspaceData(merged as AppData) } as AppData)) }
       },
     }
   )
@@ -988,7 +999,9 @@ export function readWorkspaceData(storageKey: string): AppData | null {
   try {
     const parsed = JSON.parse(raw) as { state?: Partial<AppData>; version?: number }
     if (!parsed?.state || typeof parsed.state !== 'object' || Array.isArray(parsed.state)) throw new Error('Saved workspace is missing its data. Automatic loading is paused.')
-    const seeded = { ...createPersonalInitialData(), ...parsed.state } as AppData
+    assertSupportedWorkspace(parsed.state)
+    if (parsed.version !== undefined && (!Number.isInteger(parsed.version) || parsed.version > CURRENT_STORE_VERSION || parsed.version < 0)) throw new Error('This workspace uses an unsupported local version. Its original bytes were kept.')
+    const seeded = prepareWorkspaceData({ ...createPersonalInitialData(), ...parsed.state } as AppData)
     // Respect the version zustand persisted alongside the state, exactly as
     // its own `migrate` option does. This path used to run all of `migrateAll`
     // on every workspace read, including data already at the current version:
@@ -997,8 +1010,8 @@ export function readWorkspaceData(storageKey: string): AppData | null {
     // known corruption — but re-running a migration on data it has already
     // transformed is the failure mode versioning exists to prevent.
     //
-    // A version ahead of this build cannot be migrated backwards, so it is
-    // read as-is; `merge` still layers in any fields this build expects.
+    // Future local envelopes and cloud contracts are rejected above; only
+    // supported current data skips the migration chain.
     const version = typeof parsed.version === 'number' ? parsed.version : undefined
     if (version !== undefined && version >= CURRENT_STORE_VERSION) return seeded
     return migrateAll(seeded)
@@ -1035,7 +1048,7 @@ export function assertDurableWorkspace(snapshot = snapshotData(), owner = captur
   const raw = readStoredWorkspace(localStorage, key)
   if (!raw) throw new Error('Sync is paused because this workspace has no verified saved copy.')
   const persisted = JSON.parse(raw).state
-  const disk = Object.fromEntries(DATA_KEYS.map(k => [k, persisted[k]]))
+  const disk = prepareWorkspaceData({ ...opaqueWorkspaceData(persisted), ...knownWorkspaceData(persisted) } as AppData)
   if (JSON.stringify(disk) !== JSON.stringify(snapshot)) throw new Error('Sync is paused because the open workspace differs from its saved copy.')
 }
 
@@ -1044,11 +1057,11 @@ export function assertDurableWorkspace(snapshot = snapshotData(), owner = captur
  * This keeps attachment checks from parsing the entire workspace per image. */
 export function captureDurableWorkspaceCheck(snapshot = snapshotData(), owner = captureWorkspaceIdentity()) {
   assertDurableWorkspace(snapshot, owner)
-  const captured = snapshotData(), raw = savedWorkspaceRaw(owner.key)
+  const captured = snapshotData(), opaque = useStore.getState().workspaceOpaque, raw = savedWorkspaceRaw(owner.key)
   return () => {
     assertWorkspacePersistenceReady(owner)
     const current = useStore.getState()
-    if (DATA_KEYS.some(key => captured[key] !== current[key]) || savedWorkspaceRaw(owner.key) !== raw) {
+    if (opaque !== current.workspaceOpaque || DATA_KEYS.some(key => captured[key] !== current[key]) || savedWorkspaceRaw(owner.key) !== raw) {
       throw new WorkspaceChangedError('Saved work changed during sync. Nothing was replaced; check sync again.')
     }
   }
@@ -1056,6 +1069,7 @@ export function captureDurableWorkspaceCheck(snapshot = snapshotData(), owner = 
 
 function activateWorkspace(owner: WorkspaceOwner, supplied?: AppData) {
   if (DEMO_MODE) return
+  if (supplied) assertSupportedWorkspace(supplied)
   const previous = activeWorkspaceOwner()
   const ownerChanged = previous.kind !== owner.kind
     || (previous.kind === 'account' && owner.kind === 'account' && previous.userId !== owner.userId)
@@ -1106,6 +1120,5 @@ export function activateGuestWorkspace() {
 
 /** Non-reactive snapshot of just the data (for export / backup). */
 export function snapshotData(): AppData {
-  const s = useStore.getState()
-  return Object.fromEntries(DATA_KEYS.map((k) => [k, s[k]])) as unknown as AppData
+  return snapshotState(useStore.getState())
 }

@@ -1,3 +1,4 @@
+import { knownWorkspaceData } from '@/lib/workspaceSchema'
 import type { AppData } from '@/lib/types'
 import { syncContent } from './accountSyncSafety'
 
@@ -16,7 +17,7 @@ export function compareAccountCopies(device: AppData, cloud: AppData) {
       for (const id of new Set([...left.keys(), ...right.keys()])) walk(left.get(id), right.get(id), `${path}[${id}]`)
     } else differences.push({ path, device: short(a), cloud: short(b) })
   }
-  walk(JSON.parse(syncContent(device)), JSON.parse(syncContent(cloud)), '')
+  walk(knownWorkspaceData(JSON.parse(syncContent(device))), knownWorkspaceData(JSON.parse(syncContent(cloud))), '')
   return differences
 }
 

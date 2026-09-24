@@ -13,6 +13,7 @@
 import { useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { readDashboardForReview } from '@/store/dashboardRows'
 import { snapshotData } from '@/store/store'
 import { hasLocalWork, hasSeenMerge, markEnteredApp } from '@/lib/publicLayer'
 import { decideAccountRoute, hasCompletedAccountSetup } from '@/lib/accountWorkspace'
@@ -43,12 +44,9 @@ export function MergeGate() {
       if (handled.current === handledKey) return
       handled.current = handledKey
 
-      const { data, error } = await supabase!
-        .from('dashboards')
-        .select('data')
-        .eq('user_id', userId)
-        .maybeSingle()
-      if (!alive || error) return
+      // Unsupported or unreadable cloud copies route nowhere; sync reports them.
+      const data = await readDashboardForReview(supabase!, userId).catch(() => undefined)
+      if (!alive || data === undefined) return
 
       const route = decideAccountRoute({
         pathname,

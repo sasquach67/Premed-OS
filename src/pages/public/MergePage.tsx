@@ -26,6 +26,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PublicShell } from '@/components/public/PublicShell'
 import { PublicNav } from '@/components/public/PublicNav'
 import { supabase } from '@/lib/supabase'
+import { readDashboardForReview } from '@/store/dashboardRows'
 import { snapshotData } from '@/store/store'
 import { accountMutationFailure, prepareAccountMutation, type AccountMutation } from '@/store/accountMutationSafety'
 import { AccountSyncNotice } from '@/components/layout/AccountSyncNotice'
@@ -104,14 +105,10 @@ export function MergePage() {
       if (!alive) return
       setUserId(user.id)
       try {
-        const { data, error: e } = await supabase
-          .from('dashboards')
-          .select('data')
-          .eq('user_id', user.id)
-          .maybeSingle()
-        if (e) throw e
+        // Version gates run before the review shows anything to choose from.
+        const row = await readDashboardForReview(supabase, user.id)
         if (!alive) return
-        const remote = (data?.data as AppData | undefined) ?? null
+        const remote = row?.data ?? null
         if (!remote) {
           // First-login setup is the only path allowed to create an account
           // snapshot. Never upload the open browser implicitly here.

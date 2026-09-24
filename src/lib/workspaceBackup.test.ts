@@ -64,3 +64,30 @@ it('keeps prior file identities and staged image recovery when metadata cannot c
   expect(files.get('idb://academics/source/one')).toBe(f.original)
   expect(await images.journals()).toHaveLength(1)
 })
+
+it('carries opaque metadata through ZIP without interpreting its unknown asset bindings', async () => {
+  const data = Object.assign(createPersonalInitialData(), { _schema: 1, futureResearch: {
+    blobRef: 'idb://future/missing', importedNotebook: { assetBindings: [{ sha256: 'unknown-format' }] },
+  } })
+  const prepared = await prepareWorkspaceBackup(await createWorkspaceBackup(data))
+  expect(prepared.data).toEqual(data)
+  expect(prepared.fileCount).toBe(0)
+  expect(prepared.imageCount).toBe(0)
+  const staged = await stageWorkspaceBackup(prepared, () => {})
+  expect(staged.data).toEqual(data)
+})
+
+it('blocks future cloud schemas and future ZIP formats without staging writes', async () => {
+  const data = createPersonalInitialData()
+  await expect(createWorkspaceBackup(Object.assign(structuredClone(data), { _schema: 2 }))).rejects.toThrow('newer version')
+  const zip = await createWorkspaceBackup(data)
+  const members = unzipSync(new Uint8Array(await zip.arrayBuffer()))
+  const envelope = JSON.parse(new TextDecoder().decode(members['workspace.json']))
+  envelope.version = 2
+  members['workspace.json'] = new TextEncoder().encode(JSON.stringify(envelope))
+  await expect(prepareWorkspaceBackup(new Blob([zipSync(members).slice().buffer]))).rejects.toThrow('Unsupported')
+  envelope.version = 1
+  envelope.data._schema = 2
+  members['workspace.json'] = new TextEncoder().encode(JSON.stringify(envelope))
+  await expect(prepareWorkspaceBackup(new Blob([zipSync(members).slice().buffer]))).rejects.toThrow()
+})

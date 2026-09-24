@@ -6,10 +6,14 @@ import {
   Archive as ArchiveIcon, Cloud, CloudOff, Download, Upload, RotateCcw, Check, AlertCircle,
   Palette, ExternalLink, CheckCircle2, Trash2, CalendarClock, RefreshCw, Unplug, Wifi, ShieldCheck,
 } from 'lucide-react'
-import { activateGuestWorkspace, assertDurableWorkspace, captureWorkspaceIdentity, snapshotData, useStore } from '@/store/store'
+import { activateGuestWorkspace, assertDurableWorkspace, captureWorkspaceIdentity, prepareRestoredStoreData, snapshotData, useStore } from '@/store/store'
 import { flushWorkspaceStorage } from '@/store/storageHealth'
 import { restoreWorkspaceFromSource } from '@/store/accountMutationSafety'
 import { restoreCompleteWorkspace } from '@/store/restoreCompleteWorkspace'
+import { workspaceRestoreReview } from '@/lib/workspaceRestoreReview'
+import { prepareWorkspaceData } from '@/lib/workspaceSchema'
+import { mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
+import type { AppData } from '@/lib/types'
 import { createWorkspaceBackup, prepareWorkspaceBackup } from '@/lib/workspaceBackup'
 import type { CompleteBackupPoint } from '@/lib/googleDrive'
 import { useBackup } from '@/store/useBackup'
@@ -67,12 +71,44 @@ export function Settings() {
     if (archiveRequested) archiveRef.current?.scrollIntoView({ block: 'start' })
   }, [archiveRequested])
 
+  function restoreReviewGuard() {
+    const owner = captureWorkspaceIdentity(), before = snapshotData(), signature = JSON.stringify(before)
+    return {
+      before,
+      fresh() {
+        const current = captureWorkspaceIdentity()
+        if (owner.key !== current.key || owner.epoch !== current.epoch || JSON.stringify(snapshotData()) !== signature) throw new Error('Your workspace changed during backup review. Nothing was replaced; open Restore again.')
+      },
+    }
+  }
+
+  async function reviewRestore(data: AppData, before: AppData, complete: boolean, keepPrivateStories = false) {
+    const supported = prepareRestoredStoreData(prepareWorkspaceData(data))
+    const incoming = keepPrivateStories ? mergeRemotePreservingLocal(supported, before) : supported
+    const changes = workspaceRestoreReview(before, incoming)
+    return confirm({
+      title: 'Review workspace restore', tone: 'danger', confirmLabel: 'Restore reviewed backup',
+      details: changes,
+      description: `${changes.length ? 'Review the known sections and records that will change.' : 'No known sections change.'} Current sections this app does not recognize will be kept; matching sections from the backup take precedence. ${complete ? 'Files are restored only for sections this app understands.' : 'JSON contains records and references, without image or original-file bytes.'} A recovery copy of the current workspace will be kept.`,
+    })
+  }
+
   async function onImport(file: File) {
     if (restoring.current) return
     restoring.current = true
     try {
-      if (file.name.toLowerCase().endsWith('.zip')) await restoreCompleteWorkspace(() => prepareWorkspaceBackup(file))
-      else await restoreWorkspaceFromSource(() => readJsonFile(file))
+      const guard = restoreReviewGuard()
+      if (file.name.toLowerCase().endsWith('.zip')) {
+        const prepared = await prepareWorkspaceBackup(file); guard.fresh()
+        if (!(await reviewRestore(prepared.data, guard.before, true))) return
+        guard.fresh()
+        await restoreCompleteWorkspace(async () => prepared)
+      } else {
+        const data = await readJsonFile(file); guard.fresh()
+        if (!(await reviewRestore(data, guard.before, false))) return
+        guard.fresh()
+        await restoreWorkspaceFromSource(async () => data)
+      }
       setMsg('Imported successfully.')
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Import failed.')
@@ -83,17 +119,19 @@ export function Settings() {
     if (restoring.current) return
     restoring.current = true
     try {
-      const owner = captureWorkspaceIdentity(), before = JSON.stringify(snapshotData())
-      const input = await backup.restore(restoreChoice || undefined)
-      const current = captureWorkspaceIdentity()
-      if (owner.key !== current.key || owner.epoch !== current.epoch || JSON.stringify(snapshotData()) !== before) throw new Error('Your workspace changed while the backup downloaded. Reopen Restore in the intended workspace.')
+      const guard = restoreReviewGuard()
+      const input = await backup.restore(restoreChoice || undefined); guard.fresh()
       if (!input) throw new Error('No backup found on Drive.')
-      if (input.kind === 'complete') await restoreCompleteWorkspace(() => prepareWorkspaceBackup(input.blob), true)
-      else {
+      if (input.kind === 'complete') {
+        const prepared = await prepareWorkspaceBackup(input.blob); guard.fresh()
+        if (!(await reviewRestore(prepared.data, guard.before, true, true))) return
+        guard.fresh()
+        await restoreCompleteWorkspace(async () => prepared, true)
+      } else {
         if (!looksLikeAppData(input.data)) throw new Error('No valid legacy JSON backup found on Drive.')
-        const data = input.data
-        if (!(await confirm({ title: 'Restore a JSON-only backup?', description: 'This older backup contains records but no image or original-file bytes. The current workspace will be preserved for recovery before restoration.', confirmLabel: 'Restore records' }))) return
-        if (owner.key !== captureWorkspaceIdentity().key || owner.epoch !== captureWorkspaceIdentity().epoch || JSON.stringify(snapshotData()) !== before) throw new Error('Your workspace changed during review. Open Restore again.')
+        const data = prepareWorkspaceData(input.data)
+        if (!(await reviewRestore(data, guard.before, false, true))) return
+        guard.fresh()
         await restoreWorkspaceFromSource(async () => data, true)
       }
       setMsg('Restored from Google Drive.')
@@ -177,12 +215,12 @@ export function Settings() {
         <Card>
           <CardHeader><CardTitle>Local data</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">Changes save to this browser. A complete backup includes your records, notebook history, images and attached files. JSON-only exports contain records and source references, without file bytes.</p>
+            <p className="text-sm text-muted-foreground">Changes save to this browser. A complete backup includes your records, notebook history, images and attached files. JSON-only exports contain records and source references, without file bytes. Unrecognized sections are preserved as metadata; files they reference are not included in complete backups.</p>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => void exportComplete()} disabled={exportingBackup}><Download className="size-4" /> {exportingBackup ? 'Preparing backup…' : 'Export complete backup'}</Button>
               <Button variant="outline" onClick={exportJson}><Download className="size-4" /> Export JSON</Button>
               <Button variant="outline" onClick={() => fileRef.current?.click()}><Upload className="size-4" /> Import backup</Button>
-              <input ref={fileRef} type="file" accept="application/json,application/zip,.json,.zip" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) onImport(f) }} />
+              <input ref={fileRef} type="file" accept="application/json,application/zip,.json,.zip" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void onImport(f) }} />
             </div>
           </CardContent>
         </Card>
@@ -259,7 +297,7 @@ export function Settings() {
             </div>
             {restoreChoices && <div className="space-y-2 rounded-xl border border-border p-3"><Label htmlFor="drive-restore-point">Restore point (100 most recent verified snapshots)</Label><SelectField id="drive-restore-point" className="w-full rounded-md border border-border bg-card p-2" value={restoreChoice} onValueChange={setRestoreChoice} options={[...restoreChoices.map(point => ({ value: point.id, label: `${new Date(point.createdTime).toLocaleString()} — complete backup` })), { value: 'legacy', label: 'Older JSON-only backup — no image files' }]} /><div className="flex gap-2"><Button variant="outline" onClick={() => void restoreFromDrive()}>Restore selected backup</Button><Button variant="ghost" onClick={() => setRestoreChoices(null)}>Cancel</Button></div></div>}
             <p className="text-xs text-muted-foreground">
-              Drive creates at most one automatic complete snapshot per day while the app is open. Use Back up now for another restore point. Backups include attached files and notebook images; stories marked local-only stay on this device. Earlier complete snapshots and the older JSON backup are retained.
+              Drive creates at most one automatic complete snapshot per day while the app is open. Use Back up now for another restore point. Backups include known attached files and notebook images; files referenced by unrecognized sections are not included; stories marked local-only stay on this device. Earlier complete snapshots and the older JSON backup are retained.
               {backup.lastBackupAt ? <>Last backed up {fmtTimeAgo(backup.lastBackupAt)}.</> : 'Not backed up to Drive yet.'}
               {backup.error && <span className="ml-1 inline-flex items-center gap-1 text-destructive"><AlertCircle className="size-3" /> {backup.error}</span>}
             </p>
@@ -421,6 +459,12 @@ function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
                     : 'Connected — first sync pending.'}
                   {cloud.error && <span className="ml-1 inline-flex items-center gap-1 text-destructive"><AlertCircle className="size-3" /> {cloud.error}</span>}
                 </p>
+                {/* Shown only from server-confirmed row metadata (S1 item 14). */}
+                {cloud.protection !== 'unknown' && <p className="mt-1 text-xs text-muted-foreground" data-testid="cloud-protection">
+                  {cloud.protection === 'on' ? 'Cloud protection: on'
+                    : cloud.protection === 'unavailable' ? 'Cloud protection: unavailable. Sync is paused; your changes are saved on this device.'
+                    : 'Cloud protection: off'}
+                </p>}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">

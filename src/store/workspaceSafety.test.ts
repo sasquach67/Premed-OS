@@ -135,13 +135,13 @@ describe('persisted workspace version gates migrations', () => {
     expect(snapshotData().academics.classCenter.termReports).toEqual([])
   })
 
-  it('reads a workspace from a newer build as-is rather than migrating backwards', () => {
-    persistAt(accountStorageKey('future'), withoutTermReports('Future'), CURRENT_STORE_VERSION + 5)
-
-    activateAccountWorkspace('future')
-
-    expect(snapshotData().profile.name).toBe('Future')
-    expect(snapshotData().academics.classCenter.termReports).toBeUndefined()
+  it('keeps an unsupported future local envelope untouched instead of migrating backwards', () => {
+    const key = accountStorageKey('future')
+    persistAt(key, withoutTermReports('Future'), CURRENT_STORE_VERSION + 5)
+    const raw = localStorage.getItem(key)
+    expect(() => activateAccountWorkspace('future')).toThrow('unsupported local version')
+    expect(localStorage.getItem(key)).toBe(raw)
+    expect(snapshotData().profile.name).not.toBe('Future')
   })
 })
 

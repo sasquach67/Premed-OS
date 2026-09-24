@@ -11,9 +11,9 @@ import { useBackup } from './useBackup'
 let root: Root, backup: ReturnType<typeof useBackup>, n = 0
 beforeEach(() => { localStorage.clear(); useStore.persist.setOptions({ name: 'hq:app-data:guest' }); activateGuestWorkspace(); drive.uploadCompleteBackup.mockReset().mockResolvedValue('synthetic-file'); drive.connectSilent.mockReset().mockResolvedValue(undefined); root = createRoot(document.createElement('div')) })
 afterEach(async () => { await act(async () => root.unmount()) })
-async function prepare() {
+async function prepare(data = createPersonalInitialData()) {
   const id = `synthetic-drive-${++n}`
-  activateAccountWorkspace(id, createPersonalInitialData()); allowAccountSync(observeSyncSession(id))
+  activateAccountWorkspace(id, data); allowAccountSync(observeSyncSession(id))
   function Probe() { backup = useBackup(); return null }
   await act(async () => root.render(createElement(Probe)))
   return id
@@ -54,4 +54,17 @@ it('waits for verified account readiness before the daily backup and then resume
   expect(drive.connectSilent).toHaveBeenCalledTimes(1)
   expect(drive.uploadCompleteBackup).toHaveBeenCalledTimes(1)
   expect(backup.status).toBe('saved')
+})
+
+it('carries supported opaque metadata into Drive ZIP while excluding private stories', async () => {
+  const data = Object.assign(createPersonalInitialData(), { _schema: 1, futureResearch: [{ id: 'synthetic', value: 'opaque' }] })
+  data.stories = [{ id: 'private', prompt: '', title: '', commentary: 'Device only', tags: [], localOnly: true, order: 0 }]
+  await prepare(data)
+  await act(async () => backup.backupNow())
+  expect(backup.error).toBe('')
+  const blob = (drive.uploadCompleteBackup.mock.calls as unknown as Array<[Blob]>)[0][0]
+  const { prepareWorkspaceBackup } = await import('@/lib/workspaceBackup')
+  const prepared = await prepareWorkspaceBackup(blob)
+  expect(prepared.data).toMatchObject({ _schema: 1, futureResearch: data.futureResearch, stories: [] })
+  expect(snapshotData().stories).toHaveLength(1)
 })

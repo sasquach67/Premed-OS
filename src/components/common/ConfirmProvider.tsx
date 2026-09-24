@@ -10,6 +10,8 @@ import { ConfirmContext } from '@/components/common/confirm-context'
 export interface ConfirmInput {
   title: string
   description?: string
+  /** Bounded review list, for example the known sections changed by a restore. */
+  details?: string[]
   /** Say what will happen, not "OK". The label is the last thing read before
    *  an irreversible action, so it carries the verb. */
   confirmLabel?: string
@@ -61,7 +63,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         open={Boolean(pending)}
         onOpenChange={(open) => { if (!open) settle(false) }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogMedia className={danger ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}>
               {danger ? <AlertTriangle className="size-7" /> : <HelpCircle className="size-7" />}
@@ -71,6 +73,9 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               <AlertDialogDescription>{pending.description}</AlertDialogDescription>
             )}
           </AlertDialogHeader>
+          {!!pending?.details?.length && <ul className="max-h-[35dvh] space-y-1 overflow-y-auto rounded-lg border border-border p-3 text-sm text-muted-foreground" aria-label="Changes to known sections">
+            {pending.details.map(detail => <li key={detail}>{detail}</li>)}
+          </ul>}
           <AlertDialogFooter>
             {pending?.onExport && <Button variant="outline" onClick={pending.onExport}>Export a backup first</Button>}
             <AlertDialogCancel onClick={() => settle(false)}>

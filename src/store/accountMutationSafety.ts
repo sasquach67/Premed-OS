@@ -1,18 +1,19 @@
+import { isSchemaGuardError, prepareWorkspaceData, mergeRestoredWorkspace, WorkspaceSchemaError } from '@/lib/workspaceSchema'
 import type { AppData } from '@/lib/types'
 import { validateAppData } from '@/lib/validateAppData'
 import { notifyAccountWorkspaceReady } from '@/lib/accountWorkspace'
 import { ACCOUNT_STORAGE_PREFIX, accountStorageKey } from '@/lib/demoMode'
-import { supabase, type DashboardRow } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { dataForRemote, mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
 import { activateAccountWorkspace, assertDurableWorkspace, captureWorkspaceIdentity, readWorkspaceData, snapshotData, useStore } from './store'
 import { loadDurableWorkspace } from './workspaceBootstrap'
 import { workspacePersistence } from './workspacePersistence'
 import { savedWorkspaceRaw, flushWorkspaceStorage, storageFailure, WorkspaceChangedError } from './storageHealth'
-import { assertSyncSession, captureSyncSession, getAccountConflict, observeSyncSession, assertSyncLease, finishAccountConflictReview, type AccountConflict, pauseAccountSync, preserveAccountConflict, syncContent, syncDigest, validateRemoteWorkspace } from './accountSyncSafety'
+import { getAccountSchemaBlock, pauseAccountForSchema, assertSyncSession, captureSyncSession, getAccountConflict, observeSyncSession, assertSyncLease, finishAccountConflictReview, type AccountConflict, pauseAccountSync, preserveAccountConflict, syncContent, syncDigest, validateRemoteWorkspace } from './accountSyncSafety'
 import { workspaceRecoveryRepository } from './workspaceRecoveryRepository'
 import { syncNotebookImages } from '@/lib/academics/notebook/sharedNotebookAssets'
 import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
-import { cloudRequest } from './cloudRequest'
+import { DashboardWriteMiss, readDashboard, writeDashboard, type RemoteDashboard } from './dashboardRows'
 
 const changed = () => new WorkspaceChangedError('The account or saved workspace changed. Nothing else was replaced. Reopen this review before continuing.')
 const conflictMessage = 'Account copies need review. Sync is paused; download the preserved copies before choosing what to restore.'
@@ -44,9 +45,11 @@ async function beginMutation(expectedUserId?: string, reviewedConflict?: Account
     if (transitions || (observedId !== undefined && observedId !== userId)
       || (expectedUserId !== undefined && userId !== expectedUserId)
       || (owner.key.startsWith(ACCOUNT_STORAGE_PREFIX) && owner.key !== accountStorageKey(userId ?? ''))) throw changed()
+    if (getAccountSchemaBlock(userId)) throw new Error(getAccountSchemaBlock(userId))
     observedId = userId
     const token = observeSyncSession(userId)
     const assertFresh = () => {
+      if (getAccountSchemaBlock(userId)) throw new Error(getAccountSchemaBlock(userId))
       const current = captureWorkspaceIdentity(), session = captureSyncSession()
       if (closed || transitions || owner.key !== current.key || owner.epoch !== current.epoch
         || session.id !== token.id || session.generation !== token.generation
@@ -100,11 +103,10 @@ export async function prepareAccountMutation(userId: string, reviewedRemote: App
     await loadDurableWorkspace(key)
     const targetRaw = savedWorkspaceRaw(key), cached = readWorkspaceData(key)
     const assertTarget = () => { if (savedWorkspaceRaw(key) !== targetRaw) throw changed() }
-    const { data: row, error } = await client.from('dashboards').select('data, updated_at').eq('user_id', userId).maybeSingle()
-    if (error) throw error
+    // Row metadata and version gates run before any comparison or replacement.
+    const row = await readDashboard(client, userId, () => { mutation.assertFresh(); assertTarget() }, { localRaw: targetRaw, token: mutation.token })
     await mutation.check(); assertTarget()
     const remote = row ? row.data : null
-    if (remote !== null) validateRemoteWorkspace(remote)
     if (cached && (!remote || syncContent(cached) !== syncContent(remote))) {
       await preserveAccountConflict(userId, targetRaw, remote, mutation.token)
       throw new Error(conflictMessage)
@@ -113,8 +115,6 @@ export async function prepareAccountMutation(userId: string, reviewedRemote: App
       || (remote && reviewedRemote && syncContent(remote) !== syncContent(reviewedRemote))) {
       throw new Error('The cloud copy changed after this review opened. Reopen the review; no replacement was started.')
     }
-    const remoteAt = row?.updated_at
-    if (remote && (typeof remoteAt !== 'string' || !remoteAt)) throw new Error('The cloud copy has no usable revision. No replacement was started.')
     await mutation.archive(mutation.owner.key, mutation.beforeRaw ?? wrapped(mutation.before))
     if (targetRaw !== null && key !== mutation.owner.key) await mutation.archive(key, targetRaw)
     if (remote) await mutation.archive(`${key}:before-explicit-cloud-write`, wrapped(remote))
@@ -125,19 +125,19 @@ export async function prepareAccountMutation(userId: string, reviewedRemote: App
       pause() { pauseAccountSync(userId) },
       async check() { await mutation.check(); await flushWorkspaceStorage(key); assertTarget() },
       async write(data: AppData) {
+        data = mergeRestoredWorkspace(remote ?? mutation.before, data)
         validateRemoteWorkspace(data)
         await mutation.check(); await flushWorkspaceStorage(key); assertTarget()
         pauseAccountSync(userId)
-        await syncNotebookImages(dataForRemote(data), userId, notebookAssetRepository(), async () => { await mutation.check(); assertTarget() })
-        const next: DashboardRow = { user_id: userId, data: dataForRemote(data), updated_at: new Date().toISOString() }
-        if (remote) {
-          // Compare the reviewed revision at the server write boundary.
-          const result = await client.from('dashboards').update(next).eq('user_id', userId).eq('updated_at', remoteAt!).select('user_id').maybeSingle()
-          if (result.error) throw result.error
-          if (!result.data) throw new Error('The cloud copy changed before saving. Reopen the review; no replacement was accepted.')
-        } else {
-          const result = await client.from('dashboards').insert(next)
-          if (result.error) throw result.error
+        await syncNotebookImages(dataForRemote(prepareWorkspaceData(data)), userId, notebookAssetRepository(), async () => { await mutation.check(); assertTarget() })
+        // Conditional on the reviewed revision: a first claim of a legacy row, a
+        // compare-and-set on write_rev, or an insert when no row existed.
+        try {
+          await writeDashboard(client, userId, dataForRemote(prepareWorkspaceData(data)), row, () => { mutation.assertFresh(); assertTarget() })
+        } catch (error) {
+          if (error instanceof DashboardWriteMiss) throw new Error('The cloud copy changed before saving. Reopen the review; no replacement was accepted.', { cause: error })
+          if (isSchemaGuardError(error) || error instanceof WorkspaceSchemaError) pauseAccountForSchema(userId, error instanceof Error ? error.message : 'This tab is out of date.')
+          throw error
         }
         serverSaved = true
         await mutation.check(); assertTarget()
@@ -146,7 +146,7 @@ export async function prepareAccountMutation(userId: string, reviewedRemote: App
         mutation.assertFresh(); assertTarget()
         pauseAccountSync(userId)
         try {
-          activateAccountWorkspace(userId, data)
+          activateAccountWorkspace(userId, mergeRestoredWorkspace(remote ?? data, data))
           const activatedOwner = captureWorkspaceIdentity()
           if (workspacePersistence()) return flushWorkspaceStorage(accountStorageKey(userId)).then(() => { assertSyncSession(mutation.token); assertDurableWorkspace(snapshotData(), activatedOwner) }).catch(error => { pauseAccountSync(userId); throw error })
           assertDurableWorkspace(snapshotData(), captureWorkspaceIdentity())
@@ -159,7 +159,7 @@ export async function prepareAccountMutation(userId: string, reviewedRemote: App
 
 export type AccountMutation = Awaited<ReturnType<typeof prepareAccountMutation>>
 export function accountMutationFailure(error: unknown, mutation?: AccountMutation) {
-  const detail = error instanceof Error ? error.message : 'The operation could not finish.'
+  const detail = error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' ? error.message : 'The operation could not finish.'
   if (mutation?.serverSaved) mutation.pause()
   return mutation?.serverSaved
     ? `The cloud accepted the change, but local completion was not confirmed. Recovery copies were kept. Do not submit again until the saved copies are reviewed. ${detail}`
@@ -173,7 +173,7 @@ export async function restoreWorkspaceFromSource(load: () => Promise<AppData>, k
     const input = await load()
     await mutation.check()
     if (validateAppData(input).length) throw new Error('That backup has an invalid structure. Nothing was replaced.')
-    const data = structuredClone(keepPrivateStories ? mergeRemotePreservingLocal(input, mutation.before) : input)
+    const data = structuredClone(mergeRestoredWorkspace(mutation.before, keepPrivateStories ? mergeRemotePreservingLocal(input, mutation.before) : input))
     await mutation.archive(mutation.owner.key, mutation.beforeRaw ?? wrapped(mutation.before))
     await mutation.archive(`${mutation.owner.key}:explicit-restore-input`, wrapped(data))
     await mutation.check()
@@ -202,20 +202,20 @@ export async function restoreWorkspaceFromSource(load: () => Promise<AppData>, k
 export async function prepareAccountConflictResolution(userId: string, conflict: AccountConflict) {
   const client = supabase
   if (!client || getAccountConflict(userId) !== conflict) throw changed()
+  if (conflict.schemaBlocked || getAccountSchemaBlock(userId)) throw new Error(getAccountSchemaBlock(userId) ?? conflict.message)
   if (conflict.open || !conflict.localRaw || !conflict.remote) {
     throw new Error('This recovery includes unsaved or unreadable work. Keep its downloads before choosing a replacement; a two-copy review is unavailable.')
   }
   const mutation = await beginMutation(userId, conflict)
   try {
     if (mutation.owner.key !== accountStorageKey(userId)) throw changed()
-    const readRemote = async () => {
-      const result = await cloudRequest(() => client.from('dashboards').select('data, updated_at').eq('user_id', userId).maybeSingle(), mutation.check)
+    const readRemote = async (): Promise<RemoteDashboard> => {
+      const result = await readDashboard(client, userId, mutation.check, { localRaw: mutation.beforeRaw, token: mutation.token })
       await mutation.check()
-      if (result.error) throw result.error
-      if (!result.data?.data || !result.data.updated_at) throw new Error('The cloud copy changed. Reopen the comparison.')
-      validateRemoteWorkspace(result.data.data)
-      return { data: result.data.data as AppData, updatedAt: result.data.updated_at }
+      if (!result) throw new Error('The cloud copy changed. Reopen the comparison.')
+      return result
     }
+    const sameRevision = (a: RemoteDashboard, b: RemoteDashboard) => a.updatedAt === b.updatedAt && a.claim?.writeRev === b.claim?.writeRev && a.claim?.cloudSchema === b.claim?.cloudSchema
     const remote = await readRemote()
     await mutation.archive(mutation.owner.key, mutation.beforeRaw!)
     await mutation.archive(`${mutation.owner.key}:before-reviewed-resolution`, wrapped(remote.data))
@@ -231,29 +231,30 @@ export async function prepareAccountConflictResolution(userId: string, conflict:
         try {
           await mutation.check()
           const latest = await readRemote()
-          if (latest.updatedAt !== remote.updatedAt || syncContent(latest.data) !== syncContent(cloud)) throw new Error('The cloud copy changed after review. Reopen the comparison.')
-          const chosen = choice === 'device' ? device : mergeRemotePreservingLocal(cloud, device)
+          if (!sameRevision(latest, remote) || syncContent(latest.data) !== syncContent(cloud)) throw new Error('The cloud copy changed after review. Reopen the comparison.')
+          const chosen = choice === 'device' ? mergeRestoredWorkspace(cloud, device) : mergeRestoredWorkspace(device, mergeRemotePreservingLocal(cloud, device))
           let confirmed = remote
-          await syncNotebookImages(dataForRemote(chosen), userId, notebookAssetRepository(), mutation.check)
+          await syncNotebookImages(dataForRemote(prepareWorkspaceData(chosen)), userId, notebookAssetRepository(), mutation.check)
           await mutation.check()
           if (choice === 'device') {
-            const updatedAt = new Date().toISOString()
-            const saved = await cloudRequest(() => client.from('dashboards').update({ data: dataForRemote(chosen), updated_at: updatedAt })
-              .eq('user_id', userId).eq('updated_at', remote.updatedAt).select('user_id').maybeSingle(), mutation.check)
-            if (saved.error) throw saved.error
-            if (!saved.data) throw new Error('The cloud copy changed before saving. Reopen the comparison.')
+            let saved: RemoteDashboard
+            try { saved = await writeDashboard(client, userId, dataForRemote(prepareWorkspaceData(chosen)), remote, mutation.check) }
+            catch (error) {
+              if (error instanceof DashboardWriteMiss) throw new Error('The cloud copy changed before saving. Reopen the comparison.', { cause: error })
+              throw error
+            }
             serverSaved = true
             await mutation.check()
             confirmed = await readRemote()
-            if (Date.parse(confirmed.updatedAt) !== Date.parse(updatedAt) || syncContent(confirmed.data) !== syncContent(chosen)) throw new Error('The cloud result could not be verified.')
+            if (!sameRevision(confirmed, saved) || syncContent(confirmed.data) !== syncContent(chosen)) throw new Error('The cloud result could not be verified.')
           }
           await mutation.check()
           if (choice === 'cloud') {
             const finalCloud = await readRemote()
-            if (finalCloud.updatedAt !== remote.updatedAt || syncContent(finalCloud.data) !== syncContent(cloud)) throw new Error('The cloud copy changed before restoring. Reopen the comparison.')
+            if (!sameRevision(finalCloud, remote) || syncContent(finalCloud.data) !== syncContent(cloud)) throw new Error('The cloud copy changed before restoring. Reopen the comparison.')
           }
           let applied = mutation.before
-          if (choice === 'cloud') {
+          if (choice === 'cloud' || syncContent(chosen) !== syncContent(device)) {
             useStore.getState().replaceAll(structuredClone(chosen))
             applied = structuredClone(snapshotData())
             await flushWorkspaceStorage(mutation.owner.key)
@@ -262,9 +263,10 @@ export async function prepareAccountConflictResolution(userId: string, conflict:
             assertSyncLease(mutation.token)
             assertDurableWorkspace(snapshotData(), mutation.owner)
           }
-          await finishAccountConflictReview(userId, conflict, mutation.token, confirmed.data, confirmed.updatedAt, applied)
+          await finishAccountConflictReview(userId, conflict, mutation.token, confirmed.data, confirmed, applied)
           notifyAccountWorkspaceReady(userId)
         } catch (error) {
+          if (isSchemaGuardError(error) || error instanceof WorkspaceSchemaError) pauseAccountForSchema(userId, error instanceof Error ? error.message : 'This tab is out of date. Export your changes, then reopen Premed OS.')
           if (serverSaved) throw new Error('The cloud accepted your choice, but completion was not confirmed. Recovery copies are kept and sync remains paused. Reopen the comparison before trying again.', { cause: error })
           throw error
         } finally { mutation.dispose() }

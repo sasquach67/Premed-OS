@@ -1,3 +1,5 @@
+import { CURRENT_STORE_VERSION, OLDEST_SUPPORTED_STORE_VERSION } from './workspaceVersion'
+import { assertSupportedWorkspace, retainLocalSchemaBlock, WorkspaceSchemaError } from '@/lib/workspaceSchema'
 import { workspacePersistence } from './workspacePersistence'
 import { activeStorageKey } from '@/lib/demoMode'
 import type { StateStorage } from 'zustand/middleware'
@@ -42,6 +44,7 @@ function rememberFailure(error: unknown) {
 }
 
 export function blockStoredWorkspace(storage: Storage, name: string, error: unknown) {
+  retainLocalSchemaBlock(name, error)
   if (storage === localStorage) workspacePersistence()?.block(name, error)
   const raw = storage.getItem(name)
   if (raw !== null) {
@@ -87,6 +90,10 @@ export function readStoredWorkspace(storage: Storage, name: string): string | nu
     const decoded = raw === null ? null : decodeWorkspaceStorage(raw)
     if (decoded !== null) {
       const parsed = JSON.parse(decoded)
+      if (name.startsWith('hq:app-data') || name === 'hq-demo:app-data') {
+        if (parsed.version !== undefined && (!Number.isSafeInteger(parsed.version) || parsed.version < OLDEST_SUPPORTED_STORE_VERSION || parsed.version > CURRENT_STORE_VERSION)) throw new WorkspaceSchemaError('This workspace uses an unsupported local version. Its original bytes were kept.')
+        assertSupportedWorkspace(parsed?.state)
+      }
       if ((name.startsWith('hq:app-data') || name === 'hq-demo:app-data') && validateAppData(parsed?.state).length) {
         throw new Error('Saved workspace has an invalid structure. Its original data was kept; automatic loading and sync are paused.')
       }
@@ -94,6 +101,7 @@ export function readStoredWorkspace(storage: Storage, name: string): string | nu
     rememberReadable(storage, name, raw)
     return decoded
   } catch (error) {
+    retainLocalSchemaBlock(name, error)
     if (raw !== null) {
       const blocked = unreadableValues.get(storage) ?? new Map<string, string>()
       blocked.set(name, raw)

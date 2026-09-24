@@ -1,6 +1,7 @@
 import { unzipSync, zipSync } from 'fflate'
 import type { AppData } from './types'
 import { validateAppData } from './validateAppData'
+import { assertSupportedWorkspace, KNOWN_WORKSPACE_KEYS } from './workspaceSchema'
 import { binaryDigest, workspaceAssets } from './workspaceAssets'
 import { notebookAssetRepository, type NotebookAssetRepository } from './academics/notebook/notebookAssetStore'
 import { readLocalBlob, retainLocalBlob } from './localBlobStore'
@@ -18,6 +19,7 @@ const encode = (value: unknown) => new TextEncoder().encode(JSON.stringify(value
 function bound(size: number, max: number, label: string) { if (!Number.isSafeInteger(size) || size < 0 || size > max) throw new Error(`${label} exceeds the complete-backup limit (${Math.round(max / MiB)} MiB). Nothing was truncated. Export individual notebook backups or split large original files.`) }
 
 export async function createWorkspaceBackup(data: AppData, readers: { images: NotebookAssetReader; file: typeof readLocalBlob } = { images: notebookAssetRepository(), file: readLocalBlob }): Promise<Blob> {
+  assertSupportedWorkspace(data)
   const snapshot = structuredClone(data), assets = workspaceAssets(snapshot), objects: ObjectRecord[] = []
   if (validateAppData(snapshot).length) throw new Error('The workspace is invalid; no complete backup was created.')
   const members: Record<string, Uint8Array> = Object.create(null)
@@ -61,6 +63,7 @@ export async function prepareWorkspaceBackup(blob: Blob, decode?: RasterDecoder)
   rejectDuplicateKeys(raw)
   const envelope = JSON.parse(raw) as Envelope
   if (!envelope || envelope.format !== 'premed-os-workspace-backup' || envelope.version !== 1 || !Array.isArray(envelope.objects) || Object.keys(envelope).some(key => !['format', 'version', 'data', 'dataSha256', 'objects'].includes(key)) || validateAppData(envelope.data).length) throw new Error('Unsupported or malformed workspace backup. Nothing was restored.')
+  assertSupportedWorkspace(envelope.data)
   if (await binaryDigest(new Blob([encode(envelope.data)])) !== envelope.dataSha256) throw new Error('Workspace metadata integrity check failed. Nothing was restored. Select an intact backup or export a new complete copy from the source device.')
   const assets = workspaceAssets(envelope.data), expected = new Set(['workspace.json']), identities = new Set<string>(), bytes = new Map<string, Blob>()
   for (const item of envelope.objects) {
@@ -112,6 +115,7 @@ export async function stageWorkspaceBackup(prepared: PreparedWorkspaceBackup, as
     }
     for (const child of Object.values(record)) await visit(child)
   }
-  await visit(data); assertFresh()
+  for (const key of KNOWN_WORKSPACE_KEYS) await visit(data[key])
+  assertFresh()
   return { data, async finish() { for (const id of leases) await writers.images.finish(id) } }
 }

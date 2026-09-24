@@ -3,25 +3,18 @@ import { act, createElement, useEffect } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
-const wire = vi.hoisted(() => ({ sessionUser: null as string | null, listeners: new Set<(event: string, session: unknown) => void>(), rows: new Map<string, unknown>(), pending: new Map<string, Promise<unknown>>(), snapshots: new Map<string, unknown>(), writes: vi.fn(), archiveFails: false, failures: [] as Array<{ status: number; error: { message: string } }>, attempts: vi.fn(), imageDownload: vi.fn() }))
-vi.mock('@/lib/supabase', () => ({
-  isSupabaseConfigured: true, authRedirectTo: 'http://localhost/#/auth',
-  supabase: {
-    auth: { getSession: async () => ({ data: { session: wire.sessionUser ? { user: { id: wire.sessionUser } } : null } }), onAuthStateChange: (cb: (event: string, session: unknown) => void) => { wire.listeners.add(cb); return { data: { subscription: { unsubscribe: () => wire.listeners.delete(cb) } } } } },
-    storage: { from: () => ({ download: wire.imageDownload }) },
-    from: () => ({
-      select: () => ({ eq: (_: string, id: string) => ({ maybeSingle: async () => ({ data: await (wire.pending.get(id) ?? wire.rows.get(id)), error: null }) }) }),
-      update: (value: unknown) => ({ eq: (_: string, id: string) => ({ eq: (_: string, at: string) => ({ select: () => ({ maybeSingle: async () => {
-        wire.attempts()
-        const failed = wire.failures.shift()
-        if (failed) return { data: null, ...failed }
-        const row = wire.rows.get(id) as { updated_at: string } | undefined
-        if (row?.updated_at !== at) return { data: null, error: null }
-        wire.writes(value); wire.rows.set(id, value); return { data: value, error: null }
-      } }) }) }) }),
-    }),
-  },
-}))
+const wire = vi.hoisted(() => ({ sessionUser: null as string | null, listeners: new Set<(event: string, session: unknown) => void>(), rows: new Map<string, unknown>(), pending: new Map<string, Promise<unknown>>(), snapshots: new Map<string, unknown>(), writes: vi.fn(), archiveFails: false, failures: [] as Array<{ status: number; error: Record<string, unknown> }>, attempts: vi.fn(), imageDownload: vi.fn(), loseResponses: 0, missingColumns: false }))
+vi.mock('@/lib/supabase', async () => {
+  const { fakeDashboardsTable } = await import('@/test/fakeDashboards')
+  return {
+    isSupabaseConfigured: true, authRedirectTo: 'http://localhost/#/auth',
+    supabase: {
+      auth: { getSession: async () => ({ data: { session: wire.sessionUser ? { user: { id: wire.sessionUser } } : null } }), onAuthStateChange: (cb: (event: string, session: unknown) => void) => { wire.listeners.add(cb); return { data: { subscription: { unsubscribe: () => wire.listeners.delete(cb) } } } } },
+      storage: { from: () => ({ download: wire.imageDownload }) },
+      from: () => fakeDashboardsTable(wire),
+    },
+  }
+})
 vi.mock('@/lib/academics/notebook/notebookAssetStore', () => ({ notebookAssetRepository: () => ({ read: async () => undefined }) }))
 vi.mock('@/lib/academics/sharedMaterialFiles', () => ({ MATERIAL_BUCKET: 'academic-originals', syncAcademicOriginals: vi.fn(async () => undefined) }))
 vi.mock('./workspaceRecoveryRepository', () => ({ workspaceRecoveryRepository: () => ({
@@ -31,6 +24,7 @@ vi.mock('./workspaceRecoveryRepository', () => ({ workspaceRecoveryRepository: (
 }) }))
 
 import { createPersonalInitialData } from '@/data/personalInitialData'
+import { claimedRow } from '@/test/fakeDashboards'
 import { accountStorageKey, activeWorkspaceOwner } from '@/lib/demoMode'
 import { activateAccountWorkspace, activateGuestWorkspace, snapshotData, useStore } from './store'
 import { getAccountConflict, allowAccountSync, pauseAccountSync, observeSyncSession, readSyncBaseline, recordSyncBaseline, isAccountSyncReady } from './accountSyncSafety'
@@ -45,6 +39,9 @@ import { captureFolderFence } from '@/lib/academics/materialFolder/controller'
 let root: Root, cloud: ReturnType<typeof useCloudSync>, counter = 0
 const older = '2026-09-10T12:00:00Z', newer = '2026-09-11T12:00:00Z'
 function workspace(note: string) { const d = createPersonalInitialData(); d.profile.name = 'Synthetic'; d.profile.email = 'synthetic@example.invalid'; d.notes.example = note; return d }
+/** Rows and baselines for an account a current app has already protected. */
+function claimed(data: object, updatedAt: string, writeRev = 1) { return claimedRow(data as Record<string, unknown>, updatedAt, writeRev) }
+function revision(updatedAt: string, writeRev = 1) { return { updatedAt, claim: { cloudSchema: 1, writeRev } } }
 function account() { return `synthetic-safety-${++counter}` }
 function Probe() { const value = useCloudSync(); useEffect(() => { cloud = value }, [value]); return null }
 async function render(count = 1) {
@@ -56,7 +53,7 @@ async function session(id: string | null, settle = true) {
 }
 beforeEach(() => {
   vi.stubGlobal('Blob', NodeBlob); wire.imageDownload.mockReset()
-  localStorage.clear(); wire.sessionUser = null; wire.rows.clear(); wire.pending.clear(); wire.snapshots.clear(); wire.writes.mockClear(); wire.archiveFails = false; wire.failures = []; wire.attempts.mockClear()
+  localStorage.clear(); wire.sessionUser = null; wire.rows.clear(); wire.pending.clear(); wire.snapshots.clear(); wire.writes.mockClear(); wire.archiveFails = false; wire.failures = []; wire.attempts.mockClear(); wire.loseResponses = 0; wire.missingColumns = false
   observeSyncSession(null); useStore.persist.setOptions({ name: 'hq:app-data:guest' }); activateGuestWorkspace()
   root = createRoot(document.createElement('div'))
 })
@@ -64,7 +61,7 @@ afterEach(async () => { await act(async () => root.unmount()); vi.useRealTimers(
 
 it('pauses every mounted coordinator for divergence and preserves both copies before any write', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('local newer')); const raw = localStorage.getItem(accountStorageKey(id))
-  wire.rows.set(id, { data: workspace('remote older'), updated_at: older })
+  wire.rows.set(id, claimed(workspace('remote older'), older))
   await render(3); await session(id)
   expect(getAccountConflict(id)?.saved).toBe(true)
   expect(() => captureFolderFence(true)).toThrow('Resolve the account sync notice')
@@ -77,7 +74,7 @@ it('pauses every mounted coordinator for divergence and preserves both copies be
 })
 it('keeps originals and downloadable copies when recovery storage fails', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('device')); const raw = localStorage.getItem(accountStorageKey(id))
-  wire.rows.set(id, { data: workspace('cloud'), updated_at: older }); wire.archiveFails = true
+  wire.rows.set(id, claimed(workspace('cloud'), older)); wire.archiveFails = true
   await render(); await session(id)
   expect(getAccountConflict(id)).toMatchObject({ localRaw: raw, saved: false })
   expect(localStorage.getItem(accountStorageKey(id))).toBe(raw)
@@ -85,15 +82,15 @@ it('keeps originals and downloadable copies when recovery storage fails', async 
 })
 it('accepts equal copies and records an account baseline without uploading', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('equal')); const actual = snapshotData()
-  wire.rows.set(id, { data: actual, updated_at: older })
+  wire.rows.set(id, claimed(actual, older))
   await render(2); await session(id)
   expect(isAccountSyncReady(id)).toBe(true); expect(readSyncBaseline(id)?.updatedAt).toBe(older)
   expect(wire.writes).not.toHaveBeenCalled()
 })
 it('allows ordinary local edits with a trusted unchanged remote baseline', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
-  wire.rows.set(id, { data: base, updated_at: older })
-  await recordSyncBaseline(id, base, older, observeSyncSession(id))
+  wire.rows.set(id, claimed(base, older))
+  await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
   useStore.getState().update(d => { d.notes.example = 'dirty local' })
   await render(); await session(id)
   expect(getAccountConflict(id)).toBeUndefined(); expect(snapshotData().notes.example).toBe('dirty local')
@@ -102,13 +99,13 @@ it('allows ordinary local edits with a trusted unchanged remote baseline', async
 })
 it('pulls a newer remote when the local copy exactly matches its trusted baseline', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
-  await recordSyncBaseline(id, base, older, observeSyncSession(id))
-  wire.rows.set(id, { data: { ...base, notes: { ...base.notes, example: 'remote changed' } }, updated_at: newer })
+  await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
+  wire.rows.set(id, claimed({ ...base, notes: { ...base.notes, example: 'remote changed' } }, newer))
   await render(); await session(id)
   expect(snapshotData().notes.example).toBe('remote changed'); expect(isAccountSyncReady(id)).toBe(true)
 })
 it('loads a valid cloud account on a new device without seeding over another account', async () => {
-  const id = account(); wire.rows.set(id, { data: workspace('remote only'), updated_at: older })
+  const id = account(); wire.rows.set(id, claimed(workspace('remote only'), older))
   await render(); await session(id)
   expect(snapshotData().notes.example).toBe('remote only'); expect(isAccountSyncReady(id)).toBe(true)
 })
@@ -120,14 +117,14 @@ it('does not upload or erase local work when no cloud row exists', async () => {
 it('rejects a delayed account response after signout and another login', async () => {
   const a = account(), b = account(); let resolve!: (value: unknown) => void
   wire.pending.set(a, new Promise(r => { resolve = r }))
-  wire.rows.set(b, { data: workspace('B owned'), updated_at: newer })
+  wire.rows.set(b, claimed(workspace('B owned'), newer))
   await render(); await session(a, false); await session(null); await session(b)
-  await act(async () => resolve({ data: workspace('stale A'), updated_at: older }))
+  await act(async () => resolve(claimed(workspace('stale A'), older)))
   expect(activeWorkspaceOwner()).toEqual({ kind: 'account', userId: b }); expect(snapshotData().notes.example).toBe('B owned')
   expect(localStorage.getItem(accountStorageKey(a))).toBeNull()
 })
 it('blocks cloud upload when durable account storage rejects an edit', async () => {
-  const id = account(); activateAccountWorkspace(id, workspace('saved')); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  const id = account(); activateAccountWorkspace(id, workspace('saved')); wire.rows.set(id, claimed(snapshotData(), older))
   await render(); await session(id)
   const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Synthetic quota', 'QuotaExceededError') })
   try { await act(async () => { useStore.getState().update(d => { d.notes.example = 'unsaved' }); expect(await cloud.pushNow()).toBe(false) }) } finally { set.mockRestore() }
@@ -135,9 +132,9 @@ it('blocks cloud upload when durable account storage rejects an edit', async () 
 })
 it('preserves both sides when both changed since a trusted baseline', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
-  await recordSyncBaseline(id, base, older, observeSyncSession(id))
+  await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
   useStore.getState().update(d => { d.notes.example = 'local changed' })
-  wire.rows.set(id, { data: { ...base, notes: { ...base.notes, example: 'remote changed' } }, updated_at: newer })
+  wire.rows.set(id, claimed({ ...base, notes: { ...base.notes, example: 'remote changed' } }, newer))
   await render(); await session(id)
   expect(getAccountConflict(id)?.saved).toBe(true)
   expect(snapshotData().notes.example).toBe('local changed'); expect(wire.writes).not.toHaveBeenCalled()
@@ -146,18 +143,18 @@ it('rejects the first A response after A signs out and signs in again', async ()
   const id = account(); let finish!: (value: unknown) => void
   wire.pending.set(id, new Promise(r => { finish = r }))
   await render(); await session(id, false); await session(null)
-  wire.pending.delete(id); wire.rows.set(id, { data: workspace('current A'), updated_at: newer })
+  wire.pending.delete(id); wire.rows.set(id, claimed(workspace('current A'), newer))
   await session(id)
   const current = localStorage.getItem(accountStorageKey(id))
-  await act(async () => finish({ data: workspace('stale A'), updated_at: older }))
+  await act(async () => finish(claimed(workspace('stale A'), older)))
   expect(localStorage.getItem(accountStorageKey(id))).toBe(current)
   expect(snapshotData().notes.example).toBe('current A')
 })
 it('refuses a cloud update if another device changed the row since the baseline', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
-  wire.rows.set(id, { data: base, updated_at: older }); await render(); await session(id)
+  wire.rows.set(id, claimed(base, older)); await render(); await session(id)
   await act(async () => useStore.getState().update(d => { d.notes.example = 'local edit' }))
-  wire.rows.set(id, { data: { ...base, notes: { ...base.notes, example: 'concurrent cloud edit' } }, updated_at: newer })
+  wire.rows.set(id, claimed({ ...base, notes: { ...base.notes, example: 'concurrent cloud edit' } }, newer))
   await act(async () => { expect(await cloud.pushNow()).toBe(false) })
   expect(wire.writes).not.toHaveBeenCalled()
   expect(getAccountConflict(id)?.saved).toBe(true)
@@ -168,7 +165,7 @@ it('keeps first-login Guest work visible for review before opening a new account
     d.notes.example = 'Guest work awaiting review'
     d.courses.push({ id: 'synthetic-guest-course', term: 'Fall 2026', code: 'TEST101', title: 'Guest class', credits: 3, grade: '', bcpm: false, status: 'planned', inResidence: true, satisfies: [], order: 0 })
   })
-  wire.rows.set(id, { data: workspace('existing cloud'), updated_at: older })
+  wire.rows.set(id, claimed(workspace('existing cloud'), older))
   await render(); await session(id)
   expect(activeWorkspaceOwner()).toEqual({ kind: 'guest' })
   expect(snapshotData().notes.example).toBe('Guest work awaiting review')
@@ -178,7 +175,7 @@ it('keeps first-login Guest work visible for review before opening a new account
 it('preserves unreadable account bytes for download without loading or uploading defaults', async () => {
   const id = account(), raw = JSON.stringify({ state: {}, version: 50 })
   localStorage.setItem(accountStorageKey(id), raw)
-  wire.rows.set(id, { data: workspace('cloud'), updated_at: older })
+  wire.rows.set(id, claimed(workspace('cloud'), older))
   await render(); await session(id)
   expect(localStorage.getItem(accountStorageKey(id))).toBe(raw)
   expect(getAccountConflict(id)).toMatchObject({ localRaw: raw, saved: true })
@@ -186,7 +183,7 @@ it('preserves unreadable account bytes for download without loading or uploading
 })
 it('keeps a readable returning-account cache visible when the cloud copy is invalid', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('device content')); const raw = localStorage.getItem(accountStorageKey(id))
-  wire.rows.set(id, { data: {}, updated_at: older })
+  wire.rows.set(id, claimed({}, older))
   await render(); await session(id)
   expect(activeWorkspaceOwner()).toEqual({ kind: 'account', userId: id })
   expect(snapshotData().notes.example).toBe('device content')
@@ -194,7 +191,7 @@ it('keeps a readable returning-account cache visible when the cloud copy is inva
   expect(isAccountSyncReady(id)).toBe(false); expect(wire.writes).not.toHaveBeenCalled()
 })
 it('does not discard volatile account edits when a save failed before reconciliation', async () => {
-  const id = account(); activateAccountWorkspace(id, workspace('saved')); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  const id = account(); activateAccountWorkspace(id, workspace('saved')); wire.rows.set(id, claimed(snapshotData(), older))
   await render(); await session(id)
   const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Synthetic quota', 'QuotaExceededError') })
   try {
@@ -209,7 +206,7 @@ it('does not discard volatile account edits when a save failed before reconcilia
 it('keeps volatile Guest work open when signing into a returning account', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('saved account')); const accountRaw = localStorage.getItem(accountStorageKey(id))
   activateGuestWorkspace()
-  wire.rows.set(id, { data: workspace('cloud account'), updated_at: newer })
+  wire.rows.set(id, claimed(workspace('cloud account'), newer))
   await render()
   const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Synthetic quota', 'QuotaExceededError') })
   await act(async () => useStore.getState().update(d => { d.notes.example = 'unsaved Guest work' }))
@@ -227,7 +224,7 @@ it('does not replace open work edited while the cloud read is pending', async ()
   wire.pending.set(id, new Promise(r => { finish = r }))
   await render(); await session(id, false)
   await act(async () => useStore.getState().update(d => { d.notes.example = 'new edit while waiting' }))
-  await act(async () => finish({ data: workspace('cloud'), updated_at: newer }))
+  await act(async () => finish(claimed(workspace('cloud'), newer)))
   await vi.waitFor(() => expect(cloud.status).toBe('error'))
   expect(snapshotData().notes.example).toBe('new edit while waiting')
   expect(isAccountSyncReady(id)).toBe(false)
@@ -245,7 +242,7 @@ it('does not record a baseline after a newer pause while its digest is pending',
   let finish!: (value: ArrayBuffer) => void
   const digest = vi.spyOn(crypto.subtle, 'digest').mockImplementationOnce(() => new Promise(r => { finish = r }))
   try {
-    const work = recordSyncBaseline(id, snapshotData(), newer, lease)
+    const work = recordSyncBaseline(id, snapshotData(), revision(newer), lease)
     const rejected = expect(work).rejects.toThrow('newer operation')
     pauseAccountSync(id); finish(new ArrayBuffer(32))
     await rejected
@@ -255,7 +252,7 @@ it('does not record a baseline after a newer pause while its digest is pending',
 })
 
 it('hides a signed-out account while retaining its unsaved edits for that owner', async () => {
-  const id = account(); activateAccountWorkspace(id, workspace('saved')); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  const id = account(); activateAccountWorkspace(id, workspace('saved')); wire.rows.set(id, claimed(snapshotData(), older))
   await render(); await session(id)
   const raw = localStorage.getItem(accountStorageKey(id))
   const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Synthetic quota', 'QuotaExceededError') })
@@ -265,7 +262,7 @@ it('hides a signed-out account while retaining its unsaved edits for that owner'
   expect(activeWorkspaceOwner()).toEqual({ kind: 'guest' })
   expect(snapshotData().notes.example).not.toBe('retained signed-out edit')
   expect(localStorage.getItem(accountStorageKey(id))).toBe(raw)
-  const other = account(); wire.rows.set(other, { data: workspace('other account'), updated_at: older })
+  const other = account(); wire.rows.set(other, claimed(workspace('other account'), older))
   await session(other)
   expect(getAccountConflict(other)?.open).toBeUndefined()
   await session(null); await session(id)
@@ -277,7 +274,7 @@ it('hides a signed-out account while retaining its unsaved edits for that owner'
 
 it('automatically retries a temporary cloud save failure without another edit or click', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('base'))
-  wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  wire.rows.set(id, claimed(snapshotData(), older))
   await render(); await session(id)
   await act(async () => useStore.getState().update(d => { d.notes.example = 'latest edit' }))
   wire.failures.push({ status: 500, error: { message: 'Temporary server failure' } })
@@ -295,7 +292,7 @@ it('automatically retries a temporary cloud save failure without another edit or
 
 it.each([false, true])('stops a save retry after another pause, even if it resumes (%s)', async resume => {
   const id = account(); activateAccountWorkspace(id, workspace('base'))
-  wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  wire.rows.set(id, claimed(snapshotData(), older))
   await render(); await session(id)
   wire.failures.push({ status: 500, error: { message: 'Temporary' } })
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
@@ -314,7 +311,7 @@ it.each([false, true])('stops a save retry after another pause, even if it resum
 
 it('asks for review if the cloud changes while an automatic retry is waiting', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
-  wire.rows.set(id, { data: base, updated_at: older })
+  wire.rows.set(id, claimed(base, older))
   await render(); await session(id)
   await act(async () => useStore.getState().update(d => { d.notes.example = 'local edit' }))
   wire.failures.push({ status: 500, error: { message: 'Temporary' } })
@@ -322,7 +319,7 @@ it('asks for review if the cloud changes while an automatic retry is waiting', a
   await act(async () => {
     const saving = cloud.pushNow()
     await vi.advanceTimersByTimeAsync(1)
-    wire.rows.set(id, { data: { ...base, notes: { ...base.notes, example: 'other device edit' } }, updated_at: newer })
+    wire.rows.set(id, claimed({ ...base, notes: { ...base.notes, example: 'other device edit' } }, newer))
     await vi.advanceTimersByTimeAsync(3000)
     expect(await saving).toBe(false)
   })
@@ -334,7 +331,7 @@ it('asks for review if the cloud changes while an automatic retry is waiting', a
 
 it('resumes automatically when the connection returns after bounded retries', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('base'))
-  wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  wire.rows.set(id, claimed(snapshotData(), older))
   await render(); await session(id)
   await act(async () => useStore.getState().update(d => { d.notes.example = 'offline edit' }))
   wire.failures.push(...Array.from({ length: 4 }, () => ({ status: 503, error: { message: 'Unavailable' } })))
@@ -361,7 +358,7 @@ async function imageWorkspace(suffix = '') {
 }
 it.each([503, 403])('only retries a retryable image failure in the background (%s)', async status => {
   const id = account(), f = await imageWorkspace()
-  activateAccountWorkspace(id, f.data); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  activateAccountWorkspace(id, f.data); wire.rows.set(id, claimed(snapshotData(), older))
   wire.imageDownload.mockResolvedValue({ error: { status, statusCode: status === 503 ? 'SlowDown' : 'AccessDenied', message: 'Image request failed' } })
   await render()
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
@@ -390,7 +387,7 @@ it.each([503, 403])('only retries a retryable image failure in the background (%
 })
 it('keeps the current review stable when another sync check runs during a conflict', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('device edit'))
-  wire.rows.set(id, { data: workspace('cloud edit'), updated_at: older })
+  wire.rows.set(id, claimed(workspace('cloud edit'), older))
   await render(); await session(id)
   const conflict = getAccountConflict(id), copies = wire.snapshots.size
   expect(conflict?.saved).toBe(true)
@@ -404,7 +401,7 @@ it('keeps the current review stable when another sync check runs during a confli
 
 it('keeps folder connection ready across Settings observer mounts and navigation', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('verified device'))
-  const row = { data: snapshotData(), updated_at: older }
+  const row = claimed(snapshotData(), older)
   wire.rows.set(id, row)
   let observed: ReturnType<typeof useAccountCloud> | undefined
   function SettingsObserver() { const value = useAccountCloud(); useEffect(() => { observed = value }, [value]); return null }
@@ -441,7 +438,7 @@ it('checks workspace durability once per image batch instead of revalidating the
     data.academics.classCenter.lectures.push(lecture)
     images.set(lecture.importedNotebook!.assetBindings![0].sha256, f.blob)
   }
-  activateAccountWorkspace(id, data); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  activateAccountWorkspace(id, data); wire.rows.set(id, claimed(snapshotData(), older))
   wire.imageDownload.mockImplementation(async (path: string) => ({ data: images.get(path.split('/').at(-1)!), error: null }))
   const reads = vi.spyOn(storageHealth, 'readStoredWorkspace')
   try {
@@ -456,7 +453,7 @@ it('checks workspace durability once per image batch instead of revalidating the
 
 it.each(['memory', 'disk', 'account', 'pause'])('stops image verification if %s changes during a download', async change => {
   const id = account(), f = await imageWorkspace()
-  activateAccountWorkspace(id, f.data); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  activateAccountWorkspace(id, f.data); wire.rows.set(id, claimed(snapshotData(), older))
   let release!: (value: unknown) => void
   wire.imageDownload.mockImplementation(() => new Promise(resolve => { release = resolve }))
   await render(); await session(id, false)
@@ -487,7 +484,7 @@ it('does not revalidate the entire workspace per image when pushing an ordinary 
     lecture.id = `push-image-${n}`; data.academics.classCenter.lectures.push(lecture)
     images.set(lecture.importedNotebook!.assetBindings![0].sha256, f.blob)
   }
-  activateAccountWorkspace(id, data); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  activateAccountWorkspace(id, data); wire.rows.set(id, claimed(snapshotData(), older))
   wire.imageDownload.mockImplementation(async (path: string) => ({ data: images.get(path.split('/').at(-1)!), error: null }))
   await render(); await session(id, false)
   await vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).toBe('synced') }, { timeout: 5000, interval: 1 })
@@ -505,7 +502,7 @@ it('does not revalidate the entire workspace per image when pushing an ordinary 
 
 it.each(['memory', 'disk', 'account', 'pause'])('does not push stale metadata when %s changes during an image download', async change => {
   const id = account(), f = await imageWorkspace()
-  activateAccountWorkspace(id, f.data); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  activateAccountWorkspace(id, f.data); wire.rows.set(id, claimed(snapshotData(), older))
   wire.imageDownload.mockResolvedValue({ data: f.blob, error: null })
   await render(); await session(id)
   await act(async () => useStore.getState().update(d => { d.notes.example = 'metadata ready to push' }))
@@ -531,3 +528,202 @@ it.each(['memory', 'disk', 'account', 'pause'])('does not push stale metadata wh
   if (change === 'memory') expect(snapshotData().notes.example).toBe('newer edit during push')
   if (change === 'pause') expect(isAccountSyncReady(id)).toBe(false)
 })
+
+it('S1 retains a future cloud document for recovery without hydrating it or allowing replacement', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('device copy'))
+  const raw = localStorage.getItem(accountStorageKey(id))
+  const remote = { ...workspace('future cloud'), _schema: 2, futureResearch: [{ id: 'future-only', nested: { intact: true } }] }
+  const row = claimedRow(remote, older, 1, 2)
+  wire.rows.set(id, row)
+  await render(); await session(id)
+  expect(getAccountConflict(id)).toMatchObject({ schemaBlocked: true, saved: true, remote })
+  expect(localStorage.getItem(accountStorageKey(id))).toBe(raw)
+  expect(snapshotData().notes.example).toBe('device copy')
+  expect(() => useStore.getState().setNote('blocked', 'must not apply')).toThrow('newer version')
+  expect(isAccountSyncReady(id)).toBe(false)
+  await act(async () => { await cloud.pullNow(); expect(await cloud.pushNow()).toBe(false) })
+  expect(wire.attempts).not.toHaveBeenCalled()
+  expect(() => allowAccountSync(observeSyncSession(id))).toThrow()
+  await session(null); await session(id)
+  expect(isAccountSyncReady(id)).toBe(false)
+  expect(wire.rows.get(id)).toEqual(row)
+})
+
+it('S1 terminal schema rejection fences uploads and Drive readiness across reconnect and explicit pulls', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('base'))
+  const original = claimed(snapshotData(), older)
+  wire.rows.set(id, original)
+  await render(); await session(id)
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'recent edit' }))
+  wire.failures.push({ status: 400, error: { message: 'This tab is out of date. Export your changes, then reopen Premed OS.', code: 'P0001', details: 'S1_SCHEMA_GUARD' } } as typeof wire.failures[number])
+  await act(async () => { expect(await cloud.pushNow()).toBe(false) })
+  expect(isAccountSyncReady(id)).toBe(false)
+  expect(cloud.error).toContain('out of date')
+  expect(snapshotData().notes.example).toBe('recent edit')
+  expect(wire.rows.get(id)).toEqual(original)
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'another device edit' }))
+  expect(snapshotData().notes.example).toBe('another device edit')
+  await act(async () => { await cloud.pullNow(); expect(await cloud.pushNow()).toBe(false) })
+  await session(null); await session(id)
+  expect(isAccountSyncReady(id)).toBe(false)
+  expect(wire.attempts).toHaveBeenCalledTimes(1)
+})
+
+it('S1 carries supported opaque data through an ordinary upload with the current marker', async () => {
+  const id = account(), opaque = { samples: [{ id: 'synthetic', values: [1, 2, 3] }] }
+  const original = { ...workspace('base'), _schema: 1, futureCollection: opaque }
+  wire.rows.set(id, claimed(original, older))
+  await render(); await session(id)
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'edited' }))
+  await act(async () => { expect(await cloud.pushNow()).toBe(true) })
+  expect(wire.rows.get(id)).toMatchObject({ data: { _schema: 1, futureCollection: opaque, notes: { example: 'edited' } } })
+})
+
+// ---- S1 revision 3: row metadata, claim on load, compare-and-set on write_rev ----
+type StoredRow = { data: Record<string, unknown>; updated_at: string; cloud_schema: number | null; write_rev: number | null }
+const stored = (id: string) => wire.rows.get(id) as StoredRow
+const withoutMarker = (data: Record<string, unknown>) => { const { _schema: _, ...rest } = data; return rest }
+
+it('S1 claims an unclaimed row on load with exactly the reviewed cloud document and only then reports protection', async () => {
+  const id = account(), legacy = { ...workspace('legacy cloud'), futureCollection: { nested: { kept: ['exact'] } }, stories: [{ id: 'story', title: 'Kept as stored' }] }
+  wire.rows.set(id, { data: structuredClone(legacy), updated_at: older })
+  await render()
+  expect(cloud.protection).toBe('unknown')
+  await session(id)
+  expect(wire.writes).toHaveBeenCalledTimes(1)
+  const row = stored(id)
+  expect(row).toMatchObject({ cloud_schema: 1, write_rev: 1 })
+  expect(row.updated_at).not.toBe(older)
+  // Only the portable marker was added: no privacy rewrite, defaults or local content.
+  expect(withoutMarker(row.data)).toEqual(legacy)
+  expect(row.data._schema).toBe(1)
+  expect(readSyncBaseline(id)).toMatchObject({ updatedAt: row.updated_at, claim: { cloudSchema: 1, writeRev: 1 } })
+  expect(cloud.protection).toBe('on')
+  expect(isAccountSyncReady(id)).toBe(true)
+})
+
+it('S1 claim keeps dirty local edits dirty, then saves them with the next counter', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
+  const legacy = withoutMarker(base as unknown as Record<string, unknown>)
+  wire.rows.set(id, { data: structuredClone(legacy), updated_at: older })
+  // A pre-S1 baseline: content only, no row metadata.
+  localStorage.setItem(`premed-os:sync-baseline:v1:${id}`, JSON.stringify({ digest: readSyncBaseline(id)?.digest ?? await digestOf(base), updatedAt: older }))
+  useStore.getState().update(d => { d.notes.example = 'dirty local' })
+  await render(); await session(id)
+  expect(withoutMarker(stored(id).data)).toEqual(legacy)
+  expect(stored(id)).toMatchObject({ cloud_schema: 1, write_rev: 1 })
+  expect(snapshotData().notes.example).toBe('dirty local')
+  expect(getAccountConflict(id)).toBeUndefined()
+  await act(async () => { expect(await cloud.pushNow()).toBe(true) })
+  expect(stored(id)).toMatchObject({ cloud_schema: 1, write_rev: 2, data: { notes: { example: 'dirty local' } } })
+})
+
+it('S1 claim loses a race to an old writer, rereads and claims the newer content', async () => {
+  const id = account(), first = workspace('before old write'), oldWrite = workspace('old tab wrote this')
+  wire.rows.set(id, { data: first, updated_at: older })
+  let raced = false
+  wire.attempts.mockImplementation(() => {
+    // A deployed app saves {data, updated_at} between our read and our claim.
+    if (!raced) { raced = true; wire.rows.set(id, { data: oldWrite, updated_at: newer }) }
+  })
+  await render(); await session(id)
+  expect(wire.attempts).toHaveBeenCalledTimes(2)
+  expect(stored(id)).toMatchObject({ cloud_schema: 1, write_rev: 1 })
+  expect(withoutMarker(stored(id).data)).toEqual(oldWrite)
+  expect(snapshotData().notes.example).toBe('old tab wrote this')
+  expect(cloud.protection).toBe('on')
+})
+
+it('S1 treats a write_rev miss from another current app as ordinary concurrency, not a permanent pause', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
+  wire.rows.set(id, claimed(base, older, 4)); await render(); await session(id)
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'local edit' }))
+  // Another current tab saved: same content, next counter, new timestamp.
+  wire.rows.set(id, claimed(base, newer, 5))
+  await act(async () => { expect(await cloud.pushNow()).toBe(false) })
+  expect(wire.writes).not.toHaveBeenCalled()
+  // It went back to reconciliation: both copies moved since the baseline, so the
+  // ordinary two-copy review opens. It is not the out-of-date (schema) block.
+  expect(getAccountConflict(id)).toMatchObject({ schemaBlocked: false, saved: true })
+  expect(cloud.error).not.toContain('out of date')
+  expect(stored(id)).toMatchObject({ write_rev: 5 })
+  expect(snapshotData().notes.example).toBe('local edit')
+})
+
+it('S1 confirms a committed save whose response was lost without incrementing again', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('base'))
+  wire.rows.set(id, claimed(snapshotData(), older, 7))
+  await render(); await session(id)
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'sent once' }))
+  wire.loseResponses = 1
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  await act(async () => {
+    const saving = cloud.pushNow()
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(await saving).toBe(true)
+  })
+  // The retry resent the same counter and predicate; it matched nothing, and
+  // the reread proved the committed row is exactly this save.
+  expect(wire.attempts).toHaveBeenCalledTimes(2)
+  expect(wire.writes).toHaveBeenCalledTimes(1)
+  expect(stored(id)).toMatchObject({ write_rev: 8, data: { notes: { example: 'sent once' } } })
+  expect(readSyncBaseline(id)).toMatchObject({ claim: { writeRev: 8 } })
+  expect(getAccountConflict(id)).toBeUndefined()
+})
+
+it('S1 fails closed without the columns: no fallback writer, edits stay on the device', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('device'))
+  wire.rows.set(id, { data: workspace('device'), updated_at: older }); wire.missingColumns = true
+  await render(); await session(id)
+  expect(cloud.status).toBe('error')
+  expect(cloud.error).toContain('server has not been updated')
+  expect(cloud.protection).toBe('unavailable')
+  expect(isAccountSyncReady(id)).toBe(false)
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'kept locally' }))
+  await act(async () => { expect(await cloud.pushNow()).toBe(false) })
+  expect(wire.attempts).not.toHaveBeenCalled(); expect(wire.writes).not.toHaveBeenCalled()
+  expect(JSON.parse(localStorage.getItem(accountStorageKey(id))!).state.notes.example).toBe('kept locally')
+})
+
+it.each([
+  ['claimed row without a marker', (data: Record<string, unknown>) => ({ data: withoutMarker(data), updated_at: older, cloud_schema: 1, write_rev: 3 })],
+  ['marker and column disagree', (data: Record<string, unknown>) => ({ data: { ...data, _schema: 1 }, updated_at: older, cloud_schema: 2, write_rev: 3 })],
+  ['future marker on an unclaimed row', (data: Record<string, unknown>) => ({ data: { ...data, _schema: 2 }, updated_at: older, cloud_schema: null, write_rev: null })],
+  ['half-claimed metadata', (data: Record<string, unknown>) => ({ data: { ...data, _schema: 1 }, updated_at: older, cloud_schema: 1, write_rev: null })],
+  ['counter beyond the safe range', (data: Record<string, unknown>) => ({ data: { ...data, _schema: 1 }, updated_at: older, cloud_schema: 1, write_rev: 2 ** 53 })],
+])('S1 blocks before hydration: %s', async (_label, make) => {
+  const id = account(); activateAccountWorkspace(id, workspace('device copy')); const raw = localStorage.getItem(accountStorageKey(id))
+  const row = make(workspace('cloud copy') as unknown as Record<string, unknown>)
+  wire.rows.set(id, structuredClone(row))
+  await render(); await session(id)
+  expect(getAccountConflict(id)).toMatchObject({ schemaBlocked: true, remote: row.data })
+  expect(snapshotData().notes.example).toBe('device copy')
+  expect(localStorage.getItem(accountStorageKey(id))).toBe(raw)
+  expect(wire.attempts).not.toHaveBeenCalled()
+  expect(wire.rows.get(id)).toEqual(row)
+  expect(cloud.protection).not.toBe('on')
+})
+
+it.each([
+  ['a Research collection', (d: Record<string, unknown>) => ({ ...d, researchReminders: [] })],
+  ['a Research field on an experience', (d: Record<string, unknown>) => ({ ...d, experiences: [{ id: 'exp', title: 'Lab', research: { institution: 'Synthetic' } }] })],
+  ['an hour entry with thoughts', (d: Record<string, unknown>) => ({ ...d, experienceHourEntries: [{ id: 'h', experienceId: 'exp', thoughts: 'Synthetic' }] })],
+  ['a person bio', (d: Record<string, unknown>) => ({ ...d, persons: [{ id: 'p', name: 'Synthetic', bio: 'Synthetic' }] })],
+  ['a Research record in Trash', (d: Record<string, unknown>) => ({ ...d, trash: [{ id: 't', collection: 'researchMemberships', deletedAt: 1, record: { id: 'm' } }] })],
+])('S1 schema-1 client refuses to claim or hydrate an unmarked T4 row with %s', async (_label, make) => {
+  const id = account()
+  const row = { data: make(workspace('T4 cloud') as unknown as Record<string, unknown>), updated_at: older }
+  wire.rows.set(id, structuredClone(row))
+  await render(); await session(id)
+  expect(getAccountConflict(id)).toMatchObject({ schemaBlocked: true, remote: row.data })
+  expect(getAccountConflict(id)?.message).toContain('Research data')
+  expect(wire.attempts).not.toHaveBeenCalled()
+  expect(wire.rows.get(id)).toEqual(row)
+  expect(localStorage.getItem(accountStorageKey(id))).toBeNull()
+  expect(cloud.protection).not.toBe('on')
+})
+
+async function digestOf(data: ReturnType<typeof snapshotData>) {
+  const { syncContent, syncDigest } = await import('./accountSyncSafety')
+  return syncDigest(syncContent(data))
+}

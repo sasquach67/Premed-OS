@@ -1,9 +1,13 @@
+import { isSchemaGuardError } from '@/lib/workspaceSchema'
+
 /** Retry transport failures only. Account/storage guards run outside the retry catch. */
 export class CloudRequestError extends Error {
   readonly retryable: boolean
   readonly status?: number
-  constructor(message: string, retryable: boolean, options?: ErrorOptions & { status?: number }) {
-    super(message, options); this.name = 'CloudRequestError'; this.retryable = retryable; this.status = options?.status
+  readonly code?: string
+  readonly details?: string
+  constructor(message: string, retryable: boolean, options?: ErrorOptions & { status?: number; code?: string; details?: string }) {
+    super(message, options); this.name = 'CloudRequestError'; this.retryable = retryable; this.status = options?.status; this.code = options?.code; this.details = options?.details
   }
 }
 
@@ -24,12 +28,12 @@ function networkError(error: unknown): boolean {
 }
 function transportError(error: unknown, responseStatus?: number) {
   if (error instanceof CloudRequestError) return error
-  const detail = error && typeof error === 'object' ? error as { message?: unknown } : undefined
+  const detail = error && typeof error === 'object' ? error as { message?: unknown; code?: unknown; details?: unknown } : undefined
   const message = typeof detail?.message === 'string' ? detail.message : 'Cloud request failed.'
   const status = cloudErrorStatus(error, responseStatus)
-  const retryable = status === 408 || status === 429 || (status !== undefined && status >= 500 && status <= 599)
-    || ((status === undefined || status === 0) && (networkError(error) || status === 0 && /fetch|network|connection|timeout/i.test(message)))
-  return new CloudRequestError(message, retryable, { cause: error, status })
+  const retryable = !isSchemaGuardError(error) && (status === 408 || status === 429 || (status !== undefined && status >= 500 && status <= 599)
+    || ((status === undefined || status === 0) && (networkError(error) || status === 0 && /fetch|network|connection|timeout/i.test(message))))
+  return new CloudRequestError(message, retryable, { cause: error, status, code: typeof detail?.code === 'string' ? detail.code : undefined, details: typeof detail?.details === 'string' ? detail.details : undefined })
 }
 
 /** Callers must use reads or conditional writes, then check freshness after recording any server acknowledgement. */

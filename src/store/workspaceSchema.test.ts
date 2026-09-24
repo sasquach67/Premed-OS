@@ -76,7 +76,7 @@ it('keeps unknown sections during legacy restore and filters only known private 
   expect(() => mergeRestoredWorkspace(current, { ...incoming, _schema: 2 } as typeof incoming)).toThrow('newer version')
 })
 
-it.each([null, '1', 1.2, -1, 2147483648, [], {}])('rejects malformed marker %j without stamping', marker => {
+it.each([null, '1', 1.2, -1, 0, 2147483648, [], {}])('rejects malformed marker %j without stamping', marker => {
   const raw = { ...fixture(), _schema: marker }
   expect(() => assertSupportedWorkspace(raw)).toThrow('invalid schema')
   expect(() => prepareWorkspaceData(raw as ReturnType<typeof fixture>)).toThrow()
@@ -92,4 +92,16 @@ it('protects future local envelopes even when their cloud marker is supported', 
   expect(s.useStore.persist.hasHydrated()).toBe(false)
   expect(() => s.useStore.getState().setNote('edit', 'blocked')).toThrow('unsupported local version')
   expect(localStorage.getItem(key)).toBe(raw)
+})
+
+it('S1 blocks local hydration of an unmarked Research (T4) snapshot and keeps its exact bytes', async () => {
+  const key = 'hq:app-data:account:t4-local'
+  localStorage.setItem('hq:workspace-owner', 'account:t4-local')
+  const raw = JSON.stringify({ state: { ...createPersonalInitialData(), persons: [{ id: 'p', name: 'Synthetic', bio: 'T4 field' }] }, version: 51 })
+  localStorage.setItem(key, raw)
+  const s = await import('./store')
+  expect(s.useStore.persist.hasHydrated()).toBe(false)
+  expect(() => s.useStore.getState().setNote('edit', 'blocked')).toThrow('Research data')
+  expect(localStorage.getItem(key)).toBe(raw)
+  expect(() => s.readWorkspaceData(key)).toThrow()
 })

@@ -1,4 +1,5 @@
 import type { AppData } from './types'
+import { KNOWN_WORKSPACE_KEYS } from './workspaceSchema'
 import type { NotebookAssetBinding, PortableImportedNotebook } from './academics/notebook/visualTypes'
 import { assertNotebookBackupFits } from './academics/notebook/notebookBundle'
 
@@ -22,7 +23,9 @@ export function workspaceAssets(data: AppData) {
     }
     Object.values(record).forEach(visit)
   }
-  visit(data)
+  // Opaque sections are metadata only. Never interpret their keys as known
+  // notebook/file bindings or claim their unknown assets are archived.
+  for (const key of KNOWN_WORKSPACE_KEYS) visit(data[key])
   return { images, files }
 }
 export async function binaryDigest(blob: Blob) {

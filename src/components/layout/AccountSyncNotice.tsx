@@ -31,7 +31,7 @@ export function AccountSyncNotice({ userId }: { userId?: string }) {
       {portableLocal && <button type="button" className="underline" onClick={() => download('local')}>Download device account JSON</button>}
       {conflict.remote && <button type="button" className="underline" onClick={() => download('cloud')}>Download cloud account JSON</button>}
     </div>
-    <p className="mt-2 text-muted-foreground">Compare the copies below before choosing which to use. Downloading alone does not restore or replace any data.</p>
-    <AccountConflictReview key={userId} userId={userId} conflict={conflict} />
+    <p className="mt-2 text-muted-foreground">{conflict.schemaBlocked ? 'This app cannot safely edit this cloud copy. Keep the downloads and reopen the current version of Premed OS.' : 'Compare the copies below before choosing which to use. Downloading alone does not restore or replace any data.'}</p>
+    {!conflict.schemaBlocked && <AccountConflictReview key={userId} userId={userId} conflict={conflict} />}
   </aside>
 }

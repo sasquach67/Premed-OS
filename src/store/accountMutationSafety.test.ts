@@ -13,7 +13,8 @@ const fake = vi.hoisted(() => ({
   userId: null as string | null,
   remote: null as AppData | null,
   revision: '2026-09-12T00:00:00.000Z',
-  writes: [] as Array<{ user_id: string; data: AppData; updated_at: string }>,
+  claim: { cloud_schema: null, write_rev: null } as { cloud_schema: number | null; write_rev: number | null },
+  writes: [] as Array<{ user_id?: string; data: AppData; updated_at: string; cloud_schema?: number; write_rev?: number }>,
   listeners: new Set<(event: string, session: { user: { id: string } } | null) => void>(),
   snapshots: new Map<string, WorkspaceRecoverySnapshot>(),
   failArchive: false,
@@ -22,7 +23,9 @@ const fake = vi.hoisted(() => ({
   afterArchive: undefined as (() => void) | undefined,
   beforeWrite: undefined as (() => void) | undefined,
 }))
-vi.mock('@/lib/supabase', () => ({
+vi.mock('@/lib/supabase', async () => {
+  const { s1GuardRejects, S1_GUARD_ERROR } = await import('@/test/fakeDashboards')
+  return {
   supabase: {
     auth: {
       getSession: async () => ({ data: { session: fake.userId ? { user: { id: fake.userId } } : null }, error: null }),
@@ -32,32 +35,44 @@ vi.mock('@/lib/supabase', () => ({
       },
     },
     from: () => ({
-      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: fake.remote ? { data: fake.remote, updated_at: fake.revision } : null, error: null }) }) }),
-      update: (row: { user_id: string; data: AppData; updated_at: string }) => {
-        const filters: Record<string, string> = {}
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: fake.remote ? { data: fake.remote, updated_at: fake.revision, ...fake.claim } : null, error: null }) }) }),
+      update: (row: { data: AppData; updated_at: string; cloud_schema?: number; write_rev?: number }) => {
+        const filters: Array<() => boolean> = []
         const query = {
-          eq: (key: string, value: string) => { filters[key] = value; return query },
+          eq: (key: string, value: string | number) => { filters.push(() => key === 'user_id' || (key === 'updated_at' ? Date.parse(fake.revision) === Date.parse(value as string) : fake.claim[key as keyof typeof fake.claim] === value)); return query },
+          is: (key: string, value: null) => { filters.push(() => fake.claim[key as keyof typeof fake.claim] === value); return query },
           select: () => query,
           maybeSingle: async () => {
             if (fake.transientWrites > 0) { fake.transientWrites--; return { data: null, status: 500, error: { message: 'Temporary server failure' } } }
-            if (filters.updated_at !== fake.revision) return { data: null, error: null }
+            if (!fake.remote || !filters.every(test => test())) return { data: null, error: null }
+            const next = { cloud_schema: row.cloud_schema ?? fake.claim.cloud_schema, write_rev: row.write_rev ?? fake.claim.write_rev }
+            if (s1GuardRejects({ user_id: '', data: null, updated_at: '', ...fake.claim }, { user_id: '', data: null, updated_at: '', ...next })) return { data: null, status: 400, error: { ...S1_GUARD_ERROR } }
             fake.beforeWrite?.()
-            fake.writes.push(row); fake.remote = row.data; fake.revision = row.updated_at.replace('Z', '+00:00')
-            return { data: { user_id: row.user_id }, error: null }
+            fake.writes.push(row); fake.remote = row.data; fake.revision = row.updated_at.replace('Z', '+00:00'); fake.claim = next
+            return { data: { data: fake.remote, updated_at: fake.revision, ...fake.claim }, error: null }
           },
         }
         return query
       },
-      insert: async (row: { user_id: string; data: AppData; updated_at: string }) => {
-        if (fake.remote) return { error: new Error('Account already exists') }
-        fake.beforeWrite?.()
-        fake.writes.push(row); fake.remote = row.data; fake.revision = row.updated_at.replace('Z', '+00:00')
-        return { error: null }
+      insert: (row: { user_id: string; data: AppData; updated_at: string; cloud_schema?: number; write_rev?: number }) => {
+        const query = {
+          select: () => query,
+          maybeSingle: async () => {
+            if (fake.remote) return { data: null, status: 409, error: { code: '23505', message: 'Account already exists' } }
+            const next = { cloud_schema: row.cloud_schema ?? null, write_rev: row.write_rev ?? null }
+            if (s1GuardRejects(undefined, { ...row, ...next })) return { data: null, status: 400, error: { ...S1_GUARD_ERROR } }
+            fake.beforeWrite?.()
+            fake.writes.push(row); fake.remote = row.data; fake.revision = row.updated_at.replace('Z', '+00:00'); fake.claim = next
+            return { data: { data: fake.remote, updated_at: fake.revision, ...fake.claim }, error: null }
+          },
+        }
+        return query
       },
     }),
   },
   isSupabaseConfigured: true,
-}))
+  }
+})
 vi.mock('./workspaceRecoveryRepository', () => ({
   workspaceRecoveryRepository: () => ({
     save: async (snapshot: WorkspaceRecoverySnapshot) => {
@@ -90,6 +105,7 @@ beforeEach(async () => {
   fake.userId = `mutation-synthetic-${++sequence}`
   fake.remote = data('Reviewed cloud')
   fake.revision = '2026-09-12T00:00:00.000Z'
+  fake.claim = { cloud_schema: null, write_rev: null }
   fake.writes.length = 0; fake.snapshots.clear(); fake.listeners.clear()
   fake.failArchive = false; fake.corruptRead = false; fake.transientWrites = 0
   fake.afterArchive = undefined; fake.beforeWrite = undefined
@@ -348,4 +364,79 @@ it('retries the already approved device choice after a temporary server rejectio
   expect(fake.remote?.profile.name).toBe('Device with newer work')
   expect(getAccountConflict(fake.userId!)).toBeUndefined()
   expect(isAccountSyncReady(fake.userId!)).toBe(true)
+})
+
+it('S1 first-login insert and explicit replacement stamp schema 1 and retain remote opaque sections', async () => {
+  const id = fake.userId!
+  fake.remote = null
+  const first = await prepareAccountMutation(id, null)
+  try { await first.write(data('First account')); expect(fake.writes[0]).toMatchObject({ data: { _schema: 1 }, cloud_schema: 1, write_rev: 1 }) } finally { first.dispose() }
+  fake.remote = { ...fake.remote!, futureCollection: { intact: ['synthetic'] } } as AppData
+  const replacement = await prepareAccountMutation(id, fake.remote)
+  try {
+    await replacement.write(data('Known section replacement'))
+    expect(fake.writes[1]).toMatchObject({ data: { _schema: 1, futureCollection: { intact: ['synthetic'] } }, cloud_schema: 1, write_rev: 2 })
+    await replacement.activate(data('Known section replacement'))
+    expect(snapshotData()).toMatchObject({ _schema: 1, futureCollection: { intact: ['synthetic'] } })
+  } finally { replacement.dispose() }
+})
+
+it('S1 first-login future remote is preserved and cannot be replaced', async () => {
+  const id = fake.userId!
+  fake.remote = { ...data('Future workspace'), _schema: 2, futureCollection: { untouched: true } } as AppData
+  await expect(prepareAccountMutation(id, fake.remote)).rejects.toThrow('newer version')
+  expect(getAccountConflict(id)).toMatchObject({ schemaBlocked: true, remote: fake.remote, saved: true })
+  expect(fake.writes).toHaveLength(0)
+})
+
+it('S1 older restore keeps current unknown sections and normalizes the marker', async () => {
+  activateAccountWorkspace(fake.userId!, { ...data('Current'), _schema: 1, futureCollection: { retained: true } } as AppData)
+  await restoreWorkspaceFromSource(async () => data('Legacy restore'))
+  expect(snapshotData()).toMatchObject({ _schema: 1, futureCollection: { retained: true }, profile: { name: 'Legacy restore' } })
+})
+
+
+it('S1 reviewed device replacement retains cloud opaque sections in both copies and stamps the writer', async () => {
+  fake.remote = { ...fake.remote!, _schema: 1, futureCollection: { retained: true } } as AppData
+  const review = await pausedReview()
+  try {
+    await review.apply('device')
+    // Unclaimed versioned row: the reviewed device choice is its conditional first claim.
+    expect(fake.writes[0]).toMatchObject({ data: { _schema: 1, futureCollection: { retained: true } }, cloud_schema: 1, write_rev: 1 })
+    expect(snapshotData()).toMatchObject({ _schema: 1, futureCollection: { retained: true } })
+    expect(isAccountSyncReady(fake.userId!)).toBe(true)
+  } finally { review.dispose() }
+})
+
+it('S1 explicit replacement of a claimed row is compare-and-set on write_rev', async () => {
+  const id = fake.userId!
+  fake.remote = { ...data('Claimed cloud'), _schema: 1 } as AppData; fake.claim = { cloud_schema: 1, write_rev: 41 }
+  const replacement = await prepareAccountMutation(id, fake.remote)
+  try {
+    await replacement.write(data('Replacement'))
+    expect(fake.writes[0]).toMatchObject({ cloud_schema: 1, write_rev: 42 })
+    expect(fake.claim).toEqual({ cloud_schema: 1, write_rev: 42 })
+  } finally { replacement.dispose() }
+})
+
+it('S1 a reviewed replacement never overwrites a row another current app saved after the review', async () => {
+  const id = fake.userId!
+  fake.remote = { ...data('Claimed cloud'), _schema: 1 } as AppData; fake.claim = { cloud_schema: 1, write_rev: 3 }
+  const replacement = await prepareAccountMutation(id, fake.remote)
+  try {
+    // Same timestamp, next counter: only write_rev can tell the revisions apart.
+    fake.claim = { cloud_schema: 1, write_rev: 4 }
+    await expect(replacement.write(data('Stale replacement'))).rejects.toThrow('changed before saving')
+    expect(fake.writes).toHaveLength(0)
+    expect(replacement.serverSaved).toBe(false)
+  } finally { replacement.dispose() }
+})
+
+it('S1 first-login never claims or replaces an unmarked Research (T4) cloud copy', async () => {
+  const id = fake.userId!
+  fake.remote = { ...data('T4 cloud'), researchMemberships: [{ id: 'm', experienceId: 'e', personId: 'p', createdAt: 1, updatedAt: 1 }] } as unknown as AppData
+  const before = structuredClone(fake.remote)
+  await expect(prepareAccountMutation(id, fake.remote)).rejects.toThrow('Research data')
+  expect(getAccountConflict(id)).toMatchObject({ schemaBlocked: true, remote: before, saved: true })
+  expect(fake.writes).toHaveLength(0); expect(fake.remote).toEqual(before); expect(fake.claim).toEqual({ cloud_schema: null, write_rev: null })
 })

@@ -1,3 +1,6 @@
+import { assertSupportedWorkspace, retainLocalSchemaBlock, localSchemaBlock, WorkspaceSchemaError } from '@/lib/workspaceSchema'
+import { activeStorageKey, activeWorkspaceOwner } from '@/lib/demoMode'
+import { getAccountSchemaMutationBlock } from './accountSchemaBlock'
 import { decodeWorkspaceStorage } from './workspaceStorageCodec'
 import { validateAppData } from '@/lib/validateAppData'
 import { CURRENT_STORE_VERSION, OLDEST_SUPPORTED_STORE_VERSION } from './workspaceVersion'
@@ -11,7 +14,8 @@ function validate(raw: string) {
   let parsed: unknown
   try { parsed = JSON.parse(raw) } catch { throw new Error('The saved workspace is not readable JSON. Its original bytes were kept.') }
   const version = (parsed as { version?: unknown })?.version
-  if (version !== undefined && (!Number.isSafeInteger(version) || (version as number) < OLDEST_SUPPORTED_STORE_VERSION || (version as number) > CURRENT_STORE_VERSION)) throw new Error('This workspace uses an unsupported or newer app version. Update Premed OS before opening it; the saved data was kept.')
+  if (version !== undefined && (!Number.isSafeInteger(version) || (version as number) < OLDEST_SUPPORTED_STORE_VERSION || (version as number) > CURRENT_STORE_VERSION)) throw new WorkspaceSchemaError('This workspace uses an unsupported or newer app version. Update Premed OS before opening it; the saved data was kept.')
+  assertSupportedWorkspace((parsed as { state?: unknown })?.state)
   if (validateAppData((parsed as { state?: unknown })?.state).length) throw new Error('The saved workspace has an invalid structure. Its original bytes were kept.')
 }
 export function workspacePointer(record: WorkspaceRecord) { return WORKSPACE_IDB_PREFIX + record.migrationId }
@@ -23,7 +27,7 @@ export function createWorkspacePersistence(repository: WorkspaceRepository, lega
   const listeners = new Set<() => void>()
   function status(key: string) { return states.get(key) ?? unloaded }
   function publish(key: string, value: PersistenceStatus) { states.set(key, value); listeners.forEach(fn => fn()) }
-  function failed(key: string, error: unknown) { publish(key, { phase: 'error', pending: 0, error: error instanceof Error ? error.message : 'Workspace storage failed. Keep this tab open and export your work.' }) }
+  function failed(key: string, error: unknown) { retainLocalSchemaBlock(key, error); publish(key, { phase: 'error', pending: 0, error: error instanceof Error ? error.message : 'Workspace storage failed. Keep this tab open and export your work.' }) }
   function pointer(record: WorkspaceRecord) {
     if (legacy.getItem(record.key) !== workspacePointer(record)) throw new WorkspaceConflictError('An older tab changed the saved workspace. Both copies were kept. Close other Premed OS tabs and review recovery before continuing.')
   }
@@ -140,6 +144,10 @@ export function enableWorkspacePersistence(repository = createWorkspaceRepositor
 let transactionOwner: symbol | undefined
 let internalMutation = false
 export function assertWorkspaceEditable() {
+  const owner = activeWorkspaceOwner()
+  const schemaBlock = owner.kind === 'account' ? getAccountSchemaMutationBlock(owner.userId) : undefined
+  const block = schemaBlock ?? localSchemaBlock(activeStorageKey())
+  if (block && !internalMutation) throw new Error(block)
   if (transactionOwner && !internalMutation) throw new Error('A notebook save is finishing. Wait for its saved confirmation before making another change.')
 }
 export function beginWorkspaceTransaction() {
