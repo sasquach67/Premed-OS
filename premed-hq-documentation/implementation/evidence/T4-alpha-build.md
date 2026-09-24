@@ -66,3 +66,22 @@ The browser was at 0.9 zoom, so viewport capability width 338 produced the measu
 - Confirm guest merge with synthetic Research records/notes; save a new log with Thoughts and one record in each working-rail collection, then reload from cloud and switch account away/back.
 - Exercise network-offline and rejected cloud write; device acknowledgment must remain distinct from sync status.
 - Claude reviews branch diff and this evidence. Planning owns the board and notification to Claude. Release requires a separate brief after compatibility passes.
+
+
+### Claude visual review follow-up — 2026-09-24
+
+Review: `docs/dev-workflow` revision `c2624f0137545612933ac447b90c59841d5911a5`, `goals/reviews/2026-09-24-claude-T4-build-review.md`. Claude accepted the build, variant B, and existing PageHeader; three visual corrections were requested before alpha.
+
+**Fix revision: `3f02a0ab53898afceae8ff573ad6cef86885aa87`.** Only `src/pages/research.css` changed: chips use `justify-self:start` and `white-space:nowrap`, the zero-hours width cap is removed, and the Research row chevron uses flex order to appear after the summary. Full visible wording remains “No hours recorded.” No shared component markup, handlers, selection behavior, data, schema, merge or sync changes.
+
+Fresh checks against the rebuilt local preview (signed out, synthetic Example Lab):
+
+- Desktop 1422 CSS px and mobile **375 CSS px**, **both light and dark**: populated chips remain 26.736px (`2 h` / `3 h`) or 35.339px (`1.5 h`), zero-hours chip 100.634px wide. These widths are identical across viewport/theme combinations. Chips are single-line: populated height 16.997px, zero-hours height 18.108px including its border.
+- Every measured chevron's left edge is right of its summary's right edge. Screenshot inspection confirmed the right-side placement and compact chip sizing.
+- Mobile document client/scroll width **375/375** in both themes; row width 322.448px. No horizontal overflow. Browser zoom compensation as documented above; viewport override reset.
+- Enter expanded the zero-hour row (`aria-expanded=true`); Space collapsed it (`false`). Existing button and accessible label are unchanged.
+- `npx vitest run src/pages/Research.test.tsx --maxWorkers=2`: **8/8 passed**, `/tmp/research-t4-visual-tests.log`.
+- Flag-on `npm run build`: **passed**, `/tmp/research-t4-visual-build.log` (existing bundle-size warning only). `git diff --check` clean. No new JS/TS was introduced, so no additional JS lint run was necessary.
+- Control audit remains **32 controls / 0 inert**. Earlier full-suite result **2,177 passing tests** remains historical evidence for the preceding implementation, not a newly repeated full-suite claim.
+
+Local preview updated at `http://127.0.0.1:53024/#/research`. This resolves review findings 1–3. Header acceptance supersedes the earlier pending decorative-header fidelity note. Authenticated alpha still awaits Andy's separate test account/environment; production remains blocked on S1 and separate release approval. No merge, push, deployment, production unlock, real-account writes, or promotion occurred.
