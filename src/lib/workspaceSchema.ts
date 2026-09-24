@@ -93,7 +93,7 @@ export function mergeRestoredWorkspace(current: AppData, incoming: AppData): App
 
 /** Server row metadata. `null` is an unclaimed (legacy) row: both columns NULL. */
 export type CloudClaim = { cloudSchema: number; writeRev: number }
-export function cloudClaim(row: { cloud_schema?: unknown; write_rev?: unknown }): CloudClaim | null {
+export function cloudClaim(row: Record<string, unknown>): CloudClaim | null {
   if (!Object.hasOwn(row, 'cloud_schema') || !Object.hasOwn(row, 'write_rev')) throw new CloudColumnsMissingError()
   const { cloud_schema: cloudSchema, write_rev: writeRev } = row
   if (cloudSchema === null && writeRev === null) return null
