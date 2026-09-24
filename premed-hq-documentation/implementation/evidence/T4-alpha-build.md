@@ -108,3 +108,16 @@ Andy's manual sequence (sign-in waits on hosted redirect verification):
 5. Verify existing real classes, notes, hours and files before editing. Andy may personally exercise normal Research capture (with/without hours and Thoughts), edit/search/filter, working-rail and People changes, reload and visible device/cloud status. Do not call these checks complete until actually observed. If unexpected data or sync conflict appears, stop. Machine-driven offline/rejection/destructive tests remain synthetic only.
 
 Status: manual real-account alpha is authorized with the required precautions, **but hosted redirect verification and all real-account/cloud alpha checks are still pending**. No live session/account writes or Auth changes were made. No runtime code changed in this preparation; preview remains at the reviewed visual build.
+
+
+### Hosted redirect verified by Planning — 2026-09-24
+
+**Current status update; supersedes the hosted allow-list blocker above.** Planning (task `01a07de1-ad82-7df0-aede-00af15f1b673`) reports a read-only observation in Andy's Arc browser of project `poichxqptuupzrkyewrq`, production main, Auth → URL Configuration:
+
+- Redirect URLs visibly includes **`http://127.0.0.1:53024/**`**, among six entries.
+- Site URL remains **`https://premedos.app/`**.
+- Andy reported adding the redirect. Planning made no configuration changes or sign-in action. This Research task records **Planning-observed hosted configuration**, not an independently repeated observation and not a successful authentication roundtrip.
+
+The hosted redirect observation blocker is resolved. Andy must still complete the real-account full ZIP backup to his Mac and close premedos.app on every device/tab before self sign-in. Neither precaution is yet confirmed complete. He can then sign into `http://127.0.0.1:53024/#/research` himself, requesting/opening the link in the same browser/profile. If prompted about synthetic Guest work, choose **“Use my account workspace and review this later.”** Keep recovery copies and Guest records separate; do not clear browser data.
+
+Actual login, real-account cloud reload, and manual alpha checks remain **unperformed/unverified**. No agent login, sign-in email, account writes, runtime change, new build, merge, push, deployment or production unlock. S1 and separate release approval still block production. The earlier synthetic test evidence is unchanged.
