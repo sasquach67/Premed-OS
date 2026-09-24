@@ -173,4 +173,38 @@ describe('MergePage exits', () => {
     const guestBlob = localStorage.getItem(GUEST_STORAGE_KEY)
     expect(guestBlob).not.toContain('cloud-101')
   })
+  it('carries the chosen Research parent, all children, people and unassigned notes into outgoing and reloaded account data', async () => {
+    const guest = createPersonalInitialData()
+    guest.experiences = [{ id: 'lab', category: 'research', org: 'Lab', role: 'Assistant', description: '', status: 'active', tags: [], order: 0, research: { current: true, lastPiContact: '2026-09-24' } }]
+    const envelope = { createdAt: 1, updatedAt: 1, archived: false, order: 0 }
+    guest.experienceHourEntries = [{ ...envelope, id: 'zero-log', experienceId: 'lab', kind: 'logged', date: '2026-09-24', hours: 0, note: 'Observed', thoughts: 'Ask why' }]
+    guest.researchUpcomingItems = [{ ...envelope, id: 'upcoming', experienceId: 'lab', date: '2026-09-25', title: 'Meeting' }]
+    guest.researchReminders = [{ ...envelope, id: 'reminder', experienceId: 'lab', text: 'Read protocol' }]
+    guest.researchTimelineNotes = [{ ...envelope, id: 'timeline', experienceId: 'lab', date: '2026-09-24', text: 'Started' }]
+    guest.persons = [{ ...envelope, id: 'person', name: 'Mentor', bio: 'Studies cells' }]
+    guest.researchMemberships = [{ ...envelope, id: 'membership', experienceId: 'lab', personId: 'person', roleInLab: 'Mentor', projectText: 'Cell biology' }]
+    guest.notePages = [{ id: 'legacy', title: 'Earlier', body: 'Original long note', pillar: 'research', updatedAt: 1, order: 0 }, { id: 'clinical-note', title: 'Other pillar', body: 'Unchanged', pillar: 'clinical', updatedAt: 1, order: 1 }]
+    useStore.getState().replaceAll(guest)
+    await render()
+    // Select exactly experiences and notes; coursework/profile retain their account choices.
+    for (const label of ['Experience hours and the people behind them', 'Notes from every pillar']) {
+      const heading = [...container.querySelectorAll('span.fn')].find((element) => element.textContent === label)
+      const area = heading?.parentElement?.parentElement
+      expect(area).toBeTruthy()
+      await act(async () => { button(area!, "Use this device's")?.click() })
+    }
+    await act(async () => { button(container, 'Apply and continue')?.click() })
+    await vi.waitFor(async () => { await act(async () => {}); expect(upserted).toHaveLength(1) }, { interval: 1 })
+    const uploaded = upserted[0].data as AppData
+    for (const field of ['experiences', 'experienceHourEntries', 'researchUpcomingItems', 'researchReminders', 'researchTimelineNotes', 'researchMemberships', 'persons', 'notePages'] as const) {
+      expect(uploaded[field]).toEqual(guest[field])
+      expect(snapshotData()[field]).toEqual(guest[field])
+    }
+    expect(uploaded.courses.map((course) => course.id)).toEqual(['cloud-101'])
+    expect(uploaded.notePages.find((note) => note.id === 'legacy')).not.toHaveProperty('experienceId')
+    expect(activeWorkspaceOwner()).toEqual({ kind: 'account', userId: USER_ID })
+    activateGuestWorkspace()
+    expect(snapshotData().experienceHourEntries).toEqual(guest.experienceHourEntries)
+  })
+
 })
