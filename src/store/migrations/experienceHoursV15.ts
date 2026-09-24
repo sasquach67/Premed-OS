@@ -15,7 +15,8 @@ export function migrateExperienceHoursV15(data: AppData): AppData {
     const hours = Number(experience.hours)
     if (!Number.isFinite(hours) || hours <= 0) continue
     const id = `experience-hour-legacy-${experience.id}`
-    if (ids.has(id)) continue
+    if (ids.has(id) || experience.estimatedHoursDeletedAt != null
+      || data.trash?.some((row) => row.collection === 'experienceHourEntries' && row.record.id === id)) continue
     const migrated: ExperienceHourEntry = {
       id,
       experienceId: experience.id,

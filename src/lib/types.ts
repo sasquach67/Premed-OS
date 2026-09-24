@@ -48,6 +48,7 @@ export interface Person extends EntityEnvelope {
   organizationId?: ID
   tags?: string[]
   notes?: string
+  bio?: string
 }
 
 export type OrganizationType = 'hospital' | 'clinic' | 'lab' | 'nonprofit' | 'club' | 'school' | 'other'
@@ -189,6 +190,16 @@ export interface ExperienceEntry {
   contact?: string
   status: 'active' | 'completed' | 'planned'
   fileUrl?: string        // Drive link
+  research?: {
+    department?: string
+    institution?: string
+    researchType?: string
+    since?: string
+    lastPiContact?: string
+    current?: boolean
+  }
+  /** Durable v15 estimate deletion evidence, retained after Trash purge. */
+  estimatedHoursDeletedAt?: number
   tags: string[]
   order: number
 }
@@ -204,6 +215,37 @@ export interface ExperienceHourEntry extends EntityEnvelope {
   periodStart?: string
   periodEnd?: string
   note?: string
+  thoughts?: string
+  /** Parent deletion provenance; retained when its Trash record is purged. */
+  parentDeletedAt?: number
+}
+
+export interface ResearchChild extends EntityEnvelope {
+  experienceId: ID
+  /** Preserves historical relationships through parent deletion and purge. */
+  parentDeletedAt?: number
+}
+
+export interface ResearchUpcomingItem extends ResearchChild {
+  date: string
+  title: string
+  note?: string
+}
+
+export interface ResearchReminder extends ResearchChild {
+  text: string
+}
+
+export interface ResearchTimelineNote extends ResearchChild {
+  date: string
+  text: string
+}
+
+export interface ResearchMembership extends ResearchChild {
+  personId: ID
+  roleInLab?: string
+  projectText?: string
+  personDeletedAt?: number
 }
 
 export type AcademicTagColor =
@@ -2200,6 +2242,10 @@ export interface AppData {
   requirements: CollectionRecord<RequirementItem>[]
   experiences: CollectionRecord<ExperienceEntry>[]
   experienceHourEntries: CollectionRecord<ExperienceHourEntry>[]
+  researchUpcomingItems: ResearchUpcomingItem[]
+  researchReminders: ResearchReminder[]
+  researchTimelineNotes: ResearchTimelineNote[]
+  researchMemberships: ResearchMembership[]
   persons: CollectionRecord<Person>[]
   organizations: CollectionRecord<Organization>[]
   tasks: CollectionRecord<TaskItem>[]
@@ -2230,3 +2276,4 @@ export type CollectionKey =
   | 'stories' | 'secondaries' | 'interviewQs' | 'schools' | 'resources'
   | 'tips' | 'focusTargets' | 'quarterlyGoals' | 'advisingQs'
   | 'captures' | 'notePages' | 'orgs'
+  | 'researchUpcomingItems' | 'researchReminders' | 'researchTimelineNotes' | 'researchMemberships'

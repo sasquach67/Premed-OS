@@ -69,6 +69,8 @@ import { migrateGeneratedUnitResourcesV39 } from '@/store/migrations/generatedUn
 import { migrateProfileMinorsV40 } from '@/store/migrations/profileMinorsV40'
 import { migrateNotebookV49 } from '@/store/migrations/notebookV49'
 import { migrateNotebookV50 } from '@/store/migrations/notebookV50'
+import { migrateResearchV51 } from '@/store/migrations/researchV51'
+import { recordResearchDeletion, reconcileResearchRelations } from '@/lib/researchLifecycle'
 import { migrateJournalIntentV48 } from '@/store/migrations/journalIntentV48'
 import { migrateLectureWorkspaceV41 } from '@/store/migrations/lectureWorkspaceV41'
 import { migrateStaffEmailV42 } from '@/store/migrations/staffEmailV42'
@@ -159,6 +161,7 @@ export type Store = AppData & Actions
 const DATA_KEYS: (keyof AppData)[] = [
   'profile', 'goals', 'courses', 'requirements', 'experiences', 'experienceHourEntries', 'tasks', 'timelineMilestones',
   'persons', 'organizations',
+  'researchUpcomingItems', 'researchReminders', 'researchTimelineNotes', 'researchMemberships',
   'academics', 'letters', 'stories', 'secondaries', 'interviewQs', 'mcat', 'schools',
   'resources', 'tips', 'focusTargets', 'quarterlyGoals', 'advisingQs',
   'captures', 'notePages', 'orgs', 'notes', 'settings', 'meta',
@@ -611,7 +614,7 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateClassIdentityV46(migrated)
   migrated = migrateCurrentClassIdentityV47(migrated)
   migrated = migrateJournalIntentV48(migrated)
-  return migrateNotebookV50(migrateNotebookV49(migrated))
+  return migrateResearchV51(migrateNotebookV50(migrateNotebookV49(migrated)))
 }
 
 /**
@@ -744,6 +747,7 @@ export const useStore = create<Store>()(
           const deletedAt = Date.now()
           const [record] = arr.splice(i, 1)
           if (key === 'courses') syncCurrentTermWorkspaces(s as unknown as AppData)
+          recordResearchDeletion(s as unknown as AppData, key, record, deletedAt)
           record.deletedAt = deletedAt
           s.trash.unshift({ id: uid(), collection: key, deletedAt, record: { ...plain(record), deletedAt } })
           pushRecovery(s as unknown as AppData, key, 'Moved record to trash', [before], [record])
@@ -760,6 +764,7 @@ export const useStore = create<Store>()(
           const after = before.map((row) => ({ ...row, deletedAt }))
           ;(s as unknown as Record<string, unknown>)[key] = arr.filter((row) => !wanted.has(row.id))
           for (const record of after) {
+            recordResearchDeletion(s as unknown as AppData, key, record, deletedAt)
             s.trash.unshift({ id: uid(), collection: key, deletedAt, record: { ...plain(record), deletedAt } })
           }
           if (key === 'courses') syncCurrentTermWorkspaces(s as unknown as AppData)
@@ -780,6 +785,7 @@ export const useStore = create<Store>()(
             arr.push(record)
           }
           s.trash = s.trash.filter((entry) => !wanted.has(entry.id))
+          reconcileResearchRelations(s as unknown as AppData)
           if (restoring.some((entry) => entry.collection === 'courses')) syncCurrentTermWorkspaces(s as unknown as AppData)
         }),
 
@@ -841,6 +847,7 @@ export const useStore = create<Store>()(
             delete restored.deletedAt
             target.push(restored)
           }
+          reconcileResearchRelations(s as unknown as AppData)
           target.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
           if (entry.collection === 'courses') syncCurrentTermWorkspaces(s as unknown as AppData)
           s.meta.recoveryStack = s.meta.recoveryStack.filter((candidate) => candidate.id !== id)
