@@ -1,3 +1,7 @@
+# Folder delivery default — beta21
+
+Across Review, Assessment and Assignment, including new notebooks, updates and repairs, the standard output is one folder named after the notebook with exactly one final JSON and all required images. Local authorized assistants create it in the actual Downloads directory and preserve existing files. Hosted chats that cannot deliver folders disclose that limitation and provide the complete file set and intended paths. ZIP requires an explicit student request. This changes AI delivery instructions and app guidance; existing ZIP import and app-owned baseline/backup exports remain compatible. Regenerate the three app prompts through the canonical builder and verified asset sync.
+
 # Direct teaching default — beta20
 
 External notebooks use course material to establish relevance and expectations, then use established subject knowledge to explain and resolve ordinary errors. EC-TEACH-DIRECTLY through EC-KNOWLEDGE-PRECEDENCE in canonical 20 govern all three goals and both new/update modes. Teach the answer first; keep material correction notes secondary. Preserve exact evidence, genuine uncertainty, missing essential stimuli and explicit source-only or assignment constraints. These rules supersede conflicting source-mode wording in the included legacy methodology. Existing notebooks change only through an explicit content update.

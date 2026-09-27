@@ -139,6 +139,8 @@ it('keeps the update action visible and the complete guide available throughout 
   expect(guide.querySelectorAll('.en-update-guide-steps>li')).toHaveLength(8)
   expect(guide.querySelectorAll(':scope>details')).toHaveLength(5)
   expect(guide.textContent).toContain('A whole revised notes file is fine')
+  expect(guide.textContent).toContain('complete titled folder containing the revised JSON')
+  expect(guide.textContent).toContain('Ask for a ZIP only if you want one.')
   expect(guide.textContent).toContain('No separate draft approval is required.')
   expect(guide.textContent).toContain('A readable draft is optional.')
   expect(guide.textContent).not.toContain('Create the JSON')

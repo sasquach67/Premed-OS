@@ -190,7 +190,7 @@ it('distinguishes minimum materials, optional lecture sources, partial exam scop
   expect([...steps.querySelectorAll('h2')].map(node => node.textContent)).toEqual(['Paste the prompt', 'Add your materials', 'Download your notebook'])
   expect(steps.textContent).toContain('Open your AI chat and paste the full prompt.')
   expect(steps.textContent).toContain('Include the review sheet or assessment scope.')
-  expect(steps.textContent).toContain('notebook ZIP with its JSON and images')
+  expect(steps.textContent).toContain('notebook folder with its JSON and images')
   expect(steps.textContent).not.toContain('Checkpoint')
   const help = container.querySelector<HTMLDetailsElement>('.en-handoff-help')!
   expect(help.open).toBe(false)

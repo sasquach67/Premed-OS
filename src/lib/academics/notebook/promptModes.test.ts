@@ -35,15 +35,18 @@ it('rejects unknown modes and changed trusted headings instead of rewriting arbi
   try { PROMPT_TEMPLATES.review = 'Unexpected heading\n\n' + previous; expect(() => composeNotebookPrompt('review', values, 'update')).toThrow('canonical heading') } finally { PROMPT_TEMPLATES.review = previous }
 })
 
-it.each(['review', 'assessment', 'assignment'] as const)('delivers a complete ZIP by default in new and update %s prompts without adding a draft approval gate', goal => {
+it.each(['review', 'assessment', 'assignment'] as const)('delivers a complete folder by default in new and update %s prompts without adding a draft approval gate', goal => {
   for (const mode of ['new', 'update'] as const) {
     const prompt = composeNotebookPrompt(goal, values, mode)
-    expect(prompt).toContain('Default to one real downloadable ZIP')
-    expect(prompt).toContain('A text-only notebook still uses a ZIP containing its JSON')
-    expect(prompt).toContain('Ordinary AI-created ZIPs need no app-owned bindings.json')
+    expect(prompt).toContain('Default to one real folder named after the notebook')
+    expect(prompt).toContain('Create a ZIP only when the student explicitly requests one')
+    expect(prompt).toContain('creates the complete titled folder there')
+    expect(prompt).not.toMatch(/ZIP-first|Default to one real downloadable ZIP|deliver one complete titled ZIP|one titled ZIP under EC-DELIVERY/)
+    expect(prompt).toContain('A text-only notebook still uses a folder containing its JSON')
+    expect(prompt).toContain('Ordinary AI-created folders need no app-owned bindings.json')
     expect(prompt).toContain('complete downloadable file set together')
-    expect(prompt).toContain('Never claim a ZIP/folder exists without creating it')
+    expect(prompt).toContain('Never claim a folder or ZIP exists without creating it')
     expect(prompt).toContain('no additional default confirmation is required')
-    expect(prompt).toContain('complete corrected ZIP with the notebook JSON and all required actual image files')
+    expect(prompt).toContain('complete corrected folder with the notebook JSON and all required actual image files')
   }
 })
