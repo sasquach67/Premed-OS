@@ -30,7 +30,7 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 async function click(label: string) { const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.trim() === label)!; expect(button, label).toBeTruthy(); await act(async () => button.click()); if (label === 'Validate and preview' || label.startsWith('Save editable')) await vi.waitFor(async () => { await act(async () => {}); expect(container.textContent).not.toContain('Checking package...'); expect(container.querySelector('input[type="file"]')?.hasAttribute('disabled')).not.toBe(true) }, { timeout: 10000, interval: 20 }) }
 async function fill(label: string, text: string) { const el = [...container.querySelectorAll<HTMLLabelElement>('label')].find(l => l.childNodes[0]?.textContent?.trim() === label)?.querySelector('textarea,input') as HTMLTextAreaElement | HTMLInputElement; expect(el, label).toBeTruthy(); await act(async () => { Object.getOwnPropertyDescriptor(el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, 'value')!.set!.call(el, text); el.dispatchEvent(new Event('input', { bubbles: true })) }) }
 async function renderImport() { await act(async () => root.render(<NotebookImportPanel courseId={course.id} onImported={imported} />)) }
-async function choose(goal: 'review' | 'assessment' | 'assignment') { await act(async () => container.querySelector<HTMLInputElement>(`input[value="${goal}"]`)!.click()) }
+async function choose(goal: 'review' | 'assessment') { await act(async () => container.querySelector<HTMLInputElement>(`input[value="${goal}"]`)!.click()) }
 async function openFallback() { const detail = container.querySelector<HTMLDetailsElement>('.en-prompt-detail')!; if (!detail.open) await act(async () => detail.querySelector('summary')!.click()); return detail }
 async function renderWorkflow(id = course.id) { await act(async () => root.render(<ExternalNotebookWorkflow key={id} courseId={id} onImported={imported} />)) }
 function nextButton() { return [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Next')! }
@@ -111,7 +111,8 @@ it('preserves every objective text editor and omits practice rows from editing a
 })
 it('journal new route requires a goal and has noninteractive progress without a direct-import bypass', async () => {
   await act(async () => root.render(<MemoryRouter initialEntries={['/academics/classes/test-notebook/journal/new']}><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<JournalEntryPage />} /></Routes></MemoryRouter>))
-  expect(container.textContent).toContain('Choose your goal'); expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(3)
+  expect(container.textContent).toContain('Choose your goal'); expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(2)
+  expect(container.querySelector('input[value="assignment"]')).toBeNull()
   expect(container.querySelectorAll('input[type="radio"]:checked')).toHaveLength(0)
   expect(container.textContent).not.toContain('Already have JSON? Import directly')
   const progress = container.querySelector('[aria-label="Notebook workflow progress"]')!
@@ -164,7 +165,7 @@ it('shows the complete accessible preview without granting destination approval'
 it('distinguishes minimum materials, optional lecture sources, partial exam scope and external checkpoints', async () => {
   await act(async () => root.render(<ExternalNotebookWorkflow courseId={course.id} onImported={imported} />))
   await choose('review')
-  expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(3)
+  expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(2)
   expect(container.textContent).toContain('Review a lecture or lesson.')
   const guide = container.querySelector('.en-goal-guide')!
   expect(guide.querySelectorAll('.en-output-list li')).toHaveLength(4)
@@ -351,7 +352,7 @@ it('keeps inputs on Back and invalidates copy and JSON readiness when the goal c
   expect(nextButton().disabled).toBe(false)
   await click('Back to goal')
   expect(container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Additional instructions for your AI"]')!.value).toBe('Keep my exact request.')
-  await choose('assignment'); await click('Next')
+  await choose('review'); await click('Next')
   expect(nextButton().disabled).toBe(true)
   const saved = JSON.parse(sessionStorage.getItem(notebookWorkflowDraftKey(course.id))!)
   expect(saved.confirmedPrompt).toBeNull(); expect(saved.jsonReady).toBe(false)
@@ -404,6 +405,15 @@ it('does not trust a stored later stage without the current prompt acknowledgmen
   expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt')
   expect(nextButton().disabled).toBe(true)
   expect(container.querySelector('[aria-label="Import external notebook"]')).toBeNull()
+})
+it('drops a restored assignment goal from a new-notebook draft but keeps it when updating an existing notebook', () => {
+  const defaults = { preferences: '', term: course.term }, updateId = `${course.id}:update:local:entry`
+  for (const storageId of [course.id, updateId]) {
+    const draft = loadNotebookWorkflowDraft(course.id, defaults, storageId).draft
+    sessionStorage.setItem(notebookWorkflowDraftKey(storageId), JSON.stringify({ ...draft, goal: 'assignment', goalAccepted: true }))
+  }
+  expect(loadNotebookWorkflowDraft(course.id, defaults).draft).toMatchObject({ goal: null, goalAccepted: false })
+  expect(loadNotebookWorkflowDraft(course.id, defaults, updateId).draft).toMatchObject({ goal: 'assignment', goalAccepted: true })
 })
 it('reports session-storage failure and removes an older draft rather than restoring stale completion later', () => {
   const draft = loadNotebookWorkflowDraft(course.id, { preferences: '', term: course.term }).draft

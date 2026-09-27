@@ -32,6 +32,12 @@ async function render(entry?: LectureRecord) {
 async function click(text: string) { const button = [...document.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent?.trim() === text || item.getAttribute('aria-label') === text)!; expect(button, text).toBeTruthy(); await act(async () => button.click()) }
 async function fill(element: HTMLTextAreaElement, value: string) { await act(async () => { Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(element, value); element.dispatchEvent(new Event('input', { bubbles: true })) }) }
 function goalChoice(label: string) { const choice = [...container.querySelectorAll<HTMLElement>('[role="radio"]')].find(item => item.getAttribute('aria-label') === label)!; expect(choice, label).toBeTruthy(); return choice }
+/** Assignment is no longer offered for new notebooks; an existing assignment notebook keeps it. */
+function assignmentNotebook(): LectureRecord {
+  const entry: LectureRecord = { id: 'assignment', courseId: 'course', title: 'Essay notebook', inputPath: 'materials', processingState: 'ready', workspaceState: 'draft', notebookGoal: 'assignment', notebookRequest: '', selectedSourceFileIds: [], createdAt: 1, updatedAt: 1, order: 0 }
+  useStore.getState().update(data => { data.academics.classCenter.lectures.push(entry) })
+  return entry
+}
 async function selectSource() { await click('Continue to materials'); await click('Choose saved class materials'); await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click()) }
 
 it('asks the goal before showing any material intake, without creating an empty draft', async () => {
@@ -40,8 +46,8 @@ it('asks the goal before showing any material intake, without creating an empty 
   expect(container.textContent).not.toContain('Upload or paste')
   expect(container.textContent).not.toContain('Choose saved class materials')
   expect(container.textContent).toContain('Prepare for an assessment')
-  expect(container.textContent).toContain('Work on an assignment')
-  expect(container.querySelectorAll('[role="radio"]')).toHaveLength(3)
+  expect(container.textContent).not.toContain('Work on an assignment')
+  expect(container.querySelectorAll('[role="radio"]')).toHaveLength(2)
   expect(goalChoice('Review class material').getAttribute('aria-checked')).toBe('true')
   expect(goalChoice('Prepare for an assessment').getAttribute('aria-checked')).toBe('false')
   expect(container.querySelectorAll('textarea')).toHaveLength(1)
@@ -62,7 +68,7 @@ it('keeps the default Guide + Mastery path and passes the complete selected tran
   expect(built).toHaveBeenCalledWith(saved.id)
 })
 it('uses a specific writing request for one tailored page and does not generate a Mastery Map', async () => {
-  await render(); await click('Work on an assignment'); await fill(container.querySelector('textarea')!, 'Help outline an argument for my paper.'); await selectSource()
+  await render(assignmentNotebook()); expect(goalChoice('Work on an assignment').getAttribute('aria-checked')).toBe('true'); await fill(container.querySelector('textarea')!, 'Help outline an argument for my paper.'); await selectSource()
   await click('Review and create')
   expect(container.textContent).toContain('Work on an assignment')
   await click('Create entry')
@@ -71,7 +77,7 @@ it('uses a specific writing request for one tailored page and does not generate 
   expect(useStore.getState().academics.classCenter.lectures[0]).toMatchObject({ notebookOutput: 'tailored-page', notebookGoal: 'assignment', notebookGeneratedGoal: 'assignment', notebookGeneratedRequest: 'Help outline an argument for my paper.' })
 })
 it('lets students revise their request at review and return to the default', async () => {
-  await render(); await click('Work on an assignment'); await fill(container.querySelector('textarea')!, 'Compare the readings.'); await selectSource(); await click('Review and create'); await click('Back to materials'); await click('Back to goal'); await click('Review class material'); await fill(container.querySelector('textarea')!, ''); await click('Continue to materials'); await click('Review and create')
+  await render(); await click('Prepare for an assessment'); await fill(container.querySelector('textarea')!, 'Compare the readings.'); await selectSource(); await click('Review and create'); await click('Back to materials'); await click('Back to goal'); await click('Review class material'); await fill(container.querySelector('textarea')!, ''); await click('Continue to materials'); await click('Review and create')
   expect(container.textContent).toContain('Study Guide + Mastery Map')
   await click('Create entry'); expect(generateUnitMasteryOutline).toHaveBeenCalledTimes(1)
 })
@@ -111,7 +117,7 @@ it('selects and highlights goals without ever replacing additional instructions'
   await render()
   const instructions = 'Make it easier to digest, add examples, and prioritize the lecture over the textbook.'
   await fill(container.querySelector('textarea')!, instructions)
-  for (const label of ['Prepare for an assessment', 'Work on an assignment', 'Review class material']) {
+  for (const label of ['Prepare for an assessment', 'Review class material']) {
     await click(label)
     expect(goalChoice(label).getAttribute('aria-checked')).toBe('true')
     expect(container.querySelectorAll('[role="radio"][aria-checked="true"]')).toHaveLength(1)
@@ -149,10 +155,10 @@ it('uses assessment selection with no additional instructions and preserves it w
   expect(useStore.getState().academics.classCenter.lectures[0]).toMatchObject({ notebookOutput: 'tailored-page', notebookGeneratedGoal: 'assessment', notebookGeneratedRequest: '' })
 })
 it('preserves the generated goal and instructions if a tailored rebuild fails', async () => {
-  const old: LectureRecord = { id: 'old', courseId: 'course', title: 'Previous page', inputPath: 'materials', processingState: 'ready', workspaceState: 'complete', notebookGoal: 'review', notebookRequest: '', notebookGeneratedGoal: 'review', notebookGeneratedRequest: 'Original explanation', notebookOutput: 'study-package', selectedSourceFileIds: ['source'], studyGuide: structuredClone(guide.artifact) as unknown as LectureRecord['studyGuide'], createdAt: 1, updatedAt: 1, order: 0 }
+  const old: LectureRecord = { id: 'old', courseId: 'course', title: 'Previous page', inputPath: 'materials', processingState: 'ready', workspaceState: 'complete', notebookGoal: 'assignment', notebookRequest: '', notebookGeneratedGoal: 'review', notebookGeneratedRequest: 'Original explanation', notebookOutput: 'study-package', selectedSourceFileIds: ['source'], studyGuide: structuredClone(guide.artifact) as unknown as LectureRecord['studyGuide'], createdAt: 1, updatedAt: 1, order: 0 }
   useStore.getState().update(data => { data.academics.classCenter.lectures.push(old) })
   vi.mocked(generateStudyGuide).mockResolvedValue({ ok: false, message: 'Generation failed' })
-  await render(old); await click('Work on an assignment'); await fill(container.querySelector('textarea')!, 'Help with an essay.'); await click('Continue to materials'); await click('Review and create'); await click('Create entry')
+  await render(old); await fill(container.querySelector('textarea')!, 'Help with an essay.'); await click('Continue to materials'); await click('Review and create'); await click('Create entry')
   expect(container.querySelector('[role="alert"]')?.textContent).toBe('Generation failed')
   expect(useStore.getState().academics.classCenter.lectures[0]).toMatchObject({ notebookGoal: 'assignment', notebookRequest: 'Help with an essay.', notebookGeneratedGoal: 'review', notebookGeneratedRequest: 'Original explanation', notebookOutput: 'study-package', studyGuide: old.studyGuide })
   expect(generateUnitMasteryOutline).not.toHaveBeenCalled()
@@ -193,8 +199,7 @@ it('shows only applicable progress for an assessment', async () => {
 })
 
 it('restores goal-specific upload help and preserves the draft across step navigation', async () => {
-  await render()
-  await click('Work on an assignment')
+  await render(assignmentNotebook())
   await fill(container.querySelector('textarea')!, 'Help me compare two arguments.')
   await selectSource()
   expect(container.textContent).toContain('Not sure what to upload?')

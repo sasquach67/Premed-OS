@@ -189,7 +189,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision, basel
     {step === 'goal' && <div className="en-stage-content">
       {revision ? <p className="en-selected-goal">Updating {revision.baseline.entries[0].title} / {goalInfo.title}</p> : <fieldset>
         <legend className="sr-only">Notebook goal</legend>
-        <div className="en-goals">{(Object.keys(GOALS) as NotebookGoal[]).map(g => { const GoalIcon = GOAL_PRESENTATION[g].icon; return <label key={g} className="en-goal-card">
+        <div className="en-goals">{(Object.keys(GOALS) as NotebookGoal[]).filter(g => g !== 'assignment' || goal === 'assignment').map(g => { const GoalIcon = GOAL_PRESENTATION[g].icon; return <label key={g} className="en-goal-card">
           <input aria-label={GOALS[g].title} type="radio" name={`external-goal-${courseId}`} value={g} checked={goal === g} onChange={() => chooseGoal(g)} />
           <span className="en-goal-symbol"><GoalIcon aria-hidden="true" /></span>
           <span className="en-goal-copy"><b>{GOALS[g].title}</b><span>{GOALS[g].description}</span></span>
