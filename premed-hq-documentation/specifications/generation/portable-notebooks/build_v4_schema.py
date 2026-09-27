@@ -43,6 +43,12 @@ def build():
     variants.append(block('worked-example',{'problem':text,'problemEvidence':obj(ev),'solutionEvidence':obj(ev),'stimulusBlockIds':arr(ident,64),'steps':arr(solutionstep,8,1),'answer':text,'check':nullable(text)}))
     point=obj({'id':ident,'label':short,'detail':detail,'value':num,**ev})
     variants.append(block('continuum',{'orderingBasis':note,'axis':copy.deepcopy(axis),'points':arr(point,12,2)}))
+    # Show-don't-tell: a compact worked representation (aligned strands, crosses,
+    # calculations) with a one-line reading and optional Show-more explanation.
+    line={'type':'string','minLength':1,'maxLength':120}
+    summary={'type':'string','minLength':1,'maxLength':200}
+    more=nullable({'type':'string','minLength':1,'maxLength':1200})
+    variants.append(block('illustration',{'lines':arr(line,12,1),'summary':summary,'more':more}))
     return schema
 
 if __name__=='__main__':

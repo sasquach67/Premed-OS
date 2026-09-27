@@ -7,7 +7,7 @@ import { beforeAll, expect, it, vi } from 'vitest'
 import { createInitialDataForMode } from '@/store/store'
 import { acceptNotebookUpdate, exportNotebook, importNotebook, inspectNotebookUpdate, restoreNotebookVersion, saveNotebookEdits } from './import'
 import { canonical, prepareNotebook } from './package'
-import { compareNotebooks, createNotebookUpdateSession, notebookContentKey, notebookPracticePolicy, notebookStateKey, revisionInput } from './revision'
+import { compareNotebooks, readableDifference, createNotebookUpdateSession, notebookContentKey, notebookPracticePolicy, notebookStateKey, revisionInput } from './revision'
 import { correctedFixture, revisionFixture, withNewTopic } from './revision.test-fixtures'
 import type { NotebookPackage } from './types'
 beforeAll(() => vi.stubGlobal('crypto', webcrypto))
@@ -183,4 +183,11 @@ it('recognizes accepted multi-entry proposal provenance after manual edits, late
   expect(importNotebook(s.center, s.course, proposal)).toEqual(ids)
   expect(n.current.entries[0].revision).toBe(1); expect(n.history).toHaveLength(4)
   expect(s.center.lectures).toHaveLength(2)
+})
+
+it('labels illustration fields in the readable update comparison', () => {
+  const text = readableDifference({ lines: ["5'-AUG-3'"], summary: 'Start codon.', more: null })
+  expect(text).toContain("Illustration lines: 1. 5'-AUG-3'")
+  expect(text).toContain('Summary: Start codon.')
+  expect(text).toContain('Show-more explanation: Not supplied')
 })

@@ -2051,6 +2051,98 @@
             "axis",
             "points"
           ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200000
+            },
+            "provenance": {
+              "enum": [
+                "source",
+                "clarification",
+                "background",
+                "generated-practice",
+                "student-work"
+              ]
+            },
+            "sourceIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200000
+              },
+              "minItems": 0,
+              "maxItems": 5000
+            },
+            "excerptIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200000
+              },
+              "minItems": 0,
+              "maxItems": 5000
+            },
+            "assetIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "minItems": 0,
+              "maxItems": 64
+            },
+            "type": {
+              "const": "illustration"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "lines": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "minItems": 1,
+              "maxItems": 12
+            },
+            "summary": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "more": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1,
+              "maxLength": 1200
+            }
+          },
+          "required": [
+            "id",
+            "provenance",
+            "sourceIds",
+            "excerptIds",
+            "type",
+            "title",
+            "lines",
+            "summary",
+            "more"
+          ]
         }
       ]
     },

@@ -180,3 +180,40 @@ it('preserves null while clearing caption, time label, and worked check through 
   await show(reloaded)
   expect(container.querySelector('.en-block-worked-example')!.textContent).not.toContain('Worked example check')
 })
+
+function illustrated(more: string | null) {
+  const pkg = fresh()
+  pkg.entries[0].sections.push({ id: 'fixture-illustration', title: 'Illustration', purpose: 'study-guide', blocks: [{
+    id: 'aligned-strands', type: 'illustration', title: 'Reading a template strand', provenance: 'source', sourceIds: ['ref'], excerptIds: ['ref-1'],
+    lines: ["template  3'-TAC-GGA-5'", "mRNA      5'-AUG-CCU-3'"], summary: 'The mRNA matches the coding strand, with U for T.', more,
+  }] } as unknown as NotebookPackage['entries'][number]['sections'][number])
+  return parsePortableNotebook(JSON.stringify(pkg))
+}
+
+it('shows the worked lines and one-line summary first, with the explanation behind Show more', async () => {
+  await show(illustrated('RNA polymerase reads the template 3′ to 5′.'))
+  const block = container.querySelector('.en-block-illustration')!
+  expect(block.querySelector('pre')!.textContent).toBe("template  3'-TAC-GGA-5'\nmRNA      5'-AUG-CCU-3'")
+  expect(block.querySelector('.nbr-illustration-summary')!.textContent).toBe('The mRNA matches the coding strand, with U for T.')
+  const toggle = [...block.querySelectorAll('button')].find(button => button.textContent === 'Show more')!
+  const more = document.getElementById(toggle.getAttribute('aria-controls')!)!
+  expect(toggle.getAttribute('aria-expanded')).toBe('false'); expect(more.hidden).toBe(true)
+  await act(async () => toggle.click())
+  expect(toggle.getAttribute('aria-expanded')).toBe('true'); expect(toggle.textContent).toBe('Show less'); expect(more.hidden).toBe(false)
+  expect(more.textContent).toBe('RNA polymerase reads the template 3′ to 5′.')
+  expect(visualCss).toMatch(/\.nbr-illustration-lines \{[^}]*overflow-x: auto/)
+})
+
+it('omits Show more when an illustration has no further explanation, and clears it to null in the editor', async () => {
+  await show(illustrated(null))
+  expect(container.querySelector('.en-block-illustration')!.textContent).not.toContain('Show more')
+  await act(async () => root.unmount()); root = createRoot(container)
+  const pkg = illustrated('Extra.'), changes: { path: (string | number)[]; value: string | null }[] = []
+  await show(pkg, (path, value) => { changes.push({ path, value }) })
+  const field = [...container.querySelectorAll<HTMLTextAreaElement>('.en-block-illustration textarea')].find(item => /Show-more/.test(item.closest('label')!.textContent ?? ''))!
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(field, '')
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  expect(changes.at(-1)).toEqual({ path: expect.arrayContaining(['more']), value: null })
+})
