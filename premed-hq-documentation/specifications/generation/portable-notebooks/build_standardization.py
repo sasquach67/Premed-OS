@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse, collections, hashlib, json, re, shutil
 from build_revision_cases import examples, render, TUESDAY, THURSDAY, REMINDER
 
-BUILD='notebook-instructions-beta-18'
+from build_prompts import PROMPT_BUILD as BUILD
 NOTICE='Authored synthetic regression packet; no actual coursework, provider/context trial or student rating.'
 SAFEGUARDS={
  'course-target-scope':['EC-TARGET','EC-BASELINE','EC-SCOPE'],
