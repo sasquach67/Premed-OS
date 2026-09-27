@@ -60,18 +60,25 @@ key.
 
 **Correction.** An earlier audit note said the only genuine exam items were
 three questions quoted in the Exam 1 reflection. **That was wrong.** A full,
-keyed Exam 1 (35 items, tagged by learning objective) is in Andy's materials.
-The questions phase uses it.
+keyed Exam 1 (35 items, tagged by learning objective) is in Andy's materials,
+and Codex's audit handoff already included it. The questions phase uses it for
+intended grading and reasoning patterns, not as factual authority.
 
-**Proposed prompt rules** (exact wording needs Andy's approval before shipping):
-1. Separate instructor questions from student responses by structure, never by formatting.
-2. Treat student responses as attempts, never as keys.
-3. Answer each question independently, then compare it with keys and attempts.
-4. Name each answer's basis.
-5. Surface where the student's attempt differs, in one line.
-6. Investigate discrepancies before settling them.
-7. No unsourced claims about typical errors.
-8. Search the materials for keys; a key outranks model reasoning.
+**Existing rules.** Andy's earlier direction was codified on Sep 15 (`cba1eb1`) as `EC-RESOLVE`, `EC-KNOWLEDGE-PROVENANCE`, `EC-SOURCEQUESTIONS` and `EC-EXAMPLES`. Andy's version: use established knowledge and an educated guess when the sources are silent, and check an authoritative reference when a point is uncertain. The Lesson 2 notebook was generated under those rules.
+- **Followed:** it filled gaps from knowledge, and it disclosed that knowledge use once.
+- **Not followed:** it never recorded its corrections to the student's attempts, and it never labelled each answer's key status.
+
+So the failures are **compliance failures of approved rules, not missing rules**. Also, `provenance: "source"` on practice marks the question's origin by design, so that label is not itself the fault.
+
+**Proposed prompt changes** (they extend the existing EC rules; exact wording needs Andy's approval):
+1. Separate instructor questions from inserted student responses by structure, never by formatting. Render and read handwritten pages.
+2. Student responses are attempts, never an answer basis.
+3. Answer independently first, then compare with keys, instructor explanations and the attempt.
+4. Open each practice rationale with its key status: "Pearson key", "Instructor key", "Instructor's explanation", "Worked from the sources", or "Best-supported answer; no key". No schema change.
+5. Record where the student's attempt differed, once, in one line.
+6. A key establishes intended grading, not factual authority. Flag a key-vs-science conflict once.
+7. Keep the educated guess: when sources and keys are silent, give the best-supported answer, and check an authoritative reference when uncertain.
+8. Frame common-error remarks as teaching tips, not observed frequencies.
 9. Import validation and self-review are structural checks, never verification.
 
 ## Question provenance (for the questions phase)
