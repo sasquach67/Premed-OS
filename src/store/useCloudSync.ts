@@ -144,6 +144,7 @@ export function useCloudSync() {
         const equal = localText === remoteText
         const cleanLocal = baseline && local && await matchesSyncBaseline(local, baseline.digest)
         const remoteUnchanged = baseline && remote.updatedAt === baseline.updatedAt && await matchesSyncBaseline(remote.data, baseline.digest)
+        fresh(); assertSyncLease(lease)
         if (local && !equal && !cleanLocal && !remoteUnchanged) {
           await preserveAccountConflict(u.id, before, remote.data, token)
           fresh()
