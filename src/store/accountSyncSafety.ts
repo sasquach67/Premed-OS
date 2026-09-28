@@ -161,8 +161,19 @@ async function archiveAccountCopies(id: string, localRaw: string | null, remote:
       const workspaceKey = `${accountStorageKey(id)}:sync-conflict:${side}`
       const sha256 = await syncDigest(JSON.stringify(stored))
       assertSyncSession(token)
-      const snapshot = { format: 'premed-os-workspace-recovery' as const, version: 1 as const, workspaceKey, id: crypto.randomUUID(), createdAt: Date.now(), stored, sha256 }
-      await repository.save(snapshot)
+      // Exact-content identity avoids storing identical full copies on retries.
+      // Existing immutable history is retained; no recovery copy is pruned.
+      const snapshot = { format: 'premed-os-workspace-recovery' as const, version: 1 as const, workspaceKey, id: `content-${sha256}`, createdAt: Date.now(), stored, sha256 }
+      const existing = await repository.read(workspaceKey, snapshot.id)
+      assertSyncSession(token)
+      if (!existing) {
+        try { await repository.save(snapshot) }
+        catch (error) {
+          // Another coordinator may have archived these exact bytes meanwhile.
+          // Only a verified copy below can make that race safe to continue.
+          if (!await repository.read(workspaceKey, snapshot.id)) throw error
+        }
+      }
       const read = await repository.read(workspaceKey, snapshot.id)
       if (!read || read.workspaceKey !== workspaceKey || read.id !== snapshot.id || read.stored !== stored || read.sha256 !== sha256) throw new Error('Recovery copy verification failed.')
       assertSyncSession(token)

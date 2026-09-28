@@ -29,7 +29,7 @@ import { claimedRow } from '@/test/fakeDashboards'
 import legacyFixture from './__fixtures__/s1-d60f682-baseline.json'
 import { accountStorageKey, activeWorkspaceOwner } from '@/lib/demoMode'
 import { activateAccountWorkspace, activateGuestWorkspace, snapshotData, useStore } from './store'
-import { getAccountConflict, allowAccountSync, pauseAccountSync, observeSyncSession, readSyncBaseline, recordSyncBaseline, isAccountSyncReady, getAccountRecoveryNotice, ADDITIVE_RECOVERY_NOTICE } from './accountSyncSafety'
+import { getAccountConflict, allowAccountSync, pauseAccountSync, observeSyncSession, readSyncBaseline, recordSyncBaseline, isAccountSyncReady, getAccountRecoveryNotice, ADDITIVE_RECOVERY_NOTICE, preserveAccountReplacement } from './accountSyncSafety'
 import { useCloudSync } from './useCloudSync'
 import { AccountCloudContext, useAccountCloud } from './AccountCloudContext'
 import { visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
@@ -905,7 +905,8 @@ it('S2 resumes matching authored work despite per-device housekeeping without ch
   remote.meta.lastOpenedAt=123;remote.meta.recentRoutes=['/research'];remote.settings.calendar.lastSyncedAt=456
   wire.rows.set(id,claimed(remote,newer));await render();await session(id)
   expect(getAccountConflict(id)).toBeUndefined();expect(isAccountSyncReady(id)).toBe(true)
-  expect(wire.snapshots.size).toBeGreaterThanOrEqual(2)
+  expect(wire.snapshots.size).toBe(0)
+  expect(getAccountRecoveryNotice(id)).toBe('Your saved work matches. Sync resumed.')
   expect(snapshotData().notes.example).toBe('same work')
 })
 it('S2 still identifies additions when shared record content matches but housekeeping differs', async () => {
@@ -915,4 +916,32 @@ it('S2 still identifies additions when shared record content matches but houseke
   wire.rows.set(id,claimed(base,older));await render();await session(id)
   expect(getAccountConflict(id)).toBeUndefined();expect(getAccountRecoveryNotice(id)).toBe(ADDITIVE_RECOVERY_NOTICE)
   expect(wire.snapshots.size).toBeGreaterThanOrEqual(2)
+})
+
+it.each(['housekeeping', 'local edit'] as const)('S2 keeps 20 routine %s reconciliations silent without new recovery copies', async kind => {
+  for (let i = 0; i < 20; i++) {
+    const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
+    await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
+    useStore.getState().update(d => { if (kind === 'housekeeping') d.meta.recentRoutes = ['/research']; else d.notes.example = 'Local work' })
+    wire.rows.set(id, claimed(base, older)); await render(); await session(id)
+    expect(isAccountSyncReady(id)).toBe(true); expect(getAccountConflict(id)).toBeUndefined()
+    expect(getAccountRecoveryNotice(id)).toBeUndefined(); expect(wire.snapshots.size).toBe(0)
+    await session(null)
+  }
+})
+it('S2 reuses verified exact-byte recovery on repeat attempts without deleting history', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('device')); const raw = localStorage.getItem(accountStorageKey(id))!
+  const token = observeSyncSession(id), remote = workspace('cloud')
+  for (let i = 0; i < 20; i++) expect(await preserveAccountReplacement(id, raw, remote, token)).toBe(true)
+  expect(wire.snapshots.size).toBe(2)
+})
+
+it('S2 refuses a corrupt content-addressed recovery copy instead of trusting its key', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('device')); const raw = localStorage.getItem(accountStorageKey(id))!
+  const token = observeSyncSession(id), remote = workspace('cloud')
+  expect(await preserveAccountReplacement(id, raw, remote, token)).toBe(true)
+  const stored = wire.snapshots.values().next().value as { stored: string }
+  stored.stored = 'corrupt'
+  expect(await preserveAccountReplacement(id, raw, remote, token)).toBe(false)
+  expect(isAccountSyncReady(id)).toBe(false)
 })

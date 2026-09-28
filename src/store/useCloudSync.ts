@@ -160,7 +160,8 @@ export function useCloudSync() {
           setStatus('error')
           return
         }
-        if (local && (housekeepingOnly || (!equal && (cleanLocal || remoteUnchanged)))) {
+        const localDeletion = remoteUnchanged && !!changes?.cloudOnly.length
+        if (local && !equal && (cleanLocal || additiveWinner === 'device' || localDeletion)) {
           if (!await preserveAccountReplacement(u.id, before!, remote.data, token)) { setStatus('error'); return }
         }
         fresh(); assertSyncLease(lease)
@@ -183,8 +184,7 @@ export function useCloudSync() {
         allowAccountSync(lease)
         lastSig.current = remoteText
         if (additiveWinner) recordAccountRecoveryNotice(u.id, ADDITIVE_RECOVERY_NOTICE)
-        else if (!equal && (cleanLocal || remoteUnchanged)) recordAccountRecoveryNotice(u.id, 'Your latest changes were kept. Sync resumed; the other copy is saved under Settings → Local data.')
-        else if (housekeepingOnly) recordAccountRecoveryNotice(u.id, 'Your saved work matches. Sync resumed; the other copy is saved under Settings → Local data.')
+        else if (housekeepingOnly && !cleanLocal && !remoteUnchanged) recordAccountRecoveryNotice(u.id, 'Your saved work matches. Sync resumed.')
         setStatus('synced'); setProgress(''); setLastSyncAt(Date.parse(remote.updatedAt))
       } catch (cause) {
         try { assertSyncSession(token) } catch { return }

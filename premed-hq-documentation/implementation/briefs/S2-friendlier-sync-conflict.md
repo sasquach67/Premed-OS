@@ -91,3 +91,9 @@ Current checks: **302 files / 2,325 tests pass** in a clean full run; build pass
 ### Approved deletion correction
 
 Verified Andy's actual selection in the Claude planning conversation: **"Delete it quietly (Recommended)"**, as recorded at docs/dev-workflow `e02283f`. One-sided changes now fast-forward when the other copy is proven unchanged against the baseline, including known record/note deletions. Both copies are verified in recovery before either direction resumes. Both-changed deletions and opaque-section omissions still require review. The S2-only header waiver is recorded above; the check remains unchanged. New focused regressions and final acceptance follow this correction.
+
+### Recovery frequency review follow-up
+
+Claude's final review identified unnecessary full snapshots/notices on housekeeping equality and ordinary dirty-local reconciliation. Those now stay silent with no new archive when no authored copy is replaced. A housekeeping mismatch that previously caused review gets only a matching-work notice. Additive choices, cloud adoption, and proven local deletions still preserve verified recovery before replacing meaningful work. Repeated exact-byte recovery requests use a content-derived identity, read back and verified; they do not add identical copies. Twenty routine-load and twenty repeated-recovery regressions cover this.
+
+Suggested pruning to the newest three copies is **not implemented**: it would permanently discard distinct historical recovery copies under a brief that says "Never lose the loser." Existing recovery history remains intact. A retention policy for distinct meaningful historical versions is a separate product/data-retention decision; it is not necessary to remove the newly introduced routine-load duplication. No existing copies are deleted by this patch.
