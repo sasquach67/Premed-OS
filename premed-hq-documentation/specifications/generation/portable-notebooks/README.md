@@ -1,3 +1,7 @@
+# Course exam profile and mock exams — beta23
+
+Assessment prompts now include EC-EXAM-PROFILE and EC-MOCK-EXAM in new and update mode. The approved wording is in canonical workflow 20. Beta22 teaching rules and the package schema are unchanged.
+
 # Show, don't tell — beta22
 
 Andy's Sep 27 audit found study guides that explain in long paragraphs what a worked example would show, narrate their sources, and never correct the student's own answers. EC-SHOW-DONT-TELL, EC-PERTINENT-ONLY, EC-STUDENT-WORK, EC-VERIFY-ANSWERS and EC-ILLUSTRATION in canonical 20 fix this for all three goals and both modes: lead with an `illustration` (worked lines, a one-line summary, optional Show more), keep provenance in JSON rather than text, treat student work as attempts and correct it in one line, and verify answers independently (a key shows intended grading, not truth). The v4 `illustration` block is additive; version 4 and draft-4 are unchanged so existing notebooks still update. Beta21's folder delivery is unchanged.

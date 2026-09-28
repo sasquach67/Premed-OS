@@ -1,8 +1,8 @@
 {
   "instructionsVersion": "notebook-workflows-draft-4",
-  "promptBuild": "notebook-instructions-beta-22",
-  "canonicalHeadAtBuild": "1b9bab5e1a2ed174ce104c04174cbbfb8647dd2a",
-  "canonicalRootAtBuild": "/Users/andyquach/Documents/premed-os-notebook",
+  "promptBuild": "notebook-instructions-beta-23",
+  "canonicalHeadAtBuild": "60235a53c2e1865592b39271901cc4696d1111bc",
+  "canonicalRootAtBuild": "/Users/andyquach/.codex/worktrees/assessment-exam-profile/premed-os",
   "sources": {
     "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
       "sha256": "67dc7c5ce49da9d97a7dcf8c521bc4711983a358d8c36f45575e8b41d4ad1e83",
@@ -28,9 +28,9 @@
       }
     },
     "premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md": {
-      "sha256": "808fe92354b0e4e2225ae1d0f4535fde37f0ca2987321ea161dc76269b5d4687",
+      "sha256": "0469876d29ce8faf3bb65ae2bd5064ac0fb9b255b5b06b99d91e9339343e3a4b",
       "sections": {
-        "full": "808fe92354b0e4e2225ae1d0f4535fde37f0ca2987321ea161dc76269b5d4687"
+        "full": "0469876d29ce8faf3bb65ae2bd5064ac0fb9b255b5b06b99d91e9339343e3a4b"
       }
     },
     "premed-hq-documentation/specifications/generation/03-study-guide-v1.md": {
@@ -90,7 +90,7 @@
     "premed-hq-documentation/specifications/generation/portable-notebooks/FIXTURE-CORRECTIONS.md": "11d749acb5140fd1a743a9fe0e93231b89c3a858ecb4e1e1fa55696c5e0e5621",
     "premed-hq-documentation/specifications/generation/portable-notebooks/METHODOLOGY-AUDIT.md": "21b823e2cc304b8d0681da9f9f8c324e39be77cb963b0bc1cbd4f0d514b3c265",
     "premed-hq-documentation/specifications/generation/portable-notebooks/ORDINARY-CHAT-MATERIALS.md": "b36020e6361a7a3885294e42dfa137ab7a2ef22958fecdc6181e65de7e03df56",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "9cdd647b9aeb4dd416466ac85f089a7b6b1c28458741d67ca46a0274121bcba4"
+    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "549b4f3a53aa342d26ca74c4a9bcd027e184adbdaf85c4350ca694922e8c1a1c"
   },
   "testAssets": {
     "premed-hq-documentation/specifications/generation/portable-notebooks/cross-provider-assets/question-new-detail.png": "03f9199ec4dff474e7cb2df62c119c04140cedf432a38ca79ea3d0b030087846",
@@ -101,7 +101,7 @@
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_conversation_examples.py": "bc0c36b25bb604056a5e2342957887aed7be86987271e86fe2cee6aeb667cb81",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_feasibility_case.py": "61ea50db75f7901d6b7f733d02db1204ea7e8dde7a8165b9715e1d5dff88efcc",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_fixtures.py": "31d262db6aafa9788e30e20be0f2b3d4af3c80eba634990984d25a2d623ff169",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "49ee491f899a4db7b329922eae9fdc218f6076d1daef272d2c486d565ee7c39c",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "18e9fda4a92d1629e2c3ba9d1959ddca272edd458e5210eec80f108290add115",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_revision_cases.py": "1532a4cec4e1333b3c63c877cc34d8913e0c034a0c220aa090d020532ce201a1",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_schema.py": "86cee42747b37f0dc735f28e21a1aa586f77015454b6fcfd593eb8178684085d",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_standardization.py": "65276c633874b1821335d2774f8543bae3a1293312582cd6ffb25fbdbd368c56",
@@ -117,40 +117,40 @@
   },
   "outputs": {
     "copy-prompt-review.md": {
-      "sha256": "008f5646dfc41c2137d182b8c9d8b54d974487d264485357a70d0a334b870767",
-      "bytes": 164125,
-      "words": 19083,
+      "sha256": "5642701354887f76a31ddcfeb19c87115efacf2d642992a8a704292ee0111703",
+      "bytes": 165964,
+      "words": 19372,
       "componentBytes": {
         "request": 5997,
         "commonLearningRules": 16010,
         "goalLearningRules": 28201,
-        "externalWorkflow": 82163,
+        "externalWorkflow": 84002,
         "schema": 30644,
         "assembly": 1110
       }
     },
     "copy-prompt-assessment.md": {
-      "sha256": "648cb393031ec4e20488045a9f4e3fb0509d334a04e62022103a3883b5a37971",
-      "bytes": 151987,
-      "words": 17015,
+      "sha256": "ff6110ff87340e529a7fe7250a35a7a0127b9d9cd19519b8821e9aa16000d665",
+      "bytes": 153826,
+      "words": 17304,
       "componentBytes": {
         "request": 6005,
         "commonLearningRules": 16010,
         "goalLearningRules": 16047,
-        "externalWorkflow": 82163,
+        "externalWorkflow": 84002,
         "schema": 30644,
         "assembly": 1118
       }
     },
     "copy-prompt-assignment.md": {
-      "sha256": "023aa611a5a73dcd8551827eb530ff91f8d4b50544b4f1378138d134ddcea398",
-      "bytes": 144330,
-      "words": 15978,
+      "sha256": "fb8cc2442ffb8e402869a6025c2a920c28fd8663eb209e87e14d976ff8ee5dd2",
+      "bytes": 146169,
+      "words": 16267,
       "componentBytes": {
         "request": 6005,
         "commonLearningRules": 16010,
         "goalLearningRules": 8390,
-        "externalWorkflow": 82163,
+        "externalWorkflow": 84002,
         "schema": 30644,
         "assembly": 1118
       }
@@ -179,5 +179,6 @@
   "teachingKnowledgeIncrement": "Beta20 teaches directly with established knowledge, resolves ordinary source errors, adds original examples and keeps material corrections secondary; exact evidence, scope and explicit source-only constraints remain intact.",
   "deliveryIncrement": "Beta21 standardizes titled notebook folders across all goals, new/update modes and repair. Local assistants create the folder in Downloads; hosted providers disclose unavailable folder delivery and return the complete file set. ZIP is explicit opt-in only.",
   "showDontTellIncrement": "Beta22 leads with illustration blocks (worked lines, one-line summary, optional Show more), keeps provenance and key status out of the text, treats student work as attempts and corrects it in one line, and verifies answers independently; v4/draft-4 unchanged apart from the additive illustration block.",
+  "examProfileIncrement": "Beta23 adds the Assessment-only EC-EXAM-PROFILE and EC-MOCK-EXAM rules in new and update modes: original practice follows the supplied course exam profile, and the first reply asks once for mock exam, topic drills or both. Beta22 rules, schema, request fields and three goal templates are unchanged.",
   "qualityStatus": "Draft; structural checks and invented fixtures cannot establish learning quality or count as manual course trials."
 }

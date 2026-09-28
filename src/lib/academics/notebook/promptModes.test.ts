@@ -2,6 +2,18 @@ import { expect, it } from 'vitest'
 import { composeNotebookPrompt, PROMPT_KEYS, PROMPT_TEMPLATES, type PromptValues } from './prompt'
 import modes from './prompts/prompt-modes.json'
 const values = Object.fromEntries(PROMPT_KEYS.map(key => [key, key === 'REVISION_INPUT' ? '{"mode":"update-existing-entry"}' : key === 'USER_REQUEST' ? '# Create my Premed OS notebook: review\n\nKeep {{COURSE_CODE}} and $& literal.' : null])) as PromptValues
+it.each(['new', 'update'] as const)('includes the Assessment exam profile and practice-style choice in %s mode', mode => {
+  const prompt = composeNotebookPrompt('assessment', values, mode)
+  const assessmentRules = prompt.split('## Assessment exam profile and practice style\n')[1]?.split('## Portable representation')[0]
+  expect(assessmentRules).toContain('These rules apply only to the **Assessment** goal, in new and update mode.')
+  expect(assessmentRules).toContain('`EC-EXAM-PROFILE`')
+  expect(assessmentRules).toContain('`EC-MOCK-EXAM`')
+  expect(assessmentRules).toContain('Never copy, lightly reword or renumber an exam item.')
+  expect(assessmentRules).toContain('Without real exams, use the course blueprint and say so.')
+  expect(assessmentRules).toContain('Unless the request already says, ask once, in the first reply')
+  expect(assessmentRules).toContain('If the student doesn\'t choose, use (a).')
+  expect(prompt).toContain('Prompt build: notebook-instructions-beta-23.')
+})
 it.each(['review', 'assessment', 'assignment'] as const)('composes canonical new/update %s mode before inserting inputs once', goal => {
   const original = composeNotebookPrompt(goal, values)
   const update = composeNotebookPrompt(goal, values, 'update')
