@@ -212,6 +212,22 @@ if (OLD) {
     expect(await readRow(account.id)).toEqual(before)
   }, 60_000)
 
+  it('current (schema 1): refuses a schema-2 Research row written by the combined app; nothing is written', async () => {
+    let row!: Record<string, unknown>
+    const account = await openAccount(async (id, email) => {
+      const doc = { ...await seedWorkspace(email, 'bare'), _schema: 2, researchMemberships: [{ id: 'm', experienceId: 'lab', personId: 'p', createdAt: 1, updatedAt: 1, archived: false, order: 0 }] }
+      row = { user_id: id, data: doc, updated_at: '2026-01-01T00:00:00+00:00', cloud_schema: 2, write_rev: 1 }
+      await admin('/rest/v1/dashboards', 'POST', row)
+    })
+    const before = await readRow(account.id)
+    expect(account.safety.getAccountConflict(account.id)).toMatchObject({ schemaBlocked: true })
+    expect(account.store.snapshotData()).not.toHaveProperty('researchMemberships')
+    expect(await act(async () => account.cloud.pushNow())).toBe(false)
+    expect(requests.filter(r => r.method !== 'GET')).toEqual([])
+    expect(await readRow(account.id)).toEqual(before)
+    expect(account.cloud.protection).not.toBe('on')
+  }, 60_000)
+
   it('current: refuses to claim or hydrate an unmarked Research (T4) row', async () => {
     const account = await openAccount(async (id, email) => {
       const doc = await seedWorkspace(email, 'bare')

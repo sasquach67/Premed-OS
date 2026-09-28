@@ -26,6 +26,8 @@ const builds = {
   'old-deployed': { rev: 'd60f682946e264ea2d680c2c8e2914a86899c114', port: 55441 },
   'old-stale': { rev: '5c7a3e4f1c28c3b36392815c0a63fe3c963cb225', port: 55442 },
   current: { rev: 'HEAD', port: 55443 },
+  // S1 + Research (T4) integration at cloud schema 2 (codex/s1-research-r3), separate fixture.
+  combined: { rev: 'a054d407038a9f5af2b0eff9969754d4196831dc', port: 55444 },
 }
 const cleanEnv = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(SUPABASE|PG|DATABASE|VITE_|AWS_|S3_)/.test(k)))
 const sleep = ms => new Promise(r => setTimeout(r, ms))
@@ -99,6 +101,30 @@ function workspace(email, as) {
   if (as === 'text') doc.notes.s1Odd = '\uD800 lone surrogate'
   doc.futureCollection = [{ id: 'opaque', nested: { kept: [1, 2, 3] } }]
   return doc
+}
+
+const envelope = { createdAt: 1, updatedAt: 1, archived: false, order: 0 }
+/** Unmarked synthetic T4 workspace: all four Research collections and every nested field. */
+function t4Workspace(email, as) {
+  const doc = workspace(email, as)
+  doc.experiences = [{ id: 'lab-a', category: 'research', org: 'Synthetic lab', role: 'Observer', description: 'Synthetic', hours: 60, estimatedHoursDeletedAt: 42, tags: [], status: 'active', order: 0, research: { department: 'Biology', institution: 'Synthetic institution', researchType: 'Cell biology', since: '2026-09-01', lastPiContact: '2026-09-23', current: true } }]
+  doc.persons = [{ ...envelope, id: 'person-a', name: 'Synthetic mentor', bio: 'Nested T4 bio' }]
+  doc.researchUpcomingItems = [{ ...envelope, id: 'upcoming', experienceId: 'lab-a', date: '2026-09-25', title: 'Training', note: 'Synthetic' }]
+  doc.researchReminders = [{ ...envelope, id: 'reminder', experienceId: 'lab-a', text: 'Ask before handling samples' }]
+  doc.researchTimelineNotes = [{ ...envelope, id: 'timeline', experienceId: 'lab-a', date: '2026-09-24', text: 'Synthetic timeline' }]
+  doc.researchMemberships = [{ ...envelope, id: 'membership', experienceId: 'lab-a', personId: 'person-a', roleInLab: 'Mentor', projectText: 'Synthetic project' }]
+  doc.experienceHourEntries = [
+    { ...envelope, id: 'logged', experienceId: 'lab-a', kind: 'logged', date: '2026-09-24', hours: 1.5, note: 'Synthetic', thoughts: 'Why did the signal change?' },
+    { ...envelope, id: 'orphan', experienceId: 'lab-gone', kind: 'logged', date: '2026-09-20', hours: 1, parentDeletedAt: 99 },
+  ]
+  return doc
+}
+const T4_KEYS = ['researchUpcomingItems', 'researchReminders', 'researchTimelineNotes', 'researchMemberships']
+function t4Kept(doc, seed) {
+  const lab = doc.experiences?.find(x => x.id === 'lab-a'), hours = doc.experienceHourEntries ?? []
+  return T4_KEYS.every(k => same(doc[k], seed[k])) && same(lab?.research, seed.experiences[0].research) && lab?.estimatedHoursDeletedAt === 42
+    && hours.find(x => x.id === 'logged')?.thoughts === 'Why did the signal change?' && hours.find(x => x.id === 'orphan')?.parentDeletedAt === 99
+    && doc.persons?.find(x => x.id === 'person-a')?.bio === 'Nested T4 bio'
 }
 
 // ---------- one scenario ----------
@@ -232,6 +258,24 @@ const insert = (id, data, extra = {}) => admin('/rest/v1/dashboards', 'POST', { 
 // JSONB does not keep object key order; compare structure, not serialization.
 const same = (a, b) => isDeepStrictEqual(a, b)
 function matrix(build) {
+  if (build === 'combined') return ['bare', 'gzip', 'text'].map(encoding => ({
+    name: `t4-legacy-${encoding}`, shot: encoding === 'bare',
+    seed: (id, email) => insert(id, encode(t4Workspace(email, encoding), encoding)),
+    afterLoad: async ({ check, page, before, writes, readRow }) => {
+      const claimed = await readRow()
+      check('opening claimed the unmarked T4 row once, at cloud schema 2', writes().length === 1 && claimed.cloud_schema === 2 && claimed.write_rev === 1, writes())
+      check('the claim is exactly the reviewed document plus _schema: 2', same(decode(claimed.data), { ...decode(before.data), _schema: 2 }))
+      check(`claim keeps the stored encoding (${encoding})`, encodingOf(claimed.data) === encoding)
+      check('Settings shows "Cloud protection: on"', /Cloud protection: on/.test(page))
+    },
+    verify: ({ check, before, after, out }) => {
+      const doc = decode(after.data)
+      check('the save succeeded: schema 2, write_rev 2', out.editWrites.some(w => w.status === 200) && after.cloud_schema === 2 && after.write_rev === 2, out.editWrites)
+      check('edit saved', doc.settings.theme === 'dark' && doc._schema === 2)
+      check('every T4 collection and nested field kept exactly', t4Kept(doc, decode(before.data)))
+      check(`stored encoding stays ${encoding}`, encodingOf(after.data) === encoding)
+    },
+  }))
   const old = build !== 'current', list = []
   for (const encoding of ['bare', 'gzip', 'text']) {
     list.push({
@@ -288,6 +332,15 @@ function matrix(build) {
         check('blocked before hydration with the newer-version message', /needs a newer version of Premed OS/.test(page))
         check('no write of any kind', out.loadWrites.length === 0)
         check('protection not shown as on', !/Cloud protection: on/.test(page))
+        check('cloud row unchanged', same(after, before))
+      },
+    })
+    list.push({
+      name: 'schema2-t4-row', edit: false,
+      seed: (id, email) => insert(id, { ...t4Workspace(email, 'bare'), _schema: 2 }, { cloud_schema: 2, write_rev: 1 }),
+      verify: ({ check, page, before, after, out }) => {
+        check('schema-1 app blocks a schema-2 Research row', /needs a newer version of Premed OS/.test(page))
+        check('no write of any kind', out.loadWrites.length === 0)
         check('cloud row unchanged', same(after, before))
       },
     })

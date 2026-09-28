@@ -1,6 +1,8 @@
 // Runs scripts/s1/client.test.template inside an exact-revision fixture against the
 // disposable local stack. Usage:
-//   S1_LOCAL_CONFIRMED=yes node scripts/s1/hooks.mjs old-deployed|old-stale|current [missing-columns]
+//   S1_LOCAL_CONFIRMED=yes node scripts/s1/hooks.mjs old-deployed|old-stale|current|combined [missing-columns]
+// `combined` is the S1 + Research (schema 2) integration revision, in its own fixture
+// with its own template (combined.test.template).
 // Fixtures are `git archive` snapshots (committed code only) under the ignored
 // scripts/s1/.runtime/, sharing this checkout's node_modules. No .env is copied.
 import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
@@ -9,8 +11,8 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const [fixture, extra] = process.argv.slice(2)
-const revisions = { 'old-deployed': 'd60f682946e264ea2d680c2c8e2914a86899c114', 'old-stale': '5c7a3e4f1c28c3b36392815c0a63fe3c963cb225', current: 'HEAD' }
-if (!Object.hasOwn(revisions, fixture)) throw new Error('Use old-deployed|old-stale|current')
+const revisions = { 'old-deployed': 'd60f682946e264ea2d680c2c8e2914a86899c114', 'old-stale': '5c7a3e4f1c28c3b36392815c0a63fe3c963cb225', current: 'HEAD', combined: 'a054d407038a9f5af2b0eff9969754d4196831dc' }
+if (!Object.hasOwn(revisions, fixture)) throw new Error('Use old-deployed|old-stale|current|combined')
 if (process.env.S1_LOCAL_CONFIRMED !== 'yes') throw new Error('Set S1_LOCAL_CONFIRMED=yes only for the disposable local stack')
 const revision = execFileSync('git', ['rev-parse', revisions[fixture]], { cwd: root, encoding: 'utf8' }).trim()
 const dir = resolve(root, 'scripts/s1/.runtime', `hooks-${fixture}`)
@@ -22,7 +24,7 @@ if (!existsSync(stamp) || !readFileSync(stamp, 'utf8').includes(revision)) {
   symlinkSync(resolve(root, 'node_modules'), resolve(dir, 'node_modules'), 'dir')
   writeFileSync(stamp, `Exact source: ${revision} (git archive). Dependencies: this checkout's node_modules (same lockfile).\n`)
 }
-writeFileSync(resolve(dir, 'src/store/s1.local.integration.test.ts'), readFileSync(resolve(root, 'scripts/s1/client.test.template'), 'utf8').replaceAll('S1_FIXTURE', fixture).replaceAll('S1_REVISION', revision))
+writeFileSync(resolve(dir, 'src/store/s1.local.integration.test.ts'), readFileSync(resolve(root, `scripts/s1/${fixture === 'combined' ? 'combined' : 'client'}.test.template`), 'utf8').replaceAll('S1_FIXTURE', fixture).replaceAll('S1_REVISION', revision))
 const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(SUPABASE|PG|DATABASE|VITE_|AWS_|S3_)/.test(k)))
 env.S1_STATUS_FILE = resolve(root, 'scripts/s1/local/status.json'); env.S1_LOCAL_CONFIRMED = 'yes'
 const local = args => execFileSync('node', [resolve(root, 'scripts/s1/run-local.mjs'), ...args], { cwd: root, env: { ...env }, encoding: 'utf8' })

@@ -49,25 +49,39 @@ Repair, with Andy's approval for that exact row:
 
 1. Read only that row's metadata (not its content): `cloud_schema`, `write_rev`,
    `updated_at`, and the document's logical `_schema` if it must be confirmed.
-2. Choose the repaired pair:
+2. Choose the repaired values:
    - `cloud_schema` = the document's logical `_schema` (never lower than any value
      already present in either place; if they disagree, stop and ask);
-   - `write_rev` = a valid value **different from anything a client could hold**:
-     the old counter + 1 when it is valid and below the cap, otherwise 1.
+   - `write_rev` = the old counter + 1 when it is valid and below the cap, otherwise 1;
+   - `updated_at` = a **fresh** timestamp (`clock_timestamp()`), verified different
+     from the value read in step 1. A client's compare-and-set matches on
+     `updated_at`, `cloud_schema` and `write_rev` together, so the fresh timestamp
+     alone guarantees no client still holds the repaired tuple, even when
+     `write_rev` restarts at 1.
 3. In one transaction, as the database owner, bypass user triggers for that single
-   statement and change only the two columns:
+   statement and change only the three metadata columns. Predicate on **all** the
+   metadata read in step 1, null-safely, and roll back unless exactly one row changed:
 
    ```sql
    begin;
    set local session_replication_role = replica;   -- this statement only; not for app roles
-   update public.dashboards
-      set cloud_schema = <verified>, write_rev = <chosen>
-    where user_id = '<exact id>' and updated_at = '<value read in step 1>';
-   -- expect exactly 1 row
+   do $$
+   declare changed int;
+   begin
+     update public.dashboards
+        set cloud_schema = <verified>, write_rev = <chosen>, updated_at = clock_timestamp()
+      where user_id = '<exact id>'
+        and updated_at = '<updated_at read in step 1>'
+        and cloud_schema is not distinct from <cloud_schema read in step 1, or null>
+        and write_rev is not distinct from <write_rev read in step 1, or null>
+        and clock_timestamp() <> '<updated_at read in step 1>';
+     get diagnostics changed = row_count;
+     if changed <> 1 then raise exception 'repair matched % rows; expected exactly 1. Rolled back.', changed; end if;
+   end $$;
    commit;
    ```
 
-4. Clients holding the old metadata get a zero-row compare-and-set, reread and reconcile.
-   They never overwrite.
+4. Clients holding any pre-repair metadata get a zero-row compare-and-set, reread and
+   reconcile. They never overwrite.
 
 `scripts/s1/sql-tests.sql` section H rehearses this on a synthetic row.
