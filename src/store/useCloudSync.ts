@@ -13,7 +13,7 @@ import { ACCOUNT_WORKSPACE_READY_EVENT } from '@/lib/accountWorkspace'
 import { syncAcademicOriginals } from '@/lib/academics/sharedMaterialFiles'
 import { syncNotebookImages } from '@/lib/academics/notebook/sharedNotebookAssets'
 import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
-import { getAccountSchemaBlock, getCloudProtection, pauseAccountForSchema, allowAccountSync, assertAccountUpload, assertSyncLease, assertSyncSession, captureSyncSession, getAccountConflict, isAccountSyncReady, observeSyncSession, pauseAccountSync, preserveAccountConflict, preserveAccountReplacement, readSyncBaseline, recordSyncBaseline, subscribeAccountConflicts, syncContent, syncDigest } from './accountSyncSafety'
+import { getAccountSchemaBlock, getCloudProtection, pauseAccountForSchema, allowAccountSync, assertAccountUpload, assertSyncLease, assertSyncSession, captureSyncSession, getAccountConflict, isAccountSyncReady, observeSyncSession, pauseAccountSync, preserveAccountConflict, preserveAccountReplacement, readSyncBaseline, rebaseSyncBaseline, recordSyncBaseline, subscribeAccountConflicts, syncContent, syncDigest } from './accountSyncSafety'
 import { DashboardWriteMiss, readDashboard, writeDashboard, type RemoteDashboard } from './dashboardRows'
 import { CloudRequestError } from './cloudRequest'
 
@@ -133,7 +133,7 @@ export function useCloudSync() {
           fresh()
           // The claim moved only the server revision. Rebase a baseline that matched it.
           if (baseline && baseline.updatedAt === reviewed.updatedAt) {
-            await recordSyncBaseline(u.id, { digest: baseline.digest }, remote, lease)
+            await rebaseSyncBaseline(u.id, baseline, remote, lease)
             baseline = readSyncBaseline(u.id)
           }
         }
@@ -171,7 +171,7 @@ export function useCloudSync() {
         if (!local || equal || cleanLocal) await recordSyncBaseline(u.id, remote.data, remote, lease)
         // Dirty local edits over an unchanged cloud keep their baseline digest, but
         // the next save needs this revision's server metadata, read just now.
-        else if (baseline && remoteUnchanged && (baseline.claim?.writeRev !== remote.claim?.writeRev || baseline.claim?.cloudSchema !== remote.claim?.cloudSchema)) await recordSyncBaseline(u.id, { digest: baseline.digest }, remote, lease)
+        else if (baseline && remoteUnchanged && (baseline.claim?.writeRev !== remote.claim?.writeRev || baseline.claim?.cloudSchema !== remote.claim?.cloudSchema)) await rebaseSyncBaseline(u.id, baseline, remote, lease)
         assertSyncLease(lease)
         assertDurableWorkspace()
         allowAccountSync(lease)

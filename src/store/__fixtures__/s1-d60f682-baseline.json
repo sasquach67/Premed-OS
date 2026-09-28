@@ -1,0 +1,184 @@
+{
+ "source": "d60f682946e264ea2d680c2c8e2914a86899c114 src/store/accountSyncSafety.ts syncContent + syncDigest, snapshot after activateAccountWorkspace",
+ "digest": "f8f7928bb9ae04897ed186e36310cc9e6d2a5bc122b882a5119d2eada5bd0836",
+ "snapshot": {
+  "profile": {
+   "name": "S1 legacy baseline",
+   "email": "legacy@example.invalid",
+   "school": "",
+   "major": "",
+   "minors": [],
+   "track": "",
+   "classYear": "",
+   "startTerm": "",
+   "matriculationTarget": "",
+   "applicationCycle": "",
+   "resumeDocUrl": ""
+  },
+  "goals": {
+   "clinical": 0,
+   "volunteering": 0,
+   "shadowing": 0,
+   "research": 0,
+   "activities": 0,
+   "mcatTarget": 0,
+   "gpaTarget": 0
+  },
+  "courses": [],
+  "requirements": [],
+  "experiences": [],
+  "experienceHourEntries": [],
+  "tasks": [],
+  "timelineMilestones": [],
+  "persons": [],
+  "organizations": [],
+  "academics": {
+   "courseOptions": [],
+   "assignmentTypeOptions": [],
+   "classCenter": {
+    "workspaces": [],
+    "topics": [],
+    "notes": [],
+    "assignments": [],
+    "files": [],
+    "keyPoints": [],
+    "sourceChunks": [],
+    "reviewEvents": [],
+    "retrievabilityPredictions": [],
+    "reviewSessionPreferences": {
+     "defaultInput": "microphone",
+     "interleave": true,
+     "weakFirst": true,
+     "workMinutes": 25,
+     "breakMinutes": 5,
+     "enforceBreaks": false,
+     "sound": true
+    },
+    "focusSessions": [],
+    "contacts": [],
+    "weakAreas": [],
+    "practiceExams": [],
+    "practiceQuestions": [],
+    "paperDrafts": [],
+    "assignedReadings": [],
+    "feedbackNotes": [],
+    "gradeCategories": [],
+    "mistakes": [],
+    "topicLinks": [],
+    "topicPredictions": [],
+    "savedPlans": [],
+    "plannerTerms": [],
+    "examPrepPlans": [],
+    "generatedFlashcardDecks": [],
+    "generatedMockAttempts": [],
+    "generatedRevisedNotes": [],
+    "generatedMasteryOutlines": [],
+    "generatedUnitQuestionBanks": [],
+    "professorEvidence": [],
+    "conceptCanvases": [],
+    "assessmentMaterials": [],
+    "assessmentAttempts": [],
+    "transcriptRecords": [],
+    "acknowledgedCatalogWarnings": [],
+    "planningProgramContext": {},
+    "lectures": [],
+    "lectureFindings": [],
+    "lectureMaterialProposals": [],
+    "lectureNoteProposals": [],
+    "guideProposals": [],
+    "watchedNoteSources": [],
+    "watchedNoteProposals": [],
+    "termReports": []
+   },
+   "migrationJournal": []
+  },
+  "letters": [],
+  "stories": [
+   {
+    "id": "story-private",
+    "title": "Local only",
+    "localOnly": true
+   },
+   {
+    "id": "story-shared",
+    "title": "Shared"
+   }
+  ],
+  "secondaries": [],
+  "interviewQs": [],
+  "mcat": {
+   "attempts": [],
+   "errorLog": [],
+   "schedule": []
+  },
+  "schools": [],
+  "resources": [],
+  "tips": [],
+  "focusTargets": [],
+  "quarterlyGoals": [],
+  "advisingQs": [],
+  "captures": [],
+  "notePages": [],
+  "orgs": [],
+  "notes": {
+   "example": "base"
+  },
+  "settings": {
+   "theme": "system",
+   "visualTheme": "ghibli",
+   "backup": {
+    "enabled": false,
+    "googleClientId": "",
+    "lastBackupAt": 12345
+   },
+   "calendar": {
+    "enabled": false,
+    "googleClientId": "",
+    "googleApiKey": "",
+    "cachedEvents": [],
+    "timelineStart": "06:00",
+    "timelineEnd": "23:00",
+    "timeFormat": "12h",
+    "showLocations": true,
+    "showAllDayEvents": true,
+    "useMockPreview": false
+   },
+   "quotesApi": true,
+   "sidebarCollapsed": false,
+   "studentBannerDismissed": false,
+   "dismissedAlertKey": "",
+   "northStarExpanded": false,
+   "overviewTaskMode": "today",
+   "academicsMode": "daily",
+   "listPreferences": {},
+   "savedViews": {},
+   "activeSavedViewIds": {},
+   "attentionSnoozedUntil": {},
+   "recommendationState": {},
+   "mutedRecommendationRules": {},
+   "projectionDismissals": {},
+   "mascotNoteDismissals": {},
+   "weeklyCapacity": {
+    "hoursByWeekday": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "busyPeriods": [],
+    "updatedAt": 0
+   }
+  },
+  "meta": {
+   "recentRoutes": [],
+   "activity": [],
+   "lastOpenedAt": 1790558603453,
+   "seedVersion": 0,
+   "recoveryStack": []
+  },
+  "trash": []
+ }
+}
