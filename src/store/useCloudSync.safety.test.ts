@@ -945,3 +945,24 @@ it('S2 refuses a corrupt content-addressed recovery copy instead of trusting its
   expect(await preserveAccountReplacement(id, raw, remote, token)).toBe(false)
   expect(isAccountSyncReady(id)).toBe(false)
 })
+
+it('S2 resolves the same task with only its inferred typeId missing from cloud', async () => {
+  const id = account(); const initial = workspace('same work')
+  initial.tasks.push({ ...addedTask('same-task'), type: 'Other' })
+  activateAccountWorkspace(id, initial); const local = snapshotData(), remote = structuredClone(local)
+  expect(local.tasks[0].typeId).toBe('type-other')
+  delete remote.tasks[0].typeId
+  wire.rows.set(id, claimed(remote, newer)); await render(); await session(id)
+  expect(getAccountConflict(id)).toBeUndefined()
+  expect(isAccountSyncReady(id)).toBe(true)
+  expect(snapshotData().tasks[0].typeId).toBe('type-other')
+})
+
+it('S2 still asks when authored task content differs alongside an inferred category default', async () => {
+  const id = account(); const initial = workspace('same work')
+  initial.tasks.push({ ...addedTask('same-task'), type: 'Other' })
+  activateAccountWorkspace(id, initial); const remote = structuredClone(snapshotData())
+  delete remote.tasks[0].typeId; remote.tasks[0].title = 'Different authored title'
+  wire.rows.set(id, claimed(remote, newer)); await render(); await session(id)
+  expect(getAccountConflict(id)?.saved).toBe(true); expect(wire.writes).not.toHaveBeenCalled()
+})

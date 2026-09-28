@@ -108,3 +108,11 @@ Suggested pruning to the newest three copies is **not implemented**: it would pe
 - Build/lint and the live release receipt follow; nothing is reported deployed by this section alone.
 
 Final runtime `907b9f5`: build passed; lint passed with 0 errors / 55 pre-existing warnings; production dependency audit remains 0 vulnerabilities (no dependency changes). The code is ready for the authorized S2 release. The five missing hosting headers remain a recorded S2-only waiver, not a passed check.
+
+### Post-release migration-default follow-up
+
+A delayed review of `1f56382` prompted a check of the released `64d28fb`. Its volatile-field and empty-container cases were covered, but a task's missing inferred `typeId` still produced review. A focused `useCloudSync` test reproduced that exact symptom (1 failed, 80 skipped) before the fix.
+
+The comparison projection now removes a redundant task `typeId` only when a unique existing assignment-type option matches both the task's type label and the linked ID. Explicit different IDs, ambiguous labels, missing definitions, authored fields and the option catalog remain meaningful. This narrowly follows `migrateAcademicTags`' inferred link; it does not run broad migrations that also rewrite unrelated authored fields. Input data, baseline hashes, payloads, S1 guards, protocol and versions are unchanged. No real-account access.
+
+Focused result: 89 tests pass, including real hook reconciliation, explicit/ambiguous category differences and a real task edit combined with the migration default. Final validation and release status follow. This is a follow-up to the already-live release, not evidence that `64d28fb` contained the fix.

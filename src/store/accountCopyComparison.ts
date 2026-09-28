@@ -28,6 +28,18 @@ export function comparableAccountContent(data: AppData): string {
   const value = JSON.parse(syncContent(data))
   if (value.meta) { delete value.meta.lastOpenedAt; delete value.meta.recentRoutes }
   if (value.settings?.calendar) delete value.settings.calendar.lastSyncedAt
+  // migrateAcademicTags derives a missing typeId from the existing type label.
+  // Ignore only that redundant link when one unambiguous option proves it.
+  // Running all migrations here would also rewrite real fields (e.g. topic
+  // confidence), which must remain visible as authored differences.
+  const types = value.academics?.assignmentTypeOptions
+  if (Array.isArray(types) && Array.isArray(value.tasks)) {
+    for (const task of value.tasks) {
+      if (typeof task.type !== 'string' || typeof task.typeId !== 'string') continue
+      const matches = types.filter((option: { name?: unknown; id?: unknown }) => typeof option.name === 'string' && option.name.trim().toLowerCase() === task.type.trim().toLowerCase())
+      if (matches.length === 1 && matches[0].id === task.typeId) delete task.typeId
+    }
+  }
   for (const key of ['researchUpcomingItems', 'researchReminders', 'researchTimelineNotes', 'researchMemberships']) {
     if (Array.isArray(value[key]) && value[key].length === 0) delete value[key]
   }

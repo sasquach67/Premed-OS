@@ -54,3 +54,18 @@ it('identifies opaque top-level omissions in either direction independently of k
   a.tasks.push(task('known'))
   expect(classifyAccountCopyChanges(a, createPersonalInitialData()).opaqueOmission).toBe(false)
 })
+
+it('normalizes only the redundant task category link proven by an unambiguous existing option', () => {
+  const a = createPersonalInitialData()
+  a.academics.assignmentTypeOptions = [{ id: 'type-other', name: 'Other', color: 'blue', archived: false }]
+  a.tasks = [{ ...task('task'), type: 'Other', typeId: 'type-other' }]
+  const b = structuredClone(a); delete b.tasks[0].typeId
+  expect(comparableAccountContent(a)).toBe(comparableAccountContent(b))
+  expect(a.tasks[0].typeId).toBe('type-other')
+  a.tasks[0].typeId = 'explicit-custom-choice'
+  expect(comparableAccountContent(a)).not.toBe(comparableAccountContent(b))
+  a.tasks[0].typeId = 'type-other'
+  a.academics.assignmentTypeOptions.push({ id: 'ambiguous', name: ' other ', color: 'red', archived: false })
+  b.academics.assignmentTypeOptions = structuredClone(a.academics.assignmentTypeOptions)
+  expect(comparableAccountContent(a)).not.toBe(comparableAccountContent(b))
+})
