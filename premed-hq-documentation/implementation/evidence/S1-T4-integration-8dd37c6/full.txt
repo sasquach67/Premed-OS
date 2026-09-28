@@ -1,0 +1,13 @@
+
+> premed-os@0.0.0 test
+> vitest run --maxWorkers=1
+
+
+ RUN  v4.1.9 /Users/andyquach/.codex/worktrees/s1-research-r3/premed-os
+
+
+ Test Files  298 passed (298)
+      Tests  2285 passed (2285)
+   Start at  21:42:06
+   Duration  277.49s (transform 10.72s, setup 0ms, import 66.97s, tests 83.70s, environment 100.36s)
+

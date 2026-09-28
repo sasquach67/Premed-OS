@@ -1,0 +1,13 @@
+
+> premed-os@0.0.0 test
+> vitest run --maxWorkers=1 src/lib/logicalJson.test.ts src/store/workspaceSchema.test.ts src/store/useCloudSync.safety.test.ts src/store/researchPersistence.integration.test.ts
+
+
+ RUN  v4.1.9 /Users/andyquach/.codex/worktrees/s1-research-r3/premed-os
+
+
+ Test Files  4 passed (4)
+      Tests  85 passed (85)
+   Start at  21:42:10
+   Duration  9.91s (transform 1.85s, setup 0ms, import 1.41s, tests 4.62s, environment 3.20s)
+
