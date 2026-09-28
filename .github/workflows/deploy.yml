@@ -41,6 +41,8 @@ jobs:
           # the Google OAuth tester list until verification is approved.
           VITE_CALENDAR_TESTERS: ${{ vars.VITE_CALENDAR_TESTERS }}
           VITE_CALENDAR_OAUTH_VERIFIED: ${{ vars.VITE_CALENDAR_OAUTH_VERIFIED }}
+          # Approved S1 + T4 release: expose Research with the schema-2 client.
+          VITE_RESEARCH_PREVIEW: 'true'
       # Pages replaces the whole published artifact. Keep recent hashed files
       # available to tabs whose entry module was loaded before this release.
       - run: node scripts/release/retain-assets.mjs dist https://premedos.app

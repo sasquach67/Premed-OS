@@ -1,4 +1,4 @@
-# S1 production preflight — STOPPED before apply
+# S1 production preflight — pending authorized apply
 
 ## Follow-up after Andy's discrepancy decision
 
@@ -13,7 +13,13 @@ Andy selected `Yes, proceed (Recommended)` with a condition to compare the eight
 - Job status counts: succeeded 1, failed 5. Task status counts: done 58, failed 5, pending 7, skipped 1. No content or identifiers were read.
 - The live `dispatch_generation_work` function definition was inspected. It sends HTTP requests only for runnable tasks whose parent job is queued/running, matches the current stage, is unexpired, has attempts remaining, and has no active lease. The read-only aggregate using these same predicates returned **0**. Thus the configured timer has no runnable work at this observation; this does not disable it or prove its entire past activity.
 
-The missing six SQL records prevent satisfying the new comparison condition literally. Claude Planning was notified and presented Andy with a separate choice to proceed using fresh live overlap/catalog checks while explicitly retaining the historical uncertainty. That answer is pending at this record. No S1 apply, migration-history insert, account-content access, claim, merge, or deployment has occurred.
+The missing six SQL records prevent satisfying the new comparison condition literally. Claude Planning was notified and presented Andy with a separate choice to proceed using fresh live overlap/catalog checks while explicitly retaining the historical uncertainty.
+
+### Revised authorization, verified before proceeding
+
+Andy subsequently selected **`Yes, go ahead (Recommended)`** in the original Claude planning conversation. This answer was independently read in its visible history. It replaces the impossible exact-match condition for the six rows. Those six remain **statements NULL, applied SQL unknown**.
+
+The replacement precondition is to rerun, immediately before applying, the non-internal dashboard trigger check, absence of both S1 columns and `guard_dashboard_write`, plus a catalog list of current generation tables and function signatures. Stop on overlap. The two exact matches and report-only timer checks above are complete. The timer remains unchanged. Arc is currently in use by Andy; execution is waiting for his availability. No S1 apply, migration-history insert, account-content access, claim, merge, or deployment has occurred.
 
 The production apply and one-release security-header waiver were authorized by Andy in the Claude planning conversation, verified through its visible original question answers and user message `u make codex do option b`. Andy then explicitly changed the browser to Arc in this Codex conversation. The SQL apply was conditional on the preflight matching expectations.
 
@@ -62,3 +68,20 @@ The local reviewed combined branch remained `b156d73` at preflight; freshly fetc
 - `20260904185425_founder_ai_quota_lifecycle.sql`
 - `20260906035516_academic_originals_private_storage.sql`
 - `20260906165926_astra_backup_budget.sql`
+
+## Fresh metadata preflight after Arc input handoff
+
+Andy pasted the prepared read-only query into Arc after native automated paste failed. Codex inspected all 23 lines before clicking Run in the verified production project. The query returned 21 metadata rows. No migration has been applied yet.
+
+- `dashboard_triggers`, `s1_columns`, `s1_functions`, and `s1_history`: all `[]`.
+- Generation tables: generation_provider_capabilities, generation_stage_stats, study_generation_jobs, study_generation_tasks, study_generation_usage.
+- Generation function signatures: add_generation_tasks(uuid,text,jsonb); advance_generation_stage(uuid,text,real); claim_generation_task(integer,uuid,uuid); complete_generation_task(uuid,uuid,text,jsonb,jsonb,integer,text,text,text,uuid,boolean,boolean); dispatch_generation_work(integer); generation_job_view(uuid); lease_generation_job(uuid,uuid,integer); reap_generation_work(); start_generation_job(uuid,text,jsonb,integer); subdivide_generation_task(uuid,uuid,jsonb); update_generation_job(uuid,uuid,text,text,jsonb,text,text,text,uuid,boolean,integer,integer,jsonb,jsonb,boolean). No name overlap with S1 objects.
+- Migration-history fields confirmed: version text required; statements text[] and name text nullable. Other metadata fields remain untouched.
+- Prepared `02-apply-S1-and-verify.sql` outside the repo for Andy to paste. It includes metadata-only stop conditions immediately before the exact reviewed SQL, the new history entry, and installation checks. Migration MD5: `26ae9611554c07b05e9f88f4248a98ad`. The six NULL historical SQL rows remain unknown and untouched.
+- The deployment branch now preserves main b10a4e5; Research's approved build flag is prepared. Final tests: 298 files / 2,285 tests passed; build passed; lint zero errors (55 existing warnings); production-dependency audit zero vulnerabilities; retained-assets tests 6/6. The same five security-header failures remain under Andy's one-release waiver. No push or deployment yet.
+
+## Priority resumption after beta23 release
+
+Andy/Claude requested S1 before lesson batches and the notebook-list feature. The existing production authorization and one-release header waiver remain in force. Combined branch now merges main b169def through 173fdfa, preserving beta23. No production apply record exists because no apply has occurred.
+
+Arc showed Audible on resumption; availability was requested before switching it. The next production action is a fresh catalog/overlap preflight in Arc, followed by the exact migration and history insert using the prepared reviewed-SQL wrapper. If paste remains unavailable to automation, Andy pastes the file and Codex inspects it before Run. No lesson/account data access, claims, history repair, or timer changes are authorized.
