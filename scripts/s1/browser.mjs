@@ -105,11 +105,12 @@ function workspace(email, as) {
 async function scenario(cdp, build, spec) {
   const origin = `http://127.0.0.1:${builds[build].port}`
   const email = `s1-browser-${randomUUID()}@example.invalid`, password = randomUUID() + randomUUID()
-  const user = await admin('/auth/v1/admin/users', 'POST', { email, password, email_confirm: true })
   const out = { build, scenario: spec.name, checks: [] }
   const check = (label, ok, detail) => { out.checks.push({ label, ok: !!ok, ...(detail === undefined ? {} : { detail }) }); if (!ok) out.failed = true }
-  let contextId, targetId
+  let contextId, targetId, user
   try {
+    // Setup failures (API down, fixture rejected) are this scenario's failure, not a crash.
+    user = await admin('/auth/v1/admin/users', 'POST', { email, password, email_confirm: true })
     await spec.seed(user.id, email)
     const before = (await admin(`/rest/v1/dashboards?user_id=eq.${user.id}&select=data,updated_at,cloud_schema,write_rev`))[0]
     const login = await admin('/auth/v1/token?grant_type=password', 'POST', { email, password }, status.ANON_KEY)
@@ -219,8 +220,10 @@ async function scenario(cdp, build, spec) {
   finally {
     if (targetId) await cdp.send('Target.closeTarget', { targetId }).catch(() => {})
     if (contextId) await cdp.send('Target.disposeBrowserContext', { browserContextId: contextId }).catch(() => {})
-    await admin(`/auth/v1/admin/users/${user.id}`, 'DELETE').catch(() => {})
+    if (user) await admin(`/auth/v1/admin/users/${user.id}`, 'DELETE').catch(() => {})
   }
+  // A scenario that asserted nothing proves nothing.
+  if (!out.checks.length) { out.failed = true; out.error ??= 'no checks ran' }
   return out
 }
 
@@ -331,5 +334,11 @@ try {
   cdp.close(); servers.forEach(child => child.kill('SIGTERM'))
   const file = resolve(evidence, `browser-report${onlyBuild ? '-' + onlyBuild : ''}.json`)
   writeFileSync(file, JSON.stringify({ ranAt: new Date().toISOString(), api: status.API_URL, report }, null, 2))
-  console.log(`\n${report.filter(r => !r.failed).length}/${report.length} browser scenarios passed. Report: ${file}`)
+  const failed = report.filter(r => r.failed).length
+  console.log(`\n${report.length - failed}/${report.length} browser scenarios passed. Report: ${file}`)
+  // Acceptance fails on any failed scenario, and on a run that selected none.
+  if (failed || !report.length) {
+    console.error(report.length ? `S1 browser acceptance FAILED: ${failed} scenario(s).` : 'S1 browser acceptance FAILED: no scenario ran (check the build/scenario filter).')
+    process.exitCode = 1
+  }
 }
