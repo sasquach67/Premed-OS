@@ -73,3 +73,38 @@ describe('v4 frozen-contract parity regressions', () => {
     expect(parse(pkg)).toEqual(pkg)
   })
 })
+
+describe('illustration blocks (show, don\'t tell)', () => {
+  const illustrated = (overrides: Record<string, unknown> = {}) => {
+    const pkg = fresh(), block = {
+      id: 'aligned-strands', type: 'illustration', title: 'Reading a template strand', provenance: 'source', sourceIds: ['ref'], excerptIds: ['ref-1'],
+      lines: ["template  3'-TAC-GGA-5'", "mRNA      5'-AUG-CCU-3'"], summary: 'The mRNA copies the coding strand, with U for T.', more: 'RNA polymerase reads the template 3′ to 5′.', ...overrides,
+    }
+    pkg.entries[0].sections.push({ id: 'fixture-illustration', title: 'Illustration', purpose: 'study-guide', blocks: [block as unknown as NotebookBlock] } as NotebookPackage['entries'][number]['sections'][number])
+    return pkg
+  }
+
+  it.each([['with', 'Show-more text'], ['without', null]] as const)('accepts an illustration %s Show-more text and round-trips it unchanged', (_, more) => {
+    const pkg = illustrated({ more })
+    expect(parse(pkg)).toEqual(pkg)
+  })
+
+  it.each([
+    ['a blank line', { lines: ['   '] }],
+    ['a blank summary', { summary: ' ' }],
+    ['whitespace-only Show-more text', { more: '  ' }],
+    ['empty Show-more text instead of null', { more: '' }],
+    ['more than twelve lines', { lines: Array.from({ length: 13 }, (_, index) => `line ${index}`) }],
+    ['a line wider than 120 characters', { lines: ['x'.repeat(121)] }],
+    ['an unsupported explanation field', { explanation: 'Narration belongs in Show more.' }],
+    ['a missing Show-more field', { more: undefined }],
+  ])('rejects %s', (_, overrides) => {
+    expect(() => parse(illustrated(overrides))).toThrow()
+  })
+
+  it('cannot serve as a neutral worked-example stimulus', () => {
+    const pkg = illustrated()
+    find(pkg, 'worked-example').stimulusBlockIds = ['aligned-strands']
+    expect(() => parse(pkg)).toThrow(/Stimuli must reference supported neutral bodies/)
+  })
+})

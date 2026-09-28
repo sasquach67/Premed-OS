@@ -25,7 +25,9 @@ export type WorkedExampleBlock = LearningIdentity & {
   type: 'worked-example'; problem: string; problemEvidence: LearningEvidence; solutionEvidence: LearningEvidence; stimulusBlockIds: string[]
   steps: (LearningItem & { label: string; explanation: string })[]; answer: string; check: string | null
 }
-export type LearningVisualBlock = AnnotatedFigureBlock | TimelineBlock | ContinuumBlock | VennBlock | SequenceStripBlock | WorkedExampleBlock
+/** Show, don't tell: a compact worked representation, its one-line reading, and optional Show-more text. */
+export type IllustrationBlock = LearningIdentity & { type: 'illustration'; lines: string[]; summary: string; more: string | null }
+export type LearningVisualBlock = AnnotatedFigureBlock | TimelineBlock | ContinuumBlock | VennBlock | SequenceStripBlock | WorkedExampleBlock | IllustrationBlock
 export function isLearningVisualBlock(block: { type: string }): block is LearningVisualBlock {
-  return ['annotated-figure', 'timeline', 'continuum', 'venn', 'sequence-strip', 'worked-example'].includes(block.type)
+  return ['annotated-figure', 'timeline', 'continuum', 'venn', 'sequence-strip', 'worked-example', 'illustration'].includes(block.type)
 }

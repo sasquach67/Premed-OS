@@ -4,7 +4,7 @@ from collections import Counter,defaultdict
 from validate_visual import asset_refs
 
 NEUTRAL_TYPES={'paragraph','table','figure','study-diagram','annotated-figure'}
-NEW_TYPES={'annotated-figure','timeline','venn','sequence-strip','worked-example','continuum'}
+NEW_TYPES={'annotated-figure','timeline','venn','sequence-strip','worked-example','continuum','illustration'}
 
 def v4_errors(data,evidence):
     errors=[];assets={x['id']:x for x in data['assets']}
@@ -43,6 +43,7 @@ def v4_errors(data,evidence):
             if kind in NEW_TYPES:
                 if not b['title'].strip():fail('v4-empty-title',b['id'])
                 if kind=='worked-example' and (not b['problem'].strip() or not b['answer'].strip()):fail('v4-empty-text',b['id'])
+                if kind=='illustration' and (any(not line.strip() for line in b['lines']) or not b['summary'].strip() or (b['more'] is not None and not b['more'].strip())):fail('v4-empty-text',b['id'])
                 if 'orderingBasis' in b and not b['orderingBasis'].strip():fail('v4-ordering-basis',b['id'])
             if kind=='annotated-figure':
                 identities(b['annotations'],b)

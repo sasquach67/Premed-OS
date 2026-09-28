@@ -76,3 +76,8 @@
 @media (max-width: 620px) {
   .nbr-venn-regions, .nbr-sequence-steps { grid-template-columns: minmax(0, 1fr); }
 }
+.nbr-illustration .nbr-illustration-lines { max-width: 100%; overflow-x: auto; margin: .5rem 0; padding: .75rem .9rem; background: var(--muted); border: 1px solid var(--border); border-radius: .6rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem; line-height: 1.6; white-space: pre; color: var(--foreground); }
+.nbr-illustration .nbr-illustration-lines:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.nbr-illustration .nbr-illustration-summary { font-weight: 700; }
+.nbr-illustration .nbr-illustration-more { margin-top: .25rem; }
+.nbr-illustration .nbr-illustration-edit { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

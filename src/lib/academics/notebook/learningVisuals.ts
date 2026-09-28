@@ -80,6 +80,7 @@ export function validateLearningVisual(block: NotebookBlock) {
     return
   }
   if (!isLearningVisualBlock(block)) return
+  if (block.type === 'illustration' && (!block.title.trim() || block.lines.some(line => !line.trim()) || !block.summary.trim() || (block.more !== null && !block.more.trim()))) fail(block, 'An illustration needs a title, non-blank lines, a one-line summary, and Show-more text that is either meaningful or null.')
   for (const item of learningVisualItems(block)) for (const key of ['label', 'detail', 'text', 'explanation']) {
     if (key in item && typeof (item as unknown as Record<string, unknown>)[key] === 'string' && !(item as unknown as Record<string, string>)[key].trim()) fail(block, 'Structured labels, details and explanations must contain meaningful text.')
   }
