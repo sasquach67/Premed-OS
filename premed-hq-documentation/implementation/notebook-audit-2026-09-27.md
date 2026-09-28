@@ -75,7 +75,7 @@ So the failures are **compliance failures of approved rules, not missing rules**
 2. Student responses are attempts, never an answer basis.
 3. Answer independently first, then compare with keys, instructor explanations and the attempt.
 4. Key status stays internal: answers are verified behind the scenes, but the notebook shows only the answer and why. Andy: "the source of the information doesn't really matter to the user. as long as there is a good answer is fine".
-5. Record where the student's attempt differed, once, in one line.
+5. Check all user-supplied work (worksheet answers, notes, handwritten pages) and correct errors or gaps in one short line beside the item; correct attempts get no comment. Andy (Sep 27): "it should also take whatever user inputted info there may be and take attempts to try and correct it".
 6. A key establishes intended grading, not factual authority. Flag a key-vs-science conflict once.
 7. Keep the educated guess: when sources and keys are silent, give the best-supported answer, and check an authoritative reference when uncertain.
 8. Frame common-error remarks as teaching tips, not observed frequencies.
