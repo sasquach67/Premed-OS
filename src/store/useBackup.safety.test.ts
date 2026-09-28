@@ -1,3 +1,4 @@
+import { CURRENT_CLOUD_SCHEMA } from '@/lib/workspaceSchema'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
@@ -65,6 +66,6 @@ it('carries supported opaque metadata into Drive ZIP while excluding private sto
   const blob = (drive.uploadCompleteBackup.mock.calls as unknown as Array<[Blob]>)[0][0]
   const { prepareWorkspaceBackup } = await import('@/lib/workspaceBackup')
   const prepared = await prepareWorkspaceBackup(blob)
-  expect(prepared.data).toMatchObject({ _schema: 1, futureResearch: data.futureResearch, stories: [] })
+  expect(prepared.data).toMatchObject({ _schema: CURRENT_CLOUD_SCHEMA, futureResearch: data.futureResearch, stories: [] })
   expect(snapshotData().stories).toHaveLength(1)
 })
