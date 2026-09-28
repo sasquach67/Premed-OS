@@ -18,6 +18,7 @@ import { ReadingContents } from './ReadingContents'
 import { scrollGuideHeadingIntoReadingPane } from './lectureGuideNavigation'
 import { NotebookAssetsProvider, NotebookPracticeStimulus, NotebookVisualBlock, NotebookVisualReview, useNotebookPracticeImages } from './NotebookVisuals'
 import { NotebookPortableExports, NotebookUpdateImageFiles } from './NotebookPortableExports'
+import { NotebookIllustration } from './NotebookIllustration'
 import { assertNotebookBackupFits } from '@/lib/academics/notebook/notebookBundle'
 import { visualAssetReferences } from '@/lib/academics/notebook/visualPackage'
 import type { NotebookAssetBinding, VisualNotebookBlock } from '@/lib/academics/notebook/visualTypes'
@@ -64,7 +65,7 @@ export function downloadNotebookText(filename: string, text: string, mime = 'app
 }
 type ChangeText = (path: (string | number)[], text: string | null) => void
 function ContentText({ value, path, label, change, sourceIds, inlineSources = false, tables = false }: { value: string; path: (string | number)[]; label: string; change?: ChangeText; sourceIds?: string[]; inlineSources?: boolean; tables?: boolean }) {
-  if (change) return <label className="en-field">{label}<textarea value={value} onChange={event => change(path, ['caption', 'timeLabel', 'check'].includes(String(path.at(-1))) && event.target.value === '' ? null : event.target.value)} /></label>
+  if (change) return <label className="en-field">{label}<textarea value={value} onChange={event => change(path, ['caption', 'timeLabel', 'check', 'more'].includes(String(path.at(-1))) && event.target.value === '' ? null : event.target.value)} /></label>
   const textRole = path.at(-1) === 'prompt' ? 'question' : path.at(-1) === 'answer' ? 'answer' : path.at(-1) === 'rationale' ? 'reasoning' : undefined
   if (tables) return <>{notebookPromptParts(value).map((part, index) => part.type === 'text' ? <div key={index}>{part.text.split(/\n[ \t]*\n/).filter(paragraph => paragraph.trim()).map((paragraph, pi) => <p className="en-text" data-reader-role={textRole} key={pi}>{paragraph}</p>)}</div> : <div className="en-table-scroll nbr-prompt-table" role="region" aria-label="Practice prompt data" tabIndex={0} key={index}><table><thead><tr>{part.columns.map((column, ci) => <th scope="col" style={{ textAlign: part.align[ci] }} key={ci}>{column}</th>)}</tr></thead><tbody>{part.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td style={{ textAlign: part.align[ci] }} key={ci}>{cell}</td>)}</tr>)}</tbody></table></div>)}</>
   if (!sourceIds) return <p className="en-text" data-reader-role={textRole}>{value}</p>
@@ -114,7 +115,8 @@ function BlockView({ block, path, change, pkg, progress, onProgress, reader = fa
     if (!split.body.trim() && [...split.leading, ...split.trailing].length > 0 && [...split.leading, ...split.trailing].every(note => note.kind === 'citation')) return null
   }
   return <div className={`en-block en-block-${block.type}${block.type === 'practice' && !change ? ' en-practice-unit' : ''}`}>
-    {(block.type === 'figure' || block.type === 'study-diagram' || (isLearningVisualBlock(block) && block.type !== 'worked-example')) && <NotebookVisualBlock block={block} onChange={change ? changeVisual : undefined} changeText={change ? (relative, value) => change([...path, ...relative], value) : undefined} />}
+    {(block.type === 'figure' || block.type === 'study-diagram' || (isLearningVisualBlock(block) && block.type !== 'worked-example' && block.type !== 'illustration')) && <NotebookVisualBlock block={block} onChange={change ? changeVisual : undefined} changeText={change ? (relative, value) => change([...path, ...relative], value) : undefined} />}
+    {block.type === 'illustration' && <NotebookIllustration block={block} path={path} change={change} />}
     {block.type === 'paragraph' && text(block.text, 'text', 'Explanation')}
     {block.type === 'gap' && <div className="en-notice"><b>Source gap</b>{text(block.text, 'text', 'Gap')}{text(block.nextStep, 'nextStep', 'Next step')}</div>}
     {(block.type === 'bullets' || block.type === 'steps') && (block.type === 'steps' ? <ol>{block.items.map((item, i) => <li key={i}><ContentText value={item} path={[...path, 'items', i]} label={`Step ${i + 1}`} change={change} /></li>)}</ol> : <ul>{block.items.map((item, i) => <li key={i}><ContentText value={item} path={[...path, 'items', i]} label={`Point ${i + 1}`} change={change} /></li>)}</ul>)}
@@ -210,7 +212,7 @@ export function ExternalNotebookView({ lecture, courseCode, onNavigateEntry }: {
       const next = structuredClone(previous ?? n.current)
       let node: unknown = next
       for (const key of path.slice(0, -1)) node = (node as Record<string | number, unknown>)[key]
-      ;(node as Record<string | number, unknown>)[path.at(-1)!] = ['caption', 'timeLabel', 'check'].includes(String(path.at(-1))) && value === '' ? null : value
+      ;(node as Record<string | number, unknown>)[path.at(-1)!] = ['caption', 'timeLabel', 'check', 'more'].includes(String(path.at(-1))) && value === '' ? null : value
       return next
     })
   }

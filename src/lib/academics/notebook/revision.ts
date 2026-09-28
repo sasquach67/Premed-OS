@@ -97,7 +97,7 @@ export function readableDifference(value: unknown): string {
   if (value === null) return 'Not supplied'
   if (typeof value !== 'object') return String(value)
   if (Array.isArray(value)) return value.map((item, index) => `${index + 1}. ${readableDifference(item)}`).join('\n\n') || 'None'
-  const labels: Record<string, string> = { prompt: 'Question', answer: 'Answer', rationale: 'Why this answer', text: 'Content', title: 'Title', scope: 'Scope', basis: 'Coverage explanation', inspected: 'Material inspected', limitations: 'Limits', freeRecallCues: 'Recall prompts', beAbleToDo: 'Apply it', watchFor: 'Watch for', sourceIds: 'Source references', excerptIds: 'Excerpt references', practiceBlockIds: 'Linked practice references', requirementId: 'Requirement reference', id: 'Reference ID' }
+  const labels: Record<string, string> = { lines: 'Illustration lines', summary: 'Summary', more: 'Show-more explanation', prompt: 'Question', answer: 'Answer', rationale: 'Why this answer', text: 'Content', title: 'Title', scope: 'Scope', basis: 'Coverage explanation', inspected: 'Material inspected', limitations: 'Limits', freeRecallCues: 'Recall prompts', beAbleToDo: 'Apply it', watchFor: 'Watch for', sourceIds: 'Source references', excerptIds: 'Excerpt references', practiceBlockIds: 'Linked practice references', requirementId: 'Requirement reference', id: 'Reference ID' }
   const secondary = new Set(['id', 'sourceIds', 'excerptIds', 'practiceBlockIds', 'requirementId', 'sectionId', 'order', 'provenance'])
   return Object.entries(value).sort(([a], [b]) => Number(secondary.has(a)) - Number(secondary.has(b))).map(([key, item]) => `${labels[key] ?? key.replace(/([a-z])([A-Z])/g, '$1 $2')}: ${readableDifference(item)}`).join('\n')
 }

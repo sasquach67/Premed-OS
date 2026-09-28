@@ -92,7 +92,7 @@ export function NotebookAssetThumbnail({ assetId }: { assetId: string }) {
   const { images } = useContext(NotebookImages), state = images.get(assetId)
   return state?.status === 'ready' ? <img src={state.url} alt="Selected source image preview" /> : <span>{state?.status === 'loading' ? 'Loading preview' : 'No validated image'}</span>
 }
-export function NotebookVisualBlock({ block, onChange, changeText }: { block: NotebookFigureBlock | NotebookStudyDiagramBlock | Exclude<LearningVisualBlock, { type: 'worked-example' }>; onChange?: (block: VisualNotebookBlock) => void; changeText?: LearningTextChange }) {
+export function NotebookVisualBlock({ block, onChange, changeText }: { block: NotebookFigureBlock | NotebookStudyDiagramBlock | Exclude<LearningVisualBlock, { type: 'worked-example' | 'illustration' }>; onChange?: (block: VisualNotebookBlock) => void; changeText?: LearningTextChange }) {
   if (block.type === 'figure') return <NotebookFigure block={block} onChange={onChange} />
   if (block.type === 'study-diagram') return isConstrainedDiagram(block) ? <NotebookConstrainedDiagram block={block} onChange={onChange} /> : <NotebookStudyDiagram block={block} onChange={onChange} />
   return <NotebookLearningVisual block={block} change={changeText} renderFigure={(figure, annotations) => <NotebookFigure block={figure} annotations={annotations} />} />

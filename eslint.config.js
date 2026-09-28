@@ -14,6 +14,8 @@ export default defineConfig([
     // root src/ tree and this copy owns its own package and lint config.
     'premed-hq/**',
     'premed-hq-documentation/**',
+    // S1 acceptance fixtures: git-archive copies of other revisions and their builds.
+    'scripts/s1/.runtime/**',
     'output/**',
     'tmp/**',
   ]),

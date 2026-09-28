@@ -456,11 +456,15 @@ def run(root,out):
     summary_cases=[c for c in conversations['scenarios'] if c.get('companionReviewMessage')]
     assert {c['goal'] for c in summary_cases}=={'review','assessment','assignment'} and len(summary_cases)==6
     assert all('Create the JSON' not in c['companionReviewMessage'] for c in summary_cases)
-    assert len(conversations['deliveryCases'])==4
-    local,hosted,fallback,bundle=conversations['deliveryCases']
-    assert not local['mayOverwrite'] and local['collision'].endswith(' (1).json')
+    assert len(conversations['deliveryCases'])==5
+    local,hosted,fallback,bundle,requested_zip=conversations['deliveryCases']
+    assert not local['mayOverwrite'] and local['collision']==local['folder']+' (1)'
     assert hosted['mayClaimAlreadyInDownloads'] is False and fallback['mayInventDownloadLink'] is False
     assert bundle['internalNotebookName']=='notebook.json' and bundle['mappingAndActualAssetsRequired']
+    assert bundle['outerName']==local['folder']
+    assert hosted['mustDiscloseFolderLimitation'] and hosted['automaticZipFallback'] is False
+    assert requested_zip['requiresExplicitRequest'] and requested_zip['keepOutsideImportFolder']
+    assert requested_zip['outerName']==local['folder']+'.zip'
     results.append({'case':'authored-titled-delivery-capability-boundaries','expected':'local collision-safe Downloads, honest hosted attachment, complete-block fallback and compatible image bundle','passed':True})
     with tempfile.TemporaryDirectory() as tmp:
         fresh=Path(tmp);build(root,fresh);fixtures(fresh);feasibility_case(fresh/'feasibility-case');conversation_examples(fresh,root/'premed-hq-documentation/specifications/generation/portable-notebooks');revision_cases(fresh/'revision-case');build_packet(fresh/'cross-provider-packet');prompt_audit(root,fresh)
@@ -479,7 +483,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-18.' in template
+            assert f'Prompt build: {PROMPT_BUILD}.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])

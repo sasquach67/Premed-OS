@@ -83,6 +83,17 @@ def run(out):
     mutate('worked-as-initial-practice-stimulus','stimulus-reference',lambda p:block(p,'source-question').update(stimulusBlockIds=['elapsed-worked']))
     mutate('worked-as-worked-stimulus','stimulus-reference',lambda p:block(p,'elapsed-worked').update(stimulusBlockIds=['elapsed-worked']))
     mutate('timeline-as-initial-stimulus','stimulus-reference',lambda p:block(p,'source-question').update(stimulusBlockIds=['schedule-numeric']))
+    def illustrated(p,**over):
+        b={'id':'aligned-strands','type':'illustration','title':'Reading a template strand','provenance':'source','sourceIds':['ref'],'excerptIds':['ref-1'],'lines':["template 3'-TAC-5'","mRNA     5'-AUG-3'"],'summary':'The mRNA matches the coding strand.','more':None,**over}
+        p['entries'][0]['sections'][0]['blocks'].append(b);return b
+    ill=copy.deepcopy(pkg);illustrated(ill);assert not validate(ill,schema);rec('illustration-valid-without-show-more')
+    ill=copy.deepcopy(pkg);illustrated(ill,more='Polymerase reads 3-prime to 5-prime.');assert not validate(ill,schema);rec('illustration-valid-with-show-more')
+    mutate('illustration-blank-line','v4-empty-text',lambda p:illustrated(p,lines=[' ']))
+    mutate('illustration-blank-summary','v4-empty-text',lambda p:illustrated(p,summary=' '))
+    mutate('illustration-whitespace-more','v4-empty-text',lambda p:illustrated(p,more=' '))
+    mutate('illustration-thirteen-lines','schema',lambda p:illustrated(p,lines=['x']*13))
+    mutate('illustration-narration-field','schema',lambda p:illustrated(p,explanation='Narration.'))
+    mutate('illustration-as-initial-stimulus','stimulus-reference',lambda p:(illustrated(p),block(p,'source-question').update(stimulusBlockIds=['aligned-strands'])))
     mutate('decision-unlabelled-condition','v4-decision-condition',lambda p:block(p,'route-card')['edges'][0].update(label=' '))
     mutate('decision-duplicate-conditions','v4-decision-condition',lambda p:block(p,'route-card')['edges'][1].update(label=block(p,'route-card')['edges'][0]['label']))
     mutate('decision-causal-edge','v4-diagram-relation',lambda p:block(p,'route-card')['edges'][0].update(relation='causes'))

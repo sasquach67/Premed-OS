@@ -46,7 +46,8 @@ export function loadNotebookWorkflowDraft(courseId: string, defaults: { preferen
     const value = JSON.parse(saved)
     if (!value || value.version !== 1 || value.courseId !== courseId) throw new Error('Draft identity differs')
     for (const field of fields) if (typeof value[field] === 'string') draft[field] = value[field]
-    draft.goal = ['review', 'assessment', 'assignment'].includes(value.goal) ? value.goal : null
+    // New notebooks no longer offer the assignment goal; only an update of an existing assignment notebook keeps it.
+    draft.goal = ['review', 'assessment', ...(storageId.includes(':update:') ? ['assignment'] : [])].includes(value.goal) ? value.goal : null
     draft.step = steps.includes(value.step) ? value.step : 'goal'
     draft.selected = Array.isArray(value.selected) ? value.selected.filter((id: unknown): id is string => typeof id === 'string') : []
     draft.guideTarget = typeof value.guideTarget === 'string' ? value.guideTarget : ''

@@ -5,7 +5,7 @@ import type { NotebookFigureBlock, NotebookStudyDiagramBlock } from '@/lib/acade
 import './notebookLearningVisuals.css'
 
 export type LearningTextChange = (path: (string | number)[], value: string | null) => void
-type DisplayBlock = Exclude<LearningVisualBlock, { type: 'worked-example' }>
+type DisplayBlock = Exclude<LearningVisualBlock, { type: 'worked-example' | 'illustration' }>
 
 export function NotebookLearningVisual({ block, change, renderFigure }: {
   block: DisplayBlock; change?: LearningTextChange
