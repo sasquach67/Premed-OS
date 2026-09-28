@@ -22,6 +22,9 @@
 .en-step-label{max-width:100%;overflow-wrap:normal}
 .en-stage-content{min-width:0}
 .en-flow .en-goals{gap:.75rem;margin:0 0 1rem}
+@media(min-width:761px){
+  .en-flow .en-goals{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+}
 .en-flow .en-goal-card{display:flex;align-items:flex-start;gap:.65rem;min-height:0;padding:1rem;border:1px solid var(--border);border-radius:.85rem;background:var(--card)}
 .en-goal-card>input{flex:0 0 auto;width:1rem;height:1rem;margin-top:.2rem}
 .en-goal-card>span{min-width:0}
