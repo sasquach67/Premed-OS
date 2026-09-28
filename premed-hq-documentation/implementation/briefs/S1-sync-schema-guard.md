@@ -299,5 +299,6 @@ A returning-account combined case (fixture seeds the reviewed-onboarding meta) p
 Details: `evidence/S1-r3/final-4076ebd/README.md`.
 
 **Review.** The Claude planning chat approved the S1 code at `4076ebd` (Sep 28). That is
-not Andy's approval of anything. Production-apply checklist draft:
-`briefs/S1-production-apply-checklist.md`.
+not Andy's approval of anything. The canonical combined release checklist is
+`briefs/S1-T4-release-checklist.md` (Codex parent, `9872b54`). The SQL preflight detail
+behind it is the supporting runbook `briefs/S1-production-apply-checklist.md`.

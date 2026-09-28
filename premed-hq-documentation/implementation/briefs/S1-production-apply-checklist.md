@@ -1,8 +1,12 @@
-# S1 + Research (schema 2): production-apply checklist
+# S1 + Research (schema 2): production-apply supporting runbook
 
-**Status: draft for Andy's decision. Nothing here has been run against production.** Every
-step below needs Andy's explicit yes for the combined release. No step reads or writes a
-real account's `data`. The metadata inspection in step 1 reads schema catalogs only.
+**This is a supporting runbook, not an approval checklist.** The canonical combined
+release checklist is `implementation/briefs/S1-T4-release-checklist.md` (Codex parent,
+`9872b54`). Andy approves the release there. This file only details the SQL preflight,
+the apply order and the rollback pointer behind it.
+
+Nothing here has been run against production. No step reads or writes any real
+account's row. The inspection in step 1 reads schema catalogs only.
 
 - Code: S1 `s1/sync-guard-r3` at `4076ebd`, reviewed by the Claude planning chat (Sep 28).
   Combined client: `codex/s1-research-r3` at `8dd37c6f`, whose review belongs to the Codex
@@ -48,14 +52,19 @@ every signed-in user sees "Cloud sync is paused: the server has not been updated
 version of Premed OS yet. Your changes are saved on this device." Nothing is lost and no
 unguarded save happens, but sync stays off for everyone until the migration lands.
 
-## 3. Andy's confirmed-claim check (hold 4)
+## 3. Andy's confirmed-claim check (hold 4, user-led)
 
 1. Close or refresh **every** old premedos.app tab, on every device. A stale tab can still
    overwrite the unclaimed row until step 3 completes.
 2. Open **one** current premedos.app tab and sign in.
-3. Confirm Settings → Cloud sync shows **"Cloud protection: on"**.
-4. Confirm the row metadata shows `write_rev = 1` (read-only: `cloud_schema`, `write_rev`,
-   `updated_at` only). Make one small edit, and confirm it becomes `2`.
+3. Andy confirms Settings → Cloud sync shows **"Cloud protection: on"**. The app shows this
+   only after the server returned claimed metadata. That on-screen check **is** the
+   confirmation, and it needs no database access.
+4. This check authorizes **no one** to read Andy's row. Any agent read of that row, even
+   metadata only, needs Andy's separate, explicit authorization for that read. No specific
+   counter value is expected: automatic saves, or an earlier claim, can legitimately
+   produce any counter at or above 1. The exact first claim (`write_rev` 1) and the +1
+   compare-and-set are already proven on the disposable stack.
 5. From then on, any old tab that tries to save gets "This tab is out of date…", and
    nothing is overwritten.
 
@@ -72,7 +81,10 @@ trigger reopens the loss, and dropping the columns breaks every current client.
   revoke DELETE from `authenticated` after confirming account delete does not rely on it.
 - **`supabase/schema.sql` drift.** The run-once snapshot does not list the two columns.
   Option: add them so the snapshot matches the migrations.
-- **Security headers.** `verify-production-security.mjs` fails all 5 header checks on
-  premedos.app. The site is served by GitHub Pages (`server: GitHub.com`), which cannot set
-  response headers, so every release fails this check, including today's `230975d`. This is
-  a hosting decision (for example, the Cloudflare cutover), not an S1 code fault.
+## Release gate outside S1 code
+
+- **Security headers stay a release gate.** `verify-production-security.mjs` fails all 5
+  header checks on premedos.app. The site is served by GitHub Pages (`server: GitHub.com`),
+  which cannot set response headers, so every release fails this check, including today's
+  `230975d`. It is a hosting decision (for example, the Cloudflare cutover), not an S1 code
+  defect. The canonical checklist tracks it as a gate.
