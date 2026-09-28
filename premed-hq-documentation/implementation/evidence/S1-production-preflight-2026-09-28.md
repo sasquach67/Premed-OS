@@ -1,5 +1,20 @@
 # S1 production preflight — STOPPED before apply
 
+## Follow-up after Andy's discrepancy decision
+
+Andy selected `Yes, proceed (Recommended)` with a condition to compare the eight recorded migration statements against `codex/generation-usage`, and `Report only for now (Recommended)` for the generation timer. These answers were verified in the original Claude planning conversation. The following read-only checks ran through the same Arc SQL Editor. No production mutation followed.
+
+- The first six versions listed below have **NULL statements**, as well as NULL names. Their historical SQL cannot be compared. Their contents remain unknown; local branch files are not proof of what actually ran.
+- The final two versions each contain one recorded SQL statement. Exact byte lengths and MD5 fingerprints match the branch files at `codex/generation-usage` (`a54e54ef3a028af266b531bcbee93aa580cbe05c`):
+  - `20260907185638`: 1,716 bytes; `c51fef7744670b9e88fa8ac7f16c6592`.
+  - `20260907185927`: 818 bytes; `44674e03c3f3793a75b9b3ba92e3b04c`.
+- Live cron metadata shows `premedos-generation-runner` active every **5 seconds**, not the branch's original 10 seconds. `premedos-generation-reaper` is active on `* * * * *`.
+- All three required Vault secret **names** exist: `generation_runner_url`, `generation_runner_jwt`, `generation_runner_secret`. No secret values were queried or exposed.
+- Job status counts: succeeded 1, failed 5. Task status counts: done 58, failed 5, pending 7, skipped 1. No content or identifiers were read.
+- The live `dispatch_generation_work` function definition was inspected. It sends HTTP requests only for runnable tasks whose parent job is queued/running, matches the current stage, is unexpired, has attempts remaining, and has no active lease. The read-only aggregate using these same predicates returned **0**. Thus the configured timer has no runnable work at this observation; this does not disable it or prove its entire past activity.
+
+The missing six SQL records prevent satisfying the new comparison condition literally. Claude Planning was notified and presented Andy with a separate choice to proceed using fresh live overlap/catalog checks while explicitly retaining the historical uncertainty. That answer is pending at this record. No S1 apply, migration-history insert, account-content access, claim, merge, or deployment has occurred.
+
 The production apply and one-release security-header waiver were authorized by Andy in the Claude planning conversation, verified through its visible original question answers and user message `u make codex do option b`. Andy then explicitly changed the browser to Arc in this Codex conversation. The SQL apply was conditional on the preflight matching expectations.
 
 ## Observed in Arc
