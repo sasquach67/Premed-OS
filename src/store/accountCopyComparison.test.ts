@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { createPersonalInitialData } from '@/data/personalInitialData'
-import { additiveAccountWinner, classifyAccountCopyChanges } from './accountCopyComparison'
+import { additiveAccountWinner, classifyAccountCopyChanges, comparableAccountContent } from './accountCopyComparison'
 const task = (id: string) => ({ id, title: id, type: 'Task', progress: 'Not started' as const, kanban: 'todo' as const, archived: false, order: 0 })
 it('requires the smaller side to match the baseline, not merely contain fewer records', () => {
   const small = createPersonalInitialData(), full = structuredClone(small)
@@ -33,4 +33,16 @@ it('ignores object-key order while keeping array order meaningful', () => {
   const a = createPersonalInitialData(); a.tasks = [task('one')]
   const b = structuredClone(a); b.tasks = [{ ...Object.fromEntries(Object.entries(task('one')).reverse()) } as unknown as typeof b.tasks[number], task('two')]
   expect(additiveAccountWinner(classifyAccountCopyChanges(a, b), true, false)).toBe('cloud')
+})
+
+it('ignores only enumerated housekeeping and empty Research defaults, never authored or unknown values', () => {
+  const a=createPersonalInitialData(), b=structuredClone(a)
+  b.meta.lastOpenedAt=123;b.meta.recentRoutes=['/research'];b.settings.calendar.lastSyncedAt=456
+  delete (b as Partial<typeof b>).researchReminders
+  expect(comparableAccountContent(a)).toBe(comparableAccountContent(b))
+  b.notes.example='Authored note'
+  expect(comparableAccountContent(a)).not.toBe(comparableAccountContent(b))
+  delete b.notes.example
+  Object.assign(b,{futureSection:{value:'keep'}})
+  expect(comparableAccountContent(a)).not.toBe(comparableAccountContent(b))
 })

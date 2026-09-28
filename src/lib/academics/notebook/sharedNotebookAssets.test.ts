@@ -82,11 +82,23 @@ it('reports verified progress for 80 distinct fixture images with a slowed repos
   const f=await fixture(), blobs=new Map<string,Blob>()
   const template=structuredClone(f.data.academics.classCenter.lectures[0])
   f.data.academics.classCenter.lectures=[]
-  for(let index=0;index<80;index++) {
-    const blob=new Blob([`Synthetic image ${index}`],{type:'image/png'}), hash=await binaryDigest(blob)
-    blobs.set(hash,blob)
-    const lecture=structuredClone(template);lecture.id=`fixture-${index}`
-    lecture.importedNotebook!.assetBindings=[{assetId:template.importedNotebook!.assetBindings[0].assetId,sha256:hash,byteLength:blob.size,mimeType:'image/png',width:1,height:1}]
+  for(let notebook=0;notebook<2;notebook++) {
+    const lecture=structuredClone(template), pkg=visualFixture()
+    const asset=pkg.assets[0], candidate=pkg.visualReview!.candidates[0]
+    const figure=pkg.entries[0].sections.flatMap(section=>section.blocks).find(block=>block.type==='figure')!
+    const bindings=[]
+    for(let image=0;image<40;image++) {
+      const blob=new Blob([`Synthetic image ${notebook}-${image}`],{type:'image/png'}), hash=await binaryDigest(blob)
+      const assetId=image===0?asset.id:`image-${image}`
+      blobs.set(hash,blob);bindings.push({assetId,sha256:hash,byteLength:blob.size,mimeType:'image/png',width:1,height:1})
+      if(image>0) {
+        pkg.assets.push({...asset,id:assetId,fileName:`image-${image}.png`})
+        pkg.visualReview!.candidates.push({...candidate,id:`candidate-${image}`,assetId})
+        pkg.entries[0].sections[0].blocks.push({...figure,id:`figure-${image}`,assetId} as typeof figure)
+      }
+    }
+    lecture.id=`fixture-${notebook}`
+    Object.assign(lecture.importedNotebook!,{original:pkg,current:pkg,originalRaw:JSON.stringify(pkg),assetBindings:bindings})
     f.data.academics.classCenter.lectures.push(lecture)
   }
   const progress=vi.fn()

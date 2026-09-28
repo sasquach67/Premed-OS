@@ -1,4 +1,4 @@
-import { additiveAccountWinner, classifyAccountCopyChanges } from './accountCopyComparison'
+import { additiveAccountWinner, classifyAccountCopyChanges, comparableAccountContent } from './accountCopyComparison'
 import { CloudColumnsMissingError, isMissingCloudColumnsError, isSchemaGuardError, prepareWorkspaceData, WorkspaceSchemaError } from '@/lib/workspaceSchema'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { sameJson } from '@/lib/logicalJson'
@@ -145,7 +145,8 @@ export function useCloudSync() {
         const localText = local && syncContent(local)
         const remoteText = syncContent(remote.data)
         fresh()
-        const equal = localText === remoteText
+        const housekeepingOnly = !!local && localText !== remoteText && comparableAccountContent(local) === comparableAccountContent(remote.data)
+        const equal = localText === remoteText || housekeepingOnly
         const cleanLocal = baseline && local && await matchesSyncBaseline(local, baseline.digest)
         const remoteUnchanged = baseline && remote.updatedAt === baseline.updatedAt && await matchesSyncBaseline(remote.data, baseline.digest)
         fresh(); assertSyncLease(lease)
@@ -160,7 +161,7 @@ export function useCloudSync() {
           setStatus('error')
           return
         }
-        if (local && !equal && ((cleanLocal && !remoteUnchanged) || additiveWinner === 'device')) {
+        if (local && (housekeepingOnly || (!equal && ((cleanLocal && !remoteUnchanged) || additiveWinner === 'device')))) {
           if (!await preserveAccountReplacement(u.id, before!, remote.data, token)) { setStatus('error'); return }
         }
         fresh(); assertSyncLease(lease)
@@ -183,6 +184,7 @@ export function useCloudSync() {
         allowAccountSync(lease)
         lastSig.current = remoteText
         if (additiveWinner) recordAccountRecoveryNotice(u.id, ADDITIVE_RECOVERY_NOTICE)
+        else if (housekeepingOnly) recordAccountRecoveryNotice(u.id, 'Your saved work matches. Sync resumed; the other copy is saved under Settings → Local data.')
         setStatus('synced'); setProgress(''); setLastSyncAt(Date.parse(remote.updatedAt))
       } catch (cause) {
         try { assertSyncSession(token) } catch { return }

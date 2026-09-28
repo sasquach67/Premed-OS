@@ -65,3 +65,11 @@ The standard reference for one-sided fast-forward vs divergent histories is [Git
 ### Release gate
 
 The live security preflight still fails five missing HTTP headers (CSP, HSTS, Referrer-Policy, Permissions-Policy, X-Content-Type-Options). The Sep 28 S1 waiver explicitly covered that release only. This check is unchanged. S2 remains unmerged/undeployed pending completed acceptance, planning review, and an S2 release decision on this existing hosting gate.
+
+### Review follow-up and completed local checks
+
+Claude identified housekeeping-only divergence as a false-conflict cause. Comparison now ignores only `meta.lastOpenedAt`, `meta.recentRoutes`, `settings.calendar.lastSyncedAt`, and the four existing empty Research defaults. Baseline fingerprints, remote payloads and persisted schema remain unchanged. Authored or unknown differences remain meaningful. Matching work archives both snapshots before resuming.
+
+Claude also proposed restoring one-sided deletion fast-forward. This conflicts with the approved brief's explicit missing-record prohibition, so the implementation keeps that prohibition while Claude asks Andy to clarify the scope; no new approval is inferred.
+
+Current checks: **302 files / 2,325 tests pass** in a clean full run; build passes; lint 0 errors / 55 existing warnings; dependency audit 0 vulnerabilities. Eighty distinct image assets pass through the real image service with a delayed reader; save-progress and stalled late-continuation fences are separately tested. Disposable-local browser/API acceptance is being rerun after correcting fixture normalization and stopping overlapping processes. Earlier inconclusive results remain labeled under evidence/S2/local-attempt; none counts as acceptance.

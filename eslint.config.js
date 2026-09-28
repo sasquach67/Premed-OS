@@ -16,6 +16,8 @@ export default defineConfig([
     'premed-hq-documentation/**',
     // S1 acceptance fixtures: git-archive copies of other revisions and their builds.
     'scripts/s1/.runtime/**',
+    // S2 uses the same disposable copied-build fixture pattern.
+    'scripts/s2/.runtime/**',
     'output/**',
     'tmp/**',
   ]),

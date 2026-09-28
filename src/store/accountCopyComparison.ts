@@ -22,6 +22,18 @@ export function compareAccountCopies(device: AppData, cloud: AppData) {
 }
 
 
+/** Comparison only: these are device housekeeping, not authored work. The
+ * persisted baseline digest and all payloads keep their existing contract. */
+export function comparableAccountContent(data: AppData): string {
+  const value = JSON.parse(syncContent(data))
+  if (value.meta) { delete value.meta.lastOpenedAt; delete value.meta.recentRoutes }
+  if (value.settings?.calendar) delete value.settings.calendar.lastSyncedAt
+  for (const key of ['researchUpcomingItems', 'researchReminders', 'researchTimelineNotes', 'researchMemberships']) {
+    if (Array.isArray(value[key]) && value[key].length === 0) delete value[key]
+  }
+  return JSON.stringify(value)
+}
+
 export type CopyChanges = { deviceOnly: string[]; cloudOnly: string[]; changed: boolean }
 /** Full, uncapped safety classification. The bounded display diff above is never
  * used to decide a winner. Common records and their relative order stay exact. */
@@ -56,7 +68,7 @@ export function classifyAccountCopyChanges(device: AppData, cloud: AppData): Cop
     } else result.changed = true
   }
   // Unknown sections must be equal, never treated as understood record lists.
-  const left = JSON.parse(syncContent(device)), right = JSON.parse(syncContent(cloud))
+  const left = JSON.parse(comparableAccountContent(device)), right = JSON.parse(comparableAccountContent(cloud))
   const knownLeft = knownWorkspaceData(left), knownRight = knownWorkspaceData(right)
   const opaque = (all: Record<string, unknown>, known: object) => Object.fromEntries(Object.entries(all).filter(([key]) => !Object.hasOwn(known, key)))
   if (JSON.stringify(opaque(left, knownLeft)) !== JSON.stringify(opaque(right, knownRight))) result.changed = true

@@ -29,7 +29,7 @@ import { claimedRow } from '@/test/fakeDashboards'
 import legacyFixture from './__fixtures__/s1-d60f682-baseline.json'
 import { accountStorageKey, activeWorkspaceOwner } from '@/lib/demoMode'
 import { activateAccountWorkspace, activateGuestWorkspace, snapshotData, useStore } from './store'
-import { getAccountConflict, allowAccountSync, pauseAccountSync, observeSyncSession, readSyncBaseline, recordSyncBaseline, isAccountSyncReady, getAccountRecoveryNotice } from './accountSyncSafety'
+import { getAccountConflict, allowAccountSync, pauseAccountSync, observeSyncSession, readSyncBaseline, recordSyncBaseline, isAccountSyncReady, getAccountRecoveryNotice, ADDITIVE_RECOVERY_NOTICE } from './accountSyncSafety'
 import { useCloudSync } from './useCloudSync'
 import { AccountCloudContext, useAccountCloud } from './AccountCloudContext'
 import { visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
@@ -866,4 +866,21 @@ it('S2 pairs the conflict timestamp with the cloud document reread after a claim
   await render();await session(id)
   expect(getAccountConflict(id)).toMatchObject({saved:true,cloudSavedAt:newer,remote:{notes:{example:'new cloud'}}})
   expect(snapshotData().notes.example).toBe('device copy')
+})
+
+it('S2 resumes matching authored work despite per-device housekeeping without changing the baseline format', async () => {
+  const id=account();activateAccountWorkspace(id,workspace('same work'));const local=snapshotData(), remote=structuredClone(local)
+  remote.meta.lastOpenedAt=123;remote.meta.recentRoutes=['/research'];remote.settings.calendar.lastSyncedAt=456
+  wire.rows.set(id,claimed(remote,newer));await render();await session(id)
+  expect(getAccountConflict(id)).toBeUndefined();expect(isAccountSyncReady(id)).toBe(true)
+  expect(wire.snapshots.size).toBeGreaterThanOrEqual(2)
+  expect(snapshotData().notes.example).toBe('same work')
+})
+it('S2 still identifies additions when shared record content matches but housekeeping differs', async () => {
+  const id=account();activateAccountWorkspace(id,workspace('base'));const base=snapshotData()
+  await recordSyncBaseline(id,base,revision(older),observeSyncSession(id))
+  useStore.getState().update(d=>{d.tasks.push(addedTask('new'));d.meta.recentRoutes=['/research'];d.settings.calendar.lastSyncedAt=789})
+  wire.rows.set(id,claimed(base,older));await render();await session(id)
+  expect(getAccountConflict(id)).toBeUndefined();expect(getAccountRecoveryNotice(id)).toBe(ADDITIVE_RECOVERY_NOTICE)
+  expect(wire.snapshots.size).toBeGreaterThanOrEqual(2)
 })
