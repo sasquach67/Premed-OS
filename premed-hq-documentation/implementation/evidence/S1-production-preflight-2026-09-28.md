@@ -85,3 +85,9 @@ Andy pasted the prepared read-only query into Arc after native automated paste f
 Andy/Claude requested S1 before lesson batches and the notebook-list feature. The existing production authorization and one-release header waiver remain in force. Combined branch now merges main b169def through 173fdfa, preserving beta23. No production apply record exists because no apply has occurred.
 
 Arc showed Audible on resumption; availability was requested before switching it. The next production action is a fresh catalog/overlap preflight in Arc, followed by the exact migration and history insert using the prepared reviewed-SQL wrapper. If paste remains unavailable to automation, Andy pastes the file and Codex inspects it before Run. No lesson/account data access, claims, history repair, or timer changes are authorized.
+
+### Renewed preflight receipt — 2026-09-28T15:23:28.829386+00:00
+
+Andy confirmed Arc was free. Codex reopened saved SQL query 4a6fcec4-1795-4fd0-b8bb-60cdc632d69d in poichxqptuupzrkyewrq main PRODUCTION and reran the metadata-only Step 1 query. It again returned 21 rows: zero non-internal dashboard triggers, zero S1 columns, zero S1 functions, no S1 migration history entry, and the same five generation tables/eleven function signatures listed above. No account rows were read. Six historical NULL-statement versions remain contents unknown.
+
+Step 2 has not been pasted into the editor or executed. Waiting only for the previously agreed manual paste of 02-apply-S1-and-verify.sql; no renewed production approval is required. The wrapper repeats overlap checks before writes. Final combined beta23 checks passed: 298 files / 2,287 tests and build with Research enabled. No production schema change, merge to main, or S1 deployment has occurred.
