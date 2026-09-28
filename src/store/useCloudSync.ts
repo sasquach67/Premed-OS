@@ -152,8 +152,7 @@ export function useCloudSync() {
         fresh(); assertSyncLease(lease)
         const changes = local && !equal ? classifyAccountCopyChanges(local, remote.data) : null
         const additiveWinner = changes && additiveAccountWinner(changes, Boolean(cleanLocal), Boolean(remoteUnchanged))
-        const deletion = changes && ((cleanLocal && changes.deviceOnly.length > 0) || (remoteUnchanged && changes.cloudOnly.length > 0))
-        if (local && !equal && ((!cleanLocal && !remoteUnchanged) || deletion)) {
+        if (local && !equal && ((!cleanLocal && !remoteUnchanged) || changes?.opaqueOmission)) {
           await preserveAccountConflict(u.id, before, remote.data, token, undefined, undefined, cloudSavedAt)
           fresh()
           // Reopen only the saved local account. This does not choose a sync winner.
@@ -161,7 +160,7 @@ export function useCloudSync() {
           setStatus('error')
           return
         }
-        if (local && (housekeepingOnly || (!equal && ((cleanLocal && !remoteUnchanged) || additiveWinner === 'device')))) {
+        if (local && (housekeepingOnly || (!equal && (cleanLocal || remoteUnchanged)))) {
           if (!await preserveAccountReplacement(u.id, before!, remote.data, token)) { setStatus('error'); return }
         }
         fresh(); assertSyncLease(lease)
@@ -184,6 +183,7 @@ export function useCloudSync() {
         allowAccountSync(lease)
         lastSig.current = remoteText
         if (additiveWinner) recordAccountRecoveryNotice(u.id, ADDITIVE_RECOVERY_NOTICE)
+        else if (!equal && (cleanLocal || remoteUnchanged)) recordAccountRecoveryNotice(u.id, 'Your latest changes were synced. The other copy is saved under Settings → Local data.')
         else if (housekeepingOnly) recordAccountRecoveryNotice(u.id, 'Your saved work matches. Sync resumed; the other copy is saved under Settings → Local data.')
         setStatus('synced'); setProgress(''); setLastSyncAt(Date.parse(remote.updatedAt))
       } catch (cause) {

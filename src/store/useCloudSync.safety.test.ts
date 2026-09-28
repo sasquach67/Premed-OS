@@ -817,7 +817,7 @@ it.each(['device', 'cloud'] as const)('S2 preserves recovery before silently kee
   expect(getAccountRecoveryNotice(id)).toContain('newest work')
   if (side === 'device') { await act(async () => { expect(await cloud.pushNow()).toBe(true) }); expect(wire.writes).toHaveBeenCalledTimes(1) }
 })
-it.each(['device', 'cloud'] as const)('S2 never silently restores an intentional deletion on %s', async side => {
+it.each(['device', 'cloud'] as const)('S2 silently keeps an ancestor-proven deletion on %s after recovery', async side => {
   const id = account(); const initial = workspace('base'); initial.tasks.push(addedTask('deleted'))
   activateAccountWorkspace(id, initial); const base = snapshotData()
   await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
@@ -825,8 +825,21 @@ it.each(['device', 'cloud'] as const)('S2 never silently restores an intentional
   if (side === 'device') useStore.getState().update(d => { d.tasks = d.tasks.filter(t => t.id !== 'deleted') })
   wire.rows.set(id, claimed(side === 'cloud' ? reduced : base, side === 'cloud' ? newer : older))
   await render(); await session(id)
-  expect(getAccountConflict(id)?.saved).toBe(true); expect(isAccountSyncReady(id)).toBe(false)
-  expect(wire.writes).not.toHaveBeenCalled()
+  expect(getAccountConflict(id)).toBeUndefined(); expect(isAccountSyncReady(id)).toBe(true)
+  expect(wire.snapshots.size).toBe(2)
+  expect(snapshotData().tasks.some(t => t.id === 'deleted')).toBe(false)
+  if (side === 'device') await act(async () => { expect(await cloud.pushNow()).toBe(true) })
+  expect((wire.rows.get(id) as { data: { tasks: { id: string }[] } }).data.tasks.some(t => t.id === 'deleted')).toBe(false)
+})
+it.each(['device', 'cloud'] as const)('S2 asks about a deletion on %s when the other side also changed', async side => {
+  const id = account(); const initial = workspace('base'); initial.tasks.push(addedTask('deleted'))
+  activateAccountWorkspace(id, initial); const base = snapshotData()
+  await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
+  const remote = structuredClone(base)
+  useStore.getState().update(d => { if (side === 'device') d.tasks = []; else d.notes.example = 'Device edit' })
+  if (side === 'cloud') remote.tasks = []; else remote.notes.example = 'Cloud edit'
+  wire.rows.set(id, claimed(remote, newer)); await render(); await session(id)
+  expect(getAccountConflict(id)?.saved).toBe(true); expect(wire.writes).not.toHaveBeenCalled()
 })
 it('S2 leaves an unproven superset and independent additions for review', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
@@ -846,16 +859,35 @@ it('S2 cannot resume the local-additions path when recovery fails', async () => 
   expect(wire.writes).not.toHaveBeenCalled(); expect(getAccountRecoveryNotice(id)).toBeUndefined()
 })
 
-it.each(['device', 'cloud'] as const)('S2 asks before accepting a missing note-map record on %s', async side => {
+it.each(['device', 'cloud'] as const)('S2 keeps an ancestor-proven note-map deletion on %s after recovery', async side => {
   const id = account(); activateAccountWorkspace(id, workspace('keep this note')); const base = snapshotData()
   await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
   const reduced = structuredClone(base); delete reduced.notes.example
   if (side === 'device') useStore.getState().update(d => { delete d.notes.example })
   wire.rows.set(id, claimed(side === 'cloud' ? reduced : base, side === 'cloud' ? newer : older))
   await render(); await session(id)
-  expect(getAccountConflict(id)?.saved).toBe(true)
-  expect(isAccountSyncReady(id)).toBe(false)
-  expect(wire.writes).not.toHaveBeenCalled()
+  expect(getAccountConflict(id)).toBeUndefined()
+  expect(isAccountSyncReady(id)).toBe(true); expect(wire.snapshots.size).toBe(2)
+  expect(snapshotData().notes.example).toBeUndefined()
+})
+it.each(['device', 'cloud'] as const)('S2 preserves originals if recovery fails before a deletion on %s', async side => {
+  const id = account(); activateAccountWorkspace(id, workspace('retain')); const base = snapshotData()
+  await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
+  const remote = structuredClone(base)
+  if (side === 'device') useStore.getState().update(d => { delete d.notes.example }); else delete remote.notes.example
+  wire.rows.set(id, claimed(remote, side === 'cloud' ? newer : older)); wire.archiveFails = true
+  const raw = localStorage.getItem(accountStorageKey(id))
+  await render(); await session(id)
+  expect(isAccountSyncReady(id)).toBe(false); expect(wire.writes).not.toHaveBeenCalled()
+  expect(localStorage.getItem(accountStorageKey(id))).toBe(raw)
+})
+it('S2 never treats a missing opaque cloud section as a known deletion', async () => {
+  const id = account(); const initial = { ...workspace('base'), futureSection: { keep: true } }
+  activateAccountWorkspace(id, initial); const base = snapshotData()
+  await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
+  const remote = structuredClone(base); delete (remote as unknown as Record<string, unknown>).futureSection
+  wire.rows.set(id, claimed(remote, newer)); await render(); await session(id)
+  expect(getAccountConflict(id)?.saved).toBe(true); expect(wire.writes).not.toHaveBeenCalled()
 })
 
 it('S2 pairs the conflict timestamp with the cloud document reread after a claim race', async () => {

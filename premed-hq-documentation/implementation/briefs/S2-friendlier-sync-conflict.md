@@ -25,14 +25,14 @@ The pause is correct: it replaces silent last-writer-wins data loss. But the scr
 3. **Never lose the loser.** Whichever copy isn't kept is stored first as a verified recovery copy (today's mechanism). The notice says where to find it.
 
 ## Must not
-- Auto-resolve when the **same record changed on both sides**, or when a record is **missing on one side** (it may have been deleted on purpose). Those cases always get the panel.
+- Auto-resolve, **when both copies changed since the last sync**, if the **same record changed on both sides** or a record is **missing on one side** (it may have been deleted on purpose). Those cases always get the panel. (When one copy equals the baseline, see the scope correction below.)
 - Change the S1 guard, the write protocol, the schema or storage versions.
 - Read or write Andy's real account while building or testing.
 - Add new dependencies.
 - Break the design foundation: tokens, lucide, both themes, 375px.
 
 ## Verify
-- **Unit tests:** superset in each direction resolves silently, with a recovery copy saved first. Additions on both sides, the same record edited on both sides, and a deletion on one side each show the panel. "Keep newest" picks by saved time. The recovery copy exists before any replace.
+- **Unit tests:** superset in each direction resolves silently, with a recovery copy saved first. Additions on both sides, the same record edited on both sides, and a deletion on one side **when both copies changed** each show the panel. "Keep newest" picks by saved time. The recovery copy exists before any replace.
 - **Real-API fixtures:** reuse the local S1 stack harness.
 - **Headless Chrome:** the panel in both themes and at 375px, keyboard and screen-reader labels, and the notice after the silent path.
 - **Release:** deploy under the standing final-change rule, then report to Andy.
@@ -43,6 +43,20 @@ Andy reported the review "kinda stuck". After he chose a copy, `AccountConflictR
 - If it stalls past a time limit, say so, with a safe retry. The recovery copies already exist.
 - Keep the chosen radio visibly selected while it's busy.
 - **Test:** 80 fixture images with a slowed repository show progress and complete. A stalled upload shows the retry message and loses no data.
+
+## Scope correction (Sep 28): ancestor-proven deletions fast-forward
+The original "missing on one side always gets the panel" rule was written for the both-changed case, but it read as universal. Codex implemented it as written, and that paused legitimate fast-forwards.
+
+Claude asked Andy: "You delete a task on your phone. Your laptop hasn't changed anything since it last synced. When the laptop next opens premedos.app, what should happen?" Andy answered **"Delete it quietly (Recommended)"**. The option text was: "The laptop just removes the task too, like it did before S2. This only happens when the laptop is provably unchanged since the last sync, so the deletion can't be a mistake from the other side. A recovery copy is still saved first."
+
+- **When one copy matches the baseline digest** (the ancestor is proven), the other copy wins silently, **including its deletions**, as before S2. A recovery copy is saved first.
+- **When both copies changed,** a record missing on one side, or the same record changed on both sides, still gets the panel.
+- **Regressions:** delete on A with B unchanged → silent, deletion kept, recovery copy present. Same for the reverse direction. Delete on A with B also changed → panel.
+
+## Release record (Sep 28): header waiver for S2 only
+Claude asked Andy: "S2 is held on the security-header check, just like S1 was. That check fails on every release while the site is on GitHub Pages. Either waive it for S2 too, which is what I'd do since it's the same pre-existing hosting issue, or move hosting first." Andy answered: "ok".
+
+**Recorded as:** the security-header check (`verify-production-security.mjs`) is waived for the **S2 release only**, like S1. The check stays in place, unaltered. The hosting move remains a separate task, and later releases need their own decision until hosting is fixed.
 
 ## Build report (Sep 28, review candidate)
 
@@ -73,3 +87,7 @@ Claude identified housekeeping-only divergence as a false-conflict cause. Compar
 Claude also proposed restoring one-sided deletion fast-forward. This conflicts with the approved brief's explicit missing-record prohibition, so the implementation keeps that prohibition while Claude asks Andy to clarify the scope; no new approval is inferred.
 
 Current checks: **302 files / 2,325 tests pass** in a clean full run; build passes; lint 0 errors / 55 existing warnings; dependency audit 0 vulnerabilities. Eighty distinct image assets pass through the real image service with a delayed reader; save-progress and stalled late-continuation fences are separately tested. Disposable-local browser/API acceptance is being rerun after correcting fixture normalization and stopping overlapping processes. Earlier inconclusive results remain labeled under evidence/S2/local-attempt; none counts as acceptance.
+
+### Approved deletion correction
+
+Verified Andy's actual selection in the Claude planning conversation: **"Delete it quietly (Recommended)"**, as recorded at docs/dev-workflow `e02283f`. One-sided changes now fast-forward when the other copy is proven unchanged against the baseline, including known record/note deletions. Both copies are verified in recovery before either direction resumes. Both-changed deletions and opaque-section omissions still require review. The S2-only header waiver is recorded above; the check remains unchanged. New focused regressions and final acceptance follow this correction.

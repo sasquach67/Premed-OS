@@ -46,3 +46,11 @@ it('ignores only enumerated housekeeping and empty Research defaults, never auth
   Object.assign(b,{futureSection:{value:'keep'}})
   expect(comparableAccountContent(a)).not.toBe(comparableAccountContent(b))
 })
+
+it('identifies opaque top-level omissions in either direction independently of known record deletions', () => {
+  const a = createPersonalInitialData(), b = { ...structuredClone(a), futureSection: { keep: true } }
+  expect(classifyAccountCopyChanges(a, b).opaqueOmission).toBe(true)
+  expect(classifyAccountCopyChanges(b, a).opaqueOmission).toBe(true)
+  a.tasks.push(task('known'))
+  expect(classifyAccountCopyChanges(a, createPersonalInitialData()).opaqueOmission).toBe(false)
+})

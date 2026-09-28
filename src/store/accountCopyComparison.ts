@@ -34,11 +34,11 @@ export function comparableAccountContent(data: AppData): string {
   return JSON.stringify(value)
 }
 
-export type CopyChanges = { deviceOnly: string[]; cloudOnly: string[]; changed: boolean }
+export type CopyChanges = { deviceOnly: string[]; cloudOnly: string[]; changed: boolean; opaqueOmission: boolean }
 /** Full, uncapped safety classification. The bounded display diff above is never
  * used to decide a winner. Common records and their relative order stay exact. */
 export function classifyAccountCopyChanges(device: AppData, cloud: AppData): CopyChanges {
-  const result: CopyChanges = { deviceOnly: [], cloudOnly: [], changed: false }
+  const result: CopyChanges = { deviceOnly: [], cloudOnly: [], changed: false, opaqueOmission: false }
   const record = (v: unknown): v is Record<string, unknown> & { id: string } => Boolean(v && typeof v === 'object' && typeof (v as { id?: unknown }).id === 'string')
   function walk(a: unknown, b: unknown, path: string) {
     if (JSON.stringify(a) === JSON.stringify(b)) return
@@ -72,8 +72,8 @@ export function classifyAccountCopyChanges(device: AppData, cloud: AppData): Cop
   const knownLeft = knownWorkspaceData(left), knownRight = knownWorkspaceData(right)
   const opaque = (all: Record<string, unknown>, known: object) => Object.fromEntries(Object.entries(all).filter(([key]) => !Object.hasOwn(known, key)))
   if (JSON.stringify(opaque(left, knownLeft)) !== JSON.stringify(opaque(right, knownRight))) result.changed = true
-  for (const key of Object.keys(left)) if (!Object.hasOwn(knownLeft, key) && !Object.hasOwn(right, key)) result.deviceOnly.push(key)
-  for (const key of Object.keys(right)) if (!Object.hasOwn(knownRight, key) && !Object.hasOwn(left, key)) result.cloudOnly.push(key)
+  for (const key of Object.keys(left)) if (!Object.hasOwn(knownLeft, key) && !Object.hasOwn(right, key)) { result.deviceOnly.push(key); result.opaqueOmission = true }
+  for (const key of Object.keys(right)) if (!Object.hasOwn(knownRight, key) && !Object.hasOwn(left, key)) { result.cloudOnly.push(key); result.opaqueOmission = true }
   walk(knownLeft, knownRight, '')
   return result
 }
