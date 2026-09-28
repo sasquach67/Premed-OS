@@ -1,3 +1,7 @@
+# Show, don't tell — beta22
+
+Andy's Sep 27 audit found study guides that explain in long paragraphs what a worked example would show, narrate their sources, and never correct the student's own answers. EC-SHOW-DONT-TELL, EC-PERTINENT-ONLY, EC-STUDENT-WORK, EC-VERIFY-ANSWERS and EC-ILLUSTRATION in canonical 20 fix this for all three goals and both modes: lead with an `illustration` (worked lines, a one-line summary, optional Show more), keep provenance in JSON rather than text, treat student work as attempts and correct it in one line, and verify answers independently (a key shows intended grading, not truth). The v4 `illustration` block is additive; version 4 and draft-4 are unchanged so existing notebooks still update. Beta21's folder delivery is unchanged.
+
 # Folder delivery default — beta21
 
 Across Review, Assessment and Assignment, including new notebooks, updates and repairs, the standard output is one folder named after the notebook with exactly one final JSON and all required images. Local authorized assistants create it in the actual Downloads directory and preserve existing files. Hosted chats that cannot deliver folders disclose that limitation and provide the complete file set and intended paths. ZIP requires an explicit student request. This changes AI delivery instructions and app guidance; existing ZIP import and app-owned baseline/backup exports remain compatible. Regenerate the three app prompts through the canonical builder and verified asset sync.
