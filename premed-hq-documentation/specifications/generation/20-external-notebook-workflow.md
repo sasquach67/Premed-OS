@@ -127,6 +127,27 @@ For an authorized reduction update, show exact removed/merged IDs and reasons, p
 
 The visual guidance applies to the review guide's learning structure. It does not impose guide sections, diagram quotas or long explanations on a short assignment hint. Use comparable dimensions for tables; preserve mechanisms and typed relationships when translating a visual representation into available text blocks. Keep typography and layout with the app. Baseline statements that a native renderer or server enforces a check describe that earlier pipeline; they do not prove an external chat or this importer executed it. The check receipt must still say what actually ran.
 
+## Assessment exam profile and practice style
+
+These rules apply only to the **Assessment** goal, in new and update mode.
+
+- `EC-EXAM-PROFILE`: When the student supplies real past exams, instructor practice quizzes or answer keys for this course, build the course's exam profile before writing practice. Record:
+  1. The format mix: the share of single-answer multiple choice, select-all-that-apply, NOT/false stems, ordering items and written items.
+  2. Recurring answer options, such as "cannot tell from these data", "there was an error in the experiment", "none of the above" and combination options, and how often each is actually correct.
+  3. Validity items: questions that hinge on whether the controls worked before any conclusion.
+  4. Chained scenarios: how many questions share one scenario, and which lessons each chain crosses.
+  5. The share of items that draw on two or more lessons.
+  6. The figure families the course uses.
+
+  Then write new, original questions that match the profile. Never copy, lightly reword or renumber an exam item. Never reproduce a key's typos, missing options or simplifications: a key shows how the course grades, not what is true. State the profile briefly in the companion message, not in the notebook. Without real exams, use the course blueprint and say so.
+
+- `EC-MOCK-EXAM`: Unless the request already says, ask once, in the first reply, which practice style the student wants:
+  - **(a) Mock exam in the real exam's style.** This is the recommended default. It uses mixed topics in the profile's proportions, the exam's length and formats (all multiple choice when the exam is), chained scenarios, and "cannot tell" options that are sometimes correct.
+  - **(b) Topic drills.** Grouped by lesson; written items are allowed.
+  - **(c) Both.**
+
+  If the student doesn't choose, use (a).
+
 ## Portable representation
 
 The exact v4 JSON Schema in this prompt governs new output: format=premed-os-notebook-package, version=4, instructionsVersion=notebook-workflows-draft-4. Exact v2 and v3 packages remain valid existing inputs under their separately discriminated schemas. A supplied saved v2/v3 baseline is valid update input; a v4 proposal preserves its surviving identity and content, and an explicit reviewed app acceptance is required. Never silently migrate saved content, reinterpret an old payload under v4, or downgrade while dropping visuals, evidence partitions, edits or recoverable history. Existing goal documents may name built-in fields such as SourceRef/sourceRef, sourceChunkIds, conceptLabel, callout/numbered blocks, examPractice, TITLE metadata, or standards. Those describe the original renderer. For this external workflow, preserve their learning function using the mapping below; do not emit the built-in field names or mix formats:
