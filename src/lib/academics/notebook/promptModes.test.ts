@@ -50,3 +50,11 @@ it.each(['review', 'assessment', 'assignment'] as const)('delivers a complete fo
     expect(prompt).toContain('complete corrected folder with the notebook JSON and all required actual image files')
   }
 })
+it('carries the show-don\'t-tell, pertinent-only and student-work rules and the illustration block into every goal', () => {
+  for (const goal of ['review', 'assessment', 'assignment'] as const) {
+    const template = PROMPT_TEMPLATES[goal]
+    for (const rule of ['EC-SHOW-DONT-TELL', 'EC-PERTINENT-ONLY', 'EC-STUDENT-WORK', 'EC-VERIFY-ANSWERS', 'EC-ILLUSTRATION']) expect(template, `${goal} ${rule}`).toContain(`\`${rule}\``)
+    expect(template, goal).toContain('"const":"illustration"')
+    expect(template, goal).not.toContain('Briefly disclose the use of general subject knowledge once in the companion summary')
+  }
+})
