@@ -92,3 +92,5 @@ So the failures are **compliance failures of approved rules, not missing rules**
 
 The generated practice packages are not instructor exams and must not be
 presented as exams.
+
+**Exam 1 key: questions phase only.** Andy (Sep 27): "idk how that would translate or apply - it would be good if we just worked on refining the exam if anything". Study-guide notebooks do not use the key. It is reserved for refining generated exams and practice (topic coverage, reasoning demands, formats, distractors), per `exam-evidence-2026-09-27/READ-FIRST.md`.
