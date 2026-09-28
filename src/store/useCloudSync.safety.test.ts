@@ -796,9 +796,9 @@ it('T4 baseline compatibility never hides Research records, nested edits, or opa
   expect(await matchesSyncBaseline(migrated, legacyFixture.digest)).toBe(true)
   const t4Digest = await syncDigest(syncContent(migrated))
   expect(await matchesSyncBaseline(migrated, t4Digest)).toBe(true)
-  const nonempty = { ...migrated, researchReminders: [{ id: 'r', experienceId: 'e', text: 'Real change', createdAt: 1, updatedAt: 1, order: 0 }] }
+  const nonempty = { ...migrated, researchReminders: [{ id: 'r', experienceId: 'e', text: 'Real change', createdAt: 1, updatedAt: 1, archived: false, order: 0 }] }
   expect(await matchesSyncBaseline(nonempty, legacyFixture.digest)).toBe(false)
   expect(await matchesSyncBaseline(migrated, await syncDigest(syncContent(nonempty)))).toBe(false)
-  expect(await matchesSyncBaseline({ ...migrated, persons: [{ id: 'p', name: 'Synthetic', bio: 'New bio' }] }, legacyFixture.digest)).toBe(false)
+  expect(await matchesSyncBaseline({ ...migrated, persons: [{ id: 'p', name: 'Synthetic', bio: 'New bio', createdAt: 1, updatedAt: 1, archived: false, order: 0 }] }, legacyFixture.digest)).toBe(false)
   expect(await matchesSyncBaseline({ ...migrated, unknownSection: [] } as typeof migrated, legacyFixture.digest)).toBe(false)
 })
