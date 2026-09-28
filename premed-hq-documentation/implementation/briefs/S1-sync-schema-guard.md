@@ -228,3 +228,77 @@ After Andy approves this revision: the S1 task rebuilds against it (removing the
 7. `supabase/schema.sql` (the run-once file) does not include the two columns. The tracked migration is authoritative.
 
 **Next stage:** review, then T4 rebase as schema 2 (separate follow-up), then the combined release brief with the production checklist.
+
+### Build report addendum: review fixes and combined schema-2 acceptance (Sep 27–28)
+
+**Final S1 revision: `4076ebd`** (runtime last changed at `ed6acff`). **Combined acceptance revision: `8dd37c6f`** (`codex/s1-research-r3`). Evidence index: `implementation/evidence/S1-r3/final-4076ebd/README.md`, with real logs for test, build and lint.
+
+**Fixes from Codex review**
+
+| Commit | Finding | Fix | Proof |
+|---|---|---|---|
+| `6e01440` | P2: `syncContent` included `_schema`, so every `d60f682` baseline mismatched and upgrades paused as false conflicts | marker left out of content identity; digests byte-identical to `d60f682` | fixture digest computed by the actual `d60f682` code; both upgrade cases fail on the previous code; two-sided changes still pause |
+| `6e01440` | P2: a workspace section named `digest` could become the trusted baseline | workspace data always hashed; separate `rebaseSyncBaseline` | regression fails on the previous code |
+| `b82692d` | browser runner exited 0 on failures | exit 1 on any failed or zero-scenario run | both paths verified |
+| `ed6acff` | reload paused sync ("differs from its saved copy") for any workspace hydrated from a bare JSONB row; **pre-existing on `d60f682`** | `sameJson`: logical equality, ignoring object-key order only | regression fails on the old comparison; real-API reload passes; `d60f682` reproduction recorded |
+| `4734662` | `ROLLBACK.md` repair could recreate an old compare-and-set tuple | fresh `updated_at`, null-safe predicate on all metadata, exactly one row | SQL section H: stale pre-repair tuple matches 0 rows |
+
+Also:
+- `fff440a`: lint ignores the fixture copies.
+- `fbc879c`: merges `origin/main` `230975d`. A merge, not a rebase, keeps reviewed IDs valid under the integration branch.
+
+**Final checks at `4076ebd`**
+
+| Check | Result |
+|---|---|
+| `npm test` | 2212 / 2212 (290 files) |
+| `npm run build` | pass |
+| `npx eslint .` | 0 errors |
+| SQL matrix | 57 / 57 |
+| schema-1 client, real API | 25 passed |
+| Chrome, production build | 10 / 10 |
+
+**Combined schema-2 acceptance at `8dd37c6f`**
+
+| Check | Result |
+|---|---|
+| hooks | 5 / 5 |
+| Chrome | 3 / 3 |
+
+The combined runs covered an unmarked synthetic T4 row with all four collections and the nested `research`, `estimatedHoursDeletedAt`, `thoughts`, `parentDeletedAt` and `bio` fields, in bare, gzip and text-JSON storage:
+- the first claim is exactly the decoded reviewed document plus `_schema: 2`;
+- "Cloud protection: on" is shown;
+- the next save goes to `write_rev` 2 with every T4 value kept;
+- a reload opens with no review.
+
+A schema-1 row is upgraded to schema 2 by the next save. The schema-1 client at `4076ebd` refuses a schema-2 Research row (hooks and browser). Pre-S1 guarded-write evidence for `d60f682` and `5c7a3e4` stands unchanged.
+
+**Gaps and holds that remain.** The final-deploy rule skips none of them.
+1. Andy's yes on the production database checklist.
+2. Production security headers: `verify-production-security.mjs` fails all 5 headers on premedos.app. Codex observed this; I didn't re-run it. It's a separate release blocker.
+3. Final reviews: the Claude planning chat and Codex parent.
+4. Andy's confirmed-claim check on his real account after the combined release. Keep premedos.app closed until then.
+5. Browser-level restore of a future-version file is covered by unit tests only.
+6. `supabase/schema.sql` doesn't list the two columns; the tracked migration is authoritative.
+
+Nothing was merged to `main`, deployed, or run against production.
+
+**Reload routing correction (Sep 28, Codex evidence review).** All earlier browser reloads
+landed on the device/account review page (18 historical, 6 current, 3 combined), because
+the fixtures never recorded that first-login review was done. Those checks prove durable
+storage only.
+
+A returning-account combined case (fixture seeds the reviewed-onboarding meta) passes
+10/10 on `8dd37c6f`:
+- after reload it opens to Settings;
+- there is no account conflict;
+- "Cloud protection: on" is shown;
+- the edit is applied;
+- the reload sends no write.
+
+Details: `evidence/S1-r3/final-4076ebd/README.md`.
+
+**Review.** The Claude planning chat approved the S1 code at `4076ebd` (Sep 28). That is
+not Andy's approval of anything. The canonical combined release checklist is
+`briefs/S1-T4-release-checklist.md` (Codex parent, `9872b54`). The SQL preflight detail
+behind it is the supporting runbook `briefs/S1-production-apply-checklist.md`.

@@ -20,14 +20,15 @@ if (process.env.S1_LOCAL_CONFIRMED !== 'yes') throw new Error('Set S1_LOCAL_CONF
 const status = JSON.parse(readFileSync(resolve(root, 'scripts/s1/local/status.json'), 'utf8'))
 assert.equal(status.API_URL, 'http://127.0.0.1:55431')
 const [onlyBuild, onlyScenario] = process.argv.slice(2)
-const evidence = resolve(root, 'premed-hq-documentation/implementation/evidence/S1-r3/browser')
+// S1_EVIDENCE_DIR keeps earlier runs' reports and screenshots as historical evidence.
+const evidence = resolve(root, process.env.S1_EVIDENCE_DIR ?? 'premed-hq-documentation/implementation/evidence/S1-r3/browser')
 mkdirSync(evidence, { recursive: true })
 const builds = {
   'old-deployed': { rev: 'd60f682946e264ea2d680c2c8e2914a86899c114', port: 55441 },
   'old-stale': { rev: '5c7a3e4f1c28c3b36392815c0a63fe3c963cb225', port: 55442 },
   current: { rev: 'HEAD', port: 55443 },
   // S1 + Research (T4) integration at cloud schema 2 (codex/s1-research-r3), separate fixture.
-  combined: { rev: 'a054d407038a9f5af2b0eff9969754d4196831dc', port: 55444 },
+  combined: { rev: '8dd37c6f5df5b39328eae7dc8029a70a2f081b36', port: 55444 },
 }
 const cleanEnv = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(SUPABASE|PG|DATABASE|VITE_|AWS_|S3_)/.test(k)))
 const sleep = ms => new Promise(r => setTimeout(r, ms))
@@ -182,6 +183,10 @@ async function scenario(cdp, build, spec) {
       await s('Network.enable'); await s('Page.enable'); await s('Runtime.enable'); await s('Log.enable')
       await s('Fetch.enable', { patterns: [{ urlPattern: '*' }] })
       await s('Page.addScriptToEvaluateOnNewDocument', { source: `if (location.origin === ${JSON.stringify(origin)} && !localStorage.getItem('sb-127-auth-token')) localStorage.setItem('sb-127-auth-token', ${JSON.stringify(JSON.stringify(session))})` })
+      // A returning account has already been through first-login review; the real flow
+      // records that in the public-layer meta (markEnteredApp + markMergeSeen). Other
+      // scenarios deliberately leave it unset, so their reload lands on that review.
+      if (spec.returning) await s('Page.addScriptToEvaluateOnNewDocument', { source: `if (location.origin === ${JSON.stringify(origin)} && !localStorage.getItem('premed_hq_public')) localStorage.setItem('premed_hq_public', ${JSON.stringify(JSON.stringify({ entered: true, mergeDecidedFor: [user.id] }))})` })
       const text = async () => (await s('Runtime.evaluate', { expression: 'document.body ? document.body.innerText : ""', returnByValue: true })).result.value
       const waitFor = async (predicate, label, timeout = 30_000) => {
         const end = Date.now() + timeout
@@ -236,6 +241,19 @@ async function scenario(cdp, build, spec) {
         const afterReload = await text()
         out.afterReloadRoute = /You've got work on this device/.test(afterReload) ? 'device/account review page' : /Cloud sync/.test(afterReload) ? 'settings' : 'other'
         check('after reload the edit is still saved on this device (durable workspace storage)', kept, { darkBeforeReload: out.darkBeforeReload })
+        if (spec.returning) {
+          const reloadWrites = writes().length
+          const settledAgain = await waitFor(settled, 'returning account: Settings usable after reload')
+          await sleep(1500)
+          const reloaded = await text()
+          out.afterReloadRoute = /Cloud sync/.test(reloaded) ? 'settings' : out.afterReloadRoute
+          check('returning account reloads to the app, not the device/account review', /Cloud sync/.test(settledAgain) && !/You've got work on this device/.test(reloaded))
+          check('no account conflict or paused sync after reload', !/Sync paused|compare the account copies|not confirmed saved|differs from its saved copy|out of date/i.test(reloaded))
+          check('Settings shows "Cloud protection: on" after reload', /Cloud protection: on/.test(reloaded))
+          check('the theme edit is applied after reload', (await s('Runtime.evaluate', { expression: `document.documentElement.classList.contains('dark')`, returnByValue: true })).result.value)
+          check('reload sends no write', writes().length === reloadWrites, writes().slice(reloadWrites))
+          if (spec.shot) { const png = await s('Page.captureScreenshot', { format: 'png' }); writeFileSync(resolve(evidence, `${build}-${spec.name}-after-reload.png`), Buffer.from(png.data, 'base64')) }
+        }
       }
       out.blockedOrigins = [...blocked]
       const after = (await admin(`/rest/v1/dashboards?user_id=eq.${user.id}&select=data,updated_at,cloud_schema,write_rev`))[0]
@@ -258,7 +276,7 @@ const insert = (id, data, extra = {}) => admin('/rest/v1/dashboards', 'POST', { 
 // JSONB does not keep object key order; compare structure, not serialization.
 const same = (a, b) => isDeepStrictEqual(a, b)
 function matrix(build) {
-  if (build === 'combined') return ['bare', 'gzip', 'text'].map(encoding => ({
+  if (build === 'combined') return [...['bare', 'gzip', 'text'].map(encoding => ({
     name: `t4-legacy-${encoding}`, shot: encoding === 'bare',
     seed: (id, email) => insert(id, encode(t4Workspace(email, encoding), encoding)),
     afterLoad: async ({ check, page, before, writes, readRow }) => {
@@ -275,7 +293,19 @@ function matrix(build) {
       check('every T4 collection and nested field kept exactly', t4Kept(doc, decode(before.data)))
       check(`stored encoding stays ${encoding}`, encodingOf(after.data) === encoding)
     },
-  }))
+  })), {
+    // Returning account (first-login review already done): reload must stay usable.
+    name: 't4-returning-reload', shot: true, returning: true,
+    seed: (id, email) => insert(id, t4Workspace(email, 'bare')),
+    afterLoad: async ({ check, page, readRow }) => {
+      const claimed = await readRow()
+      check('opened in the app and claimed at schema 2', /Cloud sync/.test(page) && claimed.cloud_schema === 2 && claimed.write_rev === 1)
+      check('Settings shows "Cloud protection: on"', /Cloud protection: on/.test(page))
+    },
+    verify: ({ check, before, after }) => {
+      check('save at write_rev 2 keeps every T4 value', after.cloud_schema === 2 && after.write_rev === 2 && t4Kept(decode(after.data), decode(before.data)))
+    },
+  }]
   const old = build !== 'current', list = []
   for (const encoding of ['bare', 'gzip', 'text']) {
     list.push({

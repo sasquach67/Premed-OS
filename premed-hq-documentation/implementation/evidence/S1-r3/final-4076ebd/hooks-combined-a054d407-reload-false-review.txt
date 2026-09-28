@@ -1,0 +1,590 @@
+S1 hooks: combined @ a054d407038a9f5af2b0eff9969754d4196831dc
+
+ RUN  v4.1.9 /Users/andyquach/Documents/premed-os-s1/scripts/s1/.runtime/hooks-combined
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+GoTrueClient@sb-127-auth-token:1 (2.110.2) 2026-09-28T01:37:55.776Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Probe inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+S1 reload diff (open vs saved): []
+
+ ❯ src/store/s1.local.integration.test.ts (5 tests | 1 failed) 2475ms
+   × combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload 829ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/store/s1.local.integration.test.ts > combined: unmarked T4 row stored bare is claimed as schema 2 exactly, saved, and survives reload
+AssertionError: Sync is paused because the open workspace differs from its saved copy.: expected { schemaBlocked: false, …(5) } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+{
+  "localRaw": "{\"state\":{\"profile\":{\"name\":\"S1 combined\",\"email\":\"s1-combined-e455da65-ebfa-408e-8e09-4abf6198f494@example.invalid\",\"major\":\"\",\"track\":\"\",\"minors\":[],\"school\":\"\",\"classYear\":\"\",\"startTerm\":\"\",\"resumeDocUrl\":\"\",\"applicationCycle\":\"\",\"matriculationTarget\":\"\"},\"goals\":{\"clinical\":0,\"research\":0,\"gpaTarget\":0,\"shadowing\":0,\"activities\":0,\"mcatTarget\":0,\"volunteering\":0},\"courses\":[],\"requirements\":[],\"experiences\":[{\"id\":\"lab-a\",\"org\":\"Synthetic lab\",\"role\":\"Observer\",\"tags\":[],\"hours\":60,\"order\":0,\"status\":\"active\",\"category\":\"research\",\"research\":{\"since\":\"2026-09-01\",\"current\":true,\"department\":\"Biology\",\"institution\":\"Synthetic institution\",\"researchType\":\"Cell biology\",\"lastPiContact\":\"2026-09-23\"},\"description\":\"Synthetic\",\"estimatedHoursDeletedAt\":42}],\"experienceHourEntries\":[{\"id\":\"logged\",\"date\":\"2026-09-24\",\"kind\":\"logged\",\"note\":\"Synthetic\",\"hours\":1.5,\"order\":0,\"archived\":false,\"thoughts\":\"Why did the signal change?\",\"createdAt\":1,\"updatedAt\":1,\"experienceId\":\"lab-a\"},{\"id\":\"orphan\",\"date\":\"2026-09-20\",\"kind\":\"logged\",\"hours\":1,\"order\":0,\"archived\":false,\"createdAt\":1,\"updatedAt\":1,\"experienceId\":\"lab-gone\",\"parentDeletedAt\":99}],\"tasks\":[],\"timelineMilestones\":[],\"researchUpcomingItems\":[{\"id\":\"upcoming\",\"date\":\"2026-09-25\",\"note\":\"Synthetic\",\"order\":0,\"title\":\"Training\",\"archived\":false,\"createdAt\":1,\"updatedAt\":1,\"experienceId\":\"lab-a\"}],\"researchReminders\":[{\"id\":\"reminder\",\"text\":\"Ask before handling samples\",\"order\":0,\"archived\":false,\"createdAt\":1,\"updatedAt\":1,\"experienceId\":\"lab-a\"}],\"researchTimelineNotes\":[{\"id\":\"timeline\",\"date\":\"2026-09-24\",\"text\":\"Synthetic timeline\",\"order\":0,\"archived\":false,\"createdAt\":1,\"updatedAt\":1,\"experienceId\":\"lab-a\"}],\"researchMemberships\":[{\"id\":\"membership\",\"order\":0,\"archived\":false,\"personId\":\"person-a\",\"createdAt\":1,\"roleInLab\":\"Mentor\",\"updatedAt\":1,\"projectText\":\"Synthetic project\",\"experienceId\":\"lab-a\"}],\"persons\":[{\"id\":\"person-a\",\"bio\":\"Nested T4 bio\",\"name\":\"Synthetic mentor\",\"order\":0,\"archived\":false,\"createdAt\":1,\"updatedAt\":1}],\"organizations\":[],\"academics\":{\"classCenter\":{\"files\":[],\"notes\":[],\"topics\":[],\"contacts\":[],\"lectures\":[],\"mistakes\":[],\"keyPoints\":[],\"weakAreas\":[],\"savedPlans\":[],\"topicLinks\":[],\"workspaces\":[],\"assignments\":[],\"paperDrafts\":[],\"termReports\":[],\"plannerTerms\":[],\"reviewEvents\":[],\"sourceChunks\":[],\"examPrepPlans\":[],\"feedbackNotes\":[],\"focusSessions\":[],\"practiceExams\":[],\"guideProposals\":[],\"conceptCanvases\":[],\"gradeCategories\":[],\"lectureFindings\":[],\"assignedReadings\":[],\"topicPredictions\":[],\"practiceQuestions\":[],\"professorEvidence\":[],\"transcriptRecords\":[],\"assessmentAttempts\":[],\"watchedNoteSources\":[],\"assessmentMaterials\":[],\"lectureNoteProposals\":[],\"watchedNoteProposals\":[],\"generatedMockAttempts\":[],\"generatedRevisedNotes\":[],\"planningProgramContext\":{},\"generatedFlashcardDecks\":[],\"generatedMasteryOutlines\":[],\"lectureMaterialProposals\":[],\"reviewSessionPreferences\":{\"sound\":true,\"weakFirst\":true,\"interleave\":true,\"workMinutes\":25,\"breakMinutes\":5,\"defaultInput\":\"microphone\",\"enforceBreaks\":false},\"retrievabilityPredictions\":[],\"generatedUnitQuestionBanks\":[],\"acknowledgedCatalogWarnings\":[]},\"courseOptions\":[],\"migrationJournal\":[],\"assignmentTypeOptions\":[]},\"letters\":[],\"stories\":[],\"secondaries\":[],\"interviewQs\":[],\"mcat\":{\"attempts\":[],\"errorLog\":[],\"schedule\":[]},\"schools\":[],\"resources\":[],\"tips\":[],\"focusTargets\":[],\"quarterlyGoals\":[],\"advisingQs\":[],\"captures\":[],\"notePages\":[],\"orgs\":[],\"notes\":{\"s1Seed\":\"seed\",\"s1Edit\":\"edit bare\"},\"settings\":{\"theme\":\"system\",\"backup\":{\"enabled\":false,\"googleClientId\":\"\"},\"calendar\":{\"enabled\":false,\"timeFormat\":\"12h\",\"timelineEnd\":\"23:00\",\"cachedEvents\":[],\"googleApiKey\":\"\",\"showLocations\":true,\"timelineStart\":\"06:00\",\"googleClientId\":\"\",\"useMockPreview\":false,\"showAllDayEvents\":true},\"quotesApi\":false,\"savedViews\":{},\"visualTheme\":\"ghibli\",\"academicsMode\":\"daily\",\"weeklyCapacity\":{\"updatedAt\":0,\"busyPeriods\":[],\"hoursByWeekday\":[0,0,0,0,0,0,0]},\"listPreferences\":{},\"overviewTaskMode\":\"today\",\"sidebarCollapsed\":false,\"dismissedAlertKey\":\"\",\"northStarExpanded\":false,\"activeSavedViewIds\":{},\"recommendationState\":{},\"mascotNoteDismissals\":{},\"projectionDismissals\":{},\"attentionSnoozedUntil\":{},\"studentBannerDismissed\":false,\"mutedRecommendationRules\":{}},\"meta\":{\"activity\":[],\"seedVersion\":0,\"lastOpenedAt\":1790559475118,\"recentRoutes\":[],\"recoveryStack\":[]},\"trash\":[],\"_schema\":2},\"version\":52}",
+  "message": "The open workspace has changes that are not confirmed saved. It was kept open. Download its open-workspace copy before leaving this tab.",
+  "open": {
+    "data": {
+      "_schema": 2,
+      "academics": {
+        "assignmentTypeOptions": [],
+        "classCenter": {
+          "acknowledgedCatalogWarnings": [],
+          "assessmentAttempts": [],
+          "assessmentMaterials": [],
+          "assignedReadings": [],
+          "assignments": [],
+          "conceptCanvases": [],
+          "contacts": [],
+          "examPrepPlans": [],
+          "feedbackNotes": [],
+          "files": [],
+          "focusSessions": [],
+          "generatedFlashcardDecks": [],
+          "generatedMasteryOutlines": [],
+          "generatedMockAttempts": [],
+          "generatedRevisedNotes": [],
+          "generatedUnitQuestionBanks": [],
+          "gradeCategories": [],
+          "guideProposals": [],
+          "keyPoints": [],
+          "lectureFindings": [],
+          "lectureMaterialProposals": [],
+          "lectureNoteProposals": [],
+          "lectures": [],
+          "mistakes": [],
+          "notes": [],
+          "paperDrafts": [],
+          "plannerTerms": [],
+          "planningProgramContext": {},
+          "practiceExams": [],
+          "practiceQuestions": [],
+          "professorEvidence": [],
+          "retrievabilityPredictions": [],
+          "reviewEvents": [],
+          "reviewSessionPreferences": {
+            "breakMinutes": 5,
+            "defaultInput": "microphone",
+            "enforceBreaks": false,
+            "interleave": true,
+            "sound": true,
+            "weakFirst": true,
+            "workMinutes": 25,
+          },
+          "savedPlans": [],
+          "sourceChunks": [],
+          "termReports": [],
+          "topicLinks": [],
+          "topicPredictions": [],
+          "topics": [],
+          "transcriptRecords": [],
+          "watchedNoteProposals": [],
+          "watchedNoteSources": [],
+          "weakAreas": [],
+          "workspaces": [],
+        },
+        "courseOptions": [],
+        "migrationJournal": [],
+      },
+      "advisingQs": [],
+      "captures": [],
+      "courses": [],
+      "experienceHourEntries": [
+        {
+          "archived": false,
+          "createdAt": 1,
+          "date": "2026-09-24",
+          "experienceId": "lab-a",
+          "hours": 1.5,
+          "id": "logged",
+          "kind": "logged",
+          "note": "Synthetic",
+          "order": 0,
+          "thoughts": "Why did the signal change?",
+          "updatedAt": 1,
+        },
+        {
+          "archived": false,
+          "createdAt": 1,
+          "date": "2026-09-20",
+          "experienceId": "lab-gone",
+          "hours": 1,
+          "id": "orphan",
+          "kind": "logged",
+          "order": 0,
+          "parentDeletedAt": 99,
+          "updatedAt": 1,
+        },
+      ],
+      "experiences": [
+        {
+          "category": "research",
+          "description": "Synthetic",
+          "estimatedHoursDeletedAt": 42,
+          "hours": 60,
+          "id": "lab-a",
+          "order": 0,
+          "org": "Synthetic lab",
+          "research": {
+            "current": true,
+            "department": "Biology",
+            "institution": "Synthetic institution",
+            "lastPiContact": "2026-09-23",
+            "researchType": "Cell biology",
+            "since": "2026-09-01",
+          },
+          "role": "Observer",
+          "status": "active",
+          "tags": [],
+        },
+      ],
+      "focusTargets": [],
+      "goals": {
+        "activities": 0,
+        "clinical": 0,
+        "gpaTarget": 0,
+        "mcatTarget": 0,
+        "research": 0,
+        "shadowing": 0,
+        "volunteering": 0,
+      },
+      "interviewQs": [],
+      "letters": [],
+      "mcat": {
+        "attempts": [],
+        "errorLog": [],
+        "schedule": [],
+      },
+      "meta": {
+        "activity": [],
+        "lastOpenedAt": 1790559475118,
+        "recentRoutes": [],
+        "recoveryStack": [],
+        "seedVersion": 0,
+      },
+      "notePages": [],
+      "notes": {
+        "s1Edit": "edit bare",
+        "s1Seed": "seed",
+      },
+      "organizations": [],
+      "orgs": [],
+      "persons": [
+        {
+          "archived": false,
+          "bio": "Nested T4 bio",
+          "createdAt": 1,
+          "id": "person-a",
+          "name": "Synthetic mentor",
+          "order": 0,
+          "updatedAt": 1,
+        },
+      ],
+      "profile": {
+        "applicationCycle": "",
+        "classYear": "",
+        "email": "s1-combined-e455da65-ebfa-408e-8e09-4abf6198f494@example.invalid",
+        "major": "",
+        "matriculationTarget": "",
+        "minors": [],
+        "name": "S1 combined",
+        "resumeDocUrl": "",
+        "school": "",
+        "startTerm": "",
+        "track": "",
+      },
+      "quarterlyGoals": [],
+      "requirements": [],
+      "researchMemberships": [
+        {
+          "archived": false,
+          "createdAt": 1,
+          "experienceId": "lab-a",
+          "id": "membership",
+          "order": 0,
+          "personId": "person-a",
+          "projectText": "Synthetic project",
+          "roleInLab": "Mentor",
+          "updatedAt": 1,
+        },
+      ],
+      "researchReminders": [
+        {
+          "archived": false,
+          "createdAt": 1,
+          "experienceId": "lab-a",
+          "id": "reminder",
+          "order": 0,
+          "text": "Ask before handling samples",
+          "updatedAt": 1,
+        },
+      ],
+      "researchTimelineNotes": [
+        {
+          "archived": false,
+          "createdAt": 1,
+          "date": "2026-09-24",
+          "experienceId": "lab-a",
+          "id": "timeline",
+          "order": 0,
+          "text": "Synthetic timeline",
+          "updatedAt": 1,
+        },
+      ],
+      "researchUpcomingItems": [
+        {
+          "archived": false,
+          "createdAt": 1,
+          "date": "2026-09-25",
+          "experienceId": "lab-a",
+          "id": "upcoming",
+          "note": "Synthetic",
+          "order": 0,
+          "title": "Training",
+          "updatedAt": 1,
+        },
+      ],
+      "resources": [],
+      "schools": [],
+      "secondaries": [],
+      "settings": {
+        "academicsMode": "daily",
+        "activeSavedViewIds": {},
+        "attentionSnoozedUntil": {},
+        "backup": {
+          "enabled": false,
+          "googleClientId": "",
+        },
+        "calendar": {
+          "cachedEvents": [],
+          "enabled": false,
+          "googleApiKey": "",
+          "googleClientId": "",
+          "showAllDayEvents": true,
+          "showLocations": true,
+          "timeFormat": "12h",
+          "timelineEnd": "23:00",
+          "timelineStart": "06:00",
+          "useMockPreview": false,
+        },
+        "dismissedAlertKey": "",
+        "listPreferences": {},
+        "mascotNoteDismissals": {},
+        "mutedRecommendationRules": {},
+        "northStarExpanded": false,
+        "overviewTaskMode": "today",
+        "projectionDismissals": {},
+        "quotesApi": false,
+        "recommendationState": {},
+        "savedViews": {},
+        "sidebarCollapsed": false,
+        "studentBannerDismissed": false,
+        "theme": "system",
+        "visualTheme": "ghibli",
+        "weeklyCapacity": {
+          "busyPeriods": [],
+          "hoursByWeekday": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+          ],
+          "updatedAt": 0,
+        },
+      },
+      "stories": [],
+      "tasks": [],
+      "timelineMilestones": [],
+      "tips": [],
+      "trash": [],
+    },
+    "key": "hq:app-data:account:56bca05f-5853-4633-bf6e-016d94933a1e",
+    "raw": "{\"state\":{\"profile\":{\"name\":\"S1 combined\",\"email\":\"s1-combined-e455da65-ebfa-408e-8e09-4abf6198f494@example.invalid\",\"major\":\"\",\"track\":\"\",\"minors\":[],\"school\":\"\",\"classYear\":\"\",\"startTerm\":\"\",\"resumeDocUrl\":\"\",\"applicationCycle\":\"\",\"matriculationTarget\":\"\"},\"goals\":{\"clinical\":0,\"research\":0,\"gpaTarget\":0,\"shadowing\":0,\"activities\":0,\"mcatTarget\":0,\"volunteering\":0},\"courses\":[],\"requirements\":[],\"experiences\":[{\"id\":\"lab-a\",\"org\":\"Synthetic lab\",\"role\":\"Observer\",\"tags\":[],\"hours\":60,\"order\":0,\"status\":\"active\",\"category\":\"research\",\"research\":{\"since\":\"2026-09-01\",\"current\":true,\"department\":\"Biology\",\"institution\":\"Synthetic institution\",\"researchType\":\"Cell biology\",\"lastPiContact\":\"2026-09-23\"},\"description\":\"Synthetic\",\"estimatedHoursDeletedAt\":42}],\"experienceHourEntries\":[{\"id\":\"logged\",\"date\":\"2026-09-24\",\"kind\":\"logged\",\"note\":\"Synthetic\",\"hours\":1.5,\"order\":0,\"archived\":false,\"thoughts\":\"Why did the signal change?\",\"createdAt\":1,\"updatedAt\":1,\"experienceId\":\"lab-a\"},{\"id\":\"orphan\",\"date\":\"2026-09-20\",\"kind\":\"logged\",\"hours\":1,\"order\":0,\"archived\":false,\"createdAt\":1,\"updatedAt\":1,\"experienceId\":\"lab-gone\",\"parentDeletedAt\":99}],\"tasks\":[],\"timelineMilestones\":[],\"researchUpcomingItems\":[{\"id\":\"upcoming\",\"date\":\"2026-09-25\",\"note\":\"Synthetic\",\"order\":0,\"title\":\"Training\",\"archived\":false,\"createdAt\":1,\"updatedAt\":1,\"experienceId\":\"lab-a\"}],\"researchReminders\":[{\"id\":\"reminder\",\"text\":\"Ask before handling samples\",\"order\":0,\"archived\":false,\"createdAt\":1,\"updatedAt\":1,\"experienceId\":\"lab-a\"}],\"researchTimelineNotes\":[{\"id\":\"timeline\",\"date\":\"2026-09-24\",\"text\":\"Synthetic timeline\",\"order\":0,\"archived\":false,\"createdAt\":1,\"updatedAt\":1,\"experienceId\":\"lab-a\"}],\"researchMemberships\":[{\"id\":\"membership\",\"order\":0,\"archived\":false,\"personId\":\"person-a\",\"createdAt\":1,\"roleInLab\":\"Mentor\",\"updatedAt\":1,\"projectText\":\"Synthetic project\",\"experienceId\":\"lab-a\"}],\"persons\":[{\"id\":\"person-a\",\"bio\":\"Nested T4 bio\",\"name\":\"Synthetic mentor\",\"order\":0,\"archived\":false,\"createdAt\":1,\"updatedAt\":1}],\"organizations\":[],\"academics\":{\"classCenter\":{\"files\":[],\"notes\":[],\"topics\":[],\"contacts\":[],\"lectures\":[],\"mistakes\":[],\"keyPoints\":[],\"weakAreas\":[],\"savedPlans\":[],\"topicLinks\":[],\"workspaces\":[],\"assignments\":[],\"paperDrafts\":[],\"termReports\":[],\"plannerTerms\":[],\"reviewEvents\":[],\"sourceChunks\":[],\"examPrepPlans\":[],\"feedbackNotes\":[],\"focusSessions\":[],\"practiceExams\":[],\"guideProposals\":[],\"conceptCanvases\":[],\"gradeCategories\":[],\"lectureFindings\":[],\"assignedReadings\":[],\"topicPredictions\":[],\"practiceQuestions\":[],\"professorEvidence\":[],\"transcriptRecords\":[],\"assessmentAttempts\":[],\"watchedNoteSources\":[],\"assessmentMaterials\":[],\"lectureNoteProposals\":[],\"watchedNoteProposals\":[],\"generatedMockAttempts\":[],\"generatedRevisedNotes\":[],\"planningProgramContext\":{},\"generatedFlashcardDecks\":[],\"generatedMasteryOutlines\":[],\"lectureMaterialProposals\":[],\"reviewSessionPreferences\":{\"sound\":true,\"weakFirst\":true,\"interleave\":true,\"workMinutes\":25,\"breakMinutes\":5,\"defaultInput\":\"microphone\",\"enforceBreaks\":false},\"retrievabilityPredictions\":[],\"generatedUnitQuestionBanks\":[],\"acknowledgedCatalogWarnings\":[]},\"courseOptions\":[],\"migrationJournal\":[],\"assignmentTypeOptions\":[]},\"letters\":[],\"stories\":[],\"secondaries\":[],\"interviewQs\":[],\"mcat\":{\"attempts\":[],\"errorLog\":[],\"schedule\":[]},\"schools\":[],\"resources\":[],\"tips\":[],\"focusTargets\":[],\"quarterlyGoals\":[],\"advisingQs\":[],\"captures\":[],\"notePages\":[],\"orgs\":[],\"notes\":{\"s1Seed\":\"seed\",\"s1Edit\":\"edit bare\"},\"settings\":{\"theme\":\"system\",\"backup\":{\"enabled\":false,\"googleClientId\":\"\"},\"calendar\":{\"enabled\":false,\"timeFormat\":\"12h\",\"timelineEnd\":\"23:00\",\"cachedEvents\":[],\"googleApiKey\":\"\",\"showLocations\":true,\"timelineStart\":\"06:00\",\"googleClientId\":\"\",\"useMockPreview\":false,\"showAllDayEvents\":true},\"quotesApi\":false,\"savedViews\":{},\"visualTheme\":\"ghibli\",\"academicsMode\":\"daily\",\"weeklyCapacity\":{\"updatedAt\":0,\"busyPeriods\":[],\"hoursByWeekday\":[0,0,0,0,0,0,0]},\"listPreferences\":{},\"overviewTaskMode\":\"today\",\"sidebarCollapsed\":false,\"dismissedAlertKey\":\"\",\"northStarExpanded\":false,\"activeSavedViewIds\":{},\"recommendationState\":{},\"mascotNoteDismissals\":{},\"projectionDismissals\":{},\"attentionSnoozedUntil\":{},\"studentBannerDismissed\":false,\"mutedRecommendationRules\":{}},\"meta\":{\"activity\":[],\"seedVersion\":0,\"lastOpenedAt\":1790559475118,\"recentRoutes\":[],\"recoveryStack\":[]},\"trash\":[],\"_schema\":2},\"version\":52}",
+  },
+  "remote": null,
+  "saved": true,
+  "schemaBlocked": false,
+}
+
+ ❯ src/store/s1.local.integration.test.ts:203:43
+    201|   const reloadConflict = app.safety.getAccountConflict(user.id)
+    202|   if (reloadConflict?.open && reloadConflict.localRaw) console.error('…
+    203|   expect(reloadConflict, app.cloud.error).toBeUndefined()
+       |                                           ^
+    204|   expect(requests.filter(r => r.method !== 'GET')).toEqual([])
+    205|   expect(await readRow(user.id)).toEqual(saved)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  21:37:54
+   Duration  2.92s (transform 396ms, setup 0ms, import 63ms, tests 2.48s, environment 296ms)
+
+node:internal/errors:985
+  const err = new Error(message);
+              ^
+
+Error: Command failed: /Users/andyquach/Documents/premed-os-s1/node_modules/.bin/vitest run src/store/s1.local.integration.test.ts --maxWorkers=1
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execFileSync (node:child_process:961:15)
+    at vitest (file:///Users/andyquach/Documents/premed-os-s1/scripts/s1/hooks.mjs:32:26)
+    at file:///Users/andyquach/Documents/premed-os-s1/scripts/s1/hooks.mjs:40:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:633:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 43313,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v24.17.0

@@ -1,0 +1,528 @@
+# npx eslint . at 4076ebd (2026-09-28T01:42:31Z)
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/AcademicMigrationReview.tsx
+  33:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/AcademicMigrationReview.tsx:33:5
+  31 |   useEffect(() => {
+  32 |     if (!active) return
+> 33 |     setSelectedCourseId(active.candidateCourseIds?.[0] ?? active.courseId ?? '')
+     |     ^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  34 |     setSelectedPersonId(active.candidatePersonIds?.[0] ?? '')
+  35 |     setCode(field(active.legacyWorkspace, 'courseCode'))
+  36 |     setTitle(field(active.legacyWorkspace, 'courseTitle'))  react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/AssessmentCatalog.tsx
+  44:17  warning  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/AssessmentCatalog.tsx:44:17
+  42 |   }
+  43 |   function startAttempt(materialId: string) {
+> 44 |     const now = Date.now(); const id = uid()
+     |                 ^^^^^^^^^^ Cannot call impure function
+  45 |     update((draft) => draft.academics.classCenter.assessmentAttempts.push({ id, courseId, materialId, topicIds: [], startedAt: now, createdAt: now, updatedAt: now, order: draft.academics.classCenter.assessmentAttempts.filter((item) => item.courseId === courseId).length }))
+  46 |     setActiveAttemptId(id)
+  47 |   }  react-hooks/purity
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/ClassCenter.tsx
+  171:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-refresh/only-export-components
+  288:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-refresh/only-export-components
+  726:5   warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/ClassCenter.tsx:726:5
+  724 |   useEffect(() => {
+  725 |     if (scopedCourseId !== 'new') return
+> 726 |     setSyllabusDraft(null)
+      |     ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  727 |     setSyllabusImportOpen(true)
+  728 |   }, [scopedCourseId])
+  729 |   /** A second import into a class that ALREADY holds syllabus-derived records is  react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/ClassHub.tsx
+  142:5   warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/ClassHub.tsx:142:5
+  140 |   useEffect(() => {
+  141 |     const nextTab = isHubTab(canonicalRequestedTab) && availableTabs.includes(canonicalRequestedTab) ? canonicalRequestedTab : 'overview'
+> 142 |     setTab((current) => current === nextTab ? current : nextTab)
+      |     ^^^^^^ Avoid calling setState() directly within an effect
+  143 |   }, [canonicalRequestedTab])
+  144 |   // Read old topic placement only to keep existing materials in their saved week/unit.
+  145 |   const courseTopics = ordered(data.topics.filter((item) => item.courseId === course.id))  react-hooks/set-state-in-effect
+  143:6   warning  React Hook useEffect has a missing dependency: 'availableTabs'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             react-hooks/exhaustive-deps
+  620:19  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/ClassHub.tsx:620:19
+  618 |   })).filter((group) => group.files.length || group.notes.length)
+  619 |   const categories = data.gradeCategories.filter((item) => item.courseId === courseId).sort((a, b) => a.order - b.order)
+> 620 |   useEffect(() => setArtifact(requestedArtifact), [requestedArtifact])
+      |                   ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  621 |
+  622 |   function openArtifact(nextArtifact: MaterialArtifact) {
+  623 |     if (nextArtifact === 'flashcards' || nextArtifact === 'revised-notes') {                    react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/ExternalNotebookView.tsx
+   32:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   61:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  281:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/GradesArchive.tsx
+  246:19  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/GradesArchive.tsx:246:19
+  244 |   const [rows, setRows] = useState<ScenarioRow[]>(initialRows)
+  245 |   const [courseId, setCourseId] = useState(calculatorCourses[0]?.id ?? '')
+> 246 |   useEffect(() => setRows(initialRows), [initialRows])
+      |                   ^^^^^^^ Avoid calling setState() directly within an effect
+  247 |   useEffect(() => setCourseId(calculatorCourses[0]?.id ?? ''), [calculatorCourses])
+  248 |   const scenario = useMemo(() => projectGpa(ledger.local, rows), [ledger.local, rows])
+  249 |   const amcasScenario = useMemo(() => ledger.amcas.value == null ? null : projectGpa(ledger.amcas, rows), [ledger.amcas, rows])                 react-hooks/set-state-in-effect
+  247:19  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/GradesArchive.tsx:247:19
+  245 |   const [courseId, setCourseId] = useState(calculatorCourses[0]?.id ?? '')
+  246 |   useEffect(() => setRows(initialRows), [initialRows])
+> 247 |   useEffect(() => setCourseId(calculatorCourses[0]?.id ?? ''), [calculatorCourses])
+      |                   ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  248 |   const scenario = useMemo(() => projectGpa(ledger.local, rows), [ledger.local, rows])
+  249 |   const amcasScenario = useMemo(() => ledger.amcas.value == null ? null : projectGpa(ledger.amcas, rows), [ledger.amcas, rows])
+  250 |   const selectedCourse = courses.find((course) => course.id === courseId)  react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/MaterialFolderIntake.tsx
+  55:26  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/MaterialFolderIntake.tsx:55:26
+  53 |     }
+  54 |   }
+> 55 |   useEffect(() => { void refreshDriveStatus() }, [])
+     |                          ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  56 |
+  57 |   async function chooseLocalFolder() {
+  58 |     setBusy(true)  react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/NotebookVisuals.tsx
+  100:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/PlannerBoard.tsx
+  519:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/PlannerBoard.tsx:519:5
+  517 |   useEffect(() => {
+  518 |     if (!request) return
+> 519 |     setEntryDestinationKey(destinationKey(requestedDestination))
+      |     ^^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  520 |     setDestination(destinationKey(requestedDestination))
+  521 |     sectionRef.current?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' })
+  522 |     searchRef.current?.focus()  react-hooks/set-state-in-effect
+  523:6  warning  React Hook useEffect has a missing dependency: 'request'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/exhaustive-deps
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/PlanningColdStart.tsx
+  24:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/ProfessorEvidencePanel.tsx
+  35:17  warning  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/ProfessorEvidencePanel.tsx:35:17
+  33 |     const assignment = returned.find((item) => item.id === assignmentId)
+  34 |     if (!trimmed || !assignment) return
+> 35 |     const now = Date.now()
+     |                 ^^^^^^^^^^ Cannot call impure function
+  36 |     update((draft) => {
+  37 |       draft.academics.classCenter.professorEvidence.push({
+  38 |         id: uid(), courseId, assignmentId: assignment.id,  react-hooks/purity
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/RequirementsAudit.tsx
+  26:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/components/academics/SyllabusImportMode.tsx
+  72:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/components/common/AssignmentsPanel.tsx
+  401:6  warning  React Hook useEffect has missing dependencies: 'preference?.view', 'setPreference', and 'setSearchParams'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/andyquach/Documents/premed-os-s1/src/components/common/CenterPeek.tsx
+  11:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/components/common/HeroDailySchedule.tsx
+  35:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  74:6   warning  React Hook useEffect has a missing dependency: 'sync'. Either include it or remove the dependency array                         react-hooks/exhaustive-deps
+  83:5   warning  React Hook useMemo has a missing dependency: 'date'. Either include it or remove the dependency array                           react-hooks/exhaustive-deps
+
+/Users/andyquach/Documents/premed-os-s1/src/components/common/ObjectInspector.tsx
+  23:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  31:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/components/common/PageBanner.tsx
+  27:19  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/common/PageBanner.tsx:27:19
+  25 |   const src = candidates[idx]
+  26 |
+> 27 |   useEffect(() => setIdx(0), [candidates])
+     |                   ^^^^^^ Avoid calling setState() directly within an effect
+  28 |
+  29 |   return (
+  30 |     <div className={cn('relative overflow-hidden rounded-2xl border border-border card-soft', className)} style={{ height }}>  react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/components/common/RecordActionMenu.tsx
+  32:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/components/common/StatStrip.tsx
+  24:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/components/common/ThreeLevelNav.tsx
+  73:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/components/common/TrackerTable.tsx
+  154:21  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/Users/andyquach/Documents/premed-os-s1/src/components/common/TrackerTable.tsx:154:21
+  152 |     [columns]
+  153 |   )
+> 154 |   const dataTable = useReactTable({
+      |                     ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  155 |     data: activeRows,
+  156 |     columns: tableColumns,
+  157 |     state: { sorting, globalFilter, pagination },  react-hooks/incompatible-library
+
+/Users/andyquach/Documents/premed-os-s1/src/components/guide/UltimateGuideDialog.tsx
+  62:26  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/guide/UltimateGuideDialog.tsx:62:26
+  60 |
+  61 |   useEffect(() => {
+> 62 |     if (guideLinkOpened) setOpen(true)
+     |                          ^^^^^^^ Avoid calling setState() directly within an effect
+  63 |   }, [guideLinkOpened])
+  64 |
+  65 |   function onOpenChange(nextOpen: boolean) {  react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/components/layout/QuickAddDialog.tsx
+  114:147  warning  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/layout/QuickAddDialog.tsx:114:147
+  112 |       addItem('stories', { id, title: title.trim(), prompt: detail.trim() || 'What did this experience teach me?', commentary: '', tags: [], order: order('stories') })
+  113 |     } else if (activeKind === 'note') {
+> 114 |       addItem('notePages', { id, title: title.trim(), body: detail, pillar: location.pathname.split('/').filter(Boolean)[0] || 'home', updatedAt: Date.now(), order: order('notePages') })
+      |                                                                                                                                                   ^^^^^^^^^^ Cannot call impure function
+  115 |     } else if (activeKind === 'assignment') {
+  116 |       const row = { id, courseId, title: title.trim(), type: 'homework' as const, dueDate: date || undefined, status: 'not-started' as const, linkedTopicIds: [], linkedFileIds: [], notes: detail, createdAt: Date.now(), updatedAt: Date.now(), order: data.academics.classCenter.assignments.length }
+  117 |       update((draft) => { draft.academics.classCenter.assignments.push(row) })                                                                                                         react-hooks/purity
+  116:208  warning  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/layout/QuickAddDialog.tsx:116:208
+  114 |       addItem('notePages', { id, title: title.trim(), body: detail, pillar: location.pathname.split('/').filter(Boolean)[0] || 'home', updatedAt: Date.now(), order: order('notePages') })
+  115 |     } else if (activeKind === 'assignment') {
+> 116 |       const row = { id, courseId, title: title.trim(), type: 'homework' as const, dueDate: date || undefined, status: 'not-started' as const, linkedTopicIds: [], linkedFileIds: [], notes: detail, createdAt: Date.now(), updatedAt: Date.now(), order: data.academics.classCenter.assignments.length }
+      |                                                                                                                                                                                                                ^^^^^^^^^^ Cannot call impure function
+  117 |       update((draft) => { draft.academics.classCenter.assignments.push(row) })
+  118 |       created('Assignment', undefined, () => update((draft) => { draft.academics.classCenter.assignments = draft.academics.classCenter.assignments.filter((item) => item.id !== id) }))
+  119 |     } else if (activeKind === 'mistake') {                         react-hooks/purity
+  116:231  warning  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/layout/QuickAddDialog.tsx:116:231
+  114 |       addItem('notePages', { id, title: title.trim(), body: detail, pillar: location.pathname.split('/').filter(Boolean)[0] || 'home', updatedAt: Date.now(), order: order('notePages') })
+  115 |     } else if (activeKind === 'assignment') {
+> 116 |       const row = { id, courseId, title: title.trim(), type: 'homework' as const, dueDate: date || undefined, status: 'not-started' as const, linkedTopicIds: [], linkedFileIds: [], notes: detail, createdAt: Date.now(), updatedAt: Date.now(), order: data.academics.classCenter.assignments.length }
+      |                                                                                                                                                                                                                                       ^^^^^^^^^^ Cannot call impure function
+  117 |       update((draft) => { draft.academics.classCenter.assignments.push(row) })
+  118 |       created('Assignment', undefined, () => update((draft) => { draft.academics.classCenter.assignments = draft.academics.classCenter.assignments.filter((item) => item.id !== id) }))
+  119 |     } else if (activeKind === 'mistake') {  react-hooks/purity
+
+/Users/andyquach/Documents/premed-os-s1/src/components/mascot/Ram.tsx
+  22:19  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/mascot/Ram.tsx:22:19
+  20 |   const failed = sourceIndex >= sources.length
+  21 |
+> 22 |   useEffect(() => setSourceIndex(0), [visualTheme])
+     |                   ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  23 |
+  24 |   if (failed) {
+  25 |     return (  react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/components/overview/OverviewTasks.tsx
+  126:17  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/overview/OverviewTasks.tsx:126:17
+  124 |     if (!openedTaskId) return
+  125 |     const target = tasks.find((task) => task.id === openedTaskId)
+> 126 |     if (target) setTab(overviewTaskTab(target))
+      |                 ^^^^^^ Avoid calling setState() directly within an effect
+  127 |   }, [openedTaskId, tasks])
+  128 |
+  129 |   function clearOpenedTask() {  react-hooks/set-state-in-effect
+  488:22  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/components/overview/OverviewTasks.tsx:488:22
+  486 |
+  487 |   useEffect(() => {
+> 488 |     if (openOnMount) setDetailOpen(true)
+      |                      ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  489 |   }, [openOnMount])
+  490 |
+  491 |   function complete() {                                                                                        react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/components/ui/badge.tsx
+  31:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/components/ui/button.tsx
+  47:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/andyquach/Documents/premed-os-s1/src/hooks/useDailyQuote.ts
+  18:53  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/hooks/useDailyQuote.ts:18:53
+  16 |     try {
+  17 |       const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
+> 18 |       if (cached?.date === today && cached.quote) { setQuote(cached.quote); return }
+     |                                                     ^^^^^^^^ Avoid calling setState() directly within an effect
+  19 |     } catch { /* ignore */ }
+  20 |
+  21 |     if (!live) return  react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/hooks/useFounderAccess.ts
+  11:7  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/hooks/useFounderAccess.ts:11:7
+   9 |     let current = true
+  10 |     if (!enabled) {
+> 11 |       setIsFounder(false)
+     |       ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  12 |       setChecking(false)
+  13 |       return () => { current = false }
+  14 |     }  react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/pages/FounderConsole.tsx
+  62:26  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/pages/FounderConsole.tsx:62:26
+  60 |   }, [])
+  61 |
+> 62 |   useEffect(() => { void refresh() }, [refresh])
+     |                          ^^^^^^^ Avoid calling setState() directly within an effect
+  63 |
+  64 |   const generatedLabel = overview?.generatedAt
+  65 |     ? `Updated ${formatDistanceToNowStrict(new Date(overview.generatedAt), { addSuffix: true })}`  react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/pages/Mcat.tsx
+  1080:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/pages/Mcat.tsx:1080:5
+  1078 |   useEffect(() => {
+  1079 |     let cancelled = false
+> 1080 |     setLoading(true)
+       |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  1081 |     setMarkdown('')
+  1082 |     fetch(`${import.meta.env.BASE_URL}prepcatcontent/${item.file}`)
+  1083 |       .then((response) => response.ok ? response.text() : Promise.reject(new Error('Content unavailable')))  react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/pages/McatFocusSession.tsx
+  22:5   warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/pages/McatFocusSession.tsx:22:5
+  20 |   useEffect(() => {
+  21 |     const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+> 22 |     setReduced(media.matches)
+     |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  23 |     const onChange = () => setReduced(media.matches)
+  24 |     media.addEventListener('change', onChange)
+  25 |     return () => media.removeEventListener('change', onChange)  react-hooks/set-state-in-effect
+  56:5   warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/pages/McatFocusSession.tsx:56:5
+  54 |
+  55 |   useEffect(() => {
+> 56 |     setSessionGoal(paramGoal || defaultGoal)
+     |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  57 |   }, [defaultGoal, paramGoal])
+  58 |
+  59 |   useEffect(() => {                                                                                                                                                                       react-hooks/set-state-in-effect
+  60:5   warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/pages/McatFocusSession.tsx:60:5
+  58 |
+  59 |   useEffect(() => {
+> 60 |     setRemaining(sessionSeconds)
+     |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  61 |     setRunning(true)
+  62 |   }, [sessionSeconds])
+  63 |                                                                                                                                                                                            react-hooks/set-state-in-effect
+  73:26  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/pages/McatFocusSession.tsx:73:26
+  71 |
+  72 |   useEffect(() => {
+> 73 |     if (remaining === 0) setRunning(false)
+     |                          ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  74 |   }, [remaining])
+  75 |
+  76 |   const elapsed = sessionSeconds - remaining                                                                                                                                           react-hooks/set-state-in-effect
+
+/Users/andyquach/Documents/premed-os-s1/src/pages/ReviewItemPage.tsx
+  51:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/andyquach/Documents/premed-os-s1/src/pages/ReviewItemPage.tsx:51:5
+  49 |
+  50 |   useEffect(() => {
+> 51 |     setLeft(leftPerson ? personDraft(leftPerson) : null)
+     |     ^^^^^^^ Avoid calling setState() directly within an effect
+  52 |     setRight(rightPerson ? personDraft(rightPerson) : null)
+  53 |     setResolved(false)
+  54 |   }, [selectedId, leftPerson?.id, rightPerson?.id])  react-hooks/set-state-in-effect
+  54:6  warning  React Hook useEffect has missing dependencies: 'leftPerson' and 'rightPerson'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 react-hooks/exhaustive-deps
+
+/Users/andyquach/Documents/premed-os-s1/supabase/functions/google-drive-materials/index.ts
+  23:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/andyquach/Documents/premed-os-s1/supabase/functions/shared-syllabus/index.ts
+   63:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  106:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 55 problems (0 errors, 55 warnings)
+
+exit=0

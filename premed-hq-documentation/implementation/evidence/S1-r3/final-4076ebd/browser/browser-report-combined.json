@@ -1,0 +1,510 @@
+{
+  "ranAt": "2026-09-28T01:46:41.068Z",
+  "api": "http://127.0.0.1:55431",
+  "report": [
+    {
+      "build": "combined",
+      "scenario": "t4-legacy-bare",
+      "checks": [
+        {
+          "label": "opening claimed the unmarked T4 row once, at cloud schema 2",
+          "ok": true,
+          "detail": [
+            {
+              "requestId": "45909.108",
+              "method": "PATCH",
+              "url": "?user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "the claim is exactly the reviewed document plus _schema: 2",
+          "ok": true
+        },
+        {
+          "label": "claim keeps the stored encoding (bare)",
+          "ok": true
+        },
+        {
+          "label": "Settings shows \"Cloud protection: on\"",
+          "ok": true
+        },
+        {
+          "label": "clicked the Dark theme button (an ordinary synced settings edit)",
+          "ok": true
+        },
+        {
+          "label": "after reload the edit is still saved on this device (durable workspace storage)",
+          "ok": true,
+          "detail": {
+            "darkBeforeReload": true
+          }
+        },
+        {
+          "label": "the save succeeded: schema 2, write_rev 2",
+          "ok": true,
+          "detail": [
+            {
+              "method": "PATCH",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "edit saved",
+          "ok": true
+        },
+        {
+          "label": "every T4 collection and nested field kept exactly",
+          "ok": true
+        },
+        {
+          "label": "stored encoding stays bare",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "45909.102",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca",
+          "status": 200
+        },
+        {
+          "requestId": "900CF283B5EBEEE930D0BC828DC64A4F",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca",
+          "status": 200
+        },
+        {
+          "requestId": "45909.107",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca",
+          "status": 200
+        },
+        {
+          "requestId": "45909.108",
+          "method": "PATCH",
+          "url": "?user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "B53921EE920FEAA1321835AE04E62FE3",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45909.109",
+          "method": "PATCH",
+          "url": "?user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca&updated_at=eq.2026-09-28T01%3A46%3A12.378%2B00%3A00&cloud_schema=eq.2&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "F3201FA0F2BC5EACFF7C10107993B3E3",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca&updated_at=eq.2026-09-28T01%3A46%3A12.378%2B00%3A00&cloud_schema=eq.2&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45909.211",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca",
+          "status": 200
+        },
+        {
+          "requestId": "A42BCB88A615617C41EDE66ED87DAC79",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca",
+          "status": 200
+        },
+        {
+          "requestId": "45909.219",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca",
+          "status": 200
+        },
+        {
+          "requestId": "45909.221",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.07518816-6a2c-4864-9dab-86afe6fa83ca",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "loadWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "editWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "darkBeforeReload": true,
+      "afterReloadRoute": "device/account review page",
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": null,
+          "write_rev": null,
+          "encoding": "bare"
+        },
+        "after": {
+          "cloud_schema": 2,
+          "write_rev": 2,
+          "encoding": "bare"
+        }
+      },
+      "revision": "8dd37c6f5df5b39328eae7dc8029a70a2f081b36"
+    },
+    {
+      "build": "combined",
+      "scenario": "t4-legacy-gzip",
+      "checks": [
+        {
+          "label": "opening claimed the unmarked T4 row once, at cloud schema 2",
+          "ok": true,
+          "detail": [
+            {
+              "requestId": "45961.108",
+              "method": "PATCH",
+              "url": "?user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "the claim is exactly the reviewed document plus _schema: 2",
+          "ok": true
+        },
+        {
+          "label": "claim keeps the stored encoding (gzip)",
+          "ok": true
+        },
+        {
+          "label": "Settings shows \"Cloud protection: on\"",
+          "ok": true
+        },
+        {
+          "label": "clicked the Dark theme button (an ordinary synced settings edit)",
+          "ok": true
+        },
+        {
+          "label": "after reload the edit is still saved on this device (durable workspace storage)",
+          "ok": true,
+          "detail": {
+            "darkBeforeReload": true
+          }
+        },
+        {
+          "label": "the save succeeded: schema 2, write_rev 2",
+          "ok": true,
+          "detail": [
+            {
+              "method": "PATCH",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "edit saved",
+          "ok": true
+        },
+        {
+          "label": "every T4 collection and nested field kept exactly",
+          "ok": true
+        },
+        {
+          "label": "stored encoding stays gzip",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "45961.102",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5",
+          "status": 200
+        },
+        {
+          "requestId": "564B6E38D558093990B0C0CDF3628553",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5",
+          "status": 200
+        },
+        {
+          "requestId": "45961.107",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5",
+          "status": 200
+        },
+        {
+          "requestId": "EDC9494C0A1F72459EED95B7F48BAA6A",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45961.108",
+          "method": "PATCH",
+          "url": "?user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "0189E76FEC3B8CADC85D8160D4277EE4",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5&updated_at=eq.2026-09-28T01%3A46%3A22.405%2B00%3A00&cloud_schema=eq.2&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45961.109",
+          "method": "PATCH",
+          "url": "?user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5&updated_at=eq.2026-09-28T01%3A46%3A22.405%2B00%3A00&cloud_schema=eq.2&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45961.211",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5",
+          "status": 200
+        },
+        {
+          "requestId": "F2A1D3561207C22943D344325161A496",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5",
+          "status": 200
+        },
+        {
+          "requestId": "45961.219",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5",
+          "status": 200
+        },
+        {
+          "requestId": "45961.221",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.72c13925-0c08-4ebe-b27f-cc60928c82e5",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "loadWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "editWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "darkBeforeReload": true,
+      "afterReloadRoute": "device/account review page",
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": null,
+          "write_rev": null,
+          "encoding": "gzip"
+        },
+        "after": {
+          "cloud_schema": 2,
+          "write_rev": 2,
+          "encoding": "gzip"
+        }
+      },
+      "revision": "8dd37c6f5df5b39328eae7dc8029a70a2f081b36"
+    },
+    {
+      "build": "combined",
+      "scenario": "t4-legacy-text",
+      "checks": [
+        {
+          "label": "opening claimed the unmarked T4 row once, at cloud schema 2",
+          "ok": true,
+          "detail": [
+            {
+              "requestId": "46015.108",
+              "method": "PATCH",
+              "url": "?user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "the claim is exactly the reviewed document plus _schema: 2",
+          "ok": true
+        },
+        {
+          "label": "claim keeps the stored encoding (text)",
+          "ok": true
+        },
+        {
+          "label": "Settings shows \"Cloud protection: on\"",
+          "ok": true
+        },
+        {
+          "label": "clicked the Dark theme button (an ordinary synced settings edit)",
+          "ok": true
+        },
+        {
+          "label": "after reload the edit is still saved on this device (durable workspace storage)",
+          "ok": true,
+          "detail": {
+            "darkBeforeReload": true
+          }
+        },
+        {
+          "label": "the save succeeded: schema 2, write_rev 2",
+          "ok": true,
+          "detail": [
+            {
+              "method": "PATCH",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "edit saved",
+          "ok": true
+        },
+        {
+          "label": "every T4 collection and nested field kept exactly",
+          "ok": true
+        },
+        {
+          "label": "stored encoding stays text",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "46015.102",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b",
+          "status": 200
+        },
+        {
+          "requestId": "9666547E931BEAE282E11F60B9BA180E",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b",
+          "status": 200
+        },
+        {
+          "requestId": "46015.107",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b",
+          "status": 200
+        },
+        {
+          "requestId": "46015.108",
+          "method": "PATCH",
+          "url": "?user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "E55663D18A8FCF254F2CF3B1453E7450",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "084013C6EA7CE50223E22FB915C7DFC6",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b&updated_at=eq.2026-09-28T01%3A46%3A32.193%2B00%3A00&cloud_schema=eq.2&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "46015.109",
+          "method": "PATCH",
+          "url": "?user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b&updated_at=eq.2026-09-28T01%3A46%3A32.193%2B00%3A00&cloud_schema=eq.2&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "46015.211",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b",
+          "status": 200
+        },
+        {
+          "requestId": "880D957FA8D2F0E51F6C4A0BB5C62C0F",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b",
+          "status": 200
+        },
+        {
+          "requestId": "46015.219",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b",
+          "status": 200
+        },
+        {
+          "requestId": "46015.221",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.0b987fc1-0f3f-4575-9450-7280ed1a5a5b",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "loadWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "editWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "darkBeforeReload": true,
+      "afterReloadRoute": "device/account review page",
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": null,
+          "write_rev": null,
+          "encoding": "text"
+        },
+        "after": {
+          "cloud_schema": 2,
+          "write_rev": 2,
+          "encoding": "text"
+        }
+      },
+      "revision": "8dd37c6f5df5b39328eae7dc8029a70a2f081b36"
+    }
+  ]
+}

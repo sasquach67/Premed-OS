@@ -176,6 +176,32 @@ it.each(COMBOS)(`${FIXTURE}: unclaimed (legacy) row stored %s, edit written %s`,
   }
 }, 60_000)
 
+it(`${FIXTURE}: legacy plain row opened, edited, saved, then reloaded (${OLD ? 'reproduces the pre-S1 false review' : 'opens without a review'})`, async () => {
+  const account = await openAccount(async (id, email) => {
+    await admin('/rest/v1/dashboards', 'POST', { user_id: id, data: await seedWorkspace(email, 'bare'), updated_at: '2026-01-01T00:00:00+00:00' })
+  })
+  await act(async () => account.store.useStore.getState().update(d => { (d.notes as Record<string, string>).s1Edit = 'before reload' }))
+  expect(await act(async () => account.cloud.pushNow()), account.cloud.error).toBe(true)
+  // Reload the way main.tsx boots: durable workspaces first, then render.
+  await (await import('./storageHealth')).flushWorkspaceStorage()
+  await act(async () => root!.unmount()); root = undefined
+  vi.resetModules(); requests = []
+  await (await import('./workspaceBootstrap')).initializeDurableWorkspaces()
+  await (await import('./storageHealth')).flushWorkspaceStorage()
+  const { useCloudSync } = await import('./useCloudSync')
+  const safety = await import('./accountSyncSafety')
+  let cloud!: ReturnType<typeof useCloudSync>
+  function Probe() { const value = useCloudSync(); useEffect(() => { cloud = value }, [value]); return null }
+  root = createRoot(document.createElement('div'))
+  await act(async () => root!.render(createElement(Probe)))
+  await vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).not.toBe('syncing'); expect(cloud.status).not.toBe('idle') }, { timeout: 30_000, interval: 25 })
+  if (OLD) {
+    // Reproduces the pre-S1 defect fixed in this branch: the saved copy's JSONB key
+    // order made the byte comparison report an unsaved edit after every reload.
+    expect(safety.getAccountConflict(account.id)?.message).toContain('not confirmed saved')
+  } else expect(safety.getAccountConflict(account.id)?.message, cloud.error).toBeUndefined()
+}, 60_000)
+
 if (OLD) {
   it(`${FIXTURE}: a rejected save has no idle retry loop, and a later edit is rejected again`, async () => {
     const account = await openAccount(async (id, email) => {

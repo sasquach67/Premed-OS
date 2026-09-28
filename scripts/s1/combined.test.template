@@ -132,6 +132,14 @@ function expectT4Kept(doc: Record<string, unknown>, seed: Record<string, unknown
   expect((doc.persons as Record<string, unknown>[]).find(x => x.id === 'person-a')?.bio).toBe('Nested T4 bio')
 }
 
+function diffPaths(a: unknown, b: unknown, path = '', out: string[] = []): string[] {
+  if (out.length > 20) return out
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) diffPaths((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key], `${path}.${key}`, out)
+  } else if (JSON.stringify(a) !== JSON.stringify(b)) out.push(`${path}: ${JSON.stringify(a)?.slice(0, 80)} != ${JSON.stringify(b)?.slice(0, 80)}`)
+  return out
+}
+
 async function mount() {
   const { useCloudSync } = await import('./useCloudSync')
   const store = await import('./store')
@@ -180,12 +188,19 @@ it.each(['bare', 'gzip', 'text'] as Encoding[])(`${FIXTURE}: unmarked T4 row sto
   const savedDoc = decode(saved.data) as Record<string, unknown> & { notes: Record<string, string> }
   expect(savedDoc._schema).toBe(2); expect(savedDoc.notes.s1Edit).toBe(`edit ${as}`)
   expectT4Kept(savedDoc, seed)
-  // Reload: same device storage and session, fresh modules. Nothing is rewritten.
+  // Reload: same device storage and session, fresh modules, booted the way main.tsx
+  // boots (durable workspaces first, then render). The saved edit is flushed first,
+  // as a completed save would be before the student reloads. Nothing is rewritten.
+  await (await import('./storageHealth')).flushWorkspaceStorage()
   await act(async () => root!.unmount()); root = undefined
   vi.resetModules(); requests = []
+  await (await import('./workspaceBootstrap')).initializeDurableWorkspaces()
+  await (await import('./storageHealth')).flushWorkspaceStorage()
   app = await mount()
   await app.settle()
-  expect(app.safety.getAccountConflict(user.id), app.cloud.error).toBeUndefined()
+  const reloadConflict = app.safety.getAccountConflict(user.id)
+  if (reloadConflict?.open && reloadConflict.localRaw) console.error('S1 reload diff (open vs saved):', JSON.stringify(diffPaths(reloadConflict.open.data, JSON.parse(reloadConflict.localRaw).state)))
+  expect(reloadConflict, app.cloud.error).toBeUndefined()
   expect(requests.filter(r => r.method !== 'GET')).toEqual([])
   expect(await readRow(user.id)).toEqual(saved)
   expectT4Kept(app.store.snapshotData() as unknown as Record<string, unknown>, seed)

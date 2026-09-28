@@ -11,7 +11,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const [fixture, extra] = process.argv.slice(2)
-const revisions = { 'old-deployed': 'd60f682946e264ea2d680c2c8e2914a86899c114', 'old-stale': '5c7a3e4f1c28c3b36392815c0a63fe3c963cb225', current: 'HEAD', combined: 'a054d407038a9f5af2b0eff9969754d4196831dc' }
+const revisions = { 'old-deployed': 'd60f682946e264ea2d680c2c8e2914a86899c114', 'old-stale': '5c7a3e4f1c28c3b36392815c0a63fe3c963cb225', current: 'HEAD', combined: '8dd37c6f5df5b39328eae7dc8029a70a2f081b36' }
 if (!Object.hasOwn(revisions, fixture)) throw new Error('Use old-deployed|old-stale|current|combined')
 if (process.env.S1_LOCAL_CONFIRMED !== 'yes') throw new Error('Set S1_LOCAL_CONFIRMED=yes only for the disposable local stack')
 const revision = execFileSync('git', ['rev-parse', revisions[fixture]], { cwd: root, encoding: 'utf8' }).trim()

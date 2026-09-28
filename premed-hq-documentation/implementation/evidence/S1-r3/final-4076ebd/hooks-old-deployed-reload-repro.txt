@@ -1,0 +1,10 @@
+S1 hooks: old-deployed @ d60f682946e264ea2d680c2c8e2914a86899c114
+
+ RUN  v4.1.9 /Users/andyquach/Documents/premed-os-s1/scripts/s1/.runtime/hooks-old-deployed
+
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  21:41:32
+   Duration  8.76s (transform 425ms, setup 0ms, import 76ms, tests 8.27s, environment 332ms)
+
