@@ -8,11 +8,12 @@ it.each(['new', 'update'] as const)('includes the Assessment exam profile and pr
   expect(assessmentRules).toContain('These rules apply only to the **Assessment** goal, in new and update mode.')
   expect(assessmentRules).toContain('`EC-EXAM-PROFILE`')
   expect(assessmentRules).toContain('`EC-MOCK-EXAM`')
+  expect(assessmentRules).toContain("When practice quizzes and real exams differ on format, follow the real exam's format mix; use practice quizzes mainly for topics, figure families and traps.")
   expect(assessmentRules).toContain('Never copy, lightly reword or renumber an exam item.')
   expect(assessmentRules).toContain('Without real exams, use the course blueprint and say so.')
   expect(assessmentRules).toContain('Unless the request already says, ask once, in the first reply')
   expect(assessmentRules).toContain('If the student doesn\'t choose, use (a).')
-  expect(prompt).toContain('Prompt build: notebook-instructions-beta-23.')
+  expect(prompt).toContain('Prompt build: notebook-instructions-beta-24.')
 })
 it.each(['review', 'assessment', 'assignment'] as const)('composes canonical new/update %s mode before inserting inputs once', goal => {
   const original = composeNotebookPrompt(goal, values)

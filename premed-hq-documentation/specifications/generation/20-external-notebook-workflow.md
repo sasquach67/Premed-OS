@@ -139,6 +139,8 @@ These rules apply only to the **Assessment** goal, in new and update mode.
   5. The share of items that draw on two or more lessons.
   6. The figure families the course uses.
 
+  When practice quizzes and real exams differ on format, follow the real exam's format mix; use practice quizzes mainly for topics, figure families and traps.
+
   Then write new, original questions that match the profile. Never copy, lightly reword or renumber an exam item. Never reproduce a key's typos, missing options or simplifications: a key shows how the course grades, not what is true. State the profile briefly in the companion message, not in the notebook. Without real exams, use the course blueprint and say so.
 
 - `EC-MOCK-EXAM`: Unless the request already says, ask once, in the first reply, which practice style the student wants:
