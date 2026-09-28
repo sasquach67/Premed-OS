@@ -34,3 +34,15 @@ No bulk claims, account-content reads, real-row edits/repairs, RLS/auth changes 
 ## Current external blocker
 
 The public site's `verify-production-security.mjs` check currently fails CSP, HSTS, Referrer-Policy, Permissions-Policy and X-Content-Type-Options headers. This predates S1. Resolve through the approved hosting/release work; do not waive or silently remove the check. No hosted configuration changed during this task.
+
+## Approval and preflight receipt — September 28, 2026
+
+Andy approved this checklist's production scope in the Claude planning chat (`local_79ee7410-55ff-4eda-8f4b-3989600dc49d`), verified directly from his original visible answers before acting:
+
+- Database permission: **"Yes, apply it (Recommended)"**, covering metadata-only checks, the reviewed two columns and guard, and installation verification; no account-content reads/writes.
+- Release-only header waiver: **"Ship S1 now (Recommended)"**. The existing security-header check stays unchanged; the hosting move remains separate.
+- Executor: **"u make codex do option b"**; subsequent instruction in Codex: **"do uit in arc"**.
+
+These decisions apply to reviewed `b156d73` lineage and the exact migration named above, with the stated stop-on-unexpected-preflight condition. They supersede the earlier pending-approval/header-gate status for this release only.
+
+**Production apply has NOT occurred.** The metadata-only preflight in Arc confirmed the expected project and absence of S1 objects, but found eight additional migration-history versions absent from the reviewed branch. Execution stopped at that explicit gate. See `../evidence/S1-production-preflight-2026-09-28.md`. No permission is inferred to repair history or replay those migrations.
