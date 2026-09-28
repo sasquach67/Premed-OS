@@ -46,3 +46,15 @@ Andy approved this checklist's production scope in the Claude planning chat (`lo
 These decisions apply to reviewed `b156d73` lineage and the exact migration named above, with the stated stop-on-unexpected-preflight condition. They supersede the earlier pending-approval/header-gate status for this release only.
 
 **Production apply has NOT occurred.** The metadata-only preflight in Arc confirmed the expected project and absence of S1 objects, but found eight additional migration-history versions absent from the reviewed branch. Execution stopped at that explicit gate. See `../evidence/S1-production-preflight-2026-09-28.md`. No permission is inferred to repair history or replay those migrations.
+
+## Production apply completed — 2026-09-28T15:38:58.101905+00:00
+
+Andy confirmed `go` after pasting the prepared Step 2. Codex executed it through Arc SQL Editor in project poichxqptuupzrkyewrq, query 456d8042-c915-4b86-85cb-59e3367597d1. The supplied pasted-text attachment matches the prepared 216-line script exactly (ignoring terminal whitespace). Its transaction repeats the overlap stop conditions immediately before the reviewed migration and records only version 20260924233000.
+
+Observed four successful installation results:
+- cloud_schema integer and write_rev bigint: nullable YES, default NULL.
+- guard_dashboard_write(): security_definer false, search_path=pg_catalog, body_matches true.
+- dashboards_write_guard: enabled O, BEFORE INSERT OR UPDATE, executes guard_dashboard_write().
+- history: s1_dashboard_write_guard, version 20260924233000, one statement, exact_sql_matches true (MD5 26ae9611554c07b05e9f88f4248a98ad).
+
+No account-content read, real-row write/claim, history repair, or timer change was performed. Six older NULL-statement migrations remain applied SQL unknown. Installation alone does not establish protection of Andy's account; he must confirm Cloud protection: on in the released client. API verification and deployment follow.

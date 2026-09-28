@@ -91,3 +91,17 @@ Arc showed Audible on resumption; availability was requested before switching it
 Andy confirmed Arc was free. Codex reopened saved SQL query 4a6fcec4-1795-4fd0-b8bb-60cdc632d69d in poichxqptuupzrkyewrq main PRODUCTION and reran the metadata-only Step 1 query. It again returned 21 rows: zero non-internal dashboard triggers, zero S1 columns, zero S1 functions, no S1 migration history entry, and the same five generation tables/eleven function signatures listed above. No account rows were read. Six historical NULL-statement versions remain contents unknown.
 
 Step 2 has not been pasted into the editor or executed. Waiting only for the previously agreed manual paste of 02-apply-S1-and-verify.sql; no renewed production approval is required. The wrapper repeats overlap checks before writes. Final combined beta23 checks passed: 298 files / 2,287 tests and build with Research enabled. No production schema change, merge to main, or S1 deployment has occurred.
+
+## Production apply completed — 2026-09-28T15:38:58.101905+00:00
+
+Andy confirmed `go` after pasting the prepared Step 2. Codex executed it through Arc SQL Editor in project poichxqptuupzrkyewrq, query 456d8042-c915-4b86-85cb-59e3367597d1. The supplied pasted-text attachment matches the prepared 216-line script exactly (ignoring terminal whitespace). Its transaction repeats the overlap stop conditions immediately before the reviewed migration and records only version 20260924233000.
+
+Observed four successful installation results:
+- cloud_schema integer and write_rev bigint: nullable YES, default NULL.
+- guard_dashboard_write(): security_definer false, search_path=pg_catalog, body_matches true.
+- dashboards_write_guard: enabled O, BEFORE INSERT OR UPDATE, executes guard_dashboard_write().
+- history: s1_dashboard_write_guard, version 20260924233000, one statement, exact_sql_matches true (MD5 26ae9611554c07b05e9f88f4248a98ad).
+
+No account-content read, real-row write/claim, history repair, or timer change was performed. Six older NULL-statement migrations remain applied SQL unknown. Installation alone does not establish protection of Andy's account; he must confirm Cloud protection: on in the released client. API verification and deployment follow.
+
+API probe: public deployed anon credentials, GET /rest/v1/dashboards?select=updated_at,cloud_schema,write_rev&limit=0. Returned HTTP 401 / Postgres 42501 permission denied for table dashboards. This is the existing deliberate anon privilege boundary; no grant was changed. Column catalog and pg_notify verification passed, but authenticated live API selection remains unverified without an approved test session. The supplied scope does not authorize reading Andy's session or creating a production auth user. Prior authenticated PostgREST/browser acceptance remains disposable-local evidence only.
