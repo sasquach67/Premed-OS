@@ -282,3 +282,22 @@ A schema-1 row is upgraded to schema 2 by the next save. The schema-1 client at 
 6. `supabase/schema.sql` doesn't list the two columns; the tracked migration is authoritative.
 
 Nothing was merged to `main`, deployed, or run against production.
+
+**Reload routing correction (Sep 28, Codex evidence review).** All earlier browser reloads
+landed on the device/account review page (18 historical, 6 current, 3 combined), because
+the fixtures never recorded that first-login review was done. Those checks prove durable
+storage only.
+
+A returning-account combined case (fixture seeds the reviewed-onboarding meta) passes
+10/10 on `8dd37c6f`:
+- after reload it opens to Settings;
+- there is no account conflict;
+- "Cloud protection: on" is shown;
+- the edit is applied;
+- the reload sends no write.
+
+Details: `evidence/S1-r3/final-4076ebd/README.md`.
+
+**Review.** The Claude planning chat approved the S1 code at `4076ebd` (Sep 28). That is
+not Andy's approval of anything. Production-apply checklist draft:
+`briefs/S1-production-apply-checklist.md`.

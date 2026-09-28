@@ -31,3 +31,33 @@ account row was used.
 
 Unchanged since the earlier runs, and not re-run: the server contract (`http.txt` 23/23,
 `repeat-apply.txt`, `rollback-check.txt`, `benchmark.txt`) and the old-build browser runs.
+
+## Reload routing correction (Sep 28)
+
+**What the earlier reload results show.** Every earlier browser reload landed on the app's
+device/account review page, not on Settings:
+
+| Run | Reloads on the review page |
+|---|---|
+| `../browser/browser-report.json` | 18 |
+| `browser/browser-report-current.json` | 6 |
+| `browser/browser-report-combined.json` | 3 |
+
+The fixtures injected a session but never recorded that first-login review was already
+done. That record lives in the public-layer `premed_hq_public.mergeDecidedFor`, written by
+the real flow's `markMergeSeen`. So those reload checks prove only that the edit was
+durably saved on the device. Those files are unchanged.
+
+**The returning-account case.** `browser-returning/browser-report-combined.json` covers a
+**returning account** on the combined build (`8dd37c6f`). The fixture seeds
+`{entered: true, mergeDecidedFor: [user]}`, as the real first-login review leaves it.
+After an edit and a reload, all 10 checks pass:
+- it opens to Settings, not the review page;
+- there is no account conflict or paused sync;
+- "Cloud protection: on" is shown;
+- the edit is applied;
+- the reload sends no write;
+- the save kept every T4 value at `write_rev` 2.
+
+Screenshot: `browser-returning/combined-t4-returning-reload-after-reload.png`. The stack
+was cleaned and stopped again afterwards (0 users, 0 rows).
