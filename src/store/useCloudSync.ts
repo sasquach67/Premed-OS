@@ -183,7 +183,7 @@ export function useCloudSync() {
         allowAccountSync(lease)
         lastSig.current = remoteText
         if (additiveWinner) recordAccountRecoveryNotice(u.id, ADDITIVE_RECOVERY_NOTICE)
-        else if (!equal && (cleanLocal || remoteUnchanged)) recordAccountRecoveryNotice(u.id, 'Your latest changes were synced. The other copy is saved under Settings → Local data.')
+        else if (!equal && (cleanLocal || remoteUnchanged)) recordAccountRecoveryNotice(u.id, 'Your latest changes were kept. Sync resumed; the other copy is saved under Settings → Local data.')
         else if (housekeepingOnly) recordAccountRecoveryNotice(u.id, 'Your saved work matches. Sync resumed; the other copy is saved under Settings → Local data.')
         setStatus('synced'); setProgress(''); setLastSyncAt(Date.parse(remote.updatedAt))
       } catch (cause) {
