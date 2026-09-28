@@ -74,7 +74,7 @@ So the failures are **compliance failures of approved rules, not missing rules**
 1. Separate instructor questions from inserted student responses by structure, never by formatting. Render and read handwritten pages.
 2. Student responses are attempts, never an answer basis.
 3. Answer independently first, then compare with keys, instructor explanations and the attempt.
-4. Open each practice rationale with its key status: "Pearson key", "Instructor key", "Instructor's explanation", "Worked from the sources", or "Best-supported answer; no key". No schema change.
+4. Key status stays internal: answers are verified behind the scenes, but the notebook shows only the answer and why. Andy: "the source of the information doesn't really matter to the user. as long as there is a good answer is fine".
 5. Record where the student's attempt differed, once, in one line.
 6. A key establishes intended grading, not factual authority. Flag a key-vs-science conflict once.
 7. Keep the educated guess: when sources and keys are silent, give the best-supported answer, and check an authoritative reference when uncertain.
