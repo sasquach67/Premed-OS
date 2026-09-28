@@ -11,6 +11,7 @@ export type WorkspaceRecoverySnapshot = {
 export interface WorkspaceRecoveryRepository {
   save(snapshot: WorkspaceRecoverySnapshot): Promise<void>
   read(workspaceKey: string, id: string): Promise<WorkspaceRecoverySnapshot | null>
+  list(workspaceKey: string): Promise<WorkspaceRecoverySnapshot[]>
   latest(workspaceKey: string): Promise<WorkspaceRecoverySnapshot | null>
 }
 
@@ -58,6 +59,12 @@ export function createWorkspaceRecoveryRepository(factory: IDBFactory = indexedD
     async read(workspaceKey, id) {
       return transaction<WorkspaceRecoverySnapshot | null>('readonly', (store, result) => {
         const request = store.get([workspaceKey, id]); request.onsuccess = () => result(request.result ?? null)
+      })
+    },
+    async list(workspaceKey) {
+      return transaction<WorkspaceRecoverySnapshot[]>('readonly', (store, result) => {
+        const request = store.index('workspaceTime').getAll(IDBKeyRange.bound([workspaceKey, 0], [workspaceKey, Number.MAX_SAFE_INTEGER]))
+        request.onsuccess = () => result(request.result)
       })
     },
     async latest(workspaceKey) {

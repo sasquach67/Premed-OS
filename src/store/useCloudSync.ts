@@ -1,3 +1,4 @@
+import { additiveAccountWinner, classifyAccountCopyChanges } from './accountCopyComparison'
 import { CloudColumnsMissingError, isMissingCloudColumnsError, isSchemaGuardError, prepareWorkspaceData, WorkspaceSchemaError } from '@/lib/workspaceSchema'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { sameJson } from '@/lib/logicalJson'
@@ -14,7 +15,7 @@ import { ACCOUNT_WORKSPACE_READY_EVENT } from '@/lib/accountWorkspace'
 import { syncAcademicOriginals } from '@/lib/academics/sharedMaterialFiles'
 import { syncNotebookImages } from '@/lib/academics/notebook/sharedNotebookAssets'
 import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
-import { getAccountSchemaBlock, getCloudProtection, pauseAccountForSchema, allowAccountSync, assertAccountUpload, assertSyncLease, assertSyncSession, captureSyncSession, getAccountConflict, isAccountSyncReady, observeSyncSession, pauseAccountSync, preserveAccountConflict, preserveAccountReplacement, readSyncBaseline, rebaseSyncBaseline, recordSyncBaseline, subscribeAccountConflicts, syncContent, matchesSyncBaseline } from './accountSyncSafety'
+import { getAccountSchemaBlock, getCloudProtection, pauseAccountForSchema, allowAccountSync, assertAccountUpload, assertSyncLease, assertSyncSession, captureSyncSession, getAccountConflict, isAccountSyncReady, observeSyncSession, pauseAccountSync, preserveAccountConflict, preserveAccountReplacement, readSyncBaseline, rebaseSyncBaseline, recordSyncBaseline, subscribeAccountConflicts, syncContent, matchesSyncBaseline, recordAccountRecoveryNotice, ADDITIVE_RECOVERY_NOTICE } from './accountSyncSafety'
 import { DashboardWriteMiss, readDashboard, writeDashboard, type RemoteDashboard } from './dashboardRows'
 import { CloudRequestError } from './cloudRequest'
 
@@ -114,6 +115,7 @@ export function useCloudSync() {
           setStatus('idle')
           return
         }
+        let cloudSavedAt = remote.updatedAt
         let baseline = readSyncBaseline(u.id)
         // Protection is proven, not assumed (S1 item 14). An unclaimed row is claimed
         // with exactly the reviewed cloud document, only its portable marker added:
@@ -128,6 +130,7 @@ export function useCloudSync() {
             if (!(cause instanceof DashboardWriteMiss) || attempt === 2) throw cause
             remote = await readDashboard(supabase!, u.id, checked, { localRaw: before, token })
             if (!remote) throw new Error('The cloud copy was removed during the account check. Nothing was replaced; check sync again.', { cause })
+            cloudSavedAt = remote.updatedAt
             fresh()
             continue
           }
@@ -146,15 +149,18 @@ export function useCloudSync() {
         const cleanLocal = baseline && local && await matchesSyncBaseline(local, baseline.digest)
         const remoteUnchanged = baseline && remote.updatedAt === baseline.updatedAt && await matchesSyncBaseline(remote.data, baseline.digest)
         fresh(); assertSyncLease(lease)
-        if (local && !equal && !cleanLocal && !remoteUnchanged) {
-          await preserveAccountConflict(u.id, before, remote.data, token)
+        const changes = local && !equal ? classifyAccountCopyChanges(local, remote.data) : null
+        const additiveWinner = changes && additiveAccountWinner(changes, Boolean(cleanLocal), Boolean(remoteUnchanged))
+        const deletion = changes && ((cleanLocal && changes.deviceOnly.length > 0) || (remoteUnchanged && changes.cloudOnly.length > 0))
+        if (local && !equal && ((!cleanLocal && !remoteUnchanged) || deletion)) {
+          await preserveAccountConflict(u.id, before, remote.data, token, undefined, undefined, cloudSavedAt)
           fresh()
           // Reopen only the saved local account. This does not choose a sync winner.
           activateAccountWorkspace(u.id)
           setStatus('error')
           return
         }
-        if (local && !equal && cleanLocal && !remoteUnchanged) {
+        if (local && !equal && ((cleanLocal && !remoteUnchanged) || additiveWinner === 'device')) {
           if (!await preserveAccountReplacement(u.id, before!, remote.data, token)) { setStatus('error'); return }
         }
         fresh(); assertSyncLease(lease)
@@ -176,6 +182,7 @@ export function useCloudSync() {
         assertDurableWorkspace()
         allowAccountSync(lease)
         lastSig.current = remoteText
+        if (additiveWinner) recordAccountRecoveryNotice(u.id, ADDITIVE_RECOVERY_NOTICE)
         setStatus('synced'); setProgress(''); setLastSyncAt(Date.parse(remote.updatedAt))
       } catch (cause) {
         try { assertSyncSession(token) } catch { return }

@@ -29,7 +29,7 @@ import { claimedRow } from '@/test/fakeDashboards'
 import legacyFixture from './__fixtures__/s1-d60f682-baseline.json'
 import { accountStorageKey, activeWorkspaceOwner } from '@/lib/demoMode'
 import { activateAccountWorkspace, activateGuestWorkspace, snapshotData, useStore } from './store'
-import { getAccountConflict, allowAccountSync, pauseAccountSync, observeSyncSession, readSyncBaseline, recordSyncBaseline, isAccountSyncReady } from './accountSyncSafety'
+import { getAccountConflict, allowAccountSync, pauseAccountSync, observeSyncSession, readSyncBaseline, recordSyncBaseline, isAccountSyncReady, getAccountRecoveryNotice } from './accountSyncSafety'
 import { useCloudSync } from './useCloudSync'
 import { AccountCloudContext, useAccountCloud } from './AccountCloudContext'
 import { visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
@@ -657,7 +657,7 @@ it('S1 upgrade does not weaken conflicts: dirty local + newer cloud under a d60f
   wire.rows.set(id, { data: { ...structuredClone(legacyFixture.snapshot), notes: { ...legacyFixture.snapshot.notes, example: 'cloud changed' } }, updated_at: newer })
   useStore.getState().update(d => { d.notes.example = 'local changed' })
   await render(); await session(id)
-  expect(getAccountConflict(id)).toMatchObject({ saved: true, schemaBlocked: false })
+  expect(getAccountConflict(id)).toMatchObject({ saved: true, schemaBlocked: false, cloudSavedAt: newer })
   expect(snapshotData().notes.example).toBe('local changed')
   expect(isAccountSyncReady(id)).toBe(false)
   expect(wire.writes).toHaveBeenCalledTimes(1) // only the claim of the cloud copy, never a replacement
@@ -801,4 +801,69 @@ it('T4 baseline compatibility never hides Research records, nested edits, or opa
   expect(await matchesSyncBaseline(migrated, await syncDigest(syncContent(nonempty)))).toBe(false)
   expect(await matchesSyncBaseline({ ...migrated, persons: [{ id: 'p', name: 'Synthetic', bio: 'New bio', createdAt: 1, updatedAt: 1, archived: false, order: 0 }] }, legacyFixture.digest)).toBe(false)
   expect(await matchesSyncBaseline({ ...migrated, unknownSection: [] } as typeof migrated, legacyFixture.digest)).toBe(false)
+})
+
+function addedTask(id: string) { return { id, title: id, type: 'Task', progress: 'Not started' as const, kanban: 'todo' as const, archived: false, order: 0 } }
+it.each(['device', 'cloud'] as const)('S2 preserves recovery before silently keeping additions on %s', async side => {
+  const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
+  await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
+  const fuller = structuredClone(base); fuller.tasks.push(addedTask('addition'))
+  if (side === 'device') useStore.getState().update(d => { d.tasks.push(addedTask('addition')) })
+  wire.rows.set(id, claimed(side === 'cloud' ? fuller : base, side === 'cloud' ? newer : older))
+  await render(); await session(id)
+  expect(getAccountConflict(id)).toBeUndefined()
+  expect(wire.snapshots.size).toBe(2)
+  expect(snapshotData().tasks.some(t => t.id === 'addition')).toBe(true)
+  expect(getAccountRecoveryNotice(id)).toContain('newest work')
+  if (side === 'device') { await act(async () => { expect(await cloud.pushNow()).toBe(true) }); expect(wire.writes).toHaveBeenCalledTimes(1) }
+})
+it.each(['device', 'cloud'] as const)('S2 never silently restores an intentional deletion on %s', async side => {
+  const id = account(); const initial = workspace('base'); initial.tasks.push(addedTask('deleted'))
+  activateAccountWorkspace(id, initial); const base = snapshotData()
+  await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
+  const reduced = structuredClone(base); reduced.tasks = reduced.tasks.filter(t => t.id !== 'deleted')
+  if (side === 'device') useStore.getState().update(d => { d.tasks = d.tasks.filter(t => t.id !== 'deleted') })
+  wire.rows.set(id, claimed(side === 'cloud' ? reduced : base, side === 'cloud' ? newer : older))
+  await render(); await session(id)
+  expect(getAccountConflict(id)?.saved).toBe(true); expect(isAccountSyncReady(id)).toBe(false)
+  expect(wire.writes).not.toHaveBeenCalled()
+})
+it('S2 leaves an unproven superset and independent additions for review', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
+  await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
+  useStore.getState().update(d => { d.tasks.push(addedTask('device-add')) })
+  const remote = structuredClone(base); remote.tasks.push(addedTask('cloud-add'))
+  wire.rows.set(id, claimed(remote, newer)); await render(); await session(id)
+  expect(getAccountConflict(id)?.saved).toBe(true); expect(wire.writes).not.toHaveBeenCalled()
+})
+it('S2 cannot resume the local-additions path when recovery fails', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
+  await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
+  useStore.getState().update(d => { d.tasks.push(addedTask('addition')) })
+  wire.rows.set(id, claimed(base, older)); wire.archiveFails = true
+  await render(); await session(id)
+  expect(getAccountConflict(id)?.saved).toBe(false); expect(isAccountSyncReady(id)).toBe(false)
+  expect(wire.writes).not.toHaveBeenCalled(); expect(getAccountRecoveryNotice(id)).toBeUndefined()
+})
+
+it.each(['device', 'cloud'] as const)('S2 asks before accepting a missing note-map record on %s', async side => {
+  const id = account(); activateAccountWorkspace(id, workspace('keep this note')); const base = snapshotData()
+  await recordSyncBaseline(id, base, revision(older), observeSyncSession(id))
+  const reduced = structuredClone(base); delete reduced.notes.example
+  if (side === 'device') useStore.getState().update(d => { delete d.notes.example })
+  wire.rows.set(id, claimed(side === 'cloud' ? reduced : base, side === 'cloud' ? newer : older))
+  await render(); await session(id)
+  expect(getAccountConflict(id)?.saved).toBe(true)
+  expect(isAccountSyncReady(id)).toBe(false)
+  expect(wire.writes).not.toHaveBeenCalled()
+})
+
+it('S2 pairs the conflict timestamp with the cloud document reread after a claim race', async () => {
+  const id=account();activateAccountWorkspace(id,workspace('device copy'))
+  wire.rows.set(id,{data:workspace('first cloud'),updated_at:older})
+  let raced=false
+  wire.attempts.mockImplementation(()=>{if(!raced){raced=true;wire.rows.set(id,{data:workspace('new cloud'),updated_at:newer})}})
+  await render();await session(id)
+  expect(getAccountConflict(id)).toMatchObject({saved:true,cloudSavedAt:newer,remote:{notes:{example:'new cloud'}}})
+  expect(snapshotData().notes.example).toBe('device copy')
 })

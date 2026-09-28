@@ -9,7 +9,7 @@ import { activateAccountWorkspace, assertDurableWorkspace, captureWorkspaceIdent
 import { loadDurableWorkspace } from './workspaceBootstrap'
 import { workspacePersistence } from './workspacePersistence'
 import { savedWorkspaceRaw, flushWorkspaceStorage, storageFailure, WorkspaceChangedError } from './storageHealth'
-import { getAccountSchemaBlock, pauseAccountForSchema, assertSyncSession, captureSyncSession, getAccountConflict, observeSyncSession, assertSyncLease, finishAccountConflictReview, type AccountConflict, pauseAccountSync, preserveAccountConflict, syncContent, syncDigest, validateRemoteWorkspace } from './accountSyncSafety'
+import { getAccountSchemaBlock, pauseAccountForSchema, assertSyncSession, captureSyncSession, getAccountConflict, observeSyncSession, assertSyncLease, finishAccountConflictReview, type AccountConflict, pauseAccountSync, preserveAccountConflict, recordAccountRecoveryNotice, syncContent, syncDigest, validateRemoteWorkspace } from './accountSyncSafety'
 import { workspaceRecoveryRepository } from './workspaceRecoveryRepository'
 import { syncNotebookImages } from '@/lib/academics/notebook/sharedNotebookAssets'
 import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
@@ -220,11 +220,15 @@ export async function prepareAccountConflictResolution(userId: string, conflict:
     await mutation.archive(mutation.owner.key, mutation.beforeRaw!)
     await mutation.archive(`${mutation.owner.key}:before-reviewed-resolution`, wrapped(remote.data))
     const device = structuredClone(mutation.before), cloud = structuredClone(remote.data)
+    const stored = await workspacePersistence()?.repository.read(mutation.owner.key)
+    await mutation.check()
+    const deviceSavedAt = stored?.raw === mutation.beforeRaw ? stored.updatedAt : null
+    const cloudSavedAt = conflict.cloudSavedAt && conflict.remote && syncContent(remote.data) === syncContent(conflict.remote) ? conflict.cloudSavedAt : remote.updatedAt
     let applying = false
     return {
-      device: structuredClone(device), cloud: structuredClone(cloud), updatedAt: remote.updatedAt,
+      device: structuredClone(device), cloud: structuredClone(cloud), updatedAt: cloudSavedAt, deviceSavedAt,
       dispose: mutation.dispose,
-      async apply(choice: 'device' | 'cloud') {
+      async apply(choice: 'device' | 'cloud', onProgress?: (message: string) => void) {
         if (applying || (choice !== 'device' && choice !== 'cloud')) throw new Error('Reopen the comparison before trying again.')
         applying = true
         let serverSaved = false
@@ -234,8 +238,27 @@ export async function prepareAccountConflictResolution(userId: string, conflict:
           if (!sameRevision(latest, remote) || syncContent(latest.data) !== syncContent(cloud)) throw new Error('The cloud copy changed after review. Reopen the comparison.')
           const chosen = choice === 'device' ? mergeRestoredWorkspace(cloud, device) : mergeRestoredWorkspace(device, mergeRemotePreservingLocal(cloud, device))
           let confirmed = remote
-          await syncNotebookImages(dataForRemote(prepareWorkspaceData(chosen)), userId, notebookAssetRepository(), mutation.check)
+          // Only the image stage gets this idle timeout: no workspace write has
+          // started yet. Disposing fences every continuation of a late upload.
+          let idleTimer: ReturnType<typeof setTimeout> | undefined
+          let stalled = false
+          let rejectIdle!: (error: Error) => void
+          const idle = new Promise<never>((_resolve, reject) => { rejectIdle = reject })
+          const progress = (verified: number, total: number) => {
+            if (stalled) return
+            if (idleTimer) clearTimeout(idleTimer)
+            idleTimer = setTimeout(() => {
+              stalled = true
+              mutation.dispose()
+              rejectIdle(new Error('Notebook image transfer stopped making progress. Your recovery copies are safe and no workspace was replaced. Check your connection, then retry checking copies.'))
+            }, 120_000)
+            onProgress?.(total ? `Uploading notebook images: ${verified} of ${total}` : 'Saving your choice…')
+          }
+          progress(0, 0)
+          try { await Promise.race([syncNotebookImages(dataForRemote(prepareWorkspaceData(chosen)), userId, notebookAssetRepository(), mutation.check, undefined, progress), idle]) }
+          finally { if (idleTimer) clearTimeout(idleTimer) }
           await mutation.check()
+          onProgress?.('Saving your choice…')
           if (choice === 'device') {
             let saved: RemoteDashboard
             try { saved = await writeDashboard(client, userId, dataForRemote(prepareWorkspaceData(chosen)), remote, mutation.check) }
@@ -264,6 +287,7 @@ export async function prepareAccountConflictResolution(userId: string, conflict:
             assertDurableWorkspace(snapshotData(), mutation.owner)
           }
           await finishAccountConflictReview(userId, conflict, mutation.token, confirmed.data, confirmed, applied)
+          recordAccountRecoveryNotice(userId)
           notifyAccountWorkspaceReady(userId)
         } catch (error) {
           if (isSchemaGuardError(error) || error instanceof WorkspaceSchemaError) pauseAccountForSchema(userId, error instanceof Error ? error.message : 'This tab is out of date. Export your changes, then reopen Premed OS.')

@@ -1,3 +1,4 @@
+import { accountRecoveryDownload } from '@/store/accountRecoveryDownload'
 import { SelectField } from '@/components/ui/select-field'
 import { useConfirm } from '@/components/common/useConfirm'
 import { useEffect, useRef, useState } from 'react'
@@ -43,6 +44,8 @@ import { supabase } from '@/lib/supabase'
 import { useShellActions } from '@/components/layout/shellActions'
 
 export function Settings() {
+  const recoveryAccount = useAccountCloud()
+  const [recoveryBusy, setRecoveryBusy] = useState(false)
   const confirm = useConfirm()
   const route = ROUTE_MAP.settings
   const settings = useStore((s) => s.settings)
@@ -219,6 +222,12 @@ export function Settings() {
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => void exportComplete()} disabled={exportingBackup}><Download className="size-4" /> {exportingBackup ? 'Preparing backup…' : 'Export complete backup'}</Button>
               <Button variant="outline" onClick={exportJson}><Download className="size-4" /> Export JSON</Button>
+              {recoveryAccount.user && <Button variant="outline" disabled={recoveryBusy} onClick={async () => {
+                setRecoveryBusy(true)
+                try { await accountRecoveryDownload(recoveryAccount.user!.id); setMsg('Recovery copies downloaded. These contain saved records and file references; keep the original files too.') }
+                catch (error) { setMsg(error instanceof Error ? error.message : 'Recovery download failed.') }
+                finally { setRecoveryBusy(false) }
+              }}><Download className="size-4" />{recoveryBusy ? 'Preparing recovery copies…' : 'Download account recovery copies'}</Button>}
               <Button variant="outline" onClick={() => fileRef.current?.click()}><Upload className="size-4" /> Import backup</Button>
               <input ref={fileRef} type="file" accept="application/json,application/zip,.json,.zip" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void onImport(f) }} />
             </div>

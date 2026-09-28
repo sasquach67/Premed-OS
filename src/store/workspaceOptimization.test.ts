@@ -23,6 +23,7 @@ class RecoveryCopies implements WorkspaceRecoveryRepository {
     if (result && this.corruptRead) result.stored += 'corrupt'
     this.afterRead?.(); return result
   }
+  async list(key: string) { return structuredClone(this.copies.filter(copy => copy.workspaceKey === key)) }
   async latest(key: string) { return structuredClone(this.copies.filter(copy => copy.workspaceKey === key).at(-1) ?? null) }
 }
 

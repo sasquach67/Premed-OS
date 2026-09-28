@@ -17,7 +17,7 @@ export function pauseAccountForSchema(id: string, message: string, mutation = fa
 const conflicts = new Map<string, AccountConflict>()
 const listeners = new Set<() => void>()
 type OpenWorkspaceCopy = { data: AppData; key: string; raw: string | null }
-export type AccountConflict = { schemaBlocked?: boolean; open?: OpenWorkspaceCopy; localRaw: string | null; remote: AppData | null; saved: boolean; message: string }
+export type AccountConflict = { cloudSavedAt?: string; schemaBlocked?: boolean; open?: OpenWorkspaceCopy; localRaw: string | null; remote: AppData | null; saved: boolean; message: string }
 export function observeSyncSession(id: string | null) {
   if (sessionId !== id) { clearDriveSession(); sessionId = id; generation++; verifiedGeneration = undefined; listeners.forEach(fn => fn()) }
   return { id, generation, pauseRevision }
@@ -140,9 +140,9 @@ export function recordCloudProtection(id: string, value: CloudProtection) {
 export function getCloudProtection(id: string | null | undefined): CloudProtection { return id ? protection.get(id) ?? 'unknown' : 'unknown' }
 
 /** Immutable copies before review. Failure to archive never permits a replacement. */
-export async function preserveAccountConflict(id: string, localRaw: string | null, remote: AppData | null, token: ReturnType<typeof captureSyncSession>, reason?: string, open?: OpenWorkspaceCopy) {
+export async function preserveAccountConflict(id: string, localRaw: string | null, remote: AppData | null, token: ReturnType<typeof captureSyncSession>, reason?: string, open?: OpenWorkspaceCopy, cloudSavedAt?: string) {
   if (token.id !== id) throw new Error('These recovery copies belong to a different account.')
-  const pending: AccountConflict = { schemaBlocked: !!getAccountSchemaBlock(id), open, localRaw, remote, saved: false, message: reason ?? 'This device and the cloud contain different account data. Automatic sync and backups are paused. Download both copies before choosing what to restore.' }
+  const pending: AccountConflict = { cloudSavedAt, schemaBlocked: !!getAccountSchemaBlock(id), open, localRaw, remote, saved: false, message: reason ?? 'This device and the cloud contain different account data. Automatic sync and backups are paused. Download both copies before choosing what to restore.' }
   assertSyncSession(token)
   publish(id, pending)
   try {
@@ -193,3 +193,10 @@ export async function finishAccountConflictReview(id: string, reviewed: AccountC
   conflicts.delete(id)
   allowAccountSync(token)
 }
+
+const recoveryNotices = new Map<string, string>()
+export const ADDITIVE_RECOVERY_NOTICE = 'Kept the copy with your newest work. The other copy is saved under Settings → Local data.'
+export function recordAccountRecoveryNotice(id: string, message = 'Your choice was saved. The other copy is saved under Settings → Local data.') {
+  recoveryNotices.set(id, message); listeners.forEach(fn => fn())
+}
+export function getAccountRecoveryNotice(id?: string | null) { return id && !conflicts.has(id) && !getAccountSchemaBlock(id) ? recoveryNotices.get(id) : undefined }

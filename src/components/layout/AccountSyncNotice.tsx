@@ -21,17 +21,26 @@ export function AccountSyncNotice({ userId }: { userId?: string }) {
   }
   let portableLocal = false
   try { portableLocal = Boolean(conflict.localRaw && JSON.parse(decodeWorkspaceStorage(conflict.localRaw)).state) } catch { /* Exact bytes remain downloadable. */ }
-  return <aside role="alert" className="m-4 rounded-lg border border-amber-500/50 bg-card p-4 text-sm">
+  const readable = conflict.saved && !conflict.schemaBlocked && !conflict.open && portableLocal && !!conflict.remote
+  const downloads = <div className="flex flex-wrap gap-3">
+    {conflict.open && <button type="button" className="underline" onClick={() => download('open')}>Download open workspace JSON (includes unsaved edits)</button>}
+    {conflict.localRaw && <button type="button" className="underline" onClick={() => download('exact')}>Download exact device cache</button>}
+    {portableLocal && <button type="button" className="underline" onClick={() => download('local')}>Download device account JSON</button>}
+    {conflict.remote && <button type="button" className="underline" onClick={() => download('cloud')}>Download cloud account JSON</button>}
+  </div>
+  return <aside aria-label="Account copies need review" className="m-4 min-w-0 rounded-lg border border-warning/50 bg-card p-4 text-sm">
     <p className="font-semibold">Account copies need review</p>
-    <p className="mt-1">{conflict.message}</p>
-    <p className="mt-1 text-muted-foreground">{conflict.saved ? 'Available copies have verified browser recovery copies.' : 'Downloads remain available from this tab.'} These files include source references; keep original image folders and ZIPs.</p>
-    <div className="mt-3 flex flex-wrap gap-3">
-      {conflict.open && <button type="button" className="underline" onClick={() => download('open')}>Download open workspace JSON (includes unsaved edits)</button>}
-      {conflict.localRaw && <button type="button" className="underline" onClick={() => download('exact')}>Download exact device cache</button>}
-      {portableLocal && <button type="button" className="underline" onClick={() => download('local')}>Download device account JSON</button>}
-      {conflict.remote && <button type="button" className="underline" onClick={() => download('cloud')}>Download cloud account JSON</button>}
-    </div>
-    <p className="mt-2 text-muted-foreground">{conflict.schemaBlocked ? 'This app cannot safely edit this cloud copy. Keep the downloads and reopen the current version of Premed OS.' : 'Compare the copies below before choosing which to use. Downloading alone does not restore or replace any data.'}</p>
-    {!conflict.schemaBlocked && <AccountConflictReview key={userId} userId={userId} conflict={conflict} />}
+    {readable ? <>
+      <p className="mt-1">Your device and cloud have different saved work. Choose which copy to keep.</p>
+      <AccountConflictReview key={userId} userId={userId} conflict={conflict} downloads={<>
+        <p className="text-muted-foreground">These files include source references; keep original image folders and ZIPs. Downloading does not restore or replace data.</p>
+        {downloads}
+      </>} />
+    </> : <>
+      <p role="alert" className="mt-1 break-words">{conflict.message}</p>
+      <p className="mt-1 text-muted-foreground">{conflict.saved ? 'Available copies have verified browser recovery copies.' : 'Downloads remain available from this tab.'} These files include source references; keep original image folders and ZIPs.</p>
+      <div className="mt-3">{downloads}</div>
+      <p className="mt-2 text-muted-foreground">{conflict.schemaBlocked ? 'This app cannot safely edit this cloud copy. Keep the downloads and reopen the current version of Premed OS.' : 'Sync remains paused. Downloading alone does not restore or replace any data.'}</p>
+    </>}
   </aside>
 }

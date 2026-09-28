@@ -1,3 +1,4 @@
+import * as notebookSync from '@/lib/academics/notebook/sharedNotebookAssets'
 import { CURRENT_CLOUD_SCHEMA } from '@/lib/workspaceSchema'
 import { webcrypto } from 'node:crypto'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -443,4 +444,40 @@ it('schema 2 can explicitly replace an unmarked T4 copy without losing Research 
     expect(fake.remote).toEqual({ ...before, _schema: CURRENT_CLOUD_SCHEMA })
     expect(fake.claim).toEqual({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 1 })
   } finally { review.dispose() }
+})
+
+it('S2 reports all 80 image progress updates before saving the chosen copy', async () => {
+  const review = await pausedReview(), progress = vi.fn()
+  vi.useFakeTimers()
+  vi.spyOn(notebookSync, 'syncNotebookImages').mockImplementation(async (_data, _id, _reader, check, _remote, report) => {
+    report?.(0, 80)
+    for (let index=1; index<=80; index++) {
+      await new Promise(resolve => setTimeout(resolve, 10)); await check()
+      report?.(index, 80)
+      expect(fake.writes).toHaveLength(0)
+    }
+    return { verified: 80 }
+  })
+  const work=review.apply('device', progress)
+  await vi.advanceTimersByTimeAsync(2000); await work
+  expect(progress).toHaveBeenCalledWith('Uploading notebook images: 0 of 80')
+  expect(progress).toHaveBeenCalledWith('Uploading notebook images: 80 of 80')
+  expect(progress).toHaveBeenLastCalledWith('Saving your choice…')
+  expect(fake.writes).toHaveLength(1)
+})
+it('S2 stalls before workspace replacement, retains recovery, and fences a late image continuation', async () => {
+  const review=await pausedReview(), gate=deferred<void>(), before=structuredClone(snapshotData()), saved=fake.snapshots.size
+  vi.useFakeTimers()
+  let fenced=false
+  vi.spyOn(notebookSync, 'syncNotebookImages').mockImplementation(async (_data, _id, _reader, check, _remote, report) => {
+    report?.(12,80); await gate.promise
+    try { await check() } catch(error) { fenced=true; throw error }
+    return { verified: 80 }
+  })
+  const failed=expect(review.apply('device')).rejects.toThrow('stopped making progress')
+  await vi.advanceTimersByTimeAsync(120001); await failed
+  expect(fake.writes).toHaveLength(0);expect(snapshotData()).toEqual(before)
+  expect(fake.snapshots.size).toBe(saved);expect(getAccountConflict(fake.userId!)?.saved).toBe(true)
+  gate.resolve();await vi.advanceTimersByTimeAsync(1)
+  expect(fenced).toBe(true);expect(fake.writes).toHaveLength(0)
 })
