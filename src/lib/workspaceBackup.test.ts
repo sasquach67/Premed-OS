@@ -1,3 +1,4 @@
+import { CURRENT_CLOUD_SCHEMA } from './workspaceSchema'
 // @vitest-environment node
 import { unzipSync, zipSync } from 'fflate'
 import { expect, it } from 'vitest'
@@ -79,7 +80,7 @@ it('carries opaque metadata through ZIP without interpreting its unknown asset b
 
 it('blocks future cloud schemas and future ZIP formats without staging writes', async () => {
   const data = createPersonalInitialData()
-  await expect(createWorkspaceBackup(Object.assign(structuredClone(data), { _schema: 2 }))).rejects.toThrow('newer version')
+  await expect(createWorkspaceBackup(Object.assign(structuredClone(data), { _schema: CURRENT_CLOUD_SCHEMA + 1 }))).rejects.toThrow('newer version')
   const zip = await createWorkspaceBackup(data)
   const members = unzipSync(new Uint8Array(await zip.arrayBuffer()))
   const envelope = JSON.parse(new TextDecoder().decode(members['workspace.json']))
@@ -87,7 +88,7 @@ it('blocks future cloud schemas and future ZIP formats without staging writes', 
   members['workspace.json'] = new TextEncoder().encode(JSON.stringify(envelope))
   await expect(prepareWorkspaceBackup(new Blob([zipSync(members).slice().buffer]))).rejects.toThrow('Unsupported')
   envelope.version = 1
-  envelope.data._schema = 2
+  envelope.data._schema = CURRENT_CLOUD_SCHEMA + 1
   members['workspace.json'] = new TextEncoder().encode(JSON.stringify(envelope))
   await expect(prepareWorkspaceBackup(new Blob([zipSync(members).slice().buffer]))).rejects.toThrow()
 })

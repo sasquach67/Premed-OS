@@ -1,3 +1,4 @@
+import { CURRENT_CLOUD_SCHEMA } from './workspaceSchema'
 import { expect, it } from 'vitest'
 import { createPersonalInitialData } from '@/data/personalInitialData'
 import { workspaceRestoreReview } from './workspaceRestoreReview'
@@ -15,7 +16,7 @@ it('reviews known record additions, changes and explicit clearing without exposi
 
 it('blocks future-schema input before presenting a restore confirmation', () => {
   const current = createPersonalInitialData()
-  expect(() => workspaceRestoreReview(current, Object.assign(structuredClone(current), { _schema: 2 }))).toThrow('newer version')
+  expect(() => workspaceRestoreReview(current, Object.assign(structuredClone(current), { _schema: CURRENT_CLOUD_SCHEMA + 1 }))).toThrow('newer version')
 })
 
 it('counts nested records in known sections while keeping their contents out of review text', () => {
