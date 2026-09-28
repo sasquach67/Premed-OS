@@ -150,6 +150,21 @@ describe('Overview File Capture', () => {
     expect(container.querySelector('input[type="checkbox"]')).toBeNull()
   })
 
+  it('keeps a newly added fifth goal reachable and excludes archived goals', async () => {
+    useStore.setState({ quarterlyGoals: Array.from({ length: 4 }, (_, i) => ({
+      id: `goal-${i}`, text: `Existing goal ${i + 1}`, quarter: 'Current term',
+      kind: 'check-off' as const, done: false, order: i,
+    })) })
+    await renderQuarterlyGoals()
+    await act(async () => useStore.getState().addItem('quarterlyGoals', {
+      id: 'new-fifth', text: 'New fifth goal', quarter: 'Current term', kind: 'check-off', done: false, order: 4,
+    }))
+    expect(buttonContaining(container, 'New fifth goal')).toBeTruthy()
+    await act(async () => useStore.getState().patchItem('quarterlyGoals', 'goal-0', { deletedAt: Date.now() }))
+    expect(container.textContent).not.toContain('Existing goal 1')
+    expect(buttonContaining(container, 'New fifth goal')).toBeTruthy()
+  })
+
   it('keeps the honest no-goal state actionable', async () => {
     useStore.setState({ quarterlyGoals: [] })
     await renderQuarterlyGoals()

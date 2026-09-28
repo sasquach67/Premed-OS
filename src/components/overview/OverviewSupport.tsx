@@ -118,7 +118,16 @@ export function QuarterlyGoalsPanel() {
   const [targetsOpen, setTargetsOpen] = useState(false)
   const [mode, setMode] = useState<RecordOpenMode>('peek')
 
-  const visibleGoals = quarterlyGoals.filter((goal) => !goal.deletedAt).slice(0, 4)
+  const goalListRef = useRef<HTMLDivElement>(null)
+  const visibleGoals = quarterlyGoals.filter((goal) => !goal.deletedAt)
+  function finishGoalEdit() {
+    const added = editor === 'new'
+    closeGoalEditor()
+    if (added) requestAnimationFrame(() => {
+      const list = goalListRef.current
+      if (list) list.scrollTop = list.scrollHeight
+    })
+  }
   function openGoalEditor(goal: QuarterlyGoal | 'new') {
     setTargetsOpen(false)
     setMode('peek')
@@ -156,7 +165,8 @@ export function QuarterlyGoalsPanel() {
             <Button size="sm" onClick={() => openGoalEditor('new')}><Plus className="size-3.5" />Add goal</Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent>
+          <div ref={goalListRef} role="region" aria-label="Quarterly goals list" tabIndex={0} className="max-h-80 space-y-3 overflow-y-auto overscroll-contain rounded-xl pr-2 pb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [scrollbar-gutter:stable]">
           {!visibleGoals.length && (
             <MascotNote
               variant="empty-state"
@@ -218,10 +228,11 @@ export function QuarterlyGoalsPanel() {
               </div>
             )
           })}
+          </div>
         </CardContent>
       </Card>
       <CenterPeek open={editor != null} mode={mode} label={editor === 'new' ? 'New quarterly goal' : 'Edit quarterly goal'} onOpenChange={(open) => !open && closeGoalEditor()} onModeChange={setMode} onExpand={expandGoalEditor} allowSplit={false}>
-        {editor != null && <QuarterlyGoalEditor goal={editor === 'new' ? undefined : editor} onDone={closeGoalEditor} onArchive={editor === 'new' ? undefined : () => { archiveGoal(editor); closeGoalEditor() }} />}
+        {editor != null && <QuarterlyGoalEditor goal={editor === 'new' ? undefined : editor} onDone={finishGoalEdit} onArchive={editor === 'new' ? undefined : () => { archiveGoal(editor); closeGoalEditor() }} />}
       </CenterPeek>
       <CenterPeek open={targetsOpen} mode={mode} label="Standing domain targets" onOpenChange={(open) => !open && closeTargetEditor()} onModeChange={setMode} onExpand={() => navigate('/overview/goals/targets')} allowSplit={false}>
         <GoalTargetEditor />
