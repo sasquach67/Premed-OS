@@ -1,0 +1,19 @@
+{
+  "runtimeRevision": "f3332d49f2420bccaa17d1831a4fb6c8aca75f96",
+  "base": "64d28fb1535e161577b5bec83ca26c4c77778485",
+  "tests": {
+    "files": 302,
+    "passed": 2338,
+    "exitCode": 0
+  },
+  "build": {
+    "exitCode": 0
+  },
+  "lint": {
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 55
+  },
+  "release": "held pending separate header decision",
+  "realAccountAccess": false
+}
