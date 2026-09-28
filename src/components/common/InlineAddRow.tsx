@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode, type FormEvent } from 'react'
 import { Plus } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -7,14 +7,19 @@ import { cn } from '@/lib/utils'
 
 export function InlineAddRow({
   label,
-  fields,
+  fields = [],
   onAdd,
   className,
+  children,
+  onSubmit,
 }: {
   label: string
-  fields: string[]
-  onAdd: (values: string[]) => void
+  fields?: string[]
+  onAdd?: (values: string[]) => void
   className?: string
+  /** Controlled capture keeps draft/reset and durable acknowledgment with its caller. */
+  children?: ReactNode
+  onSubmit?: (event: FormEvent<HTMLFormElement>) => void
 }) {
   const blank = () => fields.map(() => '')
   const [values, setValues] = useState(blank)
@@ -28,11 +33,13 @@ export function InlineAddRow({
       )}
       onSubmit={(event) => {
         event.preventDefault()
+        if (onSubmit) { onSubmit(event); return }
         if (!hasValue) return
-        onAdd(values)
+        onAdd?.(values)
         setValues(blank())
       }}
     >
+      {children ?? <>
       {fields.map((field, index) => (
         <Input
           key={`${field}-${index}`}
@@ -48,6 +55,7 @@ export function InlineAddRow({
       <Button type="submit" disabled={!hasValue}>
         <Plus className="size-4" aria-hidden="true" /> {label}
       </Button>
+      </>}
     </form>
   )
 }

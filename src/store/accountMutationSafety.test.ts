@@ -1,3 +1,4 @@
+import { CURRENT_CLOUD_SCHEMA } from '@/lib/workspaceSchema'
 import { webcrypto } from 'node:crypto'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createPersonalInitialData } from '@/data/personalInitialData'
@@ -370,73 +371,76 @@ it('S1 first-login insert and explicit replacement stamp schema 1 and retain rem
   const id = fake.userId!
   fake.remote = null
   const first = await prepareAccountMutation(id, null)
-  try { await first.write(data('First account')); expect(fake.writes[0]).toMatchObject({ data: { _schema: 1 }, cloud_schema: 1, write_rev: 1 }) } finally { first.dispose() }
+  try { await first.write(data('First account')); expect(fake.writes[0]).toMatchObject({ data: { _schema: CURRENT_CLOUD_SCHEMA }, cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 1 }) } finally { first.dispose() }
   fake.remote = { ...fake.remote!, futureCollection: { intact: ['synthetic'] } } as AppData
   const replacement = await prepareAccountMutation(id, fake.remote)
   try {
     await replacement.write(data('Known section replacement'))
-    expect(fake.writes[1]).toMatchObject({ data: { _schema: 1, futureCollection: { intact: ['synthetic'] } }, cloud_schema: 1, write_rev: 2 })
+    expect(fake.writes[1]).toMatchObject({ data: { _schema: CURRENT_CLOUD_SCHEMA, futureCollection: { intact: ['synthetic'] } }, cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 2 })
     await replacement.activate(data('Known section replacement'))
-    expect(snapshotData()).toMatchObject({ _schema: 1, futureCollection: { intact: ['synthetic'] } })
+    expect(snapshotData()).toMatchObject({ _schema: CURRENT_CLOUD_SCHEMA, futureCollection: { intact: ['synthetic'] } })
   } finally { replacement.dispose() }
 })
 
 it('S1 first-login future remote is preserved and cannot be replaced', async () => {
   const id = fake.userId!
-  fake.remote = { ...data('Future workspace'), _schema: 2, futureCollection: { untouched: true } } as AppData
+  fake.remote = { ...data('Future workspace'), _schema: CURRENT_CLOUD_SCHEMA + 1, futureCollection: { untouched: true } } as AppData
   await expect(prepareAccountMutation(id, fake.remote)).rejects.toThrow('newer version')
   expect(getAccountConflict(id)).toMatchObject({ schemaBlocked: true, remote: fake.remote, saved: true })
   expect(fake.writes).toHaveLength(0)
 })
 
 it('S1 older restore keeps current unknown sections and normalizes the marker', async () => {
-  activateAccountWorkspace(fake.userId!, { ...data('Current'), _schema: 1, futureCollection: { retained: true } } as AppData)
+  activateAccountWorkspace(fake.userId!, { ...data('Current'), _schema: CURRENT_CLOUD_SCHEMA, futureCollection: { retained: true } } as AppData)
   await restoreWorkspaceFromSource(async () => data('Legacy restore'))
-  expect(snapshotData()).toMatchObject({ _schema: 1, futureCollection: { retained: true }, profile: { name: 'Legacy restore' } })
+  expect(snapshotData()).toMatchObject({ _schema: CURRENT_CLOUD_SCHEMA, futureCollection: { retained: true }, profile: { name: 'Legacy restore' } })
 })
 
 
 it('S1 reviewed device replacement retains cloud opaque sections in both copies and stamps the writer', async () => {
-  fake.remote = { ...fake.remote!, _schema: 1, futureCollection: { retained: true } } as AppData
+  fake.remote = { ...fake.remote!, _schema: CURRENT_CLOUD_SCHEMA, futureCollection: { retained: true } } as AppData
   const review = await pausedReview()
   try {
     await review.apply('device')
     // Unclaimed versioned row: the reviewed device choice is its conditional first claim.
-    expect(fake.writes[0]).toMatchObject({ data: { _schema: 1, futureCollection: { retained: true } }, cloud_schema: 1, write_rev: 1 })
-    expect(snapshotData()).toMatchObject({ _schema: 1, futureCollection: { retained: true } })
+    expect(fake.writes[0]).toMatchObject({ data: { _schema: CURRENT_CLOUD_SCHEMA, futureCollection: { retained: true } }, cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 1 })
+    expect(snapshotData()).toMatchObject({ _schema: CURRENT_CLOUD_SCHEMA, futureCollection: { retained: true } })
     expect(isAccountSyncReady(fake.userId!)).toBe(true)
   } finally { review.dispose() }
 })
 
 it('S1 explicit replacement of a claimed row is compare-and-set on write_rev', async () => {
   const id = fake.userId!
-  fake.remote = { ...data('Claimed cloud'), _schema: 1 } as AppData; fake.claim = { cloud_schema: 1, write_rev: 41 }
+  fake.remote = { ...data('Claimed cloud'), _schema: CURRENT_CLOUD_SCHEMA } as AppData; fake.claim = { cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 41 }
   const replacement = await prepareAccountMutation(id, fake.remote)
   try {
     await replacement.write(data('Replacement'))
-    expect(fake.writes[0]).toMatchObject({ cloud_schema: 1, write_rev: 42 })
-    expect(fake.claim).toEqual({ cloud_schema: 1, write_rev: 42 })
+    expect(fake.writes[0]).toMatchObject({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 42 })
+    expect(fake.claim).toEqual({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 42 })
   } finally { replacement.dispose() }
 })
 
 it('S1 a reviewed replacement never overwrites a row another current app saved after the review', async () => {
   const id = fake.userId!
-  fake.remote = { ...data('Claimed cloud'), _schema: 1 } as AppData; fake.claim = { cloud_schema: 1, write_rev: 3 }
+  fake.remote = { ...data('Claimed cloud'), _schema: CURRENT_CLOUD_SCHEMA } as AppData; fake.claim = { cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 3 }
   const replacement = await prepareAccountMutation(id, fake.remote)
   try {
     // Same timestamp, next counter: only write_rev can tell the revisions apart.
-    fake.claim = { cloud_schema: 1, write_rev: 4 }
+    fake.claim = { cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 4 }
     await expect(replacement.write(data('Stale replacement'))).rejects.toThrow('changed before saving')
     expect(fake.writes).toHaveLength(0)
     expect(replacement.serverSaved).toBe(false)
   } finally { replacement.dispose() }
 })
 
-it('S1 first-login never claims or replaces an unmarked Research (T4) cloud copy', async () => {
+it('schema 2 can explicitly replace an unmarked T4 copy without losing Research fields', async () => {
   const id = fake.userId!
-  fake.remote = { ...data('T4 cloud'), researchMemberships: [{ id: 'm', experienceId: 'e', personId: 'p', createdAt: 1, updatedAt: 1 }] } as unknown as AppData
+  fake.remote = { ...data('T4 cloud'), persons: [{ id: 'p', name: 'Synthetic', bio: '  Kept bio  ' }] } as AppData
   const before = structuredClone(fake.remote)
-  await expect(prepareAccountMutation(id, fake.remote)).rejects.toThrow('Research data')
-  expect(getAccountConflict(id)).toMatchObject({ schemaBlocked: true, remote: before, saved: true })
-  expect(fake.writes).toHaveLength(0); expect(fake.remote).toEqual(before); expect(fake.claim).toEqual({ cloud_schema: null, write_rev: null })
+  const review = await prepareAccountMutation(id, fake.remote)
+  try {
+    await review.write(fake.remote)
+    expect(fake.remote).toEqual({ ...before, _schema: CURRENT_CLOUD_SCHEMA })
+    expect(fake.claim).toEqual({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 1 })
+  } finally { review.dispose() }
 })

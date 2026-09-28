@@ -143,7 +143,6 @@ export interface LocalCount {
 
 export function localCounts(data: AppData): LocalCount[] {
   const center = data.academics?.classCenter
-  const loggedHours = data.experiences.reduce((sum, e) => sum + (Number(e.hours) || 0), 0)
   const hasProfileDetails = [
     data.profile.name,
     data.profile.email,
@@ -159,11 +158,14 @@ export function localCounts(data: AppData): LocalCount[] {
     { key: 'profile', label: 'Profile details', value: hasProfileDetails ? 1 : 0, tint: 'var(--cat-gpa)' },
     { key: 'classes', label: 'Classes', value: data.courses.length, tint: 'var(--cat-gpa)' },
     {
-      key: 'hours',
-      label: 'Logged hours',
-      value: Math.round(loggedHours),
+      key: 'experiences',
+      label: 'Experience positions',
+      value: data.experiences.length,
       tint: 'var(--cat-clinical)',
     },
+    { key: 'hourEntries', label: 'Hour and log entries', value: data.experienceHourEntries.length, tint: 'var(--cat-clinical)' },
+    { key: 'research', label: 'Lab records', value: data.researchUpcomingItems.length + data.researchReminders.length + data.researchTimelineNotes.length + data.researchMemberships.length, tint: 'var(--cat-research)' },
+    { key: 'notes', label: 'Notes', value: data.notePages.length, tint: 'var(--cat-research)' },
     {
       key: 'mistakes',
       label: 'Mistakes logged',
@@ -195,6 +197,12 @@ export function localWorkSince(data: AppData): string | undefined {
   const stamps = [
     ...data.courses.map((c) => c.createdAt),
     ...data.experiences.map((e) => e.createdAt),
+    ...data.experienceHourEntries.map((e) => e.createdAt),
+    ...data.researchUpcomingItems.map((e) => e.createdAt),
+    ...data.researchReminders.map((e) => e.createdAt),
+    ...data.researchTimelineNotes.map((e) => e.createdAt),
+    ...data.researchMemberships.map((e) => e.createdAt),
+    ...data.notePages.map((e) => e.createdAt),
     ...data.tasks.map((t) => t.createdAt),
   ].filter((n): n is number => typeof n === 'number' && Number.isFinite(n) && n > 0)
   if (stamps.length === 0) return undefined

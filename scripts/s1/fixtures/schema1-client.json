@@ -1,0 +1,5 @@
+{
+  "revision": "0846aee672fac6ab78eca24354bc32dee914c8d2",
+  "cloudSchema": 1,
+  "purpose": "Pin the complete pre-Research S1 client for browser compatibility; gate snapshot is schema1-workspaceSchema.ts."
+}

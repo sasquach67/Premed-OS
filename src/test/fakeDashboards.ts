@@ -1,3 +1,4 @@
+import { CURRENT_CLOUD_SCHEMA } from '@/lib/workspaceSchema'
 /* Test double for `supabase.from('dashboards')` with PostgREST semantics that
  * matter to S1: a write assigns only the columns it sends, filters are eq/is,
  * zero matched rows is `data: null`, and the S1 write guard from
@@ -114,6 +115,6 @@ export function fakeDashboardsTable(state: FakeDashboardsState) {
 }
 
 /** A claimed row as a current app leaves it: marker and column agree. */
-export function claimedRow(data: Record<string, unknown>, updatedAt: string, writeRev = 1, cloudSchema = 1): FakeRow {
+export function claimedRow(data: Record<string, unknown>, updatedAt: string, writeRev = 1, cloudSchema = CURRENT_CLOUD_SCHEMA): FakeRow {
   return { user_id: '', data: { ...data, _schema: cloudSchema }, updated_at: updatedAt, cloud_schema: cloudSchema, write_rev: writeRev }
 }

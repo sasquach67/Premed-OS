@@ -1,10 +1,13 @@
 import { assertSupportedWorkspace } from './workspaceSchema'
+import { validateResearchData } from './validateResearchData'
+
 // Pure structural validation; safe during cold store hydration.
 /** Collections that must be arrays of objects-with-string-ids when present. */
 const ARRAY_COLLECTIONS = [
   'courses', 'requirements', 'experiences', 'experienceHourEntries', 'tasks', 'timelineMilestones', 'letters', 'stories',
   'secondaries', 'interviewQs', 'schools', 'resources', 'tips', 'focusTargets',
-  'quarterlyGoals', 'advisingQs', 'notePages', 'orgs',
+  'quarterlyGoals', 'advisingQs', 'notePages', 'orgs', 'persons', 'organizations',
+  'researchUpcomingItems', 'researchReminders', 'researchTimelineNotes', 'researchMemberships',
 ] as const
 
 /** Objects that must be plain records when present. */
@@ -53,5 +56,5 @@ export function validateAppData(x: unknown): string[] {
     problems.push('Section "academics.classCenter" should be an object.')
   }
 
-  return problems
+  return [...problems, ...validateResearchData(x)]
 }

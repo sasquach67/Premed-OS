@@ -53,7 +53,6 @@ export function WhereIStand() {
     .filter((attempt) => attempt.total != null)
     .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')) || b.order - a.order)[0]
   const graded = gpa.credits > 0
-  const researchProjects = state.experiences.filter((entry) => entry.category === 'research' && !entry.deletedAt).length
   const leadershipRoles = state.orgs.filter((org) => org.status === 'leader' && !org.deletedAt).length
   const activeOrgs = state.orgs.filter((org) => org.status !== 'inactive' && !org.deletedAt).length
   const draftedStories = state.stories.filter((story) => story.commentary.trim()).length
@@ -82,6 +81,7 @@ export function WhereIStand() {
   ): DomainRow => {
     const totals = totalsForCategory(state.experiences, state.experienceHourEntries, category)
     const current = totals.total
+    const displayedHours = category === 'research' ? current : Math.round(current)
     const hasGoal = goal > 0
     const records = state.experiences
       .filter((entry) => entry.category === category && !entry.deletedAt)
@@ -98,7 +98,7 @@ export function WhereIStand() {
       route,
       icon,
       accent,
-      value: hasGoal ? `${Math.round(current)}/${goal} hrs` : `${Math.round(current)} hrs`,
+      value: hasGoal ? `${displayedHours}/${goal} hrs` : `${displayedHours} hrs`,
       state: !current ? 'not started' : hasGoal ? 'goal set' : 'no goal',
       progress: goalProgress(current, goal),
       records,
@@ -128,12 +128,7 @@ export function WhereIStand() {
     hourRow('Clinical', 'clinical', state.goals.clinical, '/clinical', Stethoscope, 'var(--cat-clinical)'),
     hourRow('Volunteering', 'volunteering', state.goals.volunteering, '/volunteering', HeartHandshake, 'var(--cat-volunteer)'),
     hourRow('Shadowing', 'shadowing', state.goals.shadowing, '/shadowing', Telescope, 'var(--cat-shadow)'),
-    {
-      group: 'Experiences', label: 'Research', route: '/research', icon: Microscope, accent: 'var(--cat-research)',
-      value: researchProjects ? `${researchProjects} ${researchProjects === 1 ? 'project' : 'projects'}` : 'Not started',
-      state: 'record count',
-      records: state.experiences.filter((entry) => entry.category === 'research' && !entry.deletedAt).sort((a, b) => a.order - b.order).map((entry) => ({ id: entry.id, title: entry.org || 'Untitled project', detail: entry.role || 'Role not recorded', state: entry.status === 'completed' ? 'ended' : entry.status })),
-    },
+    hourRow('Research', 'research', state.goals.research, '/research', Microscope, 'var(--cat-research)'),
     {
       group: 'Experiences', label: 'Extracurriculars', route: '/ecs', icon: Users, accent: 'var(--cat-activities)',
       value: `${activeOrgs} roles · ${leadershipRoles} leadership`,

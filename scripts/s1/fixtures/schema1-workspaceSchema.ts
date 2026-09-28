@@ -1,10 +1,11 @@
-import type { AppData } from './types'
+// Frozen schema-1 compatibility gate from 0846aee672fac6ab78eca24354bc32dee914c8d2; only type import relocated.
+import type { AppData } from '@/lib/types'
 
 /** Cloud contract, independent of store migrations and ZIP/envelope versions.
  *  The `dashboards.cloud_schema` column is the server authority; `_schema`
  *  inside the document is the portable copy that local snapshots, JSON/ZIP
  *  and Drive backups carry. A writer declares only its own version. */
-export const CURRENT_CLOUD_SCHEMA = 2
+export const CURRENT_CLOUD_SCHEMA = 1
 export const MAX_CLOUD_SCHEMA = 2147483647
 /** `dashboards.write_rev` is capped here and in SQL so JSON never rounds it. */
 export const MAX_WRITE_REV = Number.MAX_SAFE_INTEGER
@@ -12,7 +13,6 @@ export const MAX_WRITE_REV = Number.MAX_SAFE_INTEGER
 export const RESEARCH_CLOUD_SCHEMA = 2
 export const KNOWN_WORKSPACE_KEYS: (keyof AppData)[] = [
   'profile', 'goals', 'courses', 'requirements', 'experiences', 'experienceHourEntries', 'tasks', 'timelineMilestones',
-  'researchUpcomingItems', 'researchReminders', 'researchTimelineNotes', 'researchMemberships',
   'persons', 'organizations', 'academics', 'letters', 'stories', 'secondaries', 'interviewQs', 'mcat', 'schools',
   'resources', 'tips', 'focusTargets', 'quarterlyGoals', 'advisingQs', 'captures', 'notePages', 'orgs', 'notes', 'settings', 'meta', 'trash',
 ]

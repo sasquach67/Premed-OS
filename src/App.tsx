@@ -1,3 +1,4 @@
+import { RESEARCH_PREVIEW_ENABLED } from '@/app/availability'
 import { Suspense, lazy } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
@@ -8,6 +9,7 @@ import { MergeGate } from '@/components/public/MergeGate'
 /* Route-level code splitting: each page loads on demand, so the initial
    bundle stays small (recharts, dnd-kit, etc. arrive with the page that
    needs them). Pages use named exports, hence the .then() shims. */
+const Research = lazy(() => import('@/pages/Research').then(m => ({ default: m.Research })))
 const Home = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })))
 const OverviewTasksPage = lazy(() => import('@/pages/OverviewTasksPage').then((m) => ({ default: m.OverviewTasksPage })))
 const OverviewQuarterlyGoalsPage = lazy(() => import('@/pages/OverviewQuarterlyGoalsPage').then((m) => ({ default: m.OverviewQuarterlyGoalsPage })))
@@ -95,7 +97,7 @@ function App() {
             <Route path="clinical" element={<ReservedSpace routeId="clinical" />} />
             <Route path="volunteering" element={<ReservedSpace routeId="volunteering" />} />
             <Route path="shadowing" element={<ReservedSpace routeId="shadowing" />} />
-            <Route path="research" element={<ReservedSpace routeId="research" />} />
+            <Route path="research" element={RESEARCH_PREVIEW_ENABLED ? <Research /> : <ReservedSpace routeId="research" />} />
             <Route path="ecs" element={<ReservedSpace routeId="ecs" />} />
             <Route path="ecs/org/:orgId" element={<ReservedSpace routeId="ecs" />} />
             <Route path="essays" element={<ReservedSpace routeId="essays" />} />

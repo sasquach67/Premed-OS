@@ -42,7 +42,8 @@ type Phase = 'loading' | 'review' | 'working' | 'error'
  *  person can make and "the `organizations` array" is not. */
 const AREAS = [
   { key: 'coursework', label: 'Classes and coursework', fields: ['courses', 'academics', 'requirements'] },
-  { key: 'experiences', label: 'Experience hours and the people behind them', fields: ['experiences', 'persons', 'organizations', 'orgs'] },
+  { key: 'experiences', label: 'Experience hours and the people behind them', fields: ['experiences', 'experienceHourEntries', 'researchUpcomingItems', 'researchReminders', 'researchTimelineNotes', 'researchMemberships', 'persons', 'organizations', 'orgs'] },
+  { key: 'notes', label: 'Notes from every pillar', fields: ['notePages'] },
   { key: 'mcat', label: 'MCAT — attempts, schedule, error log', fields: ['mcat'] },
   { key: 'tasks', label: 'Tasks and deadlines', fields: ['tasks', 'focusTargets', 'quarterlyGoals'] },
   { key: 'application', label: 'Schools, essays, and letters', fields: ['schools', 'stories', 'secondaries', 'letters', 'interviewQs'] },

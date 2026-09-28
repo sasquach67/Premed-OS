@@ -1,3 +1,4 @@
+import { CURRENT_CLOUD_SCHEMA } from '@/lib/workspaceSchema'
 import { Blob as NodeBlob } from 'node:buffer'
 import { act, createElement, useEffect } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -41,7 +42,7 @@ const older = '2026-09-10T12:00:00Z', newer = '2026-09-11T12:00:00Z'
 function workspace(note: string) { const d = createPersonalInitialData(); d.profile.name = 'Synthetic'; d.profile.email = 'synthetic@example.invalid'; d.notes.example = note; return d }
 /** Rows and baselines for an account a current app has already protected. */
 function claimed(data: object, updatedAt: string, writeRev = 1) { return claimedRow(data as Record<string, unknown>, updatedAt, writeRev) }
-function revision(updatedAt: string, writeRev = 1) { return { updatedAt, claim: { cloudSchema: 1, writeRev } } }
+function revision(updatedAt: string, writeRev = 1) { return { updatedAt, claim: { cloudSchema: CURRENT_CLOUD_SCHEMA, writeRev } } }
 function account() { return `synthetic-safety-${++counter}` }
 function Probe() { const value = useCloudSync(); useEffect(() => { cloud = value }, [value]); return null }
 async function render(count = 1) {
@@ -532,8 +533,8 @@ it.each(['memory', 'disk', 'account', 'pause'])('does not push stale metadata wh
 it('S1 retains a future cloud document for recovery without hydrating it or allowing replacement', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('device copy'))
   const raw = localStorage.getItem(accountStorageKey(id))
-  const remote = { ...workspace('future cloud'), _schema: 2, futureResearch: [{ id: 'future-only', nested: { intact: true } }] }
-  const row = claimedRow(remote, older, 1, 2)
+  const remote = { ...workspace('future cloud'), _schema: CURRENT_CLOUD_SCHEMA + 1, futureResearch: [{ id: 'future-only', nested: { intact: true } }] }
+  const row = claimedRow(remote, older, 1, CURRENT_CLOUD_SCHEMA + 1)
   wire.rows.set(id, row)
   await render(); await session(id)
   expect(getAccountConflict(id)).toMatchObject({ schemaBlocked: true, saved: true, remote })
@@ -571,12 +572,12 @@ it('S1 terminal schema rejection fences uploads and Drive readiness across recon
 
 it('S1 carries supported opaque data through an ordinary upload with the current marker', async () => {
   const id = account(), opaque = { samples: [{ id: 'synthetic', values: [1, 2, 3] }] }
-  const original = { ...workspace('base'), _schema: 1, futureCollection: opaque }
+  const original = { ...workspace('base'), _schema: CURRENT_CLOUD_SCHEMA, futureCollection: opaque }
   wire.rows.set(id, claimed(original, older))
   await render(); await session(id)
   await act(async () => useStore.getState().update(d => { d.notes.example = 'edited' }))
   await act(async () => { expect(await cloud.pushNow()).toBe(true) })
-  expect(wire.rows.get(id)).toMatchObject({ data: { _schema: 1, futureCollection: opaque, notes: { example: 'edited' } } })
+  expect(wire.rows.get(id)).toMatchObject({ data: { _schema: CURRENT_CLOUD_SCHEMA, futureCollection: opaque, notes: { example: 'edited' } } })
 })
 
 // ---- S1 revision 3: row metadata, claim on load, compare-and-set on write_rev ----
@@ -592,12 +593,12 @@ it('S1 claims an unclaimed row on load with exactly the reviewed cloud document 
   await session(id)
   expect(wire.writes).toHaveBeenCalledTimes(1)
   const row = stored(id)
-  expect(row).toMatchObject({ cloud_schema: 1, write_rev: 1 })
+  expect(row).toMatchObject({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 1 })
   expect(row.updated_at).not.toBe(older)
   // Only the portable marker was added: no privacy rewrite, defaults or local content.
   expect(withoutMarker(row.data)).toEqual(legacy)
-  expect(row.data._schema).toBe(1)
-  expect(readSyncBaseline(id)).toMatchObject({ updatedAt: row.updated_at, claim: { cloudSchema: 1, writeRev: 1 } })
+  expect(row.data._schema).toBe(CURRENT_CLOUD_SCHEMA)
+  expect(readSyncBaseline(id)).toMatchObject({ updatedAt: row.updated_at, claim: { cloudSchema: CURRENT_CLOUD_SCHEMA, writeRev: 1 } })
   expect(cloud.protection).toBe('on')
   expect(isAccountSyncReady(id)).toBe(true)
 })
@@ -611,11 +612,11 @@ it('S1 claim keeps dirty local edits dirty, then saves them with the next counte
   useStore.getState().update(d => { d.notes.example = 'dirty local' })
   await render(); await session(id)
   expect(withoutMarker(stored(id).data)).toEqual(legacy)
-  expect(stored(id)).toMatchObject({ cloud_schema: 1, write_rev: 1 })
+  expect(stored(id)).toMatchObject({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 1 })
   expect(snapshotData().notes.example).toBe('dirty local')
   expect(getAccountConflict(id)).toBeUndefined()
   await act(async () => { expect(await cloud.pushNow()).toBe(true) })
-  expect(stored(id)).toMatchObject({ cloud_schema: 1, write_rev: 2, data: { notes: { example: 'dirty local' } } })
+  expect(stored(id)).toMatchObject({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 2, data: { notes: { example: 'dirty local' } } })
 })
 
 it('S1 claim loses a race to an old writer, rereads and claims the newer content', async () => {
@@ -628,7 +629,7 @@ it('S1 claim loses a race to an old writer, rereads and claims the newer content
   })
   await render(); await session(id)
   expect(wire.attempts).toHaveBeenCalledTimes(2)
-  expect(stored(id)).toMatchObject({ cloud_schema: 1, write_rev: 1 })
+  expect(stored(id)).toMatchObject({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 1 })
   expect(withoutMarker(stored(id).data)).toEqual(oldWrite)
   expect(snapshotData().notes.example).toBe('old tab wrote this')
   expect(cloud.protection).toBe('on')
@@ -686,11 +687,11 @@ it('S1 fails closed without the columns: no fallback writer, edits stay on the d
 })
 
 it.each([
-  ['claimed row without a marker', (data: Record<string, unknown>) => ({ data: withoutMarker(data), updated_at: older, cloud_schema: 1, write_rev: 3 })],
-  ['marker and column disagree', (data: Record<string, unknown>) => ({ data: { ...data, _schema: 1 }, updated_at: older, cloud_schema: 2, write_rev: 3 })],
-  ['future marker on an unclaimed row', (data: Record<string, unknown>) => ({ data: { ...data, _schema: 2 }, updated_at: older, cloud_schema: null, write_rev: null })],
-  ['half-claimed metadata', (data: Record<string, unknown>) => ({ data: { ...data, _schema: 1 }, updated_at: older, cloud_schema: 1, write_rev: null })],
-  ['counter beyond the safe range', (data: Record<string, unknown>) => ({ data: { ...data, _schema: 1 }, updated_at: older, cloud_schema: 1, write_rev: 2 ** 53 })],
+  ['claimed row without a marker', (data: Record<string, unknown>) => ({ data: withoutMarker(data), updated_at: older, cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 3 })],
+  ['marker and column disagree', (data: Record<string, unknown>) => ({ data: { ...data, _schema: CURRENT_CLOUD_SCHEMA }, updated_at: older, cloud_schema: CURRENT_CLOUD_SCHEMA + 1, write_rev: 3 })],
+  ['future marker on an unclaimed row', (data: Record<string, unknown>) => ({ data: { ...data, _schema: CURRENT_CLOUD_SCHEMA + 1 }, updated_at: older, cloud_schema: null, write_rev: null })],
+  ['half-claimed metadata', (data: Record<string, unknown>) => ({ data: { ...data, _schema: CURRENT_CLOUD_SCHEMA }, updated_at: older, cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: null })],
+  ['counter beyond the safe range', (data: Record<string, unknown>) => ({ data: { ...data, _schema: CURRENT_CLOUD_SCHEMA }, updated_at: older, cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 2 ** 53 })],
 ])('S1 blocks before hydration: %s', async (_label, make) => {
   const id = account(); activateAccountWorkspace(id, workspace('device copy')); const raw = localStorage.getItem(accountStorageKey(id))
   const row = make(workspace('cloud copy') as unknown as Record<string, unknown>)
@@ -704,23 +705,28 @@ it.each([
   expect(cloud.protection).not.toBe('on')
 })
 
-it.each([
-  ['a Research collection', (d: Record<string, unknown>) => ({ ...d, researchReminders: [] })],
-  ['a Research field on an experience', (d: Record<string, unknown>) => ({ ...d, experiences: [{ id: 'exp', title: 'Lab', research: { institution: 'Synthetic' } }] })],
-  ['an hour entry with thoughts', (d: Record<string, unknown>) => ({ ...d, experienceHourEntries: [{ id: 'h', experienceId: 'exp', thoughts: 'Synthetic' }] })],
-  ['a person bio', (d: Record<string, unknown>) => ({ ...d, persons: [{ id: 'p', name: 'Synthetic', bio: 'Synthetic' }] })],
-  ['a Research record in Trash', (d: Record<string, unknown>) => ({ ...d, trash: [{ id: 't', collection: 'researchMemberships', deletedAt: 1, record: { id: 'm' } }] })],
-])('S1 schema-1 client refuses to claim or hydrate an unmarked T4 row with %s', async (_label, make) => {
+it('schema 2 claims the exact unmarked T4 document, including nested and opaque fields', async () => {
   const id = account()
-  const row = { data: make(workspace('T4 cloud') as unknown as Record<string, unknown>), updated_at: older }
-  wire.rows.set(id, structuredClone(row))
+  const data = { ...workspace('T4 cloud'), persons: [{ id: 'p', name: 'Synthetic', bio: '  Synthetic bio  ' }],
+    futureCollection: { nested: ['opaque preserved'] } }
+  const envelope = { createdAt: 1, updatedAt: 1, archived: false, order: 0 }
+  Object.assign(data, {
+    experiences: [{ id: 'lab', category: 'research', org: 'Synthetic lab', role: 'Observer', description: '', tags: [], status: 'active', order: 0,
+      estimatedHoursDeletedAt: 42, research: { current: true, lastPiContact: '2026-09-23', institution: 'Synthetic' } }],
+    experienceHourEntries: [{ ...envelope, id: 'hour', experienceId: 'lab', kind: 'logged', date: '2026-09-24', hours: 0, note: '  Exact note  ', thoughts: '  Exact thoughts  ' },
+      { ...envelope, id: 'historical', experienceId: 'deleted-lab', kind: 'logged', date: '2026-09-22', hours: 1, note: 'Historical', parentDeletedAt: 2 }],
+    researchUpcomingItems: [{ ...envelope, id: 'upcoming', experienceId: 'lab', date: '2026-09-25', title: 'Synthetic item' }],
+    researchReminders: [{ ...envelope, id: 'reminder', experienceId: 'lab', text: 'Reminder' }],
+    researchTimelineNotes: [{ ...envelope, id: 'timeline', experienceId: 'lab', date: '2026-09-24', text: 'Timeline' }],
+    researchMemberships: [{ ...envelope, id: 'membership', experienceId: 'lab', personId: 'p', roleInLab: 'Mentor', projectText: 'Synthetic project' }],
+  })
+  wire.rows.set(id, { data: structuredClone(data), updated_at: older })
   await render(); await session(id)
-  expect(getAccountConflict(id)).toMatchObject({ schemaBlocked: true, remote: row.data })
-  expect(getAccountConflict(id)?.message).toContain('Research data')
-  expect(wire.attempts).not.toHaveBeenCalled()
-  expect(wire.rows.get(id)).toEqual(row)
-  expect(localStorage.getItem(accountStorageKey(id))).toBeNull()
-  expect(cloud.protection).not.toBe('on')
+  expect(getAccountConflict(id)).toBeUndefined()
+  expect(stored(id)).toMatchObject({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 1 })
+  expect(stored(id).data).toEqual({ ...data, _schema: CURRENT_CLOUD_SCHEMA })
+  expect(snapshotData().persons).toEqual(data.persons)
+  expect(cloud.protection).toBe('on')
 })
 
 async function digestOf(data: ReturnType<typeof snapshotData>) {

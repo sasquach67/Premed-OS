@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest'
-import { CURRENT_STORE_VERSION } from './workspaceVersion'
 import { prepareWorkspaceData } from '@/lib/workspaceSchema'
 import { createPersonalInitialData } from '@/data/personalInitialData'
+import { CURRENT_STORE_VERSION } from './workspaceVersion'
 
 it('hydrates an existing account when the export module is the cold entry point', async () => {
   vi.resetModules(); localStorage.clear(); sessionStorage.clear()
