@@ -1,0 +1,211 @@
+// S1 + Research (T4) combined acceptance, cloud schema 2: the ACTUAL sync code of
+// the combined integration revision (S1_REVISION), in its own fixture, against the
+// disposable local auth + PostgREST. Same fence and mocks as client.test.template.
+// Copied into a fixture by scripts/s1/hooks.mjs; never collected by the main suite.
+import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
+import { Blob as NodeBlob } from 'node:buffer'
+import { readFileSync } from 'node:fs'
+import { gunzipSync, gzipSync } from 'node:zlib'
+import { randomBytes, randomUUID } from 'node:crypto'
+import { act, createElement, useEffect } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+
+const FIXTURE = 'S1_FIXTURE'
+const REVISION = 'S1_REVISION'
+const status = JSON.parse(readFileSync(process.env.S1_STATUS_FILE!, 'utf8')) as { API_URL: string; ANON_KEY: string; SERVICE_ROLE_KEY: string }
+if (process.env.S1_LOCAL_CONFIRMED !== 'yes' || status.API_URL !== 'http://127.0.0.1:55431') throw new Error('Disposable local stack only')
+const nativeFetch = globalThis.fetch.bind(globalThis)
+;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+type Encoding = 'bare' | 'gzip' | 'text'
+type Row = { data: unknown; updated_at: string; cloud_schema: number | null; write_rev: number | null }
+const GZIP = 'premed-os-dashboard-gzip-v1', TEXT = 'premed-os-dashboard-json-text-v1'
+const encode = (value: unknown, as: Encoding) => as === 'gzip' ? { format: GZIP, gzip: gzipSync(Buffer.from(JSON.stringify(value))).toString('base64') }
+  : as === 'text' ? { format: TEXT, json: JSON.stringify(value) } : value
+const decode = (value: unknown): unknown => {
+  const v = value as { format?: string; gzip?: string; json?: string }
+  return v?.format === GZIP ? JSON.parse(gunzipSync(Buffer.from(v.gzip!, 'base64')).toString('utf8')) : v?.format === TEXT ? JSON.parse(v.json!) : value
+}
+const encodingOf = (value: unknown): Encoding => (value as { format?: string })?.format === GZIP ? 'gzip' : (value as { format?: string })?.format === TEXT ? 'text' : 'bare'
+const LARGE = randomBytes(860_000).toString('base64') // ~1.15 MB of JSON text: the transport gzips it
+const ODD = '\uD800 lone surrogate' // JSONB cannot store it: the transport uses text-JSON
+function shape(notes: Record<string, string>, as: Encoding) {
+  delete notes.s1Large; delete notes.s1Odd
+  if (as === 'gzip') notes.s1Large = LARGE
+  if (as === 'text') notes.s1Odd = ODD
+}
+
+async function admin(path: string, method = 'GET', body?: unknown) {
+  const r = await nativeFetch(status.API_URL + path, { method, redirect: 'error', headers: { apikey: status.ANON_KEY, Authorization: `Bearer ${status.SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) })
+  const text = await r.text()
+  if (!r.ok) throw new Error(`fixture ${method} ${path}: ${r.status} ${text}`)
+  return text ? JSON.parse(text) : null
+}
+const readRow = async (id: string): Promise<Row> => (await admin(`/rest/v1/dashboards?user_id=eq.${id}&select=data,updated_at,cloud_schema,write_rev`))[0]
+
+let requests: Array<{ method: string; url: string; status?: number; code?: string; details?: string }> = []
+let dropNextCasResponse = false
+let root: Root | undefined
+const users: string[] = []
+beforeEach(() => {
+  vi.resetModules(); localStorage.clear(); sessionStorage.clear(); requests = []; dropNextCasResponse = false
+  // jsdom's Blob has no stream(); the transport's CompressionStream path needs the platform Blob.
+  vi.stubGlobal('indexedDB', new IDBFactory()); vi.stubGlobal('IDBKeyRange', IDBKeyRange); vi.stubGlobal('Blob', NodeBlob)
+  vi.stubEnv('VITE_SUPABASE_URL', status.API_URL); vi.stubEnv('VITE_SUPABASE_ANON_KEY', status.ANON_KEY)
+  vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+    const request = new Request(input, init)
+    const url = new URL(request.url)
+    if (url.origin !== status.API_URL) throw new Error(`S1 fence blocked ${url.origin}`)
+    const entry: (typeof requests)[number] = { method: request.method, url: url.pathname + url.search }
+    if (url.pathname === '/rest/v1/dashboards') requests.push(entry)
+    const response = await nativeFetch(request, { redirect: 'error' })
+    entry.status = response.status
+    if (!response.ok && response.headers.get('content-type')?.includes('json')) { const e = await response.clone().json(); entry.code = e.code; entry.details = e.details }
+    if (dropNextCasResponse && request.method === 'PATCH' && url.search.includes('write_rev=eq.') && response.ok) {
+      dropNextCasResponse = false
+      throw new TypeError('Failed to fetch') // committed on the server; the browser never saw the answer
+    }
+    return response
+  })
+})
+afterEach(async () => {
+  vi.useRealTimers()
+  if (root) await act(async () => root!.unmount()); root = undefined
+  vi.unstubAllEnvs(); vi.unstubAllGlobals()
+  while (users.length) await admin(`/auth/v1/admin/users/${users.pop()}`, 'DELETE')
+})
+
+async function openAccount(seed: (id: string, email: string) => Promise<void>) {
+  const email = `s1-${FIXTURE}-${randomUUID()}@example.invalid`, password = randomUUID() + randomUUID()
+  const user = await admin('/auth/v1/admin/users', 'POST', { email, password, email_confirm: true }); users.push(user.id)
+  await seed(user.id, email)
+  const { createElement: h } = { createElement }
+  const { useCloudSync } = await import('./useCloudSync')
+  const store = await import('./store')
+  const safety = await import('./accountSyncSafety')
+  const { supabase } = await import('@/lib/supabase')
+  let cloud!: ReturnType<typeof useCloudSync>
+  function Probe() { const value = useCloudSync(); useEffect(() => { cloud = value }, [value]); return null }
+  root = createRoot(document.createElement('div'))
+  await act(async () => root!.render(h(Probe)))
+  const signed = await supabase!.auth.signInWithPassword({ email, password })
+  expect(signed.error).toBeNull()
+  const settle = async () => vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).not.toBe('syncing'); expect(cloud.status).not.toBe('idle') }, { timeout: 30_000, interval: 25 })
+  await settle()
+  return { id: user.id as string, email, get cloud() { return cloud }, store, safety, settle }
+}
+
+const envelope = { createdAt: 1, updatedAt: 1, archived: false, order: 0 }
+/** Unmarked (no _schema) synthetic T4 workspace: all four Research collections plus
+ *  every nested field the S1 detector names, as a T4 app would have saved it. */
+async function t4Workspace(email: string, as: Encoding) {
+  const { createPersonalInitialData } = await import('@/data/personalInitialData')
+  const doc = createPersonalInitialData() as unknown as Record<string, unknown> & { profile: Record<string, unknown>; settings: Record<string, unknown>; notes: Record<string, string> }
+  doc.profile.name = 'S1 combined'; doc.profile.email = email; doc.settings.quotesApi = false
+  doc.notes.s1Seed = 'seed'; shape(doc.notes, as)
+  delete (doc as Record<string, unknown>)._schema
+  doc.experiences = [
+    { id: 'lab-a', category: 'research', org: 'Synthetic lab', role: 'Observer', description: 'Synthetic', hours: 60, estimatedHoursDeletedAt: 42, tags: [], status: 'active', order: 0, research: { department: 'Biology', institution: 'Synthetic institution', researchType: 'Cell biology', since: '2026-09-01', lastPiContact: '2026-09-23', current: true } },
+  ]
+  doc.persons = [{ ...envelope, id: 'person-a', name: 'Synthetic mentor', bio: 'Nested T4 bio' }]
+  doc.researchUpcomingItems = [{ ...envelope, id: 'upcoming', experienceId: 'lab-a', date: '2026-09-25', title: 'Training', note: 'Synthetic' }]
+  doc.researchReminders = [{ ...envelope, id: 'reminder', experienceId: 'lab-a', text: 'Ask before handling samples' }]
+  doc.researchTimelineNotes = [{ ...envelope, id: 'timeline', experienceId: 'lab-a', date: '2026-09-24', text: 'Synthetic timeline' }]
+  doc.researchMemberships = [{ ...envelope, id: 'membership', experienceId: 'lab-a', personId: 'person-a', roleInLab: 'Mentor', projectText: 'Synthetic project' }]
+  doc.experienceHourEntries = [
+    { ...envelope, id: 'logged', experienceId: 'lab-a', kind: 'logged', date: '2026-09-24', hours: 1.5, note: 'Synthetic', thoughts: 'Why did the signal change?' },
+    { ...envelope, id: 'orphan', experienceId: 'lab-gone', kind: 'logged', date: '2026-09-20', hours: 1, parentDeletedAt: 99 },
+  ]
+  return doc
+}
+const T4_KEYS = ['researchUpcomingItems', 'researchReminders', 'researchTimelineNotes', 'researchMemberships'] as const
+/** Every T4 value the seed carried, exactly (collections plus nested fields). */
+function expectT4Kept(doc: Record<string, unknown>, seed: Record<string, unknown>) {
+  for (const key of T4_KEYS) expect(doc[key]).toEqual(seed[key])
+  const lab = (doc.experiences as Record<string, unknown>[]).find(x => x.id === 'lab-a')!
+  expect(lab.research).toEqual((seed.experiences as Record<string, unknown>[])[0].research)
+  expect(lab.estimatedHoursDeletedAt).toBe(42)
+  const hours = doc.experienceHourEntries as Record<string, unknown>[]
+  expect(hours.find(x => x.id === 'logged')?.thoughts).toBe('Why did the signal change?')
+  expect(hours.find(x => x.id === 'orphan')?.parentDeletedAt).toBe(99)
+  expect((doc.persons as Record<string, unknown>[]).find(x => x.id === 'person-a')?.bio).toBe('Nested T4 bio')
+}
+
+async function mount() {
+  const { useCloudSync } = await import('./useCloudSync')
+  const store = await import('./store')
+  const safety = await import('./accountSyncSafety')
+  const { supabase } = await import('@/lib/supabase')
+  let cloud!: ReturnType<typeof useCloudSync>
+  function Probe() { const value = useCloudSync(); useEffect(() => { cloud = value }, [value]); return null }
+  root = createRoot(document.createElement('div'))
+  await act(async () => root!.render(createElement(Probe)))
+  const settle = async () => vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).not.toBe('syncing'); expect(cloud.status).not.toBe('idle') }, { timeout: 30_000, interval: 25 })
+  return { get cloud() { return cloud }, store, safety, supabase: supabase!, settle }
+}
+async function newUser() {
+  const email = `s1-${FIXTURE}-${randomUUID()}@example.invalid`, password = randomUUID() + randomUUID()
+  const user = await admin('/auth/v1/admin/users', 'POST', { email, password, email_confirm: true }); users.push(user.id)
+  return { id: user.id as string, email, password }
+}
+
+it(`${FIXTURE} fixture identity: combined revision declares cloud schema 2`, async () => {
+  expect(REVISION).toMatch(/^[0-9a-f]{40}$/)
+  expect((await import('@/lib/workspaceSchema')).CURRENT_CLOUD_SCHEMA).toBe(2)
+})
+
+it.each(['bare', 'gzip', 'text'] as Encoding[])(`${FIXTURE}: unmarked T4 row stored %s is claimed as schema 2 exactly, saved, and survives reload`, async (as) => {
+  const user = await newUser()
+  const seed = await t4Workspace(user.email, as)
+  await admin('/rest/v1/dashboards', 'POST', { user_id: user.id, data: encode(seed, as), updated_at: '2026-01-01T00:00:00+00:00' })
+  let app = await mount()
+  expect((await app.supabase.auth.signInWithPassword({ email: user.email, password: user.password })).error).toBeNull()
+  await app.settle()
+  // First claim: exactly the decoded reviewed document, only `_schema: 2` added.
+  const claimed = await readRow(user.id)
+  expect(claimed).toMatchObject({ cloud_schema: 2, write_rev: 1 })
+  expect(encodingOf(claimed.data)).toBe(as)
+  expect(decode(claimed.data)).toEqual({ ...seed, _schema: 2 })
+  expect(requests.filter(r => r.method === 'PATCH')).toHaveLength(1)
+  expect(app.cloud.protection, app.cloud.error).toBe('on')
+  expect(app.safety.getAccountConflict(user.id)).toBeUndefined()
+  expectT4Kept(app.store.snapshotData() as unknown as Record<string, unknown>, seed)
+  // A later ordinary save keeps every T4 value and increments once.
+  await act(async () => app.store.useStore.getState().update(d => { (d.notes as Record<string, string>).s1Edit = `edit ${as}` }))
+  expect(await act(async () => app.cloud.pushNow()), app.cloud.error).toBe(true)
+  const saved = await readRow(user.id)
+  expect(saved).toMatchObject({ cloud_schema: 2, write_rev: 2 })
+  expect(encodingOf(saved.data)).toBe(as)
+  const savedDoc = decode(saved.data) as Record<string, unknown> & { notes: Record<string, string> }
+  expect(savedDoc._schema).toBe(2); expect(savedDoc.notes.s1Edit).toBe(`edit ${as}`)
+  expectT4Kept(savedDoc, seed)
+  // Reload: same device storage and session, fresh modules. Nothing is rewritten.
+  await act(async () => root!.unmount()); root = undefined
+  vi.resetModules(); requests = []
+  app = await mount()
+  await app.settle()
+  expect(app.safety.getAccountConflict(user.id), app.cloud.error).toBeUndefined()
+  expect(requests.filter(r => r.method !== 'GET')).toEqual([])
+  expect(await readRow(user.id)).toEqual(saved)
+  expectT4Kept(app.store.snapshotData() as unknown as Record<string, unknown>, seed)
+  expect((app.store.snapshotData().notes as Record<string, string>).s1Edit).toBe(`edit ${as}`)
+  expect(app.cloud.protection).toBe('on')
+}, 90_000)
+
+it(`${FIXTURE}: a row claimed by the schema-1 app is upgraded to schema 2 by the next save, never lowered`, async () => {
+  const user = await newUser()
+  const { createPersonalInitialData } = await import('@/data/personalInitialData')
+  const doc = { ...createPersonalInitialData(), _schema: 1 } as Record<string, unknown> & { profile: Record<string, unknown>; settings: Record<string, unknown> }
+  doc.profile = { ...doc.profile, name: 'S1 schema-1 account', email: user.email }; doc.settings = { ...doc.settings, quotesApi: false }
+  await admin('/rest/v1/dashboards', 'POST', { user_id: user.id, data: doc, updated_at: '2026-01-01T00:00:00+00:00', cloud_schema: 1, write_rev: 1 })
+  const app = await mount()
+  expect((await app.supabase.auth.signInWithPassword({ email: user.email, password: user.password })).error).toBeNull()
+  await app.settle()
+  expect(requests.filter(r => r.method !== 'GET')).toEqual([]) // opening a claimed row never writes
+  await act(async () => app.store.useStore.getState().update(d => { (d.notes as Record<string, string>).s1Edit = 'upgrade' }))
+  expect(await act(async () => app.cloud.pushNow()), app.cloud.error).toBe(true)
+  const saved = await readRow(user.id)
+  expect(saved).toMatchObject({ cloud_schema: 2, write_rev: 2 })
+  expect((decode(saved.data) as Record<string, unknown>)._schema).toBe(2)
+}, 60_000)

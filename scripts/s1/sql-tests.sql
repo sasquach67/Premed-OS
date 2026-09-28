@@ -189,14 +189,39 @@ select pg_temp.reject('stored cloud_schema 0: counter write', '00000000-0000-400
 select pg_temp.reject('stored write_rev beyond the cap: counter write', '00000000-0000-4000-8000-0000000000e5',
   $$update public.dashboards set write_rev = 9007199254740994 where user_id = '00000000-0000-4000-8000-0000000000e5'$$);
 
--- ---- H: the ROLLBACK.md repair rehearsal (synthetic row C, stored half-claimed) ----
-do $$ begin
+-- ---- H: the ROLLBACK.md repair rehearsal (synthetic row C, stored half-claimed 1/NULL) ----
+-- A mismatched predicate (stale metadata) must change nothing and abort.
+do $$
+declare changed int;
+begin
   set local session_replication_role = replica;
-  update public.dashboards set cloud_schema = 1, write_rev = 1 where user_id = '00000000-0000-4000-8000-0000000000c3' and updated_at = '2026-04-01T00:00:00Z';
+  update public.dashboards set cloud_schema = 1, write_rev = 1, updated_at = clock_timestamp()
+   where user_id = '00000000-0000-4000-8000-0000000000c3' and updated_at = '2026-04-01T00:00:00Z'
+     and cloud_schema is not distinct from 1 and write_rev is not distinct from 7;
+  get diagnostics changed = row_count;
   set local session_replication_role = origin;
+  if changed <> 0 then raise exception 'FAIL repair with stale metadata changed % rows', changed; end if;
+  raise notice 'PASS check   | repair predicate with stale metadata matches 0 rows (would abort)';
 end $$;
-select pg_temp.check('repair left data untouched and a valid claim', (select cloud_schema = 1 and write_rev = 1 and data = '{}'::jsonb from public.dashboards where user_id = '00000000-0000-4000-8000-0000000000c3'));
-select pg_temp.accept('after repair a conforming write (write_rev + 1) is accepted again',
+do $$
+declare changed int;
+begin
+  set local session_replication_role = replica;
+  update public.dashboards set cloud_schema = 1, write_rev = 1, updated_at = clock_timestamp()
+   where user_id = '00000000-0000-4000-8000-0000000000c3' and updated_at = '2026-04-01T00:00:00Z'
+     and cloud_schema is not distinct from 1 and write_rev is not distinct from null
+     and clock_timestamp() <> '2026-04-01T00:00:00Z';
+  get diagnostics changed = row_count;
+  set local session_replication_role = origin;
+  if changed <> 1 then raise exception 'FAIL repair matched % rows; expected exactly 1', changed; end if;
+  raise notice 'PASS accept  | repair: exact metadata predicate, exactly one row, fresh updated_at';
+end $$;
+select pg_temp.check('repair left data untouched, a valid claim and a fresh timestamp',
+  (select cloud_schema = 1 and write_rev = 1 and data = '{}'::jsonb and updated_at <> '2026-04-01T00:00:00Z' from public.dashboards where user_id = '00000000-0000-4000-8000-0000000000c3'));
+select pg_temp.accept('a client holding the pre-repair tuple (old updated_at, write_rev 1) matches 0 rows',
+  $$update public.dashboards set data = '{"_schema":1}', updated_at = now(), cloud_schema = 1, write_rev = 2
+    where user_id = '00000000-0000-4000-8000-0000000000c3' and updated_at = '2026-04-01T00:00:00Z' and cloud_schema = 1 and write_rev = 1$$, 0);
+select pg_temp.accept('after repair a conforming write on the repaired revision (write_rev + 1) is accepted',
   $$update public.dashboards set data = '{"_schema":1}', updated_at = now(), write_rev = 2 where user_id = '00000000-0000-4000-8000-0000000000c3' and write_rev = 1$$);
 select pg_temp.reject('after repair an old {data, updated_at} write is still rejected', '00000000-0000-4000-8000-0000000000c3',
   $$update public.dashboards set data = '{}', updated_at = now() where user_id = '00000000-0000-4000-8000-0000000000c3'$$);

@@ -122,3 +122,21 @@ it('migrates the schema-1 v51 line to v52 with opaque data and known Research co
   s.useStore.getState().setNote('migrated', 'yes')
   expect(JSON.parse(localStorage.getItem(key)!).version).toBe(CURRENT_STORE_VERSION)
 })
+
+it('S1 reload: a saved copy with reordered nested keys (JSONB order) is the same workspace; a changed value is not', async () => {
+  const s = await import('./store')
+  const key = 'hq:app-data:account:reordered'
+  s.activateAccountWorkspace('reordered', { ...createPersonalInitialData(), notes: { a: '1', b: '2' } })
+  s.assertDurableWorkspace()
+  const raw = JSON.parse(localStorage.getItem(key)!)
+  const reverse = (value: unknown): unknown => Array.isArray(value) ? value.map(reverse)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).reverse().map(([k, v]) => [k, reverse(v)])) : value
+  localStorage.setItem(key, JSON.stringify({ ...raw, state: reverse(raw.state) }))
+  expect(() => s.assertDurableWorkspace()).not.toThrow()
+  localStorage.setItem(key, JSON.stringify({ ...raw, state: { ...raw.state, notes: { a: '1', b: 'changed on disk' } } }))
+  expect(() => s.assertDurableWorkspace()).toThrow('differs from its saved copy')
+  localStorage.setItem(key, JSON.stringify({ ...raw, state: { ...raw.state, stories: [{ id: 'y' }, { id: 'x' }] } }))
+  s.useStore.getState().update(d => { d.stories = [{ id: 'x' }, { id: 'y' }] as never })
+  localStorage.setItem(key, JSON.stringify({ ...raw, state: { ...raw.state, stories: [{ id: 'y' }, { id: 'x' }] } }))
+  expect(() => s.assertDurableWorkspace()).toThrow('differs from its saved copy')
+})

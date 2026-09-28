@@ -1,3 +1,4 @@
+import { sameJson } from '@/lib/logicalJson'
 import { assertSupportedWorkspace, knownWorkspaceData, opaqueWorkspaceData, prepareWorkspaceData, KNOWN_WORKSPACE_KEYS } from '@/lib/workspaceSchema'
 /* ============================================================
    store.ts — single source of truth.
@@ -1058,7 +1059,8 @@ export function assertDurableWorkspace(snapshot = snapshotData(), owner = captur
   if (!raw) throw new Error('Sync is paused because this workspace has no verified saved copy.')
   const persisted = JSON.parse(raw).state
   const disk = prepareWorkspaceData({ ...opaqueWorkspaceData(persisted), ...knownWorkspaceData(persisted) } as AppData)
-  if (JSON.stringify(disk) !== JSON.stringify(snapshot)) throw new Error('Sync is paused because the open workspace differs from its saved copy.')
+  // Logical equality: the saved copy may carry JSONB or seed key order.
+  if (!sameJson(disk, snapshot)) throw new Error('Sync is paused because the open workspace differs from its saved copy.')
 }
 
 /** Validate once, then fence every await against immutable store references and
