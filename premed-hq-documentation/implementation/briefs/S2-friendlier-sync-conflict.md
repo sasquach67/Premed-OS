@@ -120,3 +120,7 @@ Focused result: 89 tests pass, including real hook reconciliation, explicit/ambi
 Follow-up runtime `f3332d4`: Claude planning reviewed and approved the narrow comparison change. Clean full suite **302 files / 2,338 tests** passed (one worker, 310.04s); build passed; lint passed with 0 errors / 55 existing warnings. No UI changes or new browser/real-API acceptance claimed for this small projection follow-up. The focused hook regression failed before the fix and passes afterward.
 
 **Release held:** `64d28fb` remains the live release. The S2-only header waiver does not extend to this follow-up; Claude has asked Andy for its separate release decision. The hosting check remains unchanged. No real-account or production-database access occurred.
+
+### Release authorization resumed
+
+On September 28, Andy sent the S2 release decision directly to this Planning task after the follow-up hold was reported: "Then release under the standing rule and report the live revision to Andy." This authorizes the pending S2 fixes, including runtime `f3332d4`, with the pre-existing hosting-header failure waived for this S2 release only. The check is not removed or altered; hosting remains separate. Previously recorded full acceptance remains valid because only this release record changed after testing. Main is still `64d28fb`; the release preserves it by fast-forward.
