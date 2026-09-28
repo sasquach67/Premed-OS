@@ -1,0 +1,43 @@
+# Benchmark: three runs, Sep 24 2026, disposable local PostgreSQL 17.6 (Docker Desktop)
+## run 1
+(1 row)
+  bytes  | guarded |         outcome          | iterations | elapsed_ms | mean_ms 
+---------+---------+--------------------------+------------+------------+---------
+ 1048689 | f       | accepted (write_rev + 1) |         20 |      570.9 |   28.55
+ 1048689 | t       | accepted (write_rev + 1) |         20 |      547.5 |   27.38
+ 1048689 | f       | old writer (no columns)  |         20 |      515.2 |   25.76
+ 1048689 | t       | old writer (no columns)  |         20 |        7.0 |    0.35
+ 4194417 | f       | accepted (write_rev + 1) |         20 |     2193.4 |  109.67
+ 4194417 | t       | accepted (write_rev + 1) |         20 |     2391.6 |  119.58
+ 4194417 | f       | old writer (no columns)  |         20 |     2261.1 |  113.06
+ 4194417 | t       | old writer (no columns)  |         20 |       81.9 |    4.10
+(8 rows)
+
+## run 2
+(1 row)
+  bytes  | guarded |         outcome          | iterations | elapsed_ms | mean_ms 
+---------+---------+--------------------------+------------+------------+---------
+ 1048689 | f       | accepted (write_rev + 1) |         20 |      570.7 |   28.53
+ 1048689 | t       | accepted (write_rev + 1) |         20 |      500.5 |   25.03
+ 1048689 | f       | old writer (no columns)  |         20 |      556.8 |   27.84
+ 1048689 | t       | old writer (no columns)  |         20 |        5.6 |    0.28
+ 4194417 | f       | accepted (write_rev + 1) |         20 |     2149.4 |  107.47
+ 4194417 | t       | accepted (write_rev + 1) |         20 |     2056.2 |  102.81
+ 4194417 | f       | old writer (no columns)  |         20 |     2101.4 |  105.07
+ 4194417 | t       | old writer (no columns)  |         20 |       75.3 |    3.76
+(8 rows)
+
+## run 3
+(1 row)
+  bytes  | guarded |         outcome          | iterations | elapsed_ms | mean_ms 
+---------+---------+--------------------------+------------+------------+---------
+ 1048689 | f       | accepted (write_rev + 1) |         20 |      637.5 |   31.87
+ 1048689 | t       | accepted (write_rev + 1) |         20 |      508.1 |   25.41
+ 1048689 | f       | old writer (no columns)  |         20 |      623.8 |   31.19
+ 1048689 | t       | old writer (no columns)  |         20 |        5.2 |    0.26
+ 4194417 | f       | accepted (write_rev + 1) |         20 |     2325.6 |  116.28
+ 4194417 | t       | accepted (write_rev + 1) |         20 |     2208.1 |  110.41
+ 4194417 | f       | old writer (no columns)  |         20 |     2278.9 |  113.94
+ 4194417 | t       | old writer (no columns)  |         20 |      101.9 |    5.10
+(8 rows)
+

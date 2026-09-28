@@ -1,0 +1,2 @@
+ database postgres, PostgreSQL 17.6, >=17: true
+ rollback-check: rollback removed guard and columns; roll-forward reinstalled them; all rolled back

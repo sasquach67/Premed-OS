@@ -1,0 +1,22 @@
+PASS | old-deployed | claimed-bare | 6/6 checks
+PASS | old-deployed | legacy-bare | 6/6 checks
+PASS | old-deployed | claimed-gzip | 6/6 checks
+PASS | old-deployed | legacy-gzip | 6/6 checks
+PASS | old-deployed | claimed-text | 6/6 checks
+PASS | old-deployed | legacy-text | 6/6 checks
+PASS | old-stale | claimed-bare | 6/6 checks
+PASS | old-stale | legacy-bare | 6/6 checks
+PASS | old-stale | claimed-gzip | 6/6 checks
+PASS | old-stale | legacy-gzip | 6/6 checks
+PASS | old-stale | claimed-text | 6/6 checks
+PASS | old-stale | legacy-text | 6/6 checks
+PASS | current | claimed-bare | 8/8 checks
+PASS | current | legacy-bare | 10/10 checks
+PASS | current | claimed-gzip | 8/8 checks
+PASS | current | legacy-gzip | 10/10 checks
+PASS | current | claimed-text | 8/8 checks
+PASS | current | legacy-text | 10/10 checks
+PASS | current | future-schema | 4/4 checks
+PASS | current | t4-unmarked | 3/3 checks
+PASS | current | claim-not-confirmed | 2/2 checks
+21/21 browser scenarios passed. Report: /Users/andyquach/Documents/premed-os-s1/premed-hq-documentation/implementation/evidence/S1-r3/browser/browser-report.json

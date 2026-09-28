@@ -1,0 +1,55 @@
+ database postgres, PostgreSQL 17.6, >=17: true
+NOTICE:  PASS check   | columns exist, nullable, no defaults
+NOTICE:  PASS check   | column types: cloud_schema integer, write_rev bigint
+NOTICE:  PASS check   | exactly one enabled guard, BEFORE INSERT OR UPDATE, per row
+NOTICE:  PASS check   | v1 in-document guard absent
+NOTICE:  PASS check   | guard is SECURITY INVOKER with a fixed search_path
+NOTICE:  PASS check   | RLS still enabled with the four own-row policies
+NOTICE:  PASS check   | user triggers on dashboards: only the S1 guard
+NOTICE:  PASS accept  | legacy insert (columns omitted, as deployed apps send)
+NOTICE:  PASS accept  | legacy -> legacy update (old app on an unclaimed row)
+NOTICE:  PASS accept  | legacy upsert on conflict omitting columns (synthetic merge-duplicates)
+NOTICE:  PASS reject  | legacy -> claim with write_rev 2
+NOTICE:  PASS reject  | legacy -> half-claimed (cloud_schema only)
+NOTICE:  PASS reject  | legacy -> half-claimed (write_rev only)
+NOTICE:  PASS reject  | legacy -> claim with cloud_schema 0
+NOTICE:  PASS reject  | legacy -> claim with negative cloud_schema
+NOTICE:  PASS reject  | legacy -> claim with write_rev 0
+NOTICE:  PASS accept  | conditional claim misses a stale reviewed timestamp (0 rows, no error)
+NOTICE:  PASS accept  | conditional first claim (write_rev 1, reviewed timestamp, both NULL)
+NOTICE:  PASS accept  | a second identical claim misses (0 rows): the loser of two new writers
+NOTICE:  PASS reject  | old app {data, updated_at} PATCH on a claimed row
+NOTICE:  PASS reject  | old app PATCH with an encoded gzip payload
+NOTICE:  PASS reject  | old app PATCH with a text-JSON payload
+NOTICE:  PASS reject  | timestamp-only update on a claimed row
+NOTICE:  PASS reject  | synthetic merge upsert omitting columns on a claimed row
+NOTICE:  PASS reject  | synthetic merge upsert sending NULL columns on a claimed row
+NOTICE:  PASS reject  | synthetic merge upsert with column defaults (missing=default)
+NOTICE:  PASS reject  | metadata-only unclaim (both NULL)
+NOTICE:  PASS reject  | unclaim write_rev only
+NOTICE:  PASS reject  | same counter (write_rev unchanged) with new data
+NOTICE:  PASS reject  | skipped counter (write_rev + 2)
+NOTICE:  PASS reject  | lowered counter
+NOTICE:  PASS accept  | conforming write: write_rev + 1, same schema, gzip payload
+NOTICE:  PASS accept  | conforming write: text-JSON payload, write_rev + 1
+NOTICE:  PASS accept  | stale compare-and-set misses (0 rows): write_rev already moved
+NOTICE:  PASS accept  | schema upgrade with write_rev + 1 (1 -> 2)
+NOTICE:  PASS reject  | schema downgrade with a valid counter (2 -> 1)
+NOTICE:  PASS reject  | metadata-only schema downgrade
+NOTICE:  PASS accept  | metadata-only write that follows the counter (conforming writer; allowed by design)
+NOTICE:  PASS check   | row A ends claimed at schema 2, write_rev 5
+NOTICE:  PASS accept  | new-app insert: a first claim (write_rev 1)
+NOTICE:  PASS reject  | insert with write_rev 2
+NOTICE:  PASS reject  | insert half-claimed
+NOTICE:  PASS reject  | insert beyond the safe-integer cap
+NOTICE:  PASS reject  | competing insert for an existing row: unique_violation (client rereads)
+NOTICE:  PASS accept  | write_rev 2^53 - 2 -> 2^53 - 1 (the last accepted save)
+NOTICE:  PASS reject  | write_rev 2^53 - 1 -> 2^53 is rejected deterministically
+NOTICE:  PASS reject  | stored half-claimed row: legacy write
+NOTICE:  PASS reject  | stored half-claimed row: "repair" to a valid claim
+NOTICE:  PASS reject  | stored cloud_schema 0: counter write
+NOTICE:  PASS reject  | stored write_rev beyond the cap: counter write
+NOTICE:  PASS check   | repair left data untouched and a valid claim
+NOTICE:  PASS accept  | after repair a conforming write (write_rev + 1) is accepted again
+NOTICE:  PASS reject  | after repair an old {data, updated_at} write is still rejected
+NOTICE:  PASS accept  | DELETE of a claimed row is allowed (declared limit, not guarded)

@@ -153,3 +153,78 @@ His real row holds T4 Research data and is **unclaimed**. It stays **exposed** t
 ## Next stage
 
 After Andy approves this revision: the S1 task rebuilds against it (removing the v1 guard), runs local acceptance, then Claude reviews. T4 rebases on S1 as schema 2. Then one combined release brief, with the production-apply checklist and Andy's confirmed-claim check.
+
+## Build report (Revision 3)
+
+**Built by** the Claude implementation tab, Sep 24–27, 2026, on branch `s1/sync-guard-r3` from `origin/main` `d60f682`. Approval verified in the planning session's own transcript ("Yes, allow", "Yes, together (Recommended)"). Nothing merged, pushed, deployed or applied to production. No real account row was read or written.
+
+**Commits**
+
+| Commit | What |
+|---|---|
+| `94ae8e2` | docs: pin this brief (from `docs/dev-workflow` `874b40c`) and its four binding reviews |
+| `af7356c` | SQL: `supabase/migrations/20260924233000_s1_dashboard_write_guard.sql` (items 1–7) |
+| `e8821a0` | client: row metadata, gates, claim, compare-and-set, missing-column fail-closed, protection status (items 8–16) |
+| `3ab55c5` | typecheck fix in `cloudClaim` (caught by `npm run build`) |
+| `7cf5bbc` | acceptance harness `scripts/s1/` (README, ROLLBACK.md) |
+| next commit | harness check fixes (browser only) + evidence `implementation/evidence/S1-r3/` + this report |
+
+**How each item was met**
+
+- **1–4 (server):** nullable `cloud_schema int` and `write_rev bigint`, no defaults. `guard_dashboard_write()` is `SECURITY INVOKER` with `search_path = pg_catalog`. The trigger runs `BEFORE INSERT OR UPDATE ... FOR EACH ROW`, is null-safe, and never edits data or returns NULL. Legal states and transitions are exactly as the brief lists them. Rejection raises `P0001`, `detail = S1_SCHEMA_GUARD`, with the brief's message; `hint` carries the reason.
+- **5:** the limits stand as written. DELETE is still allowed (tested). A metadata-only write that follows the counter (+1, no downgrade) is accepted, because it is a conforming write. That is tested and documented.
+- **6:** the migration claims no row. It is idempotent: `if not exists`, `create or replace`, and drop-then-create for the trigger. It drops the never-shipped v1 trigger/function if present and ends with `notify pgrst, 'reload schema'`. The v1 guard is not on this branch.
+- **7:** `scripts/s1/rollback.sql` is out-of-band. `scripts/s1/ROLLBACK.md` prefers roll-forward and contains the column-contract repair runbook (rehearsed in SQL section H). The old marker runbook was never carried over.
+- **8:** a single module `src/store/dashboardRows.ts` covers the select, parse, read and write paths. Its users:
+  - `useCloudSync` (reconcile, push)
+  - `accountMutationSafety` (first login, device-choice replacement, conflict review)
+  - the public readers `MergeGate`, `MergePage` and `FirstLoginSetupPage`
+
+  `SyncBaseline` carries `claim` under `sync-baseline:v2`; v1 is still written for older tabs. A baseline without metadata forces a fresh read before any write.
+- **9, 11:** `assertSupportedRemote` implements the rev-3 cases:
+  - legacy candidate
+  - unclaimed versioned
+  - a claimed row with a missing or unequal marker blocks
+  - a future version in either place blocks
+
+  All of these run before hydration. A block keeps the raw cloud copy for download and fences edits, uploads and Drive. The portable `_schema` stays inside the document for local, JSON/ZIP and Drive paths. `CURRENT_CLOUD_SCHEMA = 1` is separate from store v51.
+- **10:** INSERT is a first claim. On a legacy row, the claim is conditional on its `updated_at` with both columns NULL. On a claimed row, the write is compare-and-set on `updated_at`, `cloud_schema` and `write_rev`, sending +1. A zero-row result means reconcile, never an out-of-date pause. A lost response is retried with the same counter and predicate, then confirmed only by rereading the exact attempted revision. A `23505` conflict gets the same treatment. Success comes from returned server metadata.
+- **12:** the Part 2 opaque container, restore-keeps-unknown and restore review are ported from `codex/s1-sync-schema-guard`, with their tests.
+- **13:** bounded T4 signatures are the four Research collections plus `research`, `estimatedHoursDeletedAt`, `thoughts`, `parentDeletedAt` and `bio`, found in live collections, Trash and the recovery stack. They are refused while `CURRENT_CLOUD_SCHEMA < 2`, in cloud, local-load and import paths.
+- **14:** on load, an unclaimed supported row gets an explicit claim of exactly the decoded reviewed document plus `_schema`. The baseline is rebased only if it matched the reviewed revision; dirty local edits stay dirty. Settings shows "Cloud protection: on" only from server-returned claimed metadata.
+- **15:** missing columns (`42703`/`PGRST204`) produce "Cloud sync is paused … changes are saved on this device". There is no writer, no Drive, and a re-read every 60 s.
+- **16:** `dashboardTransport.ts` is unchanged.
+
+**Checks** (evidence index: `implementation/evidence/S1-r3/README.md`)
+
+| Check | Result |
+|---|---|
+| `npm test` (one clean full run, code at `3ab55c5`, which equals `7cf5bbc` for `src/`) | 289 files, 2188 tests pass |
+| `npm run build` | pass |
+| `npx eslint .` | 0 errors (warnings only; the changed areas match the `d60f682` warning count) |
+| SQL matrix | 54/54 |
+| Repeat-apply, rollback rehearsal | pass |
+| Benchmark (3 runs, 1/4 MiB) | no consistent guard cost; old-writer rejection 0.3–5 ms |
+| Real PostgREST HTTP | 23/23: deployed shapes; synthetic merge-upsert omitted/NULL/`missing=default`; two concurrent writers; lost response; claim vs old writer ×12 (both orderings seen, both safe); competing inserts; RLS isolation |
+| Actual sync code, deployed `d60f682` | 20/20: every bare/gzip/text-JSON stored × written pair. On claimed rows: 400 P0001, row unchanged, edit kept on device, no idle retry. On legacy rows: today's behavior. |
+| Actual sync code, stale `5c7a3e4` | 20/20 (same) |
+| Actual sync code, this branch | 23/23 + missing-columns 1/1: claim of exactly the reviewed document in every encoding, write_rev 2 after edits, future-version block, T4 refusal, exact nested-field claim, lost response confirmed once |
+| Headless Chrome, production builds of all three | 21/21. Old builds on claimed rows show "This tab is out of date…", row unchanged, edit durable after reload. This branch claims on open, shows "Cloud protection: on", keeps encoding and unknown sections, blocks a future version and T4 data, and never shows protection without a confirmed claim. |
+
+**Found during acceptance**
+
+- The earlier "Failed to fetch" in S1 browser runs is the app's own CSP. `index.html` allows `connect-src` only to `*.supabase.co` and sets `upgrade-insecure-requests`, so no local build can reach a loopback API. Browser fixtures patch their copied `index.html` for `127.0.0.1:55431` only. The app's CSP is unchanged.
+- After a reload with unsynced edits, the deployed app routes to its existing "You've got work on this device" review. This is existing behavior, not S1; the edit is intact in device storage.
+- Docker Desktop quit mid-run on Sep 24. Codex reopened it on Sep 27. Drift re-checked: `origin/main` and the live release are still `d60f682`.
+
+**Gaps and holds (named per DEV-WORKFLOW's final-deploy rule; none are skipped by it)**
+
+1. **Research T4 as cloud schema 2 (required before release).** "A schema-2 client claims an unmarked T4 row and keeps the nested fields" cannot run until T4 is rebased on S1 with `CURRENT_CLOUD_SCHEMA = 2` and its keys added to `KNOWN_WORKSPACE_KEYS`. Tested now: the schema-1 refusal, and that a claim sends exactly the reviewed document, including unknown nested fields.
+2. **Review:** Claude planning review of this build, plus Codex Planning's read-only contract review.
+3. **Production-apply checklist:** needs Andy's explicit yes. Not written or run here.
+4. **Andy's confirmed-claim check** on his real account, after the combined S1+T4 release. His row stays unclaimed and exposed until then; keep premedos.app closed.
+5. **Stale local store v51.** Both S1 and T4 are at v51, which T4's rebase must resolve.
+6. **Browser portable restore.** The "future block survives restore" check is covered by unit tests only: `readJsonFile`, `prepareWorkspaceBackup`, `createWorkspaceBackup` and the Drive restore path. No browser file-upload run was done.
+7. `supabase/schema.sql` (the run-once file) does not include the two columns. The tracked migration is authoritative.
+
+**Next stage:** review, then T4 rebase as schema 2 (separate follow-up), then the combined release brief with the production checklist.

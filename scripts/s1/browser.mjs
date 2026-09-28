@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
+import { isDeepStrictEqual } from 'node:util'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
 if (process.env.S1_LOCAL_CONFIRMED !== 'yes') throw new Error('Set S1_LOCAL_CONFIRMED=yes only for the disposable local stack')
@@ -185,11 +186,29 @@ async function scenario(cdp, build, spec) {
         out.editWrites = writes().slice(loadCount).map(r => ({ method: methodOf(r), status: r.status, code: r.code, details: r.details }))
         page = await text()
         if (spec.shot) { const png = await s('Page.captureScreenshot', { format: 'png' }); writeFileSync(resolve(evidence, `${build}-${spec.name}-after-edit.png`), Buffer.from(png.data, 'base64')) }
+        out.darkBeforeReload = (await s('Runtime.evaluate', { expression: `document.documentElement.classList.contains('dark')`, returnByValue: true })).result.value
         await s('Page.reload')
-        await waitFor(t => /Signed in/.test(t), 'reload')
-        await sleep(1500)
-        const dark = (await s('Runtime.evaluate', { expression: `document.documentElement.classList.contains('dark')`, returnByValue: true })).result.value
-        check('after reload the edit is still on this device (dark theme applied)', dark)
+        await waitFor(t => /premedOS/.test(t), 'reload (any app screen; the app may route to its own review page)')
+        // Persistence is checked in the browser's durable workspace storage, not on
+        // screen: after a reload the app may route to its own device/account review.
+        const persisted = `(async () => {
+          const hits = []
+          for (const info of await indexedDB.databases()) {
+            if (!info.name.startsWith('premed-os-workspaces')) continue
+            const db = await new Promise((ok, fail) => { const r = indexedDB.open(info.name); r.onsuccess = () => ok(r.result); r.onerror = () => fail(r.error) })
+            for (const name of db.objectStoreNames) {
+              const rows = await new Promise((ok, fail) => { const r = db.transaction(name).objectStore(name).getAll(); r.onsuccess = () => ok(r.result); r.onerror = () => fail(r.error) })
+              for (const row of rows) { const text = JSON.stringify(row).split(String.fromCharCode(92)).join(''); if (text.includes('account:') && text.includes('"theme":"dark"')) hits.push(name) }
+            }
+            db.close()
+          }
+          return hits.length > 0 || Object.keys(localStorage).some(k => k.startsWith('hq:app-data:account:') && (localStorage.getItem(k) || '').includes('"theme":"dark"'))
+        })()`
+        let kept = false
+        for (const end = Date.now() + 15_000; !kept && Date.now() < end; await sleep(500)) kept = (await s('Runtime.evaluate', { expression: persisted, awaitPromise: true, returnByValue: true })).result.value
+        const afterReload = await text()
+        out.afterReloadRoute = /You've got work on this device/.test(afterReload) ? 'device/account review page' : /Cloud sync/.test(afterReload) ? 'settings' : 'other'
+        check('after reload the edit is still saved on this device (durable workspace storage)', kept, { darkBeforeReload: out.darkBeforeReload })
       }
       out.blockedOrigins = [...blocked]
       const after = (await admin(`/rest/v1/dashboards?user_id=eq.${user.id}&select=data,updated_at,cloud_schema,write_rev`))[0]
@@ -207,7 +226,8 @@ async function scenario(cdp, build, spec) {
 
 // ---------- scenarios ----------
 const insert = (id, data, extra = {}) => admin('/rest/v1/dashboards', 'POST', { user_id: id, data, updated_at: '2026-01-01T00:00:00+00:00', ...extra })
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+// JSONB does not keep object key order; compare structure, not serialization.
+const same = (a, b) => isDeepStrictEqual(a, b)
 function matrix(build) {
   const old = build !== 'current', list = []
   for (const encoding of ['bare', 'gzip', 'text']) {

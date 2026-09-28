@@ -1,0 +1,10 @@
+S1 hooks: old-stale @ 5c7a3e4f1c28c3b36392815c0a63fe3c963cb225
+
+ RUN  v4.1.9 /Users/andyquach/Documents/premed-os-s1/scripts/s1/.runtime/hooks-old-stale
+
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  11:46:56
+   Duration  9.93s (transform 430ms, setup 0ms, import 66ms, tests 9.29s, environment 485ms)
+

@@ -1,0 +1,25 @@
+PASS | PostgREST schema cache serves cloud_schema/write_rev
+PASS | old-app INSERT {user_id, data, updated_at} creates an unclaimed row
+PASS | old-app conditional PATCH on an unclaimed row still succeeds
+PASS | unclaimed row reads back both columns NULL
+PASS | claim on a stale reviewed timestamp matches 0 rows (reconcile, not an error)
+PASS | conditional first claim returns the claimed metadata and exactly the reviewed document + _schema
+PASS | old-app PATCH {data, updated_at} on a claimed row: 400 P0001 S1_SCHEMA_GUARD, row unchanged
+PASS | old-app PATCH with a gzip-encoded payload: rejected, row unchanged
+PASS | old-app PATCH with a text-JSON payload: rejected, row unchanged
+PASS | PATCH sending NULL columns (unclaim): rejected, row unchanged
+PASS | metadata-only unclaim: rejected
+PASS | metadata-only PATCH with the same counter: rejected
+PASS | synthetic merge-duplicates upsert omitting columns: rejected, row unchanged
+PASS | synthetic merge-duplicates upsert sending NULLs: rejected
+PASS | synthetic merge-duplicates upsert with missing=default: rejected
+PASS | two concurrent current writers: one wins with write_rev 2, the other gets 0 rows (no error, no overwrite)
+PASS | lost response: the same-predicate retry matches 0 rows and the reread shows exactly the attempted revision (never incremented twice)
+PASS | legacy->claim vs old writer x12, both safe; orderings seen: old writer first: claim matched 0 rows, row stays unclaimed with the old write | claim first: old writer rejected
+PASS | competing first-claim INSERTs: one 201, one 409/23505 (the client rereads)
+PASS | INSERT claiming write_rev 2: rejected
+PASS | INSERT beyond the 2^53 - 1 cap: rejected (P0001)
+PASS | account B cannot read or update account A (RLS unchanged)
+PASS | DELETE of an own claimed row still allowed (declared limit)
+
+23 HTTP checks passed against http://127.0.0.1:55431 (PostgREST via local Kong).

@@ -1,0 +1,14 @@
+S1 hooks: current @ 7cf5bbcdcca5e61fb691b744a804df1e6aac8823
+
+ RUN  v4.1.9 /Users/andyquach/Documents/premed-os-s1/scripts/s1/.runtime/hooks-current
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 23 skipped (24)
+   Start at  11:47:19
+   Duration  1.46s (transform 395ms, setup 0ms, import 63ms, tests 798ms, environment 512ms)
+
+NOTICE:  trigger "dashboards_schema_guard" for relation "public.dashboards" does not exist, skipping
+NOTICE:  function public.guard_dashboard_schema() does not exist, skipping
+NOTICE:  trigger "dashboards_write_guard" for relation "public.dashboards" does not exist, skipping
+Migration re-applied (roll forward).

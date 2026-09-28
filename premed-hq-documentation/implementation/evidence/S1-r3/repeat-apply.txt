@@ -1,0 +1,2 @@
+ database postgres, PostgreSQL 17.6, >=17: true
+ repeat-apply: rows unchanged, one enabled guard, v1 absent
