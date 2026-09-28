@@ -26,6 +26,7 @@ vi.mock('./workspaceRecoveryRepository', () => ({ workspaceRecoveryRepository: (
 
 import { createPersonalInitialData } from '@/data/personalInitialData'
 import { claimedRow } from '@/test/fakeDashboards'
+import legacyFixture from './__fixtures__/s1-d60f682-baseline.json'
 import { accountStorageKey, activeWorkspaceOwner } from '@/lib/demoMode'
 import { activateAccountWorkspace, activateGuestWorkspace, snapshotData, useStore } from './store'
 import { getAccountConflict, allowAccountSync, pauseAccountSync, observeSyncSession, readSyncBaseline, recordSyncBaseline, isAccountSyncReady } from './accountSyncSafety'
@@ -603,20 +604,78 @@ it('S1 claims an unclaimed row on load with exactly the reviewed cloud document 
   expect(isAccountSyncReady(id)).toBe(true)
 })
 
-it('S1 claim keeps dirty local edits dirty, then saves them with the next counter', async () => {
-  const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
-  const legacy = withoutMarker(base as unknown as Record<string, unknown>)
-  wire.rows.set(id, { data: structuredClone(legacy), updated_at: older })
-  // A pre-S1 baseline: content only, no row metadata.
-  localStorage.setItem(`premed-os:sync-baseline:v1:${id}`, JSON.stringify({ digest: readSyncBaseline(id)?.digest ?? await digestOf(base), updatedAt: older }))
+// Pre-S1 upgrade: a baseline recorded by the deployed app (d60f682). The fixture's
+// digest was computed by that revision's own syncContent/syncDigest (scripts/s1 hook
+// fixture), never by this branch, so a changed digest algorithm cannot hide here.
+function legacyAccount() {
+  const id = account()
+  activateAccountWorkspace(id, structuredClone(legacyFixture.snapshot) as unknown as ReturnType<typeof snapshotData>)
+  localStorage.setItem(`premed-os:sync-baseline:v1:${id}`, JSON.stringify({ digest: legacyFixture.digest, updatedAt: older }))
+  return id
+}
+it('S1 hashes the d60f682 fixture exactly as d60f682 did, with or without the portable marker', async () => {
+  const { syncContent, syncDigest } = await import('./accountSyncSafety')
+  const snapshot = structuredClone(legacyFixture.snapshot) as unknown as ReturnType<typeof snapshotData>
+  expect(await syncDigest(syncContent(snapshot))).toBe(legacyFixture.digest)
+  expect(await syncDigest(syncContent({ ...snapshot, _schema: 1 } as typeof snapshot))).toBe(legacyFixture.digest)
+  const id = legacyAccount()
+  const { matchesSyncBaseline } = await import('./accountSyncSafety')
+  expect(await matchesSyncBaseline(snapshotData(), legacyFixture.digest)).toBe(true)
+  expect(readSyncBaseline(id)).toEqual({ digest: legacyFixture.digest, updatedAt: older })
+})
+
+it('S1 upgrade, dirty local + unchanged cloud under a d60f682 baseline: claims, keeps the edit, then saves it', async () => {
+  const id = legacyAccount()
+  const cloudCopy = structuredClone(legacyFixture.snapshot)
+  wire.rows.set(id, { data: structuredClone(cloudCopy), updated_at: older })
   useStore.getState().update(d => { d.notes.example = 'dirty local' })
   await render(); await session(id)
-  expect(withoutMarker(stored(id).data)).toEqual(legacy)
-  expect(stored(id)).toMatchObject({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 1 })
-  expect(snapshotData().notes.example).toBe('dirty local')
   expect(getAccountConflict(id)).toBeUndefined()
+  expect(withoutMarker(stored(id).data)).toEqual(cloudCopy) // the claim carried the cloud copy, not the local edit
+  expect(stored(id)).toMatchObject({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 1 })
+  expect(readSyncBaseline(id)).toMatchObject({ digest: legacyFixture.digest, updatedAt: stored(id).updated_at, claim: { writeRev: 1 } })
+  expect(snapshotData().notes.example).toBe('dirty local')
   await act(async () => { expect(await cloud.pushNow()).toBe(true) })
   expect(stored(id)).toMatchObject({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 2, data: { notes: { example: 'dirty local' } } })
+})
+
+it('S1 upgrade, clean local + newer cloud under a d60f682 baseline: pulls the cloud copy and claims it', async () => {
+  const id = legacyAccount()
+  const newer_ = { ...structuredClone(legacyFixture.snapshot), notes: { ...legacyFixture.snapshot.notes, example: 'newer on another device' } }
+  wire.rows.set(id, { data: structuredClone(newer_), updated_at: newer })
+  await render(); await session(id)
+  expect(getAccountConflict(id)).toBeUndefined()
+  expect(snapshotData().notes.example).toBe('newer on another device')
+  expect(stored(id)).toMatchObject({ cloud_schema: CURRENT_CLOUD_SCHEMA, write_rev: 1 })
+  expect(withoutMarker(stored(id).data)).toEqual(newer_)
+  expect(wire.snapshots.size).toBeGreaterThan(0) // the replaced device copy was archived first
+  expect(isAccountSyncReady(id)).toBe(true)
+})
+
+it('S1 upgrade does not weaken conflicts: dirty local + newer cloud under a d60f682 baseline still pauses for review', async () => {
+  const id = legacyAccount()
+  wire.rows.set(id, { data: { ...structuredClone(legacyFixture.snapshot), notes: { ...legacyFixture.snapshot.notes, example: 'cloud changed' } }, updated_at: newer })
+  useStore.getState().update(d => { d.notes.example = 'local changed' })
+  await render(); await session(id)
+  expect(getAccountConflict(id)).toMatchObject({ saved: true, schemaBlocked: false })
+  expect(snapshotData().notes.example).toBe('local changed')
+  expect(isAccountSyncReady(id)).toBe(false)
+  expect(wire.writes).toHaveBeenCalledTimes(1) // only the claim of the cloud copy, never a replacement
+  expect(stored(id).data).toMatchObject({ notes: { example: 'cloud changed' } })
+})
+
+it('S1 a workspace section named "digest" is data, never a trusted baseline digest', async () => {
+  const id = account(), forged = 'f'.repeat(64)
+  activateAccountWorkspace(id, { ...workspace('base'), digest: forged } as unknown as ReturnType<typeof snapshotData>)
+  wire.rows.set(id, claimed({ ...snapshotData() }, older))
+  await render(); await session(id)
+  const { syncContent, syncDigest } = await import('./accountSyncSafety')
+  expect(readSyncBaseline(id)?.digest).toBe(await syncDigest(syncContent(snapshotData())))
+  expect(readSyncBaseline(id)?.digest).not.toBe(forged)
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'edit' }))
+  await act(async () => { expect(await cloud.pushNow()).toBe(true) })
+  expect(readSyncBaseline(id)?.digest).not.toBe(forged)
+  expect(stored(id).data).toMatchObject({ digest: forged, notes: { example: 'edit' } })
 })
 
 it('S1 claim loses a race to an old writer, rereads and claims the newer content', async () => {
@@ -729,7 +788,17 @@ it('schema 2 claims the exact unmarked T4 document, including nested and opaque 
   expect(cloud.protection).toBe('on')
 })
 
-async function digestOf(data: ReturnType<typeof snapshotData>) {
-  const { syncContent, syncDigest } = await import('./accountSyncSafety')
-  return syncDigest(syncContent(data))
-}
+
+it('T4 baseline compatibility never hides Research records, nested edits, or opaque changes', async () => {
+  const { matchesSyncBaseline, syncContent, syncDigest } = await import('./accountSyncSafety')
+  const old = structuredClone(legacyFixture.snapshot) as unknown as ReturnType<typeof snapshotData>
+  const migrated = { ...old, researchUpcomingItems: [], researchReminders: [], researchTimelineNotes: [], researchMemberships: [] }
+  expect(await matchesSyncBaseline(migrated, legacyFixture.digest)).toBe(true)
+  const t4Digest = await syncDigest(syncContent(migrated))
+  expect(await matchesSyncBaseline(migrated, t4Digest)).toBe(true)
+  const nonempty = { ...migrated, researchReminders: [{ id: 'r', experienceId: 'e', text: 'Real change', createdAt: 1, updatedAt: 1, order: 0 }] }
+  expect(await matchesSyncBaseline(nonempty, legacyFixture.digest)).toBe(false)
+  expect(await matchesSyncBaseline(migrated, await syncDigest(syncContent(nonempty)))).toBe(false)
+  expect(await matchesSyncBaseline({ ...migrated, persons: [{ id: 'p', name: 'Synthetic', bio: 'New bio' }] }, legacyFixture.digest)).toBe(false)
+  expect(await matchesSyncBaseline({ ...migrated, unknownSection: [] } as typeof migrated, legacyFixture.digest)).toBe(false)
+})

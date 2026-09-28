@@ -57,14 +57,32 @@ function canonical(value: unknown): unknown {
   if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => [k, canonical(v)]))
   return value
 }
+/** Content identity for sync comparisons. The portable `_schema` marker is version
+ *  metadata (the server's `cloud_schema` is authoritative), so it is left out: the
+ *  same content hashes exactly as it did before S1 (d60f682), and baselines those
+ *  apps recorded stay valid. The version gate still runs first. */
 export function syncContent(data: AppData) {
-  const remote = dataForRemote(prepareWorkspaceData(data))
+  const { _schema: _marker, ...remote } = dataForRemote(prepareWorkspaceData(data)) as AppData & { _schema?: unknown }
   const settings = { ...remote.settings, backup: undefined }
   return JSON.stringify(canonical({ ...remote, settings }))
 }
 export async function syncDigest(text: string) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map(b => b.toString(16).padStart(2, '0')).join('')
 }
+/** T4 backfills four optional empty containers during the v51-to-v52 join.
+ * Accept an older baseline's spelling of that same empty state, while keeping
+ * the primary hash unchanged for pre-S1 and T4 clients. Never omit nonempty
+ * collections, nested fields, or unknown sections from this comparison. */
+export async function matchesSyncBaseline(data: AppData, digest: string): Promise<boolean> {
+  if (await syncDigest(syncContent(data)) === digest) return true
+  const earlier = { ...data } as Record<string, unknown>
+  let changed = false
+  for (const key of ['researchUpcomingItems', 'researchReminders', 'researchTimelineNotes', 'researchMemberships'] as const) {
+    if (Array.isArray(earlier[key]) && (earlier[key] as unknown[]).length === 0) { delete earlier[key]; changed = true }
+  }
+  return changed && await syncDigest(syncContent(earlier as unknown as AppData)) === digest
+}
+
 /** `claim` is the server row metadata this digest was confirmed at. A baseline
  *  recorded before S1 has none (`undefined`): the next write needs a fresh read,
  *  never an invented revision. */
@@ -87,12 +105,22 @@ export function readSyncBaseline(id: string): SyncBaseline | null {
   const legacy = read(legacyBaselineKey(id))
   return legacy && { digest: legacy.digest, updatedAt: legacy.updatedAt }
 }
-/** `digest` is either the synced document or, when only the server revision moved
- *  (a claim of unchanged content), the digest already on record. */
-export async function recordSyncBaseline(id: string, data: AppData | { digest: string }, revision: { updatedAt: string; claim: CloudClaim | null }, token: ReturnType<typeof captureSyncSession>) {
+type BaselineRevision = { updatedAt: string; claim: CloudClaim | null }
+/** Records the synced workspace (always hashed here) at a server revision. */
+export async function recordSyncBaseline(id: string, data: AppData, revision: BaselineRevision, token: ReturnType<typeof captureSyncSession>) {
+  await writeSyncBaseline(id, () => syncDigest(syncContent(data)), revision, token)
+}
+/** Moves an existing baseline to a new server revision of unchanged content (a
+ *  claim, or metadata read for dirty local edits). The digest must come from a
+ *  baseline already on record: it is a separate input, never read from workspace data. */
+export async function rebaseSyncBaseline(id: string, baseline: SyncBaseline, revision: BaselineRevision, token: ReturnType<typeof captureSyncSession>) {
+  if (!/^[0-9a-f]{64}$/.test(baseline.digest)) throw new Error('The recorded sync baseline is unreadable. Check the cloud copy again.')
+  await writeSyncBaseline(id, async () => baseline.digest, revision, token)
+}
+async function writeSyncBaseline(id: string, digestOf: () => Promise<string>, revision: BaselineRevision, token: ReturnType<typeof captureSyncSession>) {
   if (token.id !== id) throw new Error('This sync result belongs to a different account.')
   const owner = captureWorkspaceIdentity()
-  const digest = 'digest' in data && typeof data.digest === 'string' ? data.digest : await syncDigest(syncContent(data as AppData))
+  const digest = await digestOf()
   assertSyncLease(token)
   const current = captureWorkspaceIdentity()
   if (owner.key !== current.key || owner.epoch !== current.epoch) throw new Error('The workspace changed while sync completed. Its metadata was kept.')
