@@ -1,0 +1,17 @@
+[
+  {
+    "name": "device-add",
+    "theme": "dark",
+    "width": 375,
+    "checks": [],
+    "writes": [
+      {
+        "method": "PATCH",
+        "recoveryCount": 0,
+        "recoveryVerified": false
+      }
+    ],
+    "pass": false,
+    "error": "Timeout waiting for additive recovery notice; app reached signed-in Settings and Cloud protection: on. Fixture used raw initial data plus a legacy-invalid task kanban value, so result is inconclusive pending corrected fixture."
+  }
+]

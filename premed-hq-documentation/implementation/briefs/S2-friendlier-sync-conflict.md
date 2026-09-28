@@ -97,3 +97,14 @@ Verified Andy's actual selection in the Claude planning conversation: **"Delete 
 Claude's final review identified unnecessary full snapshots/notices on housekeeping equality and ordinary dirty-local reconciliation. Those now stay silent with no new archive when no authored copy is replaced. A housekeeping mismatch that previously caused review gets only a matching-work notice. Additive choices, cloud adoption, and proven local deletions still preserve verified recovery before replacing meaningful work. Repeated exact-byte recovery requests use a content-derived identity, read back and verified; they do not add identical copies. Twenty routine-load and twenty repeated-recovery regressions cover this.
 
 Suggested pruning to the newest three copies is **not implemented**: it would permanently discard distinct historical recovery copies under a brief that says "Never lose the loser." Existing recovery history remains intact. A retention policy for distinct meaningful historical versions is a separate product/data-retention decision; it is not necessary to remove the newly introduced routine-load duplication. No existing copies are deleted by this patch.
+
+### Final acceptance and review
+
+- Runtime candidate `907b9f5`: clean full suite **302 files / 2,335 tests**, one worker, exit 0. Earlier interrupted two-worker run hit unrelated five-second timeouts under host contention and is not acceptance.
+- Disposable local API + production-build Chrome: **10 scenarios / 94 assertions** at `674f612`, plus **7 affected scenarios / 56 assertions** at `907b9f5`. Exact source hashes, screenshots, results and limits are in `implementation/evidence/S2/browser/` and `browser-followup-907b9f5/`. Both themes, 375px, native Tab/Enter, accessible names and no overflow checked. No screen-reader speech claim.
+- Actual 80-asset image-service completion and stalled-transfer fencing are in the unit suite; browser fixtures have no images.
+- Both disposable runs ended with zero users/rows and no temporary browser/server/containers; volume retained. No real-account access.
+- Claude planning reviewed `907b9f5` and approved release after final checks, explicitly accepting retention as a separate nonblocking decision. Independent code review found no remaining safety findings.
+- Build/lint and the live release receipt follow; nothing is reported deployed by this section alone.
+
+Final runtime `907b9f5`: build passed; lint passed with 0 errors / 55 pre-existing warnings; production dependency audit remains 0 vulnerabilities (no dependency changes). The code is ready for the authorized S2 release. The five missing hosting headers remain a recorded S2-only waiver, not a passed check.

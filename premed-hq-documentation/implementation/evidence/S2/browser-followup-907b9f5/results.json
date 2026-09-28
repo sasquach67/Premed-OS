@@ -1,0 +1,338 @@
+[
+  {
+    "name": "device-add",
+    "theme": "dark",
+    "width": 375,
+    "checks": [
+      {
+        "label": "No horizontal page overflow",
+        "pass": true,
+        "detail": {
+          "scroll": 375,
+          "width": 375
+        }
+      },
+      {
+        "label": "Requested theme applied",
+        "pass": true
+      },
+      {
+        "label": "No choice panel",
+        "pass": true
+      },
+      {
+        "label": "Additive recovery notice is visible",
+        "pass": true
+      },
+      {
+        "label": "Authored device work retained",
+        "pass": true
+      },
+      {
+        "label": "Verified recovery snapshots exist",
+        "pass": true
+      },
+      {
+        "label": "Recovery retains both prior task collections",
+        "pass": true
+      },
+      {
+        "label": "Every cloud replacement followed verified recovery",
+        "pass": true
+      }
+    ],
+    "writes": [
+      {
+        "method": "PATCH",
+        "query": "?user_id=eq.ce5951e6-dd04-4abd-9e13-99a267f20e68&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=eq.2&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+        "recoveryCount": 4,
+        "recoveryVerified": true
+      }
+    ],
+    "pass": true
+  },
+  {
+    "name": "cloud-add",
+    "theme": "light",
+    "width": 375,
+    "checks": [
+      {
+        "label": "No horizontal page overflow",
+        "pass": true,
+        "detail": {
+          "scroll": 375,
+          "width": 375
+        }
+      },
+      {
+        "label": "Requested theme applied",
+        "pass": true
+      },
+      {
+        "label": "No choice panel",
+        "pass": true
+      },
+      {
+        "label": "Additive recovery notice is visible",
+        "pass": true
+      },
+      {
+        "label": "Authored device work retained",
+        "pass": true
+      },
+      {
+        "label": "Verified recovery snapshots exist",
+        "pass": true
+      },
+      {
+        "label": "Recovery retains both prior task collections",
+        "pass": true
+      },
+      {
+        "label": "Every cloud replacement followed verified recovery",
+        "pass": true
+      }
+    ],
+    "writes": [],
+    "pass": true
+  },
+  {
+    "name": "device-delete",
+    "theme": "light",
+    "width": 375,
+    "checks": [
+      {
+        "label": "No horizontal page overflow",
+        "pass": true,
+        "detail": {
+          "scroll": 375,
+          "width": 375
+        }
+      },
+      {
+        "label": "Requested theme applied",
+        "pass": true
+      },
+      {
+        "label": "No choice panel",
+        "pass": true
+      },
+      {
+        "label": "Ordinary one-sided sync shows no recovery notice",
+        "pass": true
+      },
+      {
+        "label": "Authored device work retained",
+        "pass": true
+      },
+      {
+        "label": "Verified recovery snapshots exist",
+        "pass": true
+      },
+      {
+        "label": "Recovery retains both prior task collections",
+        "pass": true
+      },
+      {
+        "label": "Every cloud replacement followed verified recovery",
+        "pass": true
+      }
+    ],
+    "writes": [
+      {
+        "method": "PATCH",
+        "query": "?user_id=eq.caba177d-1320-40f3-9556-49c3ead47e7b&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=eq.2&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+        "recoveryCount": 2,
+        "recoveryVerified": true
+      }
+    ],
+    "pass": true
+  },
+  {
+    "name": "cloud-delete",
+    "theme": "dark",
+    "width": 375,
+    "checks": [
+      {
+        "label": "No horizontal page overflow",
+        "pass": true,
+        "detail": {
+          "scroll": 375,
+          "width": 375
+        }
+      },
+      {
+        "label": "Requested theme applied",
+        "pass": true
+      },
+      {
+        "label": "No choice panel",
+        "pass": true
+      },
+      {
+        "label": "Ordinary one-sided sync shows no recovery notice",
+        "pass": true
+      },
+      {
+        "label": "Authored device work retained",
+        "pass": true
+      },
+      {
+        "label": "Verified recovery snapshots exist",
+        "pass": true
+      },
+      {
+        "label": "Recovery retains both prior task collections",
+        "pass": true
+      },
+      {
+        "label": "Every cloud replacement followed verified recovery",
+        "pass": true
+      }
+    ],
+    "writes": [],
+    "pass": true
+  },
+  {
+    "name": "note-delete",
+    "theme": "light",
+    "width": 375,
+    "checks": [
+      {
+        "label": "No horizontal page overflow",
+        "pass": true,
+        "detail": {
+          "scroll": 375,
+          "width": 375
+        }
+      },
+      {
+        "label": "Requested theme applied",
+        "pass": true
+      },
+      {
+        "label": "No choice panel",
+        "pass": true
+      },
+      {
+        "label": "Ordinary one-sided sync shows no recovery notice",
+        "pass": true
+      },
+      {
+        "label": "Authored device work retained",
+        "pass": true
+      },
+      {
+        "label": "One-sided note deletion retained",
+        "pass": true
+      },
+      {
+        "label": "Verified recovery snapshots exist",
+        "pass": true
+      },
+      {
+        "label": "Recovery retains both prior task collections",
+        "pass": true
+      },
+      {
+        "label": "Every cloud replacement followed verified recovery",
+        "pass": true
+      }
+    ],
+    "writes": [],
+    "pass": true
+  },
+  {
+    "name": "housekeeping-only",
+    "theme": "dark",
+    "width": 375,
+    "checks": [
+      {
+        "label": "No horizontal page overflow",
+        "pass": true,
+        "detail": {
+          "scroll": 375,
+          "width": 375
+        }
+      },
+      {
+        "label": "Requested theme applied",
+        "pass": true
+      },
+      {
+        "label": "No choice panel",
+        "pass": true
+      },
+      {
+        "label": "Matching-work notice is visible",
+        "pass": true
+      },
+      {
+        "label": "Authored device work retained",
+        "pass": true
+      },
+      {
+        "label": "Authored notes retained",
+        "pass": true
+      },
+      {
+        "label": "No unnecessary recovery snapshots",
+        "pass": true
+      },
+      {
+        "label": "Matching authored work causes no PATCH",
+        "pass": true
+      }
+    ],
+    "writes": [],
+    "pass": true
+  },
+  {
+    "name": "ordinary-device-edit",
+    "theme": "light",
+    "width": 375,
+    "checks": [
+      {
+        "label": "No horizontal page overflow",
+        "pass": true,
+        "detail": {
+          "scroll": 375,
+          "width": 375
+        }
+      },
+      {
+        "label": "Requested theme applied",
+        "pass": true
+      },
+      {
+        "label": "No choice panel",
+        "pass": true
+      },
+      {
+        "label": "Ordinary one-sided sync shows no recovery notice",
+        "pass": true
+      },
+      {
+        "label": "Authored device work retained",
+        "pass": true
+      },
+      {
+        "label": "No unnecessary recovery snapshots",
+        "pass": true
+      },
+      {
+        "label": "Ordinary edit uploads without archive churn",
+        "pass": true
+      }
+    ],
+    "writes": [
+      {
+        "method": "PATCH",
+        "query": "?user_id=eq.d469e866-ba25-4c8a-b01b-7082b208987f&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=eq.2&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+        "recoveryCount": 0,
+        "recoveryVerified": false
+      }
+    ],
+    "pass": true
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "runtimeRevision": "907b9f5",
+  "date": "2026-09-28",
+  "tests": {
+    "files": 302,
+    "passed": 2335,
+    "workers": 1,
+    "exit": 0
+  },
+  "build": {
+    "exit": 0,
+    "warning": "existing large-chunk warning"
+  },
+  "lint": {
+    "exit": 0,
+    "errors": 0,
+    "warnings": 55
+  },
+  "productionDependencyAudit": {
+    "vulnerabilities": 0,
+    "dependenciesChanged": false
+  },
+  "browser": {
+    "initial": {
+      "revision": "674f612",
+      "scenarios": 10,
+      "assertions": 94
+    },
+    "followup": {
+      "revision": "907b9f5",
+      "scenarios": 7,
+      "assertions": 56
+    }
+  },
+  "review": "Claude planning and independent code review clear at 907b9f5",
+  "headers": "five pre-existing failures; S2-only waiver recorded at docs/dev-workflow e02283f; check unchanged",
+  "realAccountAccess": false
+}
