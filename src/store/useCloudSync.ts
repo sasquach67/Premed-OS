@@ -1,5 +1,6 @@
 import { CloudColumnsMissingError, isMissingCloudColumnsError, isSchemaGuardError, prepareWorkspaceData, WorkspaceSchemaError } from '@/lib/workspaceSchema'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { sameJson } from '@/lib/logicalJson'
 import type { User } from '@supabase/supabase-js'
 import { activateAccountWorkspace, activateGuestWorkspace, activeAccountWorkspaceId, assertDurableWorkspace, captureDurableWorkspaceCheck, captureWorkspaceIdentity, readWorkspaceData, useStore, snapshotData } from './store'
 import { supabase, isSupabaseConfigured, authRedirectTo } from '@/lib/supabase'
@@ -95,7 +96,7 @@ export function useCloudSync() {
         }
         const detached = await readOutgoingWorkspace(key)
         fresh(); assertSyncLease(lease)
-        if (detached && (!local || JSON.stringify(detached.data) !== JSON.stringify(local))) {
+        if (detached && (!local || !sameJson(detached.data, local))) {
           await preserveAccountConflict(u.id, before, null, token, 'Unsaved work was kept when this account closed. Download the open-workspace copy to review those edits. Automatic sync and backups remain paused.', detached)
           fresh()
           if (local) activateAccountWorkspace(u.id)
