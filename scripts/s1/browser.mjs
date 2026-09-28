@@ -20,14 +20,15 @@ if (process.env.S1_LOCAL_CONFIRMED !== 'yes') throw new Error('Set S1_LOCAL_CONF
 const status = JSON.parse(readFileSync(resolve(root, 'scripts/s1/local/status.json'), 'utf8'))
 assert.equal(status.API_URL, 'http://127.0.0.1:55431')
 const [onlyBuild, onlyScenario] = process.argv.slice(2)
-const evidence = resolve(root, 'premed-hq-documentation/implementation/evidence/S1-r3/browser')
+// S1_EVIDENCE_DIR keeps earlier runs' reports and screenshots as historical evidence.
+const evidence = resolve(root, process.env.S1_EVIDENCE_DIR ?? 'premed-hq-documentation/implementation/evidence/S1-r3/browser')
 mkdirSync(evidence, { recursive: true })
 const builds = {
   'old-deployed': { rev: 'd60f682946e264ea2d680c2c8e2914a86899c114', port: 55441 },
   'old-stale': { rev: '5c7a3e4f1c28c3b36392815c0a63fe3c963cb225', port: 55442 },
   current: { rev: 'HEAD', port: 55443 },
   // S1 + Research (T4) integration at cloud schema 2 (codex/s1-research-r3), separate fixture.
-  combined: { rev: 'a054d407038a9f5af2b0eff9969754d4196831dc', port: 55444 },
+  combined: { rev: '8dd37c6f5df5b39328eae7dc8029a70a2f081b36', port: 55444 },
 }
 const cleanEnv = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(SUPABASE|PG|DATABASE|VITE_|AWS_|S3_)/.test(k)))
 const sleep = ms => new Promise(r => setTimeout(r, ms))

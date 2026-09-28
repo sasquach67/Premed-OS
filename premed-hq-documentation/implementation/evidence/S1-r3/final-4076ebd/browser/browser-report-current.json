@@ -1,0 +1,1164 @@
+{
+  "ranAt": "2026-09-28T01:46:04.227Z",
+  "api": "http://127.0.0.1:55431",
+  "report": [
+    {
+      "build": "current",
+      "scenario": "claimed-bare",
+      "checks": [
+        {
+          "label": "opening a claimed row sends no write",
+          "ok": true
+        },
+        {
+          "label": "Settings shows \"Cloud protection: on\"",
+          "ok": true
+        },
+        {
+          "label": "clicked the Dark theme button (an ordinary synced settings edit)",
+          "ok": true
+        },
+        {
+          "label": "after reload the edit is still saved on this device (durable workspace storage)",
+          "ok": true,
+          "detail": {
+            "darkBeforeReload": true
+          }
+        },
+        {
+          "label": "the current save succeeded",
+          "ok": true,
+          "detail": [
+            {
+              "method": "PATCH",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "write_rev 1 -> 2, schema 1",
+          "ok": true
+        },
+        {
+          "label": "stored encoding stays bare",
+          "ok": true
+        },
+        {
+          "label": "edit saved and unknown section kept",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "45493.100",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.faf782ed-807f-460b-9255-38aab8249203",
+          "status": 200
+        },
+        {
+          "requestId": "F8882437CA7D0744B7D7654605D87344",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.faf782ed-807f-460b-9255-38aab8249203",
+          "status": 200
+        },
+        {
+          "requestId": "45493.105",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.faf782ed-807f-460b-9255-38aab8249203",
+          "status": 200
+        },
+        {
+          "requestId": "45493.106",
+          "method": "PATCH",
+          "url": "?user_id=eq.faf782ed-807f-460b-9255-38aab8249203&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "476048D53289D486735560EC7CFBC387",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.faf782ed-807f-460b-9255-38aab8249203&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45493.206",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.faf782ed-807f-460b-9255-38aab8249203",
+          "status": 200
+        },
+        {
+          "requestId": "2C2DA0BA0C29C9339FC2C54F1981F29E",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.faf782ed-807f-460b-9255-38aab8249203",
+          "status": 200
+        },
+        {
+          "requestId": "45493.214",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.faf782ed-807f-460b-9255-38aab8249203",
+          "status": 200
+        },
+        {
+          "requestId": "45493.216",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.faf782ed-807f-460b-9255-38aab8249203",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "loadWrites": [],
+      "editWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "darkBeforeReload": true,
+      "afterReloadRoute": "device/account review page",
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": 1,
+          "write_rev": 1,
+          "encoding": "bare"
+        },
+        "after": {
+          "cloud_schema": 1,
+          "write_rev": 2,
+          "encoding": "bare"
+        }
+      },
+      "revision": "4076ebde9b171c745ec4067f99fa546dff2f9f33"
+    },
+    {
+      "build": "current",
+      "scenario": "legacy-bare",
+      "checks": [
+        {
+          "label": "opening claimed the row with one conditional PATCH",
+          "ok": true,
+          "detail": [
+            {
+              "requestId": "45533.106",
+              "method": "PATCH",
+              "url": "?user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "the claim is exactly the reviewed cloud document plus _schema",
+          "ok": true
+        },
+        {
+          "label": "claim keeps the stored encoding (bare)",
+          "ok": true
+        },
+        {
+          "label": "Settings shows \"Cloud protection: on\" after the claim",
+          "ok": true
+        },
+        {
+          "label": "clicked the Dark theme button (an ordinary synced settings edit)",
+          "ok": true
+        },
+        {
+          "label": "after reload the edit is still saved on this device (durable workspace storage)",
+          "ok": true,
+          "detail": {
+            "darkBeforeReload": true
+          }
+        },
+        {
+          "label": "edit saved",
+          "ok": true
+        },
+        {
+          "label": "write_rev 1 -> 2 after the edit",
+          "ok": true
+        },
+        {
+          "label": "unknown section kept",
+          "ok": true
+        },
+        {
+          "label": "stored encoding stays bare",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "45533.100",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87",
+          "status": 200
+        },
+        {
+          "requestId": "737BC26CE326D573084DBFD988D8FAF1",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87",
+          "status": 200
+        },
+        {
+          "requestId": "45533.105",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87",
+          "status": 200
+        },
+        {
+          "requestId": "45533.106",
+          "method": "PATCH",
+          "url": "?user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "5DB1556AAE26F1B633F8E9AB144946CD",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "DF59464C5C6F81025013A60648F2E111",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87&updated_at=eq.2026-09-28T01%3A45%3A05.721%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45533.107",
+          "method": "PATCH",
+          "url": "?user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87&updated_at=eq.2026-09-28T01%3A45%3A05.721%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45533.207",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87",
+          "status": 200
+        },
+        {
+          "requestId": "299665841530DB7A58A7EDF8E00E6D38",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87",
+          "status": 200
+        },
+        {
+          "requestId": "45533.215",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87",
+          "status": 200
+        },
+        {
+          "requestId": "45533.217",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.10316b07-51d5-474b-aa4a-367a12f7df87",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "loadWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "editWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "darkBeforeReload": true,
+      "afterReloadRoute": "device/account review page",
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": null,
+          "write_rev": null,
+          "encoding": "bare"
+        },
+        "after": {
+          "cloud_schema": 1,
+          "write_rev": 2,
+          "encoding": "bare"
+        }
+      },
+      "revision": "4076ebde9b171c745ec4067f99fa546dff2f9f33"
+    },
+    {
+      "build": "current",
+      "scenario": "claimed-gzip",
+      "checks": [
+        {
+          "label": "opening a claimed row sends no write",
+          "ok": true
+        },
+        {
+          "label": "Settings shows \"Cloud protection: on\"",
+          "ok": true
+        },
+        {
+          "label": "clicked the Dark theme button (an ordinary synced settings edit)",
+          "ok": true
+        },
+        {
+          "label": "after reload the edit is still saved on this device (durable workspace storage)",
+          "ok": true,
+          "detail": {
+            "darkBeforeReload": true
+          }
+        },
+        {
+          "label": "the current save succeeded",
+          "ok": true,
+          "detail": [
+            {
+              "method": "PATCH",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "write_rev 1 -> 2, schema 1",
+          "ok": true
+        },
+        {
+          "label": "stored encoding stays gzip",
+          "ok": true
+        },
+        {
+          "label": "edit saved and unknown section kept",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "62121E393639D48F1E757D59DD36FB3A",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.a021beb1-4ede-4024-a349-66a6a66a18fe",
+          "status": 200
+        },
+        {
+          "requestId": "45588.100",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.a021beb1-4ede-4024-a349-66a6a66a18fe",
+          "status": 200
+        },
+        {
+          "requestId": "45588.105",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.a021beb1-4ede-4024-a349-66a6a66a18fe",
+          "status": 200
+        },
+        {
+          "requestId": "70B7AB24C9EC4069D9C7C3EABB470B41",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.a021beb1-4ede-4024-a349-66a6a66a18fe&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45588.106",
+          "method": "PATCH",
+          "url": "?user_id=eq.a021beb1-4ede-4024-a349-66a6a66a18fe&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45588.206",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.a021beb1-4ede-4024-a349-66a6a66a18fe",
+          "status": 200
+        },
+        {
+          "requestId": "7E8E0235301D449198F6166837441284",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.a021beb1-4ede-4024-a349-66a6a66a18fe",
+          "status": 200
+        },
+        {
+          "requestId": "45588.214",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.a021beb1-4ede-4024-a349-66a6a66a18fe",
+          "status": 200
+        },
+        {
+          "requestId": "45588.216",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.a021beb1-4ede-4024-a349-66a6a66a18fe",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "loadWrites": [],
+      "editWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "darkBeforeReload": true,
+      "afterReloadRoute": "device/account review page",
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": 1,
+          "write_rev": 1,
+          "encoding": "gzip"
+        },
+        "after": {
+          "cloud_schema": 1,
+          "write_rev": 2,
+          "encoding": "gzip"
+        }
+      },
+      "revision": "4076ebde9b171c745ec4067f99fa546dff2f9f33"
+    },
+    {
+      "build": "current",
+      "scenario": "legacy-gzip",
+      "checks": [
+        {
+          "label": "opening claimed the row with one conditional PATCH",
+          "ok": true,
+          "detail": [
+            {
+              "requestId": "45640.106",
+              "method": "PATCH",
+              "url": "?user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "the claim is exactly the reviewed cloud document plus _schema",
+          "ok": true
+        },
+        {
+          "label": "claim keeps the stored encoding (gzip)",
+          "ok": true
+        },
+        {
+          "label": "Settings shows \"Cloud protection: on\" after the claim",
+          "ok": true
+        },
+        {
+          "label": "clicked the Dark theme button (an ordinary synced settings edit)",
+          "ok": true
+        },
+        {
+          "label": "after reload the edit is still saved on this device (durable workspace storage)",
+          "ok": true,
+          "detail": {
+            "darkBeforeReload": true
+          }
+        },
+        {
+          "label": "edit saved",
+          "ok": true
+        },
+        {
+          "label": "write_rev 1 -> 2 after the edit",
+          "ok": true
+        },
+        {
+          "label": "unknown section kept",
+          "ok": true
+        },
+        {
+          "label": "stored encoding stays gzip",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "45640.100",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c",
+          "status": 200
+        },
+        {
+          "requestId": "B20BD3E61EEF414815F5523871F77FAA",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c",
+          "status": 200
+        },
+        {
+          "requestId": "45640.105",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c",
+          "status": 200
+        },
+        {
+          "requestId": "8C3EE94DC7C8078D6652411D4E593CB6",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45640.106",
+          "method": "PATCH",
+          "url": "?user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "A179400AA99964448FA2E068F272A0CC",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c&updated_at=eq.2026-09-28T01%3A45%3A26.011%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45640.107",
+          "method": "PATCH",
+          "url": "?user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c&updated_at=eq.2026-09-28T01%3A45%3A26.011%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45640.207",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c",
+          "status": 200
+        },
+        {
+          "requestId": "8499C44A445F20177EF7F2AF536114FE",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c",
+          "status": 200
+        },
+        {
+          "requestId": "45640.215",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c",
+          "status": 200
+        },
+        {
+          "requestId": "45640.217",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.6fe8de15-2982-435c-b28b-efa843b3cc1c",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "loadWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "editWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "darkBeforeReload": true,
+      "afterReloadRoute": "device/account review page",
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": null,
+          "write_rev": null,
+          "encoding": "gzip"
+        },
+        "after": {
+          "cloud_schema": 1,
+          "write_rev": 2,
+          "encoding": "gzip"
+        }
+      },
+      "revision": "4076ebde9b171c745ec4067f99fa546dff2f9f33"
+    },
+    {
+      "build": "current",
+      "scenario": "claimed-text",
+      "checks": [
+        {
+          "label": "opening a claimed row sends no write",
+          "ok": true
+        },
+        {
+          "label": "Settings shows \"Cloud protection: on\"",
+          "ok": true
+        },
+        {
+          "label": "clicked the Dark theme button (an ordinary synced settings edit)",
+          "ok": true
+        },
+        {
+          "label": "after reload the edit is still saved on this device (durable workspace storage)",
+          "ok": true,
+          "detail": {
+            "darkBeforeReload": true
+          }
+        },
+        {
+          "label": "the current save succeeded",
+          "ok": true,
+          "detail": [
+            {
+              "method": "PATCH",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "write_rev 1 -> 2, schema 1",
+          "ok": true
+        },
+        {
+          "label": "stored encoding stays text",
+          "ok": true
+        },
+        {
+          "label": "edit saved and unknown section kept",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "45678.100",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.cd8c4f05-0d9c-46b5-8f98-e8df0651613c",
+          "status": 200
+        },
+        {
+          "requestId": "3F7D4CC4E2FBA68A890127BAACABB62A",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.cd8c4f05-0d9c-46b5-8f98-e8df0651613c",
+          "status": 200
+        },
+        {
+          "requestId": "45678.105",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.cd8c4f05-0d9c-46b5-8f98-e8df0651613c",
+          "status": 200
+        },
+        {
+          "requestId": "45678.106",
+          "method": "PATCH",
+          "url": "?user_id=eq.cd8c4f05-0d9c-46b5-8f98-e8df0651613c&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "7334726C17569A8BCC44BBC72DC8CADD",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.cd8c4f05-0d9c-46b5-8f98-e8df0651613c&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45678.206",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.cd8c4f05-0d9c-46b5-8f98-e8df0651613c",
+          "status": 200
+        },
+        {
+          "requestId": "EEB6C508FF3FD5D0410810036F500029",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.cd8c4f05-0d9c-46b5-8f98-e8df0651613c",
+          "status": 200
+        },
+        {
+          "requestId": "45678.214",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.cd8c4f05-0d9c-46b5-8f98-e8df0651613c",
+          "status": 200
+        },
+        {
+          "requestId": "45678.216",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.cd8c4f05-0d9c-46b5-8f98-e8df0651613c",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "loadWrites": [],
+      "editWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "darkBeforeReload": true,
+      "afterReloadRoute": "device/account review page",
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": 1,
+          "write_rev": 1,
+          "encoding": "text"
+        },
+        "after": {
+          "cloud_schema": 1,
+          "write_rev": 2,
+          "encoding": "text"
+        }
+      },
+      "revision": "4076ebde9b171c745ec4067f99fa546dff2f9f33"
+    },
+    {
+      "build": "current",
+      "scenario": "legacy-text",
+      "checks": [
+        {
+          "label": "opening claimed the row with one conditional PATCH",
+          "ok": true,
+          "detail": [
+            {
+              "requestId": "45720.106",
+              "method": "PATCH",
+              "url": "?user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "label": "the claim is exactly the reviewed cloud document plus _schema",
+          "ok": true
+        },
+        {
+          "label": "claim keeps the stored encoding (text)",
+          "ok": true
+        },
+        {
+          "label": "Settings shows \"Cloud protection: on\" after the claim",
+          "ok": true
+        },
+        {
+          "label": "clicked the Dark theme button (an ordinary synced settings edit)",
+          "ok": true
+        },
+        {
+          "label": "after reload the edit is still saved on this device (durable workspace storage)",
+          "ok": true,
+          "detail": {
+            "darkBeforeReload": true
+          }
+        },
+        {
+          "label": "edit saved",
+          "ok": true
+        },
+        {
+          "label": "write_rev 1 -> 2 after the edit",
+          "ok": true
+        },
+        {
+          "label": "unknown section kept",
+          "ok": true
+        },
+        {
+          "label": "stored encoding stays text",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "45720.100",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe",
+          "status": 200
+        },
+        {
+          "requestId": "11DE1C650A4F65EDB870A3AD5F0FB6A0",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe",
+          "status": 200
+        },
+        {
+          "requestId": "45720.105",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe",
+          "status": 200
+        },
+        {
+          "requestId": "45720.106",
+          "method": "PATCH",
+          "url": "?user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "3CB1075C8A9C8E72DF0417E4F9C4D5B5",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45720.107",
+          "method": "PATCH",
+          "url": "?user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe&updated_at=eq.2026-09-28T01%3A45%3A45.271%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "3591836FC99BC3DDA077987544ABCB9B",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe&updated_at=eq.2026-09-28T01%3A45%3A45.271%2B00%3A00&cloud_schema=eq.1&write_rev=eq.1&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "requestId": "45720.207",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe",
+          "status": 200
+        },
+        {
+          "requestId": "A45BC17BB7225E7E1E05791EBBFD8848",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe",
+          "status": 200
+        },
+        {
+          "requestId": "45720.215",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe",
+          "status": 200
+        },
+        {
+          "requestId": "45720.217",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.8c85e9fc-6dd8-4fdf-a88f-1a36bff56abe",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "loadWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "editWrites": [
+        {
+          "method": "PATCH",
+          "status": 200
+        }
+      ],
+      "darkBeforeReload": true,
+      "afterReloadRoute": "device/account review page",
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": null,
+          "write_rev": null,
+          "encoding": "text"
+        },
+        "after": {
+          "cloud_schema": 1,
+          "write_rev": 2,
+          "encoding": "text"
+        }
+      },
+      "revision": "4076ebde9b171c745ec4067f99fa546dff2f9f33"
+    },
+    {
+      "build": "current",
+      "scenario": "future-schema",
+      "checks": [
+        {
+          "label": "blocked before hydration with the newer-version message",
+          "ok": true
+        },
+        {
+          "label": "no write of any kind",
+          "ok": true
+        },
+        {
+          "label": "protection not shown as on",
+          "ok": true
+        },
+        {
+          "label": "cloud row unchanged",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "45760.100",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.9d1af227-dbc2-4764-972c-2514820ef25a",
+          "status": 200
+        },
+        {
+          "requestId": "D89445FF0DDA8500AD9789CED6E4FBF1",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.9d1af227-dbc2-4764-972c-2514820ef25a",
+          "status": 200
+        },
+        {
+          "requestId": "45760.105",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.9d1af227-dbc2-4764-972c-2514820ef25a",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "loadWrites": [],
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": 2,
+          "write_rev": 1,
+          "encoding": "bare"
+        },
+        "after": {
+          "cloud_schema": 2,
+          "write_rev": 1,
+          "encoding": "bare"
+        }
+      },
+      "revision": "4076ebde9b171c745ec4067f99fa546dff2f9f33"
+    },
+    {
+      "build": "current",
+      "scenario": "schema2-t4-row",
+      "checks": [
+        {
+          "label": "schema-1 app blocks a schema-2 Research row",
+          "ok": true
+        },
+        {
+          "label": "no write of any kind",
+          "ok": true
+        },
+        {
+          "label": "cloud row unchanged",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "45779.100",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.ea6f7386-0217-4002-be38-598ba7ada9b7",
+          "status": 200
+        },
+        {
+          "requestId": "19FF518EAA0759661C6C82CEA45F4DAE",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.ea6f7386-0217-4002-be38-598ba7ada9b7",
+          "status": 200
+        },
+        {
+          "requestId": "45779.105",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.ea6f7386-0217-4002-be38-598ba7ada9b7",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "loadWrites": [],
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": 2,
+          "write_rev": 1,
+          "encoding": "bare"
+        },
+        "after": {
+          "cloud_schema": 2,
+          "write_rev": 1,
+          "encoding": "bare"
+        }
+      },
+      "revision": "4076ebde9b171c745ec4067f99fa546dff2f9f33"
+    },
+    {
+      "build": "current",
+      "scenario": "t4-unmarked",
+      "checks": [
+        {
+          "label": "schema-1 app refuses the Research (T4) row",
+          "ok": true
+        },
+        {
+          "label": "no claim or other write",
+          "ok": true
+        },
+        {
+          "label": "cloud row unchanged and unclaimed",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "D7CE5B3B899E1DB6C3EF923B9DC262CD",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.b9d50389-6cba-4c60-9134-6753dda08740",
+          "status": 200
+        },
+        {
+          "requestId": "45798.100",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.b9d50389-6cba-4c60-9134-6753dda08740",
+          "status": 200
+        },
+        {
+          "requestId": "45798.105",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.b9d50389-6cba-4c60-9134-6753dda08740",
+          "status": 200
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "loadWrites": [],
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": null,
+          "write_rev": null,
+          "encoding": "bare"
+        },
+        "after": {
+          "cloud_schema": null,
+          "write_rev": null,
+          "encoding": "bare"
+        }
+      },
+      "revision": "4076ebde9b171c745ec4067f99fa546dff2f9f33"
+    },
+    {
+      "build": "current",
+      "scenario": "claim-not-confirmed",
+      "checks": [
+        {
+          "label": "without a server-confirmed claim the app never says protection is on",
+          "ok": true
+        },
+        {
+          "label": "row stays unclaimed",
+          "ok": true
+        }
+      ],
+      "requests": [
+        {
+          "requestId": "45819.100",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.a2cbfa34-bc96-417a-bd92-18ebf47178d0",
+          "status": 200
+        },
+        {
+          "requestId": "9791EB4DBD105B2393780DA71DF72CD5",
+          "method": "OPTIONS",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.a2cbfa34-bc96-417a-bd92-18ebf47178d0",
+          "status": 200
+        },
+        {
+          "requestId": "45819.105",
+          "method": "GET",
+          "url": "?select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev&user_id=eq.a2cbfa34-bc96-417a-bd92-18ebf47178d0",
+          "status": 200
+        },
+        {
+          "requestId": "45819.106",
+          "method": "PATCH",
+          "url": "?user_id=eq.a2cbfa34-bc96-417a-bd92-18ebf47178d0&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "failed": "net::ERR_CONNECTION_RESET"
+        },
+        {
+          "requestId": "909B50F48C8D1A11531F3B86F0A58014",
+          "method": "OPTIONS",
+          "url": "?user_id=eq.a2cbfa34-bc96-417a-bd92-18ebf47178d0&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "url": "?user_id=eq.a2cbfa34-bc96-417a-bd92-18ebf47178d0&updated_at=eq.2026-01-01T00%3A00%3A00%2B00%3A00&cloud_schema=is.null&write_rev=is.null&select=data%2Cupdated_at%2Ccloud_schema%2Cwrite_rev",
+          "status": "network-failed (harness)"
+        }
+      ],
+      "console": [
+        "log: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "api POST /rest/v1/rpc/is_founder_admin",
+        "api OPTIONS /rest/v1/rpc/is_founder_admin",
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "log: Failed to load resource: net::ERR_CONNECTION_RESET"
+      ],
+      "loadWrites": [
+        {
+          "method": "PATCH",
+          "status": "network-failed (harness)"
+        }
+      ],
+      "blockedOrigins": [
+        "https://fonts.googleapis.com"
+      ],
+      "row": {
+        "before": {
+          "cloud_schema": null,
+          "write_rev": null,
+          "encoding": "bare"
+        },
+        "after": {
+          "cloud_schema": null,
+          "write_rev": null,
+          "encoding": "bare"
+        }
+      },
+      "revision": "4076ebde9b171c745ec4067f99fa546dff2f9f33"
+    }
+  ]
+}

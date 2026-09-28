@@ -1,0 +1,15 @@
+# npm test at 4076ebd (2026-09-28T01:42:58Z)
+
+> premed-os@0.0.0 test
+> vitest run
+
+
+ RUN  v4.1.9 /Users/andyquach/Documents/premed-os-s1
+
+
+ Test Files  290 passed (290)
+      Tests  2212 passed (2212)
+   Start at  21:42:58
+   Duration  74.33s (transform 37.54s, setup 0ms, import 166.11s, tests 201.29s, environment 250.38s)
+
+exit=0

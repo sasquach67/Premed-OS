@@ -1,0 +1,10 @@
+S1 hooks: current @ 4076ebde9b171c745ec4067f99fa546dff2f9f33
+
+ RUN  v4.1.9 /Users/andyquach/Documents/premed-os-s1/scripts/s1/.runtime/hooks-current
+
+
+ Test Files  1 passed (1)
+      Tests  25 passed | 1 skipped (26)
+   Start at  21:41:18
+   Duration  13.87s (transform 453ms, setup 0ms, import 88ms, tests 13.32s, environment 352ms)
+
