@@ -1,6 +1,6 @@
 # Class notebook dates and ordering
 
-Build receipt and deployment handoff. Claude Planning approved original implementation `164b82e`; release is held for Andy's notebook-list-specific security-header decision.
+Build receipt and deployment handoff. Claude Planning approved original implementation `164b82e`; the one-time header waiver is recorded below, and release awaits the serial handoff after exam fidelity.
 
 ## Scope and decisions
 
@@ -52,8 +52,12 @@ Fetched and integrated `origin/main` again after approval; it remains `26dfc90`,
 
 ## Release boundary and security-header decision
 
-Not merged, pushed, or deployed. Planning has asked Andy the explicit notebook-list-only header question; the answer is pending. Do not reuse an S1, S2, Exam A, or other release's waiver.
+Not merged, pushed, or deployed at waiver receipt. On **September 29, 2026**, Planning verified Andy's answer in **Claude's actual planning chat UI** after Claude explicitly named both the exam-rule fix and the notebook drag/dates feature. Andy's exact answer was:
 
-The unchanged `npm run verify:production-security` check still fails on five missing headers: `content-security-policy`, `strict-transport-security`, `referrer-policy`, `permissions-policy`, and `x-content-type-options`. The current result is saved in `implementation/evidence/notebook-list/production-security.txt`. This is a failed gate, not a passed check or implied waiver. The required decision is either a waiver for this notebook-list release only or a hold until hosting headers are fixed; keep that question centralized in Planning.
+> waive for this release i guess
 
-Send final revision/checks to Planning task `01a07de1-ad82-7df0-aede-00af15f1b673` for the deployment handoff. Before any release, obtain its recorded header answer and recheck current main. After authorized deployment, report the live revision and ask Andy to drag an entry and set a class date.
+**Exact authorized scope:** the one-time waiver covers exam fidelity **PR #2 / `78331aa`** and notebook list **`a6605ab`** only. Planning relayed this verified decision through Codex Planning task `01a07de1-ad82-7df0-aede-00af15f1b673`. This resolves the pending notebook header question; it does not waive checks for unrelated or future releases.
+
+The unchanged `npm run verify:production-security` check still fails on five missing headers: `content-security-policy`, `strict-transport-security`, `referrer-policy`, `permissions-policy`, and `x-content-type-options`. Its result is saved in `implementation/evidence/notebook-list/production-security.txt`. The result remains a failure covered by the scoped waiver, not a passed check. The script is not changed.
+
+**Serial release boundary:** Academics3 releases exam fidelity first. Wait for Planning to relay its exact live revision, then integrate that new main in this isolated worktree, preserve both reviewed changes, rerun appropriate checks, and deploy notebook list under the standing rule. Do not push main concurrently or deploy before that handoff. Confirm `release-assets.json` identifies the exact deployed commit and perform live checks. Report the live SHA to Planning and Andy, and ask Andy to drag an entry and set a class date.
