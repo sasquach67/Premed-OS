@@ -1,11 +1,12 @@
 import { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import type { NotebookReadingDetail } from './useNotebookReadingDetail'
 import type { IllustrationBlock } from '@/lib/academics/notebook/learningVisualTypes'
 
 type Change = (path: (string | number)[], value: string | null) => void
 
-/** Shows a worked representation first, then one line; the explanation waits behind Show more. */
-export function NotebookIllustration({ block, path, change }: { block: IllustrationBlock; path: (string | number)[]; change?: Change }) {
+/** Shows a worked representation and summary; Full detail reveals its explanation automatically. */
+export function NotebookIllustration({ block, path, change, readingDetail }: { block: IllustrationBlock; path: (string | number)[]; change?: Change; readingDetail?: NotebookReadingDetail }) {
   const [open, setOpen] = useState(false)
   const moreId = useId()
   if (change) return <section className="nbr-learning-visual nbr-illustration" aria-label={block.title} data-visual-type="illustration">
@@ -19,8 +20,8 @@ export function NotebookIllustration({ block, path, change }: { block: Illustrat
     <pre className="nbr-illustration-lines" role="region" aria-label={`${block.title}, worked example`} tabIndex={0}>{block.lines.join('\n')}</pre>
     <p className="en-text nbr-illustration-summary">{block.summary}</p>
     {block.more !== null && <>
-      <Button className="nbr-illustration-toggle h-auto px-0" variant="link" aria-expanded={open} aria-controls={moreId} onClick={() => setOpen(previous => !previous)}>{open ? 'Show less' : 'Show more'}</Button>
-      <p id={moreId} className="en-text nbr-illustration-more" hidden={!open}>{block.more}</p>
+      {readingDetail !== 'full' && <Button className="nbr-illustration-toggle h-auto px-0" variant="link" aria-expanded={open} aria-controls={moreId} onClick={() => setOpen(previous => !previous)}>{open ? 'Show less' : 'Show more'}</Button>}
+      <p id={moreId} className="en-text nbr-illustration-more" hidden={readingDetail !== 'full' && !open}>{block.more}</p>
     </>}
   </section>
 }

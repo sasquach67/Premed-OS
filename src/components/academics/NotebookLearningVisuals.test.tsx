@@ -16,6 +16,7 @@ let root: Root, container: HTMLDivElement
 const fresh = () => structuredClone(fixture) as NotebookPackage
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
+  localStorage.clear()
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
@@ -190,11 +191,14 @@ function illustrated(more: string | null) {
   return parsePortableNotebook(JSON.stringify(pkg))
 }
 
-it('shows the worked lines and one-line summary first, with the explanation behind Show more', async () => {
+it('shows the full illustration by default and retains its local disclosure in Condensed', async () => {
   await show(illustrated('RNA polymerase reads the template 3′ to 5′.'))
   const block = container.querySelector('.en-block-illustration')!
   expect(block.querySelector('pre')!.textContent).toBe("template  3'-TAC-GGA-5'\nmRNA      5'-AUG-CCU-3'")
   expect(block.querySelector('.nbr-illustration-summary')!.textContent).toBe('The mRNA matches the coding strand, with U for T.')
+  expect(block.querySelector<HTMLElement>('.nbr-illustration-more')!.hidden).toBe(false)
+  expect([...block.querySelectorAll('button')].some(button => button.textContent === 'Show more')).toBe(false)
+  await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Condensed')!.click())
   const toggle = [...block.querySelectorAll('button')].find(button => button.textContent === 'Show more')!
   const more = document.getElementById(toggle.getAttribute('aria-controls')!)!
   expect(toggle.getAttribute('aria-expanded')).toBe('false'); expect(more.hidden).toBe(true)

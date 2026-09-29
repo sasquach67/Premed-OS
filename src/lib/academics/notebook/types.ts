@@ -3,7 +3,7 @@ import type { LearningVisualBlock } from './learningVisualTypes'
 export type NotebookGoal = 'review' | 'assessment' | 'assignment'
 export type Evidence = ({ sourceIds: string[]; excerptIds: string[] }) & { assetIds?: string[] }
 export type NotebookBlock = (Evidence & { id: string; provenance: 'source' | 'clarification' | 'background' | 'generated-practice' | 'student-work' } & (
-  { type: 'paragraph'; text: string } | { type: 'bullets' | 'steps'; items: string[] } |
+  { type: 'paragraph'; text: string; more?: string | null } | { type: 'bullets'; items: string[]; more?: string | null } | { type: 'steps'; items: string[] } |
   { type: 'table'; columns: string[]; rows: string[][] } | { type: 'practice'; prompt: string; answer: string; rationale: string ; stimulusBlockIds?: string[] } |
   { type: 'gap'; text: string; nextStep: string }
 )) | NotebookFigureBlock | NotebookStudyDiagramBlock | LearningVisualBlock

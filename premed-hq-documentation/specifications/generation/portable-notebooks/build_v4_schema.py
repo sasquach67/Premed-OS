@@ -49,6 +49,10 @@ def build():
     summary={'type':'string','minLength':1,'maxLength':200}
     more=nullable({'type':'string','minLength':1,'maxLength':1200})
     variants.append(block('illustration',{'lines':arr(line,12,1),'summary':summary,'more':more}))
+    # Optional in v4 only: existing packages remain exact and valid without it.
+    for variant in variants:
+        if variant['properties']['type'].get('const') in ('paragraph', 'bullets'):
+            variant['properties']['more'] = copy.deepcopy(more)
     return schema
 
 if __name__=='__main__':
