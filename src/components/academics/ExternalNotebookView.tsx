@@ -1,3 +1,4 @@
+import { NotebookReadGuard } from './NotebookReadGuard'
 import { workspacePersistence } from '@/store/workspacePersistence'
 import { commitWorkspaceMutation } from '@/store/workspaceTransaction'
 import { NotebookImportAdjustments } from './NotebookImportAdjustments'
@@ -19,6 +20,7 @@ import { scrollGuideHeadingIntoReadingPane } from './lectureGuideNavigation'
 import { NotebookAssetsProvider, NotebookPracticeStimulus, NotebookVisualBlock, NotebookVisualReview, useNotebookPracticeImages } from './NotebookVisuals'
 import { NotebookPortableExports, NotebookUpdateImageFiles } from './NotebookPortableExports'
 import { NotebookIllustration } from './NotebookIllustration'
+import { useNotebookReadingDetail, type NotebookReadingDetail } from './useNotebookReadingDetail'
 import { assertNotebookBackupFits } from '@/lib/academics/notebook/notebookBundle'
 import { visualAssetReferences } from '@/lib/academics/notebook/visualPackage'
 import type { NotebookAssetBinding, VisualNotebookBlock } from '@/lib/academics/notebook/visualTypes'
@@ -95,7 +97,7 @@ function ReaderSources({ blocks, pkg, scope, inlineSources, onInlineSources, sel
     </div>
   </details>
 }
-function BlockView({ block, path, change, pkg, progress, onProgress, reader = false, inlineSources = false, onShowEvidence }: { block: NotebookBlock; path: (string | number)[]; change?: ChangeText; pkg: NotebookPackage; progress?: NotebookProgress; onProgress?: (id: string, response: string, complete: boolean) => void; reader?: boolean; inlineSources?: boolean; onShowEvidence?: (id: string) => void }) {
+function BlockView({ block, path, change, pkg, progress, onProgress, reader = false, inlineSources = false, onShowEvidence, readingDetail = 'full' }: { block: NotebookBlock; path: (string | number)[]; change?: ChangeText; pkg: NotebookPackage; progress?: NotebookProgress; onProgress?: (id: string, response: string, complete: boolean) => void; reader?: boolean; inlineSources?: boolean; onShowEvidence?: (id: string) => void; readingDetail?: NotebookReadingDetail }) {
   const [practiceSources, setPracticeSources] = useState(false)
   const practiceDisplay = block.type === 'practice' ? practicePromptDisplay(block.prompt) : null
   const { missing } = useNotebookPracticeImages(block)
@@ -112,14 +114,15 @@ function BlockView({ block, path, change, pkg, progress, onProgress, reader = fa
   }
   if (reader && !change && !inlineSources && block.type === 'paragraph') {
     const split = splitNotebookAnnotations(block.text, pkg.sources.map(source => source.id))
-    if (!split.body.trim() && [...split.leading, ...split.trailing].length > 0 && [...split.leading, ...split.trailing].every(note => note.kind === 'citation')) return null
+    if (!block.more && !split.body.trim() && [...split.leading, ...split.trailing].length > 0 && [...split.leading, ...split.trailing].every(note => note.kind === 'citation')) return null
   }
   return <div className={`en-block en-block-${block.type}${block.type === 'practice' && !change ? ' en-practice-unit' : ''}`}>
     {(block.type === 'figure' || block.type === 'study-diagram' || (isLearningVisualBlock(block) && block.type !== 'worked-example' && block.type !== 'illustration')) && <NotebookVisualBlock block={block} onChange={change ? changeVisual : undefined} changeText={change ? (relative, value) => change([...path, ...relative], value) : undefined} />}
-    {block.type === 'illustration' && <NotebookIllustration block={block} path={path} change={change} />}
+    {block.type === 'illustration' && <NotebookIllustration key={readingDetail} block={block} path={path} change={change} readingDetail={reader ? readingDetail : undefined} />}
     {block.type === 'paragraph' && text(block.text, 'text', 'Explanation')}
     {block.type === 'gap' && <div className="en-notice"><b>Source gap</b>{text(block.text, 'text', 'Gap')}{text(block.nextStep, 'nextStep', 'Next step')}</div>}
     {(block.type === 'bullets' || block.type === 'steps') && (block.type === 'steps' ? <ol>{block.items.map((item, i) => <li key={i}><ContentText value={item} path={[...path, 'items', i]} label={`Step ${i + 1}`} change={change} /></li>)}</ol> : <ul>{block.items.map((item, i) => <li key={i}><ContentText value={item} path={[...path, 'items', i]} label={`Point ${i + 1}`} change={change} /></li>)}</ul>)}
+    {(block.type === 'paragraph' || block.type === 'bullets') && pkg.version === 4 && (change ? text(block.more ?? '', 'more', 'Additional explanation (leave empty for none)') : block.more && <div className="nbr-additional-detail" hidden={reader && readingDetail === 'condensed'}>{text(block.more, 'more', 'Additional explanation')}</div>)}
     {block.type === 'table' && <div className="en-table-scroll" role="region" aria-label="Notebook table" tabIndex={0}><table><thead><tr>{block.columns.map((column, i) => <th key={i}><ContentText value={column} path={[...path, 'columns', i]} label={`Column ${i + 1}`} change={change} /></th>)}</tr></thead><tbody>{block.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td key={ci}><ContentText value={cell} path={[...path, 'rows', ri, ci]} label={`Row ${ri + 1}, column ${ci + 1}`} change={change} /></td>)}</tr>)}</tbody></table></div>}
     {block.type === 'practice' && (change ? <>{text(block.prompt, 'prompt', 'Practice prompt')}<NotebookPracticeStimulus block={block} />{text(block.answer, 'answer', 'Answer')}{text(block.rationale, 'rationale', 'Explanation')}<EvidenceView evidence={block} pkg={pkg} /></> : <NotebookPracticeCard
       number={pkg.entries[Number(path[1])].sections.flatMap(section => section.blocks).filter(item => item.type === 'practice').findIndex(item => item.id === block.id) + 1}
@@ -134,7 +137,7 @@ function BlockView({ block, path, change, pkg, progress, onProgress, reader = fa
   </div>
 }
 type ReadingMode = NotebookReadingMode
-function ReaderSection({ section, index, entryIndex, mode, reader, headingId, change, pkg, progress, onProgress }: { section: NotebookEntry['sections'][number]; index: number; entryIndex: number; mode: ReadingMode; reader: boolean; headingId: string; change?: ChangeText; pkg: NotebookPackage; progress?: NotebookProgress; onProgress?: (id: string, response: string, complete: boolean) => void }) {
+function ReaderSection({ section, index, entryIndex, mode, reader, headingId, change, pkg, progress, onProgress, readingDetail }: { section: NotebookEntry['sections'][number]; index: number; entryIndex: number; mode: ReadingMode; reader: boolean; readingDetail: NotebookReadingDetail; headingId: string; change?: ChangeText; pkg: NotebookPackage; progress?: NotebookProgress; onProgress?: (id: string, response: string, complete: boolean) => void }) {
   const [inlineSources, setInlineSources] = useState(false)
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null)
   const panel = useRef<HTMLDetailsElement>(null)
@@ -143,7 +146,7 @@ function ReaderSection({ section, index, entryIndex, mode, reader, headingId, ch
   const title = change ? <ContentText value={section.title} path={['entries', entryIndex, 'sections', index, 'title']} label="Section title" change={change} /> : section.title
   return <section aria-label={section.title} className={`en-section${reader ? ' nbr-section' : ''}`} data-purpose={section.purpose} data-sources={inlineSources ? 'on' : 'off'}>
     {reader ? <header className="nbr-section-head">{!blocks.every(block => block.type === 'practice') && <span className="nbr-num" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>}<h2 id={headingId} tabIndex={-1}>{title}</h2></header> : <><p className="en-eyebrow">{section.purpose.replaceAll('-', ' ')}</p><h3>{title}</h3></>}
-    <div className={reader ? 'nbr-blocks' : undefined}>{section.blocks.map((block, bi) => blocks.includes(block) && <BlockView key={block.id} block={block} path={['entries', entryIndex, 'sections', index, 'blocks', bi]} change={change} pkg={pkg} progress={progress} onProgress={onProgress} reader={reader} inlineSources={inlineSources} onShowEvidence={id => { setSelectedBlock(id); if (panel.current) { panel.current.open = true; panel.current.querySelector('summary')?.focus() } }} />)}</div>
+    <div className={reader ? 'nbr-blocks' : undefined}>{section.blocks.map((block, bi) => blocks.includes(block) && <BlockView key={block.id} block={block} path={['entries', entryIndex, 'sections', index, 'blocks', bi]} change={change} pkg={pkg} progress={progress} onProgress={onProgress} reader={reader} readingDetail={readingDetail} inlineSources={inlineSources} onShowEvidence={id => { setSelectedBlock(id); if (panel.current) { panel.current.open = true; panel.current.querySelector('summary')?.focus() } }} />)}</div>
     {reader && blocks.some(block => block.type !== 'practice' && block.type !== 'worked-example') && <ReaderSources blocks={blocks} pkg={pkg} scope="section" inlineSources={inlineSources} onInlineSources={() => setInlineSources(previous => !previous)} selectedBlock={selectedBlock} panelRef={panel} />}
   </section>
 }
@@ -172,6 +175,8 @@ function NotebookObjectives({ entry, entryIndex, headingId, pkg, change }: { ent
 }
 function NotebookPackageContent({ pkg, entryId, change, progress, onProgress, mode = 'all', reader = false }: { pkg: NotebookPackage; entryId?: string; change?: ChangeText; progress?: NotebookProgress; onProgress?: (id: string, response: string, complete: boolean) => void; mode?: ReadingMode; reader?: boolean }) {
   const prefix = useId()
+  const { detail, choose, temporary, available } = useNotebookReadingDetail()
+  const detailControl = reader && !change && (mode === 'study' || mode === 'all') && pkg.entries.some(entry => (!entryId || entry.id === entryId) && entry.sections.some(section => readerBlocks(section.blocks, mode, section.purpose).some(block => (block.type === 'paragraph' || block.type === 'bullets' || block.type === 'illustration') && block.more)))
   const text = (value: string, path: (string | number)[], label: string) => <ContentText value={value} path={path} label={label} change={change} />
   const items = notebookReaderContents(pkg, entryId, mode, prefix)
   const document = <div className={`external-notebook en-document${reader ? ' nbr-doc' : ''}`} data-reader-mode={reader ? mode : undefined}>{!reader && <p className="en-badge">Package class: {pkg.course.code} / {pkg.course.title}{pkg.course.term ? ` / ${pkg.course.term}` : ''}</p>}
@@ -181,7 +186,7 @@ function NotebookPackageContent({ pkg, entryId, change, progress, onProgress, mo
       <details><summary>Request and class preferences</summary>{Object.entries(entry.request).map(([key, value]) => value !== null && <div key={key}><b>{key === 'helpStage' ? 'Help stage' : key === 'assessmentFormat' ? 'Assessment format' : 'Class preferences'}</b>{text(value, ['entries', ei, 'request', key], key)}</div>)}</details></>}
       {reader && (mode === 'all' || mode === 'practice') && entry.objectives.length > 0 && <NotebookObjectives entry={entry} entryIndex={ei} headingId={readerHeadingId(prefix, entry.id, 'objectives')} pkg={pkg} change={change} />}
       {!change && (mode === 'practice' || mode === 'all') && entry.sections.some(section => section.blocks.some(block => block.type === 'practice')) && <p className="np-set-cue">Answer each question in your head first, then reveal.</p>}
-      {entry.sections.map((section, si) => <ReaderSection key={`${section.id}-${mode}`} section={section} index={si} entryIndex={ei} mode={mode} reader={reader} headingId={readerHeadingId(prefix, entry.id, 'section', section.id)} change={change} pkg={pkg} progress={progress} onProgress={onProgress} />)}
+      {entry.sections.map((section, si) => <ReaderSection key={`${section.id}-${mode}`} section={section} index={si} entryIndex={ei} mode={mode} reader={reader} readingDetail={detail} headingId={readerHeadingId(prefix, entry.id, 'section', section.id)} change={change} pkg={pkg} progress={progress} onProgress={onProgress} />)}
       {!reader && (mode === 'all' || mode === 'study') && entry.objectives.length > 0 && <NotebookObjectives entry={entry} entryIndex={ei} pkg={pkg} change={change} />}
       {(!reader || mode === 'coverage' || mode === 'all' || mode === 'study') && entry.limitations.length > 0 && <section className="en-notice"><h3 id={readerHeadingId(prefix, entry.id, 'limits')} tabIndex={-1}>Limits of this entry</h3>{entry.limitations.map((item, i) => <div key={i}>{text(item, ['entries', ei, 'limitations', i], 'Entry limitation')}</div>)}</section>}
       {(mode === 'all' || mode === 'study' || mode === 'coverage') && <section aria-label="Requirement coverage">{reader && entry.requirements.some(r => r.status === 'partial' || r.status === 'missing') && <aside className="nbr-coverage-notice"><p>Some requested material is partly covered or missing.</p><button type="button" onClick={() => { const heading = window.document.getElementById(readerHeadingId(prefix, entry.id, 'coverage')), detail = heading?.closest('details'); if (detail) { detail.open = true; if (heading instanceof HTMLHeadingElement) scrollGuideHeadingIntoReadingPane(heading); detail.querySelector('summary')?.focus() } }}>See coverage and next steps</button></aside>}<details className="nbr-coverage-disclosure" open={mode === 'coverage' ? true : undefined}><summary><h3 id={readerHeadingId(prefix, entry.id, 'coverage')} tabIndex={-1}>What's covered and missing</h3></summary><div className="en-coverage">{(['supported', 'partial', 'missing', 'out-of-scope'] as const).map(status => <span key={status} data-status={status}>{{ supported: 'Covered', partial: 'Partly covered', missing: 'Missing', 'out-of-scope': 'Outside this notebook' }[status]}: {entry.requirements.filter(r => r.status === status).length}</span>)}</div>
@@ -191,12 +196,16 @@ function NotebookPackageContent({ pkg, entryId, change, progress, onProgress, mo
     {(mode === 'all' || mode === 'sources') && <details className="en-sources" open={mode === 'sources' ? true : undefined}><summary>All supplied sources and access limits ({pkg.sources.length})</summary>{pkg.sources.map((s, si) => <section key={s.id}><h3 id={readerHeadingId(prefix, 'sources', 'source', s.id)} tabIndex={-1}>{s.title}</h3><p>{s.role} / {s.access} / {s.used ? 'Used' : 'Not used'}</p>{text(s.inspected, ['sources', si, 'inspected'], 'What was inspected')}{s.limitations.map((item, i) => <div key={i}>{text(item, ['sources', si, 'limitations', i], 'Source limitation')}</div>)}{s.excerpts.map((e, i) => <blockquote key={e.id}><small>{e.location ?? 'Location not supplied'}</small>{text(e.text, ['sources', si, 'excerpts', i, 'text'], 'Supplied excerpt')}</blockquote>)}</section>)}</details>}
     <small className="en-muted">{pkg.instructionsVersion}. Externally created; structural validation does not verify teaching accuracy or source completeness.</small>
   </div>
-  return reader ? <div className="nbr-layout"><aside className="nbr-aside"><ReadingContents key={mode} items={items} label="Notebook contents" onNavigate={id => { const item = items.find(item => item.id === id); const heading = item ? window.document.getElementById(item.targetId) : null; if (heading instanceof HTMLHeadingElement) { for (let parent = heading.parentElement; parent; parent = parent.parentElement) if (parent instanceof HTMLDetailsElement) parent.open = true; scrollGuideHeadingIntoReadingPane(heading) } }} /></aside>{document}</div> : document
+  return reader ? <>{detailControl && <section className="nbr-reading-detail" aria-label="Guide reading detail"><div><strong>Reading detail</strong><p id={`${prefix}-detail-status`} role="status">{detail === 'full' ? 'All explanations are visible.' : 'Key ideas only. Switch to Full detail for every explanation.'}{temporary && ' This choice could not be remembered after closing this session.'}{!available && ' Browser preferences are unavailable.'}</p></div><div className="nbr-detail-options" role="group" aria-label="Reading detail">{(['condensed', 'full'] as const).map(value => <Button key={value} variant="ghost" disabled={!available} aria-pressed={detail === value} aria-describedby={`${prefix}-detail-status`} onClick={() => choose(value)}>{value === 'full' ? 'Full detail' : 'Condensed'}</Button>)}</div></section>}<div className="nbr-layout"><aside className="nbr-aside"><ReadingContents key={mode} items={items} label="Notebook contents" onNavigate={id => { const item = items.find(item => item.id === id); const heading = item ? window.document.getElementById(item.targetId) : null; if (heading instanceof HTMLHeadingElement) { for (let parent = heading.parentElement; parent; parent = parent.parentElement) if (parent instanceof HTMLDetailsElement) parent.open = true; scrollGuideHeadingIntoReadingPane(heading) } }} /></aside>{document}</div></> : document
 }
 export function NotebookPackageView(props: Parameters<typeof NotebookPackageContent>[0] & { assetBindings?: readonly NotebookAssetBinding[] }) {
   return <NotebookAssetsProvider pkg={props.pkg} bindings={props.assetBindings}><NotebookPackageContent {...props} />{(!props.mode || ['all', 'coverage', 'sources'].includes(props.mode)) && <NotebookVisualReview pkg={props.pkg} />}</NotebookAssetsProvider>
 }
-export function ExternalNotebookView({ lecture, courseCode, onNavigateEntry }: { lecture: LectureRecord; courseCode: string; onNavigateEntry?: (id: string) => void }) {
+type ExternalNotebookViewProps = { lecture: LectureRecord; courseCode: string; onNavigateEntry?: (id: string) => void }
+export function ExternalNotebookView(props: ExternalNotebookViewProps) {
+  return <NotebookReadGuard lecture={props.lecture} downloadRecovery={text => downloadNotebookText('notebook-recovery.json', text)}><ValidatedExternalNotebookView {...props} /></NotebookReadGuard>
+}
+function ValidatedExternalNotebookView({ lecture, courseCode, onNavigateEntry }: ExternalNotebookViewProps) {
   const n = lecture.importedNotebook!
   const [draft, setDraft] = useState<NotebookPackage | null>(null)
   const [notes, setNotes] = useState(n.notes)
