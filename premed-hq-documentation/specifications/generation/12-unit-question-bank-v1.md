@@ -51,3 +51,15 @@ copy web images or facts: all substantive question content remains closed to the
 student's selected course evidence. External microscopy or photographic assets
 still require a separate retrieval, rights, attribution, and factual-verification
 gate before they may be displayed.
+
+## Mock-exam fidelity in the external Assessment workflow
+
+For external Assessment mocks, the course exam profile takes precedence over the native bank's generic difficulty, visual and prior-unit defaults. This does not change the native structured-bank schema or its validators. Apply `EC-EXAM-FIDELITY` from workflow 20:
+
+- **Item length:** Match the real exam's mix of item lengths. When its profile includes short single-concept items, use a similar share of short trap items: a stem of three lines or fewer built on one specific misconception. Do not impose a universal proportion.
+- **Representations:** Match the profile's representation types and reading tasks. Use compact text maps, labeled strand ends, probe regions, lane tables or pedigree layouts when appropriate; preserve the task of reading the representation rather than replacing it with a prose explanation. Supply every label and value needed.
+- **Objective coverage:** Cover every objective in the selected exam scope, including small or cross-cutting objectives. Map each objective to item numbers; disclose unsupported or missing objectives and label the mock partial instead of silently omitting them or inventing source coverage.
+- **Arithmetic:** Limit arithmetic to the kinds of calculation used in the course's own assessments; do not add multi-step calculation merely to make an item harder.
+- **Options:** Match the real exam's variation in option count (for example, three to five choices when that is its pattern). Do not force an even spread of answer letters.
+- **Select-all difficulty:** Match the real exam's select-all difficulty. Use at most one "consistent with ALL the data" item per mock unless the profile shows more; do not make every select-all a harder integration puzzle.
+- **Scope across units:** Check the syllabus's cumulative policy. For a cumulative course, keep a unit mock on its unit while about one in four items uses an earlier-unit skill; a final mock covers all units. For a non-cumulative course, keep each mock within that exam's chapters; semester themes belong on the final only. Honor explicit source exclusions, and disclose any missing scope or unsupported profile assumption.
