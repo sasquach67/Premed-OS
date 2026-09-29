@@ -42,6 +42,11 @@ function NotebookSortableRow({ lecture, children }: { lecture: LectureRecord; ch
   return <div ref={setNodeRef} data-notebook-row={lecture.id} className="notebook-sortable-row"
     style={{ transform: CSS.Transform.toString(transform), transition, position: 'relative', zIndex: isDragging ? 20 : undefined }}>
     <Button ref={setActivatorNodeRef} variant="ghost" size="icon" type="button" className="notebook-drag-handle"
+      // Finish the previous control's blur before dnd-kit starts its sensor.
+      // Motion's keyboard press cleanup emits pointercancel on that blur.
+      onPointerDownCapture={event => {
+        if (event.isPrimary && event.button === 0) event.currentTarget.focus({ preventScroll: true })
+      }}
       {...attributes} {...listeners} aria-label={`Reorder ${lecture.title}`}><GripVertical aria-hidden="true" className="size-4" /></Button>
     <div className="min-w-0">{children}</div>
   </div>

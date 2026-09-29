@@ -157,6 +157,39 @@ describe('Notebook list ordering and metadata controls', () => {
     expect(rowIds().slice(0, 2)).toEqual(['Earlier', 'Later'])
   })
 
+
+  it('starts a pointer drag after the previously focused control cancels its keyboard press on blur', async () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const row = this.closest('[data-notebook-row]')
+      const index = row ? rowIds().indexOf(row.getAttribute('data-notebook-row')) : 0
+      return { x: 0, y: index * 80, left: 0, top: index * 80, right: 400, bottom: index * 80 + 70, width: 400, height: 70, toJSON() {} }
+    })
+    const pointer = (type: string, y: number) => new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: 20, clientY: y })
+    const previous = button('Actions for Earlier')
+    const handle = button('Reorder Earlier')
+    const cancelKeyboardPress = vi.fn(() => previous.dispatchEvent(pointer('pointercancel', 20)))
+    previous.focus()
+    // Reproduce Motion's retained keyboard-press cleanup without depending on
+    // its animation timing: blur dispatches pointercancel through the document.
+    previous.addEventListener('blur', cancelKeyboardPress, { once: true })
+    await act(async () => {
+      handle.dispatchEvent(pointer('pointerdown', 20))
+      // jsdom does not perform the browser's pointerdown default focus action.
+      // Without capture-phase focus, this blur occurs after sensor activation
+      // and its bubbling pointercancel cancels that newly created sensor.
+      handle.focus()
+    })
+    expect(cancelKeyboardPress).toHaveBeenCalledOnce()
+    expect(document.activeElement).toBe(handle)
+    await act(async () => document.dispatchEvent(pointer('pointermove', 30)))
+    expect(handle.getAttribute('aria-pressed')).toBe('true')
+    await act(async () => document.dispatchEvent(pointer('pointermove', 100)))
+    await act(async () => document.dispatchEvent(pointer('pointerup', 100)))
+    expect(rowIds()).toEqual(['Later', 'Earlier', 'Imported', 'Undated'])
+    expect(container.querySelector('.lecture-journal [role="status"]')?.textContent).toContain('Earlier moved to position 2')
+    expect(container.querySelector('.lecture-journal-item[data-state="open"]')).toBeNull()
+  })
+
   it('reorders through the real dnd-kit keyboard sensor without opening the entry', async () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
       const row = this.closest('[data-notebook-row]')

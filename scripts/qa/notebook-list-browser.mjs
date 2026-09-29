@@ -1,20 +1,38 @@
 // Run against `npm run dev -- --host 127.0.0.1 --port 4179`.
 // Disposable Chrome profile and synthetic, signed-out data only.
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { spawn } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-const origin = 'http://127.0.0.1:4179'
-const evidence = resolve('premed-hq-documentation/implementation/evidence/notebook-list')
+const seedOrigin = 'http://127.0.0.1:4179'
+const origin = process.env.NOTEBOOK_QA_ORIGIN ?? seedOrigin
+const live = origin === 'https://premedos.app'
+assert.ok(origin === seedOrigin || live, 'Use the local app or the approved production origin')
+const expectedSha = process.env.NOTEBOOK_QA_EXPECTED_SHA
+let releaseFiles
+if (live) {
+  assert.match(expectedSha ?? '', /^[a-f0-9]{40}$/)
+  const manifest = await fetch(`${origin}/release-assets.json?verify=${expectedSha}`, {cache:'no-store'}).then(r => r.json())
+  assert.equal(manifest.releases[0].id, expectedSha, 'Live release must match the authorized commit')
+  releaseFiles = manifest.releases[0].files
+}
+const evidence = resolve('premed-hq-documentation/implementation/evidence/notebook-list', live ? 'live' : '.')
 const profile = mkdtempSync(resolve(tmpdir(), 'notebook-list-chrome-'))
 mkdirSync(evidence, { recursive: true })
-const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--remote-debugging-port=9339', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-sync', 'about:blank'], { stdio: 'ignore' })
+const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-sync', 'about:blank'], { stdio: 'ignore' })
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 let ws
 try {
   let targets
-  for (let i = 0; i < 80 && !targets; i++) { await sleep(250); targets = await fetch('http://127.0.0.1:9339/json').then(r => r.json()).catch(() => undefined) }
+  for (let i = 0; i < 80 && !targets; i++) {
+    await sleep(250)
+    try {
+      const port = readFileSync(resolve(profile, 'DevToolsActivePort'), 'utf8').split('\n')[0]
+      targets = await fetch(`http://127.0.0.1:${port}/json`).then(r => r.json())
+    } catch { /* Chrome has not published this profile's endpoint yet. */ }
+  }
   const target = targets?.find(item => item.type === 'page')
   assert.ok(target)
   ws = new WebSocket(target.webSocketDebuggerUrl)
@@ -36,7 +54,7 @@ try {
   await send('Page.enable')
   await send('Runtime.enable')
   await send('Page.addScriptToEvaluateOnNewDocument', { source: "localStorage.setItem('premed_hq_public',JSON.stringify({entered:true}));localStorage.setItem('hq:demo-mode','off');localStorage.setItem('hq:workspace-owner','guest');" })
-  await send('Page.navigate', { url: origin })
+  await send('Page.navigate', { url: seedOrigin })
   await waitFor("document.querySelector('#root')?.firstElementChild")
   await sleep(1500)
   await evaluate(`(async () => {
@@ -51,6 +69,12 @@ try {
     useStore.getState().replaceAll(data)
   })()`)
   await sleep(1000)
+  if (live) {
+    const fixture = await evaluate("(async()=>{const {snapshotData,CURRENT_STORE_VERSION}=await import('/src/store/store.ts');return JSON.stringify({state:snapshotData(),version:CURRENT_STORE_VERSION})})()")
+    await send('Page.addScriptToEvaluateOnNewDocument', {source:`if(location.origin === ${JSON.stringify(origin)} && !localStorage.getItem('hq:app-data:guest')) localStorage.setItem('hq:app-data:guest', ${JSON.stringify(fixture)});`})
+    await send('Page.navigate', {url:`${origin}/#/academics/classes/synthetic-course`})
+    await waitFor("document.querySelectorAll('[data-notebook-row]').length===3")
+  }
   await evaluate("location.hash = '/academics/classes/synthetic-course'")
   await waitFor("document.querySelectorAll('[data-notebook-row]').length===3")
   async function editDate(title, date) {
@@ -70,7 +94,8 @@ try {
   assert.deepEqual(await order(), ['first','second','undated'])
   const results = []
   for (const theme of ['light','dark']) {
-    await evaluate(`(async()=>{const {useStore}=await import('/src/store/store.ts');useStore.getState().update(d=>{d.settings.theme='${theme}'})})()`)
+    if (!live) await evaluate(`(async()=>{const {useStore}=await import('/src/store/store.ts');useStore.getState().update(d=>{d.settings.theme='${theme}'})})()`)
+    else await evaluate(`(() => { const dark = document.documentElement.classList.contains('dark'); if (dark !== ${theme === 'dark'}) document.querySelector('button[aria-label=\"Switch to ${theme} appearance\"]').click() })()`)
     for (const width of [1280,375]) {
       await send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: false })
       await sleep(400)
@@ -96,10 +121,13 @@ try {
   await sleep(800)
   await editDate('Research methods', '2026-09-25')
   assert.deepEqual(await order(), ['first','second','undated'])
-  await sleep(300)
+  await evaluate("document.querySelector('.notebook-drag-handle').scrollIntoView({block:'center',behavior:'instant'})")
+  await sleep(400)
   // Real pointer drag through Chrome's input channel.
   const boxes = await evaluate("Array.from(document.querySelectorAll('.notebook-drag-handle')).map(e=>{const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})")
   const start = boxes[0], end = boxes[1]
+  await send('Input.dispatchMouseEvent', {type:'mouseMoved',x:start.x,y:start.y})
+  await sleep(50)
   await send('Input.dispatchMouseEvent', {type:'mousePressed',x:start.x,y:start.y,button:'left',clickCount:1})
   for(let step=1;step<=12;step++) { await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:start.x,y:start.y+(end.y-start.y)*step/12,button:'left',buttons:1}); await sleep(30) }
   await send('Input.dispatchMouseEvent', {type:'mouseReleased',x:end.x,y:end.y,button:'left',clickCount:1})
@@ -119,10 +147,41 @@ try {
   await send('Emulation.setEmulatedMedia', { features: [{name:'prefers-reduced-motion',value:'reduce'}] })
   assert.equal(await evaluate("getComputedStyle(document.querySelector('[data-notebook-row]')).transitionDuration"), '0s')
   // Empty state on the same isolated synthetic workspace.
-  await evaluate("(async()=>{const {useStore}=await import('/src/store/store.ts');useStore.getState().update(d=>{d.academics.classCenter.lectures=[]})})()")
+  if (live) {
+    while ((await order()).length) {
+      const title = await evaluate("document.querySelector('.notebook-drag-handle').getAttribute('aria-label').slice('Reorder '.length)")
+      await evaluate(`document.querySelector('button[aria-label="Actions for ${title}"]').focus()`)
+      await send('Input.dispatchKeyEvent', {type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13})
+      await send('Input.dispatchKeyEvent', {type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13})
+      await waitFor("Array.from(document.querySelectorAll('[role=menuitem]')).some(b=>b.textContent==='Delete lecture')")
+      await evaluate("Array.from(document.querySelectorAll('[role=menuitem]')).find(b=>b.textContent==='Delete lecture').click()")
+      await waitFor("document.querySelector('[role=alertdialog]')")
+      const count = (await order()).length
+      await evaluate("Array.from(document.querySelectorAll('[role=alertdialog] button')).find(b=>b.textContent==='Delete lecture').click()")
+      await waitFor(`document.querySelectorAll('[data-notebook-row]').length === ${count - 1}`)
+    }
+  } else {
+    await evaluate("(async()=>{const {useStore}=await import('/src/store/store.ts');useStore.getState().update(d=>{d.academics.classCenter.lectures=[]})})()")
+  }
   await waitFor("document.querySelector('.lecture-journal-empty')")
   assert.equal(await evaluate("document.querySelectorAll('[data-notebook-row]').length"), 0)
-  writeFileSync(resolve(evidence,'browser-results.json'), JSON.stringify({checkedAt:new Date().toISOString(),mode:'signed-out, synthetic, disposable Chrome profile',results,pointerDrag:true,metadataEdit:true,persistedReload:true,reset:true,reducedMotion:true,emptyState:true}, null, 2)+'\n')
+  const verifiedBundles = []
+  if (live) {
+    const loaded = await evaluate("performance.getEntriesByType('resource').map(r=>r.name).filter(url=>url.startsWith(location.origin+'/assets/') && /\\.(js|css)(\\?|$)/.test(url))")
+    for (const url of [...new Set(loaded)]) {
+      const path = new URL(url).pathname.slice(1)
+      const expected = releaseFiles.find(file => file.path === path)
+      assert.ok(expected, `Loaded bundle must belong to exact release: ${path}`)
+      const response = await fetch(url, {cache:'no-store'})
+      assert.ok(response.ok)
+      const bytes = Buffer.from(await response.arrayBuffer())
+      assert.equal(createHash('sha256').update(bytes).digest('hex'), expected.sha256)
+      assert.equal(bytes.length, expected.size)
+      verifiedBundles.push(path)
+    }
+    assert.ok(verifiedBundles.length > 0)
+  }
+  writeFileSync(resolve(evidence,'browser-results.json'), JSON.stringify({checkedAt:new Date().toISOString(),origin,verifiedBundles,releaseSha:live ? expectedSha : undefined,mode:'signed-out, synthetic, disposable Chrome profile',results,pointerDrag:true,metadataEdit:true,persistedReload:true,reset:true,reducedMotion:true,emptyState:true}, null, 2)+'\n')
   console.log('PASS: both themes at 1280/375px, touch targets, pointer drag, persistence reload, reset, reduced motion, empty state')
 } finally {
   ws?.close(); chrome.kill('SIGTERM'); await sleep(500)
