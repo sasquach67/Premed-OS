@@ -8,13 +8,35 @@ it.each(['new', 'update'] as const)('includes the Assessment exam profile and pr
   expect(assessmentRules).toContain('These rules apply only to the **Assessment** goal, in new and update mode.')
   expect(assessmentRules).toContain('`EC-EXAM-PROFILE`')
   expect(assessmentRules).toContain('`EC-MOCK-EXAM`')
+  expect(assessmentRules).toContain('`EC-EXAM-FIDELITY`')
   expect(assessmentRules).toContain("When practice quizzes and real exams differ on format, follow the real exam's format mix; use practice quizzes mainly for topics, figure families and traps.")
   expect(assessmentRules).toContain('Never copy, lightly reword or renumber an exam item.')
   expect(assessmentRules).toContain('Without real exams, use the course blueprint and say so.')
   expect(assessmentRules).toContain('Unless the request already says, ask once, in the first reply')
   expect(assessmentRules).toContain('If the student doesn\'t choose, use (a).')
-  expect(prompt).toContain('Prompt build: notebook-instructions-beta-24.')
+  expect(prompt).toContain('Prompt build: notebook-instructions-beta-25.')
 })
+it.each(['new', 'update'] as const)('preserves mock fidelity and cumulative scope boundaries in %s Assessment prompts', mode => {
+  const prompt = composeNotebookPrompt('assessment', values, mode)
+  const rules = prompt.split('`EC-EXAM-FIDELITY`:')[1]?.split('`EC-MOCK-EXAM`:')[0]
+  for (const clause of [
+    'three lines or fewer built on one specific misconception',
+    'Do not impose a universal proportion',
+    'preserve the task of reading the representation',
+    'Cover every objective in the selected exam scope',
+    'label the mock partial',
+    'Limit arithmetic to the kinds of calculation used',
+    'Do not force an even spread of answer letters',
+    'at most one "consistent with ALL the data" item',
+    'about one in four items uses an earlier-unit skill',
+    'a final mock covers all units',
+    "keep each mock within that exam's chapters",
+    'semester themes belong on the final only',
+    'Honor explicit source exclusions',
+  ]) expect(rules, clause).toContain(clause)
+  expect(rules).not.toMatch(/BIOL|PSYC|Lesson 2|about a third/)
+})
+
 it.each(['review', 'assessment', 'assignment'] as const)('composes canonical new/update %s mode before inserting inputs once', goal => {
   const original = composeNotebookPrompt(goal, values)
   const update = composeNotebookPrompt(goal, values, 'update')
