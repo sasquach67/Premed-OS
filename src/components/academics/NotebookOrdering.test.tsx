@@ -38,6 +38,9 @@ describe('Notebook list ordering and metadata controls', () => {
   async function edit(title: string, date: string, newTitle?: string) {
     await menu(title)
     await click(menuItem('Edit lecture'))
+    // Radix restores menu focus on a zero-delay task. Finish that transition
+    // before opening the nested date popover, as a user's next event would.
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
     if (newTitle) await act(async () => {
       const input = document.querySelector<HTMLInputElement>('input[aria-label="Lecture title"]')!
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, newTitle)
@@ -66,6 +69,7 @@ describe('Notebook list ordering and metadata controls', () => {
 
   it('moves via menus, disables boundary actions, announces, persists, and resets to oldest class date', async () => {
     expect(rowIds()).toEqual(['Earlier', 'Later', 'Imported', 'Undated'])
+    expect([...container.querySelectorAll('button')].some(item => item.textContent === 'Sort by class date')).toBe(false)
     const before = structuredClone(useStore.getState().academics.classCenter.lectures)
     await menu('Earlier')
     expect(menuItem('Move up').getAttribute('aria-disabled')).toBe('true')
@@ -73,6 +77,7 @@ describe('Notebook list ordering and metadata controls', () => {
     expect(rowIds()).toEqual(['Later', 'Earlier', 'Imported', 'Undated'])
     expect(container.querySelector('.lecture-journal [role="status"]')?.textContent).toBe('Earlier moved to position 2 of 4.')
     expect(container.textContent).toContain('Your order')
+    expect([...container.querySelectorAll('button')].some(item => item.textContent === 'Sort by class date')).toBe(true)
     await menu('Undated')
     expect(menuItem('Move down').getAttribute('aria-disabled')).toBe('true')
     await click(menuItem('Move up'))
@@ -87,6 +92,7 @@ describe('Notebook list ordering and metadata controls', () => {
     await click([...container.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === 'Sort by class date')!)
     expect(rowIds()).toEqual(['Earlier', 'Later', 'Imported', 'Undated'])
     expect(container.querySelector('.lecture-journal [role="status"]')?.textContent).toContain('oldest first')
+    expect([...container.querySelectorAll('button')].some(item => item.textContent === 'Sort by class date')).toBe(false)
     for (const original of before) {
       const current = useStore.getState().academics.classCenter.lectures.find(item => item.id === original.id)!
       expect(current.notebookGeneratedRequest).toBe(original.notebookGeneratedRequest)

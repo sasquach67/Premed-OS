@@ -53,6 +53,19 @@ try {
   await sleep(1000)
   await evaluate("location.hash = '/academics/classes/synthetic-course'")
   await waitFor("document.querySelectorAll('[data-notebook-row]').length===3")
+  async function editDate(title, date) {
+    await evaluate(`document.querySelector('button[aria-label="Actions for ${title}"]').focus()`)
+    await send('Input.dispatchKeyEvent', {type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13})
+    await send('Input.dispatchKeyEvent', {type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13})
+    await waitFor("Array.from(document.querySelectorAll('[role=menuitem]')).some(b=>b.textContent==='Edit lecture')")
+    await evaluate("Array.from(document.querySelectorAll('[role=menuitem]')).find(b=>b.textContent==='Edit lecture').click()")
+    await waitFor("document.querySelector('input[aria-label=\"Lecture title\"]')")
+    await evaluate("document.querySelector('button[aria-label=\"Lecture date\"]').click()")
+    await waitFor(`document.querySelector('button[data-date="${date}"]')`)
+    await evaluate(`document.querySelector('button[data-date="${date}"]').click()`)
+    await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Save changes').click()")
+    await waitFor("!document.querySelector('input[aria-label=\"Lecture title\"]')")
+  }
   const order = () => evaluate("Array.from(document.querySelectorAll('[data-notebook-row]')).map(e=>e.dataset.notebookRow)")
   assert.deepEqual(await order(), ['first','second','undated'])
   const results = []
@@ -65,13 +78,13 @@ try {
       const measurements = await evaluate(`(() => {
         const row=document.querySelector('[data-notebook-row]'), handle=row.querySelector('.notebook-drag-handle'), menu=row.querySelector('[aria-haspopup="menu"]'), list=document.querySelector('.lecture-journal')
         const computed=getComputedStyle(list), root=getComputedStyle(document.documentElement), reset=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Sort by class date')
-        return {theme:document.documentElement.classList.contains('dark')?'dark':'light',width:innerWidth,scrollWidth:document.documentElement.scrollWidth,handleWidth:handle.getBoundingClientRect().width,handleHeight:handle.getBoundingClientRect().height,menuWidth:menu.getBoundingClientRect().width,menuHeight:menu.getBoundingClientRect().height,resetHeight:reset.getBoundingClientRect().height,background:computed.backgroundColor,cardToken:root.getPropertyValue('--card').trim(),font:getComputedStyle(row.querySelector('b')).fontFamily,added:document.querySelector('[data-notebook-row="undated"] time').textContent}
+        return {theme:document.documentElement.classList.contains('dark')?'dark':'light',width:innerWidth,scrollWidth:document.documentElement.scrollWidth,handleWidth:handle.getBoundingClientRect().width,handleHeight:handle.getBoundingClientRect().height,menuWidth:menu.getBoundingClientRect().width,menuHeight:menu.getBoundingClientRect().height,resetVisible:Boolean(reset),background:computed.backgroundColor,cardToken:root.getPropertyValue('--card').trim(),font:getComputedStyle(row.querySelector('b')).fontFamily,added:document.querySelector('[data-notebook-row="undated"] time').textContent}
       })()`)
       assert.equal(measurements.theme, theme)
       assert.ok(measurements.scrollWidth <= width, JSON.stringify(measurements))
       assert.ok(measurements.handleWidth >= 44 && measurements.handleHeight >= 44)
       assert.ok(measurements.menuWidth >= 44 && measurements.menuHeight >= 44, JSON.stringify(measurements))
-      assert.ok(measurements.resetHeight >= 44)
+      assert.equal(measurements.resetVisible, false)
       assert.match(measurements.added, /^Added Sep 28/)
       results.push(measurements)
       const shot = await send('Page.captureScreenshot', { format: 'png' })
@@ -81,6 +94,9 @@ try {
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false })
   await evaluate("document.querySelector('.lecture-journal').scrollIntoView({block:'center'})")
   await sleep(800)
+  await editDate('Research methods', '2026-09-25')
+  assert.deepEqual(await order(), ['first','second','undated'])
+  await sleep(300)
   // Real pointer drag through Chrome's input channel.
   const boxes = await evaluate("Array.from(document.querySelectorAll('.notebook-drag-handle')).map(e=>{const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})")
   const start = boxes[0], end = boxes[1]
@@ -89,6 +105,9 @@ try {
   await send('Input.dispatchMouseEvent', {type:'mouseReleased',x:end.x,y:end.y,button:'left',clickCount:1})
   await sleep(400)
   assert.deepEqual(await order(), ['second','first','undated'], await evaluate("location.href + document.body.innerText.slice(0,1000)"))
+  assert.ok(await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Sort by class date').getBoundingClientRect().height >= 44"))
+  await editDate('Research methods', '2026-09-02')
+  assert.deepEqual(await order(), ['second','first','undated'])
   await evaluate('window.__notebookBeforeReload = true')
   await send('Page.reload')
   await waitFor("window.__notebookBeforeReload !== true && document.querySelectorAll('[data-notebook-row]').length===3")
@@ -96,13 +115,14 @@ try {
   await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Sort by class date').click()")
   await sleep(300)
   assert.deepEqual(await order(), ['first','second','undated'])
+  assert.equal(await evaluate("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Sort by class date')"), false)
   await send('Emulation.setEmulatedMedia', { features: [{name:'prefers-reduced-motion',value:'reduce'}] })
   assert.equal(await evaluate("getComputedStyle(document.querySelector('[data-notebook-row]')).transitionDuration"), '0s')
   // Empty state on the same isolated synthetic workspace.
   await evaluate("(async()=>{const {useStore}=await import('/src/store/store.ts');useStore.getState().update(d=>{d.academics.classCenter.lectures=[]})})()")
   await waitFor("document.querySelector('.lecture-journal-empty')")
   assert.equal(await evaluate("document.querySelectorAll('[data-notebook-row]').length"), 0)
-  writeFileSync(resolve(evidence,'browser-results.json'), JSON.stringify({checkedAt:new Date().toISOString(),mode:'signed-out, synthetic, disposable Chrome profile',results,pointerDrag:true,persistedReload:true,reset:true,reducedMotion:true,emptyState:true}, null, 2)+'\n')
+  writeFileSync(resolve(evidence,'browser-results.json'), JSON.stringify({checkedAt:new Date().toISOString(),mode:'signed-out, synthetic, disposable Chrome profile',results,pointerDrag:true,metadataEdit:true,persistedReload:true,reset:true,reducedMotion:true,emptyState:true}, null, 2)+'\n')
   console.log('PASS: both themes at 1280/375px, touch targets, pointer drag, persistence reload, reset, reduced motion, empty state')
 } finally {
   ws?.close(); chrome.kill('SIGTERM'); await sleep(500)

@@ -1,6 +1,6 @@
 # Class notebook dates and ordering
 
-Build receipt for Claude Planning review. Release is held for that review.
+Build receipt and deployment handoff. Claude Planning approved original implementation `164b82e`; release is held for Andy's notebook-list-specific security-header decision.
 
 ## Scope and decisions
 
@@ -8,7 +8,7 @@ Source: `~/Documents/Premed OS Academics Audit/2026-09-27_114133/codex-prompt-no
 
 The class notebook defaults to student-entered class date, oldest first. Entries without a valid class date appear last, ordered by when they were added. Rows use the class date for both the stamp and label; undated rows show a secondary “Added Sep 28” label. Import edits never become class dates or change added dates. Equal dates break ties by added time, then stable ID.
 
-Dragging the GripVertical handle or choosing Move up / Move down sets a class's manual order. “Sort by class date” clears it. Editing a date reorders default-mode lists while preserving manual order. New entries append after explicitly ordered entries and sort among themselves by the default rules. Menus remain reachable for imported and native entries, with keyboard alternatives, disabled boundary moves, and live announcements.
+Dragging the GripVertical handle or choosing Move up / Move down sets a class's manual order. “Sort by class date” appears only in manual mode and clears it. Editing a date reorders default-mode lists while preserving manual order. New entries append after explicitly ordered entries and sort among themselves by the default rules. Menus remain reachable for imported and native entries, with keyboard alternatives, disabled boundary moves, and live announcements.
 
 The existing `LectureRecord.order` number carries explicit order as contiguous negative ranks (`-N` through `-1`). Existing nonnegative ranks retain the new default date ordering. Reset writes nonnegative ranks. No new persisted field, migration, store version, cloud schema, dependency, import behavior, or account access is involved. Store remains v52 / cloud schema 2, leaving T4-b's v53 / schema 3 reservation untouched. Deleting the final negative-ranked entry naturally returns any remaining new entries to their existing default date order; an empty class starts in date mode.
 
@@ -35,8 +35,25 @@ Repeat browser check: start `npm run dev -- --host 127.0.0.1 --port 4179`, then 
 - `git diff --check`: passed.
 - Six dedicated UI tests exercise real keyboard drag, menu moves/boundaries/announcements, reset and rehydration, imported editing in both ordering modes, Added labels, legacy generated title precedence, and explicit lesson identity in reader/switcher. Shared helper tests cover dated/undated/ties, scoped manual mode, appending, reset, codec and hydration round trips.
 - Headless Chrome CDP: pointer drag and reload, reset, both themes at 1280px and 375px, zero horizontal page overflow, 44px controls, reduced-motion transition duration `0s`, and empty state passed. `browser-results.json` records measurements; four screenshots show the final list.
-- Independent code review found and verified fixes for conflicting reader numbers and hidden student renames. No remaining material gap was reported in that bounded review. This does not substitute for Claude Planning's release review.
+- Independent code review found and verified fixes for conflicting reader numbers and hidden student renames. No remaining material gap was reported in that bounded review. Claude Planning subsequently approved `164b82e`, including negative-rank behavior and both-theme/mobile screenshots.
 
-## Release boundary
+## Planning review and pre-release refinement
 
-Not merged or deployed. Send the final revision and evidence to Planning task `01a07de1-ad82-7df0-aede-00af15f1b673` for Claude review. After approval, integrate current main, complete release checks, and report the live revision. Andy's post-release check is to drag an entry and set a class date.
+Claude Planning approved `164b82e` with no blockers, including negative-rank manual mode and first-import timestamps. The optional refinement is implemented: hide “Sort by class date” in date mode and show it only after a manual move. Focused coverage checks absent → present → absent across move/reset, and the Chrome harness checks the same visibility plus real date edits before and after dragging. Screenshots and measurements have been refreshed.
+
+One component-test timing issue was isolated to Radix's deferred menu focus restoration. The edit helper now waits one event-loop task before opening its nested date popover. No production interaction change was necessary; Chrome date edits passed, and the focused 11-test suite passed three consecutive runs after the helper correction.
+
+Fetched and integrated `origin/main` again after approval; it remains `26dfc90`, already an ancestor of this branch. No merge/rebase conflict or version drift. Store v52/cloud schema 2 remain unchanged; T4-b's unmerged version reservation is untouched.
+
+## Required release notes
+
+- Named notebook titles now take precedence over AI-generated titles so your title edits appear in the list and reader.
+- After dragging entries into your own order, newly added entries appear at the bottom until you choose “Sort by class date.”
+
+## Release boundary and security-header decision
+
+Not merged, pushed, or deployed. Planning has asked Andy the explicit notebook-list-only header question; the answer is pending. Do not reuse an S1, S2, Exam A, or other release's waiver.
+
+The unchanged `npm run verify:production-security` check still fails on five missing headers: `content-security-policy`, `strict-transport-security`, `referrer-policy`, `permissions-policy`, and `x-content-type-options`. The current result is saved in `implementation/evidence/notebook-list/production-security.txt`. This is a failed gate, not a passed check or implied waiver. The required decision is either a waiver for this notebook-list release only or a hold until hosting headers are fixed; keep that question centralized in Planning.
+
+Send final revision/checks to Planning task `01a07de1-ad82-7df0-aede-00af15f1b673` for the deployment handoff. Before any release, obtain its recorded header answer and recheck current main. After authorized deployment, report the live revision and ask Andy to drag an entry and set a class date.

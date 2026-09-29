@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-09-29T14:08:45.495Z",
+  "checkedAt": "2026-09-29T14:15:05.022Z",
   "mode": "signed-out, synthetic, disposable Chrome profile",
   "results": [
     {
@@ -10,7 +10,7 @@
       "handleHeight": 44,
       "menuWidth": 44,
       "menuHeight": 44,
-      "resetHeight": 44,
+      "resetVisible": false,
       "background": "rgb(255, 250, 240)",
       "cardToken": "#fffaf0",
       "font": "Nunito, system-ui, -apple-system, sans-serif",
@@ -24,7 +24,7 @@
       "handleHeight": 44,
       "menuWidth": 44,
       "menuHeight": 44,
-      "resetHeight": 44,
+      "resetVisible": false,
       "background": "rgb(255, 250, 240)",
       "cardToken": "#fffaf0",
       "font": "Nunito, system-ui, -apple-system, sans-serif",
@@ -38,7 +38,7 @@
       "handleHeight": 44,
       "menuWidth": 44,
       "menuHeight": 44,
-      "resetHeight": 44,
+      "resetVisible": false,
       "background": "rgb(43, 39, 34)",
       "cardToken": "#2b2722",
       "font": "Nunito, system-ui, -apple-system, sans-serif",
@@ -52,7 +52,7 @@
       "handleHeight": 44,
       "menuWidth": 44,
       "menuHeight": 44,
-      "resetHeight": 44,
+      "resetVisible": false,
       "background": "rgb(43, 39, 34)",
       "cardToken": "#2b2722",
       "font": "Nunito, system-ui, -apple-system, sans-serif",
@@ -60,6 +60,7 @@
     }
   ],
   "pointerDrag": true,
+  "metadataEdit": true,
   "persistedReload": true,
   "reset": true,
   "reducedMotion": true,

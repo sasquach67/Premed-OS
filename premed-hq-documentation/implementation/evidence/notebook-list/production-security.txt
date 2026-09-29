@@ -1,0 +1,10 @@
+
+> premed-os@0.0.0 verify:production-security
+> node scripts/release/verify-production-security.mjs
+
+Production security verification failed for https://premedos.app/:
+- content-security-policy is missing
+- strict-transport-security is missing
+- referrer-policy is missing
+- permissions-policy is missing
+- x-content-type-options is missing

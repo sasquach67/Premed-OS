@@ -342,7 +342,7 @@ function Overview({ course, workspace, data, assignments, onTab }: {
     </section>
     <div className="overview-approved-columns">
       <section className="lecture-journal" aria-labelledby="lecture-ledger-title">
-        <div className="lecture-journal-heading notebook-order-heading"><div><h2 id="lecture-ledger-title">Class notebook</h2>{lectures.length > 0 && <p className="text-xs text-muted-foreground">{isNotebookManualOrder(lectures) ? 'Your order' : 'Class date · Oldest first'}</p>}</div>{lectures.length > 0 && <Button variant="ghost" size="sm" className="min-h-11" onClick={resetOrder}>Sort by class date</Button>}</div>
+        <div className="lecture-journal-heading notebook-order-heading"><div><h2 id="lecture-ledger-title">Class notebook</h2>{lectures.length > 0 && <p className="text-xs text-muted-foreground">{isNotebookManualOrder(lectures) ? 'Your order' : 'Class date · Oldest first'}</p>}</div>{isNotebookManualOrder(lectures) && <Button variant="ghost" size="sm" className="min-h-11" onClick={resetOrder}>Sort by class date</Button>}</div>
         <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">{orderAnnouncement}</p>
         <Button variant="outline" className="overview-entry-tile" onClick={startEntry}><Plus aria-hidden="true"/><span><strong>Add to notebook</strong></span><ArrowRight aria-hidden="true"/></Button>
         {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => selectLecture(value || undefined)} className="lecture-journal-list" aria-label="Notebook entries">
