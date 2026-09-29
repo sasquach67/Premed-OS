@@ -52,6 +52,7 @@ import { SyncOriginalFilesButton } from '@/components/academics/SyncOriginalFile
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { LectureCapturePanel } from '@/components/academics/LectureCapturePanel'
+import { NotebookSortableList } from '@/components/academics/NotebookSortableList'
 import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
 import { LecturePreview } from '@/components/academics/LecturePreview'
 import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
@@ -64,7 +65,7 @@ import { readingDebt, READING_LIST_STATE_COPY, recurringFeedbackThemes } from '@
 import { normalizeMeetingDays } from '@/lib/academics/meetingSchedule'
 import { QuestionBankPdfButton } from '@/components/academics/QuestionBankPdfButton'
 import { completedLectureTitle } from '@/lib/academics/lectureLabels'
-import { compareNotebookCatalogDates, notebookCatalogDate } from '@/lib/academics/notebook/catalogDate'
+import { sortNotebookLectures, isNotebookManualOrder, setNotebookManualOrder, resetNotebookOrder, notebookCatalogDate, notebookAddedDate } from '@/lib/academics/notebook/catalogDate'
 import {
   acceptGuideProposal, buildSyllabusGuideProposals, dismissGuideProposal, editGuideProposal,
   ensureSyllabusGuideProposals, guideProposalsForCourse, isGuideSourceValid,
@@ -288,6 +289,7 @@ function Overview({ course, workspace, data, assignments, onTab }: {
   const [focusOpen, setFocusOpen] = useState(false)
   const [focusDraft, setFocusDraft] = useState('')
   const [selectedLectureId, setSelectedLectureId] = useState<string>()
+  const [orderAnnouncement, setOrderAnnouncement] = useState('')
   const today = new Date(); today.setHours(0,0,0,0)
   const weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate() + 7)
   const dated = assignments.filter(item => !isComplete(item) && item.dueDate).sort((a,b) => String(a.dueDate).localeCompare(String(b.dueDate)))
@@ -295,8 +297,8 @@ function Overview({ course, workspace, data, assignments, onTab }: {
   const nextAssignment = upcoming.find(item => item.type !== 'exam')
   const exam = upcoming.find(item => item.type === 'exam')
   const weekItems = upcoming.filter(item => new Date(`${item.dueDate!.slice(0,10)}T00:00:00`) < weekEnd).slice(0,3)
-  const lectures = data.lectures.filter(item => item.courseId === course.id).sort((a,b) => b.createdAt-a.createdAt)
-  const chronologicalLectures = [...lectures].sort((a,b) => String(a.occurredOn ?? '').localeCompare(String(b.occurredOn ?? '')) || a.createdAt-b.createdAt)
+  const lectures = sortNotebookLectures(data.lectures, course.id)
+  const chronologicalLectures = sortNotebookLectures(lectures)
   const lectureNumber = (id: string) => chronologicalLectures.findIndex(item => item.id === id)+1
   const activeLecture = lectures.find(item => item.id === selectedLectureId)
   const activeLectureSources = activeLecture ? data.files.filter(file => activeLecture.selectedSourceFileIds?.includes(file.id) || file.id === activeLecture.transcriptFileId) : []
@@ -319,6 +321,18 @@ function Overview({ course, workspace, data, assignments, onTab }: {
     selectLecture(id)
     navigate(`/academics/classes/${encodeURIComponent(course.id)}/lectures/${encodeURIComponent(id)}`)
   }
+  function moveNotebook(id: string, targetId: string) {
+    const ids = lectures.map(item => item.id)
+    const from = ids.indexOf(id), to = ids.indexOf(targetId)
+    if (from < 0 || to < 0 || from === to) return
+    ids.splice(to, 0, ids.splice(from, 1)[0])
+    update(draft => setNotebookManualOrder(draft.academics.classCenter.lectures, course.id, ids))
+    setOrderAnnouncement(`${lectures[from].title} moved to position ${to + 1} of ${ids.length}.`)
+  }
+  function resetOrder() {
+    update(draft => resetNotebookOrder(draft.academics.classCenter.lectures, course.id))
+    setOrderAnnouncement('Notebooks sorted by class date, oldest first. Undated entries are last.')
+  }
   return <div className="class-hub-overview overview-approved">
     <section className="class-hub-course-pulse" aria-label="Your class at a glance">
       <div className="course-pulse-heading"><p>Today</p><b>Your class at a glance</b></div>
@@ -328,22 +342,26 @@ function Overview({ course, workspace, data, assignments, onTab }: {
     </section>
     <div className="overview-approved-columns">
       <section className="lecture-journal" aria-labelledby="lecture-ledger-title">
-        <div className="lecture-journal-heading"><div><h2 id="lecture-ledger-title">Class notebook</h2></div></div>
+        <div className="lecture-journal-heading notebook-order-heading"><div><h2 id="lecture-ledger-title">Class notebook</h2>{lectures.length > 0 && <p className="text-xs text-muted-foreground">{isNotebookManualOrder(lectures) ? 'Your order' : 'Class date · Oldest first'}</p>}</div>{lectures.length > 0 && <Button variant="ghost" size="sm" className="min-h-11" onClick={resetOrder}>Sort by class date</Button>}</div>
+        <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">{orderAnnouncement}</p>
         <Button variant="outline" className="overview-entry-tile" onClick={startEntry}><Plus aria-hidden="true"/><span><strong>Add to notebook</strong></span><ArrowRight aria-hidden="true"/></Button>
         {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => selectLecture(value || undefined)} className="lecture-journal-list" aria-label="Notebook entries">
-          {[...lectures].sort(compareNotebookCatalogDates).map((lecture) => {
+          <NotebookSortableList lectures={lectures} onMove={moveNotebook}>{(lecture, index) => {
             const isActive = activeLecture?.id === lecture.id
-            const date = notebookCatalogDate(lecture)
+            const classDate = notebookCatalogDate(lecture)
+            const date = classDate ?? notebookAddedDate(lecture)
+            const dateLabel = date ? `${classDate ? '' : 'Added '}${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : 'Added date unavailable'
+            const dateStamp = <span className={cn('overview-date-stamp', !classDate && 'notebook-added-stamp')} aria-hidden="true">{classDate ? date?.toLocaleDateString(undefined, { month: 'short' }) : 'Added'}<strong>{date?.getDate() ?? '—'}</strong></span>
+            const dateText = date ? <time dateTime={classDate ? lecture.occurredOn?.slice(0, 10) : date.toISOString()} title={`${classDate ? 'Class date' : 'Added'} ${date.toLocaleDateString()}`} className={!classDate ? 'notebook-added-date' : undefined}>{dateLabel}</time> : <span>{dateLabel}</span>
+            const moveActions = { reorderable: true, onMoveUp: index > 0 ? () => moveNotebook(lecture.id, lectures[index - 1].id) : undefined, onMoveDown: index < lectures.length - 1 ? () => moveNotebook(lecture.id, lectures[index + 1].id) : undefined }
             if (lecture.importedNotebook) {
               const openImported = () => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(lecture.id)}`)
-              const localDate = date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : null
-              const dateMeaning = lecture.importedNotebook.editedAt ? 'Updated' : 'Added'
-              return <div key={lecture.id} className="lecture-journal-imported-item"><LectureRecordMenu lecture={lecture} onOpen={openImported} onOpenFullScreen={openImported} onDeleted={lectureId => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail><button type="button" className="lecture-rail-entry imported-notebook-link" onClick={openImported}><span className="overview-date-stamp" aria-hidden="true">{date ? date.toLocaleDateString(undefined, { month: 'short' }) : 'Entry'}<strong>{date?.getDate() ?? '—'}</strong></span><span className="lecture-journal-row-text"><b>{lecture.title}</b>{date && localDate ? <time dateTime={date.toISOString()} title={`${dateMeaning} ${date.toLocaleString()}`} aria-label={`${dateMeaning} ${date.toLocaleDateString()}`}>{fmtEventDate(localDate)}</time> : <span>Date not set</span>}</span><ArrowRight aria-hidden="true" /></button></LectureRecordMenu></div>
+              return <div className="lecture-journal-imported-item"><LectureRecordMenu lecture={lecture} {...moveActions} onOpen={openImported} onOpenFullScreen={openImported} onDeleted={lectureId => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail><button type="button" className="lecture-rail-entry imported-notebook-link" onClick={openImported}>{dateStamp}<span className="lecture-journal-row-text"><b>{lecture.title}</b>{dateText}</span><ArrowRight aria-hidden="true" /></button></LectureRecordMenu></div>
             }
             return <AccordionItem key={lecture.id} value={lecture.id} className="lecture-journal-item">
-              <LectureRecordMenu lecture={lecture} onOpen={() => setSelectedLectureId(lecture.id)} onOpenFullScreen={() => openLecture(lecture.id)} onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail>
+              <LectureRecordMenu lecture={lecture} {...moveActions} onOpen={() => setSelectedLectureId(lecture.id)} onOpenFullScreen={() => openLecture(lecture.id)} onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail>
                 <AccordionTrigger className={cn('lecture-rail-entry', isActive && 'is-active')}>
-                  <span className="overview-date-stamp" aria-hidden="true">{date ? date.toLocaleDateString(undefined, { month: 'short' }) : 'Entry'}<strong>{date ? lecture.occurredOn?.slice(8,10) : '—'}</strong></span><span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span>{date && lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'}</span></span>
+                  {dateStamp}<span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b>{dateText}</span>
                 </AccordionTrigger>
               </LectureRecordMenu>
               <AccordionContent className="lecture-journal-detail">
@@ -351,7 +369,7 @@ function Overview({ course, workspace, data, assignments, onTab }: {
                 {lecture.workspaceState === 'complete' ? <div className="lecture-journal-workspace"><LectureCapturePanel key={lecture.id} courseId={course.id} course={course} data={data} initialLectureId={lecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div> : <LecturePreview lecture={lecture} sourceCount={isActive ? activeLectureSources.length : 0} />}
               </AccordionContent>
             </AccordionItem>
-          })}
+          }}</NotebookSortableList>
         </Accordion> : <p className="lecture-journal-empty">Bring your class materials and tell us what would help. No transcript required.</p>}
       </section>
       <aside className="overview-side" aria-label="Class overview highlights">

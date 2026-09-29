@@ -9,7 +9,9 @@ export function completedLectureTitle(position: number, lecture: Pick<LectureRec
       ? suggested || lecture.title
       : lecture.title.trim() || suggested || 'Study entry'
   }
-  return lectureDisplayTitle(position, lecture.title, lecture.aiTitle || (lecture.studyGuide && conciseStudyGuideTitle(lecture.studyGuide)))
+  // Named titles are student-owned; generated headings only fill generic labels.
+  const genericTitle = /^(?:lesson|lecture)\s*#?\d+$/i.test(lecture.title.trim()) || !lecture.title.trim()
+  return lectureDisplayTitle(position, lecture.title, genericTitle ? lecture.aiTitle || (lecture.studyGuide && conciseStudyGuideTitle(lecture.studyGuide)) : undefined)
 }
 
 export function lectureDisplayTitle(position: number, title: string, aiTitle?: string) {

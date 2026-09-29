@@ -1,3 +1,4 @@
+import { sortNotebookLectures } from '@/lib/academics/notebook/catalogDate'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -16,7 +17,7 @@ import { NotebookImportPanel } from './NotebookImportPanel'
 export function RevisedNotesPromptPanel({ courseId, courseLabel, lectureId }: { courseId: string; courseLabel: string; lectureId?: string }) {
   const navigate = useNavigate()
   const lectures = useStore(state => state.academics.classCenter.lectures)
-  const eligible = lectures.filter(item => item.courseId === courseId && item.importedNotebook?.current.entries.some(entry => entry.id === item.importedNotebook?.entryId))
+  const eligible = sortNotebookLectures(lectures, courseId).filter(item => item.importedNotebook?.current.entries.some(entry => entry.id === item.importedNotebook?.entryId))
   const [chosenId, setChosenId] = useState('')
   const [revision, setRevision] = useState<NotebookUpdateSession | null>(null)
   const [notesDescription, setNotesDescription] = useState('')

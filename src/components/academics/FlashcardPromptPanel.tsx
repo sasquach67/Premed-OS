@@ -1,3 +1,4 @@
+import { sortNotebookLectures } from '@/lib/academics/notebook/catalogDate'
 import { SelectField } from '@/components/ui/select-field'
 import { useStudentGuide } from './UsingStudentGuide'
 import { useRef, useState } from 'react'
@@ -17,7 +18,7 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
 }) {
   const navigate = useNavigate()
   const lectures = useStore(state => state.academics.classCenter.lectures)
-  const classLectures = lectures.filter(lecture => lecture.courseId === courseId)
+  const classLectures = sortNotebookLectures(lectures, courseId)
   const [chosenId, setChosenId] = useState('')
   const [feedback, setFeedback] = useState<{ prompt: string; text: string; fallback?: boolean }>()
   const [copyBusy, setCopyBusy] = useState(false)

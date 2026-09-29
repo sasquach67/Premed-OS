@@ -296,7 +296,7 @@ describe('ClassHub approved Overview', () => {
     seed.academics.classCenter.lectures = rows
     useStore.getState().replaceAll(seed)
     const recordsBefore = JSON.stringify(useStore.getState().academics.classCenter.lectures)
-    const expected = ['edited-Sep10', 'native-Sep9', 'added-Sep8', 'tie-a', 'tie-z', 'missing-import-date', 'undated']
+    const expected = ['tie-a', 'tie-z', 'native-Sep9', 'missing-import-date', 'edited-Sep10', 'added-Sep8', 'undated']
     for (let pass = 0; pass < 2; pass++) {
       if (pass) {
         await act(async () => root.unmount())
@@ -305,9 +305,9 @@ describe('ClassHub approved Overview', () => {
       }
       await act(async () => root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={useStore.getState().academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>))
       expect([...container.querySelectorAll('.lecture-journal-row-text b')].map(item => item.textContent?.replace(/^Lesson \d+ — /, ''))).toEqual(expected)
-      expect(container.querySelectorAll('.lecture-journal-list time')).toHaveLength(2)
-      expect(container.querySelector('.lecture-journal-list time')?.getAttribute('datetime')).toBe(new Date('2026-09-10T09:00:00').toISOString())
-      expect(container.querySelector('.lecture-journal-list')?.textContent?.match(/Date not set/g)).toHaveLength(2)
+      expect(container.querySelectorAll('.lecture-journal-list time')).toHaveLength(7)
+      expect(container.querySelector('.lecture-journal-list time')?.getAttribute('datetime')).toBe('2026-09-07')
+      expect(container.querySelector('[data-notebook-row="undated"] time')?.textContent).toMatch(/^Added /)
       expect(JSON.stringify(useStore.getState().academics.classCenter.lectures)).toBe(recordsBefore)
     }
   })
@@ -567,7 +567,7 @@ describe('ClassHub approved Overview', () => {
     expect(card.textContent).not.toMatch(/Lecture \d+\s*·\s*Lecture \d+/)
     for (const [lectureId, expectedTitle] of [
       ['lecture-actions', 'Lesson 1 — Cell signaling'],
-      ['lecture-actions-2', 'Lesson 2 — Autophagy quality control'],
+      ['lecture-actions-2', 'Lesson 2 — Autophagy generation'],
       ['lecture-actions-3', 'Lesson 2'],
     ]) {
       const record = container.querySelector<HTMLElement>(`[data-lecture-actions="${lectureId}"]`)!

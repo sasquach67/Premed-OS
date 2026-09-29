@@ -1,4 +1,4 @@
-import { ExternalLink, FolderOpen, Pencil, Trash2 } from 'lucide-react'
+import { ArrowUp, ArrowDown, ExternalLink, FolderOpen, Pencil, Trash2 } from 'lucide-react'
 import { useState, type ReactElement } from 'react'
 
 import type { ClassCenterData, LectureRecord } from '@/lib/types'
@@ -78,6 +78,9 @@ export function LectureRecordMenu({
   onOpen,
   onOpenFullScreen,
   onDeleted,
+  onMoveUp,
+  onMoveDown,
+  reorderable,
   rail,
   children,
 }: {
@@ -85,6 +88,9 @@ export function LectureRecordMenu({
   onOpen: () => void
   onOpenFullScreen?: () => void
   onDeleted?: (lectureId: string) => void
+  onMoveUp?: () => void
+  onMoveDown?: () => void
+  reorderable?: boolean
   rail?: boolean
   children: ReactElement
 }) {
@@ -136,6 +142,10 @@ export function LectureRecordMenu({
     { id: 'open', label: 'Open lecture', icon: <FolderOpen className="size-4" />, onSelect: onOpen },
     ...(onOpenFullScreen ? [{ id: 'open-full', label: 'Open full screen', icon: <ExternalLink className="size-4" />, onSelect: onOpenFullScreen }] : []),
     { id: 'edit', label: 'Edit lecture', icon: <Pencil className="size-4" />, onSelect: beginEdit },
+    ...(reorderable ? [
+      { id: 'move-up', label: 'Move up', icon: <ArrowUp className="size-4" />, disabled: !onMoveUp, onSelect: () => onMoveUp?.() },
+      { id: 'move-down', label: 'Move down', icon: <ArrowDown className="size-4" />, disabled: !onMoveDown, onSelect: () => onMoveDown?.() },
+    ] : []),
     { id: 'delete', label: 'Delete lecture', icon: <Trash2 className="size-4" />, destructive: true, separatorBefore: true, onSelect: () => setDeleteOpen(true) },
   ]
 

@@ -824,6 +824,7 @@ export interface LectureRecord {
   createdAt: number
   processedAt?: number
   updatedAt: number
+  /** Negative ranks encode explicit notebook order; nonnegative ranks use class-date order. */
   order: number
 }
 

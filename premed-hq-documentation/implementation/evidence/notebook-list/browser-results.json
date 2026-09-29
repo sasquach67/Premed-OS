@@ -1,0 +1,67 @@
+{
+  "checkedAt": "2026-09-29T14:08:45.495Z",
+  "mode": "signed-out, synthetic, disposable Chrome profile",
+  "results": [
+    {
+      "theme": "light",
+      "width": 1280,
+      "scrollWidth": 1280,
+      "handleWidth": 44,
+      "handleHeight": 44,
+      "menuWidth": 44,
+      "menuHeight": 44,
+      "resetHeight": 44,
+      "background": "rgb(255, 250, 240)",
+      "cardToken": "#fffaf0",
+      "font": "Nunito, system-ui, -apple-system, sans-serif",
+      "added": "Added Sep 28"
+    },
+    {
+      "theme": "light",
+      "width": 375,
+      "scrollWidth": 375,
+      "handleWidth": 44,
+      "handleHeight": 44,
+      "menuWidth": 44,
+      "menuHeight": 44,
+      "resetHeight": 44,
+      "background": "rgb(255, 250, 240)",
+      "cardToken": "#fffaf0",
+      "font": "Nunito, system-ui, -apple-system, sans-serif",
+      "added": "Added Sep 28"
+    },
+    {
+      "theme": "dark",
+      "width": 1280,
+      "scrollWidth": 1280,
+      "handleWidth": 44,
+      "handleHeight": 44,
+      "menuWidth": 44,
+      "menuHeight": 44,
+      "resetHeight": 44,
+      "background": "rgb(43, 39, 34)",
+      "cardToken": "#2b2722",
+      "font": "Nunito, system-ui, -apple-system, sans-serif",
+      "added": "Added Sep 28"
+    },
+    {
+      "theme": "dark",
+      "width": 375,
+      "scrollWidth": 375,
+      "handleWidth": 44,
+      "handleHeight": 44,
+      "menuWidth": 44,
+      "menuHeight": 44,
+      "resetHeight": 44,
+      "background": "rgb(43, 39, 34)",
+      "cardToken": "#2b2722",
+      "font": "Nunito, system-ui, -apple-system, sans-serif",
+      "added": "Added Sep 28"
+    }
+  ],
+  "pointerDrag": true,
+  "persistedReload": true,
+  "reset": true,
+  "reducedMotion": true,
+  "emptyState": true
+}

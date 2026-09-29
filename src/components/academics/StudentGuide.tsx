@@ -1,3 +1,4 @@
+import { sortNotebookLectures } from '@/lib/academics/notebook/catalogDate'
 import { SelectField } from '@/components/ui/select-field'
 import { useState } from 'react'
 import { Plus, Pencil, X } from 'lucide-react'
@@ -14,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 export function GuideScopeField({ courseId, data, value, onChange, label = 'Applies to' }: { courseId: string; data: ClassCenterData; value: string; onChange: (value: string) => void; label?: string }) {
   return <label className="block text-sm font-semibold">{label}<SelectField aria-label={label} className="mt-1 min-h-11 w-full bg-background" value={value} onValueChange={onChange} options={[
     { value: '', label: 'Whole class' },
-    ...data.lectures.filter(item => item.courseId === courseId).map(item => ({ value: `lesson:${item.id}`, label: `Lesson · ${item.title}` })),
+    ...sortNotebookLectures(data.lectures, courseId).map(item => ({ value: `lesson:${item.id}`, label: `Lesson · ${item.title}` })),
     ...data.assignments.filter(item => item.courseId === courseId).map(item => ({ value: `assessment:${item.id}`, label: `Exam or assignment · ${item.title}` })),
   ]} /></label>
 }
