@@ -143,6 +143,16 @@ These rules apply only to the **Assessment** goal, in new and update mode.
 
   Then write new, original questions that match the profile. Never copy, lightly reword or renumber an exam item. Never reproduce a key's typos, missing options or simplifications: a key shows how the course grades, not what is true. State the profile briefly in the companion message, not in the notebook. Without real exams, use the course blueprint and say so.
 
+- `EC-EXAM-FIDELITY`: Apply these profile rules when writing a mock exam. The course evidence sets the actual proportions and representations; these are not fixed Biology requirements.
+
+- **Item length:** Match the real exam's mix of item lengths. When its profile includes short single-concept items, use a similar share of short trap items: a stem of three lines or fewer built on one specific misconception. Do not impose a universal proportion.
+- **Representations:** Match the profile's representation types and reading tasks. Use compact text maps, labeled strand ends, probe regions, lane tables or pedigree layouts when appropriate; preserve the task of reading the representation rather than replacing it with a prose explanation. Supply every label and value needed.
+- **Objective coverage:** Cover every objective in the selected exam scope, including small or cross-cutting objectives. Map each objective to item numbers; disclose unsupported or missing objectives and label the mock partial instead of silently omitting them or inventing source coverage.
+- **Arithmetic:** Limit arithmetic to the kinds of calculation used in the course's own assessments; do not add multi-step calculation merely to make an item harder.
+- **Options:** Match the real exam's variation in option count (for example, three to five choices when that is its pattern). Do not force an even spread of answer letters.
+- **Select-all difficulty:** Match the real exam's select-all difficulty. Use at most one "consistent with ALL the data" item per mock unless the profile shows more; do not make every select-all a harder integration puzzle.
+- **Scope across units:** Check the syllabus's cumulative policy. For a cumulative course, keep a unit mock on its unit while about one in four items uses an earlier-unit skill; a final mock covers all units. For a non-cumulative course, keep each mock within that exam's chapters; semester themes belong on the final only. Honor explicit source exclusions, and disclose any missing scope or unsupported profile assumption.
+
 - `EC-MOCK-EXAM`: Unless the request already says, ask once, in the first reply, which practice style the student wants:
   - **(a) Mock exam in the real exam's style.** This is the recommended default. It uses mixed topics in the profile's proportions, the exam's length and formats (all multiple choice when the exam is), chained scenarios, and "cannot tell" options that are sometimes correct.
   - **(b) Topic drills.** Grouped by lesson; written items are allowed.
