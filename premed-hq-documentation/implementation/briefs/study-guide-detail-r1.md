@@ -4,6 +4,8 @@ R1 supports optional `more: string | null` on v4 paragraph and bullets blocks. E
 
 The saved reader validates the current package and selected-entry projection before mounting editing controls. Unsupported fields or invalid required content produce an actionable error and an untouched JSON-record recovery download. This is strict rejection, not removal or normalization of unknown data. The recovery download excludes binary image bytes.
 
+Existing notebooks can look different after R1: illustration explanations open by default, and the guide-wide Reading detail switch appears whenever illustration detail is present. Condensed hides explanations from ordinary page display and browser find; use Full detail to read/search all explanations.
+
 ## Contract and sequencing
 
 - Package remains v4; store remains 52; cloud remains 2. No migration or cloud guard change.
@@ -17,7 +19,7 @@ The saved reader validates the current package and selected-entry projection bef
 2. Obtain a new release-specific security-header decision before deployment. Earlier waivers do not apply.
 3. Verify the exact deployed R1 commit and live bundle hashes.
 4. Obtain explicit confirmation that every app tab and device has reloaded before any live import or edit that introduces paragraph/bullet detail. A deployment or source search alone does not establish that old clients reloaded.
-5. Restoration is separate content work: review the first two old-to-restored passage ledgers and word counts before any live import. Preserve notes/progress, restore relevant teaching only, and trim narration from both layers.
+5. Restoration is separate content work: review the first two old-to-restored passage ledgers and word counts before any live import. Preserve notes/progress, restore relevant teaching only, and trim narration from both layers. Each `more` is capped at 1200 characters; split longer restored teaching across the blocks it belongs to and revalidate. Never silently truncate substantive material.
 6. R2 prompt changes require a separate review and release decision.
 
 **Rollback floor:** after detail has been imported, never roll back below R1. Use a compatible reader or fix forward; never strip detail, rewrite raw copies or relabel data to force an old reader to open it.

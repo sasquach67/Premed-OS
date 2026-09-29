@@ -166,7 +166,8 @@
                 "null"
               ],
               "minLength": 1,
-              "maxLength": 1200
+              "maxLength": 1200,
+              "pattern": "\\S"
             }
           },
           "required": [
@@ -245,7 +246,8 @@
                 "null"
               ],
               "minLength": 1,
-              "maxLength": 1200
+              "maxLength": 1200,
+              "pattern": "\\S"
             }
           },
           "required": [

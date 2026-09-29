@@ -1,3 +1,5 @@
+import * as packageParser from '@/lib/academics/notebook/package'
+import * as projection from '@/lib/academics/notebook/visualProjection'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -58,4 +60,27 @@ it('renders supported detail normally and rechecks a replacement record after a 
   expect(container.querySelector('[aria-label="Notebook unavailable"]')).toBeNull()
   expect(container.textContent).toContain('The full fictional explanation.')
   expect(container.textContent).toContain('Update this notebook')
+})
+
+it('revalidates content and entry changes but skips independent notes and progress saves', async () => {
+  const parse = vi.spyOn(packageParser, 'parseNotebookPackage'), project = vi.spyOn(projection, 'projectNotebookEntry')
+  let lecture = fixture()
+  const show = () => act(async () => root.render(<NotebookReadGuard lecture={lecture} downloadRecovery={() => {}}><p>Readable</p></NotebookReadGuard>))
+  await show()
+  expect(parse).toHaveBeenCalledTimes(1); expect(project).toHaveBeenCalledTimes(1)
+  lecture = { ...lecture, importedNotebook: { ...lecture.importedNotebook!, notes: 'Updated note' } }
+  await show()
+  lecture = { ...lecture, importedNotebook: { ...lecture.importedNotebook!, progress: { question: { response: 'New response', complete: false } } } }
+  await show()
+  expect(parse).toHaveBeenCalledTimes(1); expect(project).toHaveBeenCalledTimes(1)
+  lecture = { ...lecture, importedNotebook: { ...lecture.importedNotebook!, current: structuredClone(lecture.importedNotebook!.current) } }
+  await show()
+  expect(parse).toHaveBeenCalledTimes(2); expect(project).toHaveBeenCalledTimes(2)
+  lecture = { ...lecture, importedNotebook: { ...lecture.importedNotebook!, entryId: 'missing-entry' } }
+  await show()
+  expect(parse).toHaveBeenCalledTimes(3); expect(project).toHaveBeenCalledTimes(3)
+  expect(container.querySelector('[role="alert"]')).toBeTruthy()
+  lecture = { ...lecture, importedNotebook: undefined }
+  await show()
+  expect(container.textContent).toContain('saved notebook record is missing')
 })

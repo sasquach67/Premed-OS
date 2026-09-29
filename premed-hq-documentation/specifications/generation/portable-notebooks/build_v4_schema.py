@@ -52,7 +52,7 @@ def build():
     # Optional in v4 only: existing packages remain exact and valid without it.
     for variant in variants:
         if variant['properties']['type'].get('const') in ('paragraph', 'bullets'):
-            variant['properties']['more'] = copy.deepcopy(more)
+            variant['properties']['more'] = {**copy.deepcopy(more), 'pattern': r'\S'}
     return schema
 
 if __name__=='__main__':

@@ -31,7 +31,7 @@ it.each(['paragraph', 'bullets'] as const)('preserves optional, null, and meanin
 })
 it.each(['paragraph', 'bullets'] as const)('rejects malformed %s detail and keeps older contracts exact', type => {
   const p = fixture(), b = detailBlock(p, type)
-  for (const more of ['', ' \n\t', 'x'.repeat(1201), 42, ['nested detail'], { more: 'nested' }]) {
+  for (const more of ['', ' ', '\t', '\n', ' \n\t', '\u00a0', 'x'.repeat(1201), 42, ['nested detail'], { more: 'nested' }]) {
     Object.assign(b, { more })
     expect(() => parseNotebookPackage(JSON.stringify(p))).toThrow(/more/)
   }
