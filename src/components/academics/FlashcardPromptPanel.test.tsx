@@ -82,6 +82,11 @@ it('copies the whole prompt and preserves all saved content', async () => {
   expect(container.textContent).toContain('finished deck goes directly into Anki')
   expect(JSON.stringify(useStore.getState().academics.classCenter)).toBe(before)
 })
+it('shows the missed-question concept-card tip with the complete prompt actions', async () => {
+  seed([journal('ready')]); await render('ready')
+  expect(container.textContent).toContain('Tip: Missed a practice or mock-exam question? Paste it into the same chat along with this prompt. The deck adds a card or two on the concept you missed, not a copy of the question.')
+  expect(button('Copy complete prompt').disabled).toBe(false)
+})
 it('opens a read-only complete fallback when clipboard access fails', async () => {
   seed([journal('ready')]); writeText.mockRejectedValue(new Error('Denied')); await render()
   await click('Copy complete prompt')

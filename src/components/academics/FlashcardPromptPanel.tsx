@@ -82,6 +82,7 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
         <li><strong>Try to find the chat where you uploaded the materials for this Class Notebook.</strong> Paste the complete prompt there. If you cannot find that chat, re-upload the same materials in a new chat and paste the prompt. It includes the selected Journal context; attach the complete Journal too if the AI asks for missing content.</li>
         <li><strong>Use an AI that can run code and create downloadable files.</strong> Once it has the materials, it will start making the deck. If files are missing or no longer accessible, it will ask you to re-upload them or return to the original chat and paste the prompt there. Download the finished <code>.apkg</code> file and import it into Anki.</li>
       </ol>
+      <p className="text-sm text-muted-foreground">Tip: Missed a practice or mock-exam question? Paste it into the same chat along with this prompt. The deck adds a card or two on the concept you missed, not a copy of the question.</p>
       <p className="text-sm text-muted-foreground">Premed OS supplies the prompt and stops here. The finished deck goes directly into Anki as one standalone deck. Rename it or move it under your own decks after importing.</p>
       <div className="flex flex-wrap gap-2">
         <Button disabled={copyBusy} onClick={() => void copyPrompt()}><Copy className="size-4" />{copyBusy ? 'Copying…' : 'Copy complete prompt'}</Button>
