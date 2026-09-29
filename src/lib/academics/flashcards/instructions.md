@@ -6,7 +6,7 @@ The complete portable builder and instructions are included below. No other inst
 
 ## First: confirm the prerequisite and actual source access
 
-A completed Journal for the requested lecture is required. Use its study guide and Mastery Map to establish the learning targets, scope, and relationships. Use the underlying lecture materials to verify tested claims. First inspect this conversation and its accessible attachments for the completed Journal and the same materials used to create it. The selected Journal content included at the end of this prompt can supply the Journal when complete; do not ask for a duplicate upload unnecessarily. A Journal export may contain references/excerpts without full originals.
+A completed Journal for the requested lecture is required. Use its study guide and Mastery Map to establish the learning targets, scope, and relationships. Use the underlying lecture materials to verify tested claims. Use the Journal's mastery objectives as the checklist of learning targets. Take card wording, terms, numbers, and the instructor's examples from the original materials, because the study guide is intentionally concise and may leave out card-worthy detail. First inspect this conversation and its accessible attachments for the completed Journal and the same materials used to create it. The selected Journal content included at the end of this prompt can supply the Journal when complete; do not ask for a duplicate upload unnecessarily. A Journal export may contain references/excerpts without full originals.
 
 If the completed Journal and necessary original materials are accessible and the student has finished uploading, begin creating the finished deck immediately. This pasted prompt is the request to proceed; do not ask for another confirmation or return only a plan.
 
@@ -24,11 +24,13 @@ The Journal organizes learning; it does not make unsupported claims true. Surfac
 
 Produce a manageable deck covering the Journal's core learning targets. The study guide explains, the Mastery Map organizes recall, and the deck practices the same targets. Do not translate every sentence or bullet into a separate card. Group tightly related facts when their relationship is the retrieval task. Separate important distinctions, conditions, and skills when needed.
 
-Build the target map first. Assign stable target IDs tied to the Journal and meaningful concept IDs for related groups. IDs are organizational metadata, not proof that questions are redundant. Check overlap across IDs too. Do not create a new ID for every paraphrase to disguise duplication.
+Build the target map first. Every mastery objective item (Understand, Be able to do, Watch for) maps to at least one target. Assign stable target IDs tied to the Journal and meaningful concept IDs for related groups. IDs are organizational metadata, not proof that questions are redundant. Check overlap across IDs too. Do not create a new ID for every paraphrase to disguise duplication.
 
 For each target, record whether it is directly tested, retained only in Extra, or missing. Link it to the actual cards; explain gaps. Do not mark a supporting explanation as active recall. Essential information cannot be moved into Extra merely because it is difficult. Incidental details can stay there without requiring their own cards.
 
 ## Useful reinforcement versus unnecessary repetition
+
+If the student supplies missed practice or exam questions, add one or two cards on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.
 
 Keep BOTH example directions: recognizing the concept from a source-based example, and producing a source-based example of the concept. Group each pair with examplePairId and declare its direction. These are useful complementary tasks, not automatically redundant. Do not satisfy the pair by reversing words while giving away the answer.
 
@@ -42,7 +44,7 @@ There is no universal pedagogical deck maximum or per-concept cap. Do not invent
 
 ## Card language and information order
 
-Front: a natural, precise question that stands alone when shuffled. Ask “What causes X?” or “How does X affect Y?” when sufficient. Name the situation/concepts, specify the comparison dimension, and give only context needed to answer. Avoid vague “it,” “the study,” or “the next step” without an antecedent. A pronoun with clear same-card context is fine.
+Front: a natural, precise question that stands alone when shuffled. Ask “What causes X?” or “How does X affect Y?” when sufficient. Name the situation/concepts, specify the comparison dimension, and give only context needed to answer. Avoid vague “it,” “the study,” or “the next step” without an antecedent, or “the lecture's example” and “what class identified”; name the concept or example instead. A pronoun with clear same-card context is fine.
 
 Required answer: the shortest complete response the student can grade against the question. Keep essential qualifiers and causal links. A naming answer may be a term; an explanation should state a claim in complete, direct sentences. Do not add “The answer is…” merely to satisfy a verb check. Preserve the instructor's necessary technical terms while explaining unfamiliar ones. Difficulty comes from knowledge, not ornate wording. Do not inflate cautious claims such as “may contribute.”
 

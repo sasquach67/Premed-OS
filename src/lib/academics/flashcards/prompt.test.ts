@@ -62,6 +62,35 @@ describe('flashcard prompt handoff', () => {
     expect(prompt).not.toContain('review draft')
   })
 
+  it('adds mastery coverage, original wording, explicit references, and missed-question reinforcement', () => {
+    const prompt = buildFlashcardPrompt({ courseLabel: 'Demo', lecture: lecture() })
+    for (const addition of [
+      "Use the Journal's mastery objectives as the checklist of learning targets. Take card wording, terms, numbers, and the instructor's examples from the original materials, because the study guide is intentionally concise and may leave out card-worthy detail.",
+      'Every mastery objective item (Understand, Be able to do, Watch for) maps to at least one target.',
+      'or “the lecture\'s example” and “what class identified”; name the concept or example instead.',
+      'If the student supplies missed practice or exam questions, add one or two cards on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.',
+    ]) expect(prompt).toContain(addition)
+  })
+
+  it('retains selected learning targets when teaching makes the Journal oversized, without private or unrelated content', () => {
+    const record = lecture(), notebook = record.importedNotebook!, entry = notebook.current.entries[0]
+    const before = structuredClone(entry)
+    entry.sections[0].blocks.push({ id: 'large', type: 'paragraph', provenance: 'source', text: 'OVERSIZED TEACHING '.repeat(10_000), sourceIds: [], excerptIds: [] })
+    entry.sections[0].blocks.push({ id: 'private', type: 'paragraph', provenance: 'student-work', text: 'PRIVATE BLOCK', sourceIds: [], excerptIds: [] })
+    notebook.current.entries[1].objectives = [{ ...entry.objectives[0], title: 'OTHER ENTRY OBJECTIVE' }]
+    notebook.current.sources[0].excerpts.push({ id: 'other-excerpt', location: null, text: 'UNRELATED SOURCE EXCERPT' })
+    const prompt = buildFlashcardPrompt({ courseLabel: 'Demo', lecture: record })
+    const context = JSON.parse(prompt.slice(prompt.lastIndexOf('\n\n{') + 2))
+    expect(context.contextTruncated).toBe(true)
+    expect(context.journal.entry).toEqual({ id: before.id, revision: before.revision, title: before.title, goal: before.goal, scope: before.scope, objectives: before.objectives, requirements: before.requirements, limitations: before.limitations })
+    expect(context.journal).not.toHaveProperty('omitted')
+    expect(context.journal.entry).not.toHaveProperty('sections')
+    expect(context.journal).not.toHaveProperty('sources')
+    expect(context.journal.sourceAccessNotice).toContain('Attach the complete selected Journal and its original materials before creating cards.')
+    expect(JSON.stringify(context.journal, null, 2).length).toBeLessThanOrEqual(100_000)
+    for (const secret of ['PRIVATE RAW', 'PRIVATE RESPONSE', 'PRIVATE NOTES', 'PRIVATE BLOCK', 'UNRELATED SOURCE EXCERPT', 'New separate topic', 'OTHER ENTRY OBJECTIVE', 'OVERSIZED TEACHING']) expect(prompt).not.toContain(secret)
+  })
+
   it('omits oversized context explicitly without producing broken partial JSON', () => {
     const record = lecture()
     record.importedNotebook!.current.entries[0].scope = 'x'.repeat(110_000)
@@ -69,6 +98,8 @@ describe('flashcard prompt handoff', () => {
     expect(prompt).toContain('"contextTruncated": true')
     expect(prompt).toContain('"omitted": true')
     expect(prompt.length).toBeLessThan(60_000)
+    const context = JSON.parse(prompt.slice(prompt.lastIndexOf('\n\n{') + 2))
+    expect(context.journal).toEqual({ omitted: true, reason: 'Selected Journal exceeds the copy budget. Attach the complete selected Journal and its original materials before creating cards.' })
   })
 
   it('supports completed legacy guides only when a saved Mastery Map exists', () => {
