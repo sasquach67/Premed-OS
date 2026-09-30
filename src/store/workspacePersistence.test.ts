@@ -1,5 +1,6 @@
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { createPersistentStorage, persistentStorage } from '@/lib/persistentStorage'
 import { createPersonalInitialData } from '@/data/personalInitialData'
 import { createWorkspaceRepository, type WorkspaceRepository } from './workspaceRepository'
 import { createWorkspacePersistence, WORKSPACE_IDB_PREFIX } from './workspacePersistence'
@@ -17,7 +18,12 @@ const key = 'hq:app-data:account:synthetic-a'
 const raw = (note: string) => { const state = createPersonalInitialData(); state.meta.lastOpenedAt = 0; state.notes.example = note; return JSON.stringify({ state, version: 50 }) }
 const seed = () => raw('')
 let factory: IDBFactory, legacy: LegacyStorage, repo: WorkspaceRepository
-beforeEach(() => { factory = new IDBFactory(); legacy = new LegacyStorage(); repo = createWorkspaceRepository(factory) })
+beforeEach(() => {
+  factory = new IDBFactory(); legacy = new LegacyStorage(); repo = createWorkspaceRepository(factory)
+  // Existing persistence cases must never access the host browser's permission.
+  vi.spyOn(persistentStorage, 'requestAfterSave').mockResolvedValue(undefined)
+})
+afterEach(() => { repo.close(); vi.restoreAllMocks() })
 it('refuses a future schema before replacing its legacy value or seeding defaults', async () => {
   const future = JSON.stringify({ ...JSON.parse(raw('future content')), version: 999 })
   legacy.setItem(key, future)
@@ -157,4 +163,101 @@ it('distinguishes a missing account cache from an existing empty account', async
   expect(disk.read(key)).toBeNull()
   await disk.write(key, seed())
   expect(disk.read(key)).toBe(seed())
+})
+
+
+it.each(['hq:app-data', key])('requests browser persistence only after a confirmed normal save of %s', async workspaceKey => {
+  const original = raw('before permission'), saved = raw('confirmed normal save')
+  legacy.setItem(workspaceKey, original)
+  const disk = createWorkspacePersistence(repo, legacy)
+  const observedAtRequest: string[] = []
+  const persist = vi.fn(async () => {
+    expect(disk.status(workspaceKey).phase).toBe('ready')
+    expect(disk.status(workspaceKey).pending).toBe(0)
+    observedAtRequest.push((await repo.read(workspaceKey))!.raw)
+    return false
+  })
+  const permission = createPersistentStorage(() => ({ persisted: async () => false, persist }))
+  vi.mocked(persistentStorage.requestAfterSave).mockImplementation(permission.requestAfterSave)
+
+  // Boot checks report the browser's state without asking for permission.
+  await permission.recheck()
+  await disk.load(workspaceKey, seed)
+  await disk.flush(workspaceKey)
+  expect(persist).not.toHaveBeenCalled()
+  expect(persistentStorage.requestAfterSave).not.toHaveBeenCalled()
+
+  const commit = repo.commit.bind(repo)
+  let releaseCommit!: () => void, reachedCommit!: () => void
+  const commitReached = new Promise<void>(resolve => { reachedCommit = resolve })
+  const committed = new Promise<void>(resolve => { releaseCommit = resolve })
+  vi.spyOn(repo, 'commit').mockImplementation(async (...args) => {
+    const result = await commit(...args)
+    reachedCommit()
+    await committed
+    return result
+  })
+  const writing = disk.write(workspaceKey, saved)
+  await commitReached
+  expect(persistentStorage.requestAfterSave).not.toHaveBeenCalled()
+  expect(persist).not.toHaveBeenCalled()
+  expect(disk.status(workspaceKey).phase).toBe('saving')
+  releaseCommit()
+  await writing
+  await permission.requestAfterSave()
+  expect(observedAtRequest).toEqual([saved])
+  expect(persist).toHaveBeenCalledTimes(1)
+  expect(permission.getSnapshot()).toBe('denied')
+})
+
+it.each(['rejected', 'unverified'] as const)('does not request permission for a %s normal write', async failure => {
+  legacy.setItem(key, raw('saved before failed write'))
+  const disk = createWorkspacePersistence(repo, legacy)
+  await disk.load(key, seed)
+  const persist = vi.fn().mockResolvedValue(true)
+  const permission = createPersistentStorage(() => ({ persisted: async () => false, persist }))
+  vi.mocked(persistentStorage.requestAfterSave).mockImplementation(permission.requestAfterSave)
+  if (failure === 'rejected') vi.spyOn(repo, 'commit').mockRejectedValueOnce(new Error('Synthetic transaction rejection'))
+  else {
+    const commit = repo.commit.bind(repo)
+    vi.spyOn(repo, 'commit').mockImplementationOnce(async (...args) => ({ ...await commit(...args), digest: 'unverified-digest' }))
+  }
+  await expect(disk.write(key, raw('unacknowledged'))).rejects.toThrow(failure === 'rejected' ? 'transaction rejection' : 'could not be verified')
+  await expect(disk.flush(key)).rejects.toThrow()
+  expect(disk.status(key).phase).toBe('error')
+  expect(persistentStorage.requestAfterSave).not.toHaveBeenCalled()
+  expect(persist).not.toHaveBeenCalled()
+})
+
+it('does not let a pending permission prompt delay flush or repeat on later confirmed saves', async () => {
+  const disk = createWorkspacePersistence(repo, legacy)
+  await disk.load(key, seed)
+  let finishPermission!: (granted: boolean) => void
+  let granted = false
+  const persist = vi.fn(() => new Promise<boolean>(resolve => { finishPermission = resolve }))
+  const permission = createPersistentStorage(() => ({ persisted: async () => granted, persist }))
+  vi.mocked(persistentStorage.requestAfterSave).mockImplementation(permission.requestAfterSave)
+  await disk.write(key, raw('first normal save'))
+  await disk.flush(key)
+  expect(persist).toHaveBeenCalledTimes(1)
+  expect(permission.getSnapshot()).toBe('checking')
+  expect(disk.status(key)).toMatchObject({ phase: 'ready', pending: 0 })
+  await disk.write(key, raw('second normal save'))
+  await disk.write(key, raw('second normal save')) // Same-byte acknowledged save.
+  await disk.flush(key)
+  expect((await repo.read(key))!.raw).toBe(raw('second normal save'))
+  expect(persist).toHaveBeenCalledTimes(1)
+  expect(permission.getSnapshot()).toBe('checking')
+
+  // The request's result alone is not evidence of a real browser grant.
+  finishPermission(true)
+  await permission.requestAfterSave()
+  expect(permission.getSnapshot()).toBe('denied')
+  granted = true
+  await permission.recheck()
+  expect(permission.getSnapshot()).toBe('granted')
+  granted = false
+  await permission.recheck()
+  expect(permission.getSnapshot()).toBe('denied')
+  expect(persist).toHaveBeenCalledTimes(1)
 })
