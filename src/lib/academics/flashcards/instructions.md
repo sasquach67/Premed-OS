@@ -1,5 +1,7 @@
 # Premed OS lecture flashcards — complete prompt v1
 
+Prompt revision: 2026-09-30 — plain-language answers and no source chatter.
+
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal and the same underlying course materials. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
 The complete portable builder and instructions are included below. No other instruction/design files are required. Original course material and any source figures are still required inputs.

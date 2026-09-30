@@ -13,6 +13,15 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
+  it('copies the September 30 plain-language prompt revision', () => {
+    const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
+    expect(prompt).toContain('Prompt revision: 2026-09-30')
+    expect(prompt).toContain('Apply the friend test to the Required answer (Back) itself, not just Extra')
+    expect(prompt).toContain('Instead of a worker deciding how to do the job, management breaks it into small tasks and sets the method it thinks is most efficient.')
+    expect(prompt).toContain('No source chatter in any student-facing card field')
+    expect(prompt).toContain('Run the friend test on every card')
+  })
+
   it('requires a completed saved entry with both a guide and learning objectives', () => {
     const record = lecture()
     expect(flashcardNotebookEligibility(record).eligible).toBe(true)
