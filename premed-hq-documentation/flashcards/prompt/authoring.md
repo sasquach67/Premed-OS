@@ -46,7 +46,9 @@ There is no universal pedagogical deck maximum or per-concept cap. Do not invent
 
 Front: a natural, precise question that stands alone when shuffled. Ask “What causes X?” or “How does X affect Y?” when sufficient. Name the situation/concepts, specify the comparison dimension, and give only context needed to answer. Avoid vague “it,” “the study,” or “the next step” without an antecedent, or “the lecture's example” and “what class identified”; name the concept or example instead. A pronoun with clear same-card context is fine.
 
-Required answer: the shortest complete response the student can grade against the question. Keep essential qualifiers and causal links. A naming answer may be a term; an explanation should state a claim in complete, direct sentences. Do not add “The answer is…” merely to satisfy a verb check. Preserve the instructor's necessary technical terms while explaining unfamiliar ones. Difficulty comes from knowledge, not ornate wording. Do not inflate cautious claims such as “may contribute.”
+Required answer: the shortest complete response the student can grade against the question. Keep essential qualifiers and causal links. A naming answer may be a term; an explanation should state a claim in complete, direct sentences. Do not add “The answer is…” merely to satisfy a verb check. Preserve the instructor's necessary technical terms while explaining unfamiliar ones. Difficulty comes from knowledge, not ornate wording. Do not inflate cautious claims such as “may contribute.” Apply the friend test to the Required answer (Back) itself, not just Extra: could a first-year student who skipped the lecture understand every word except the course's own named terms? If not, rewrite in plainer words and explain each necessary named term in the same sentence. “Shortest” must not mean compressed jargon. Keep the existing Q&A format, with cloze as the exception; apply the same plain-language test to cloze sentences and blurt checklist answers.
+
+No source chatter in any student-facing card field: Front, Back, cloze text, Extra, labels, or figure captions/alt text. Never mention lectures, readings, authors, slides, or phrases such as “not X's label” as commentary about where an idea came from. Teach the idea only. Keep source references and attribution in sourceRefs / hidden premedos_source metadata; keep unresolved source conflicts in the separate audit/limitations report, never as a recall task or explanatory aside.
 
 Extra: teach understanding, particularly when the idea is difficult, abstract, or unintuitive. This is a firm requirement, not optional decorative text:
 
@@ -60,6 +62,12 @@ Accepted style example, not content to insert into unrelated decks:
 - Required answer: Negative reinforcement increases a behavior by removing an unpleasant stimulus.
 - In other words: You become more likely to do something because doing it makes something unpleasant stop. “Negative” means something is removed, not that the behavior is bad.
 - Illustrative example: Buckling your seat belt stops the car's annoying warning sound. If that makes you buckle up more readily next time, the behavior has been negatively reinforced.
+
+Second accepted style example, from a theory subject (not content to insert into unrelated decks):
+- Front: What is scientific management or Taylorism?
+- Required answer: Instead of a worker deciding how to do the job, management breaks it into small tasks and sets the method it thinks is most efficient.
+- In other words: Being good at the job does not mean you get to choose how to do it: your job is to follow the manager's chosen steps. Faster output also does not automatically mean better working conditions for you.
+- Illustrative example: You pack orders at a warehouse. Instead of arranging your station and packing boxes your own way, your manager times each step and tells you exactly where to put each item and in what order to pack it. That puts decisions about how you work in management's hands.
 
 Use short connected sentences. Explain enough to make the idea understandable without turning Extra into a mini study guide. Use plain text in the build fields; do not author HTML, CSS, or script inside card content. The supplied builder handles safe formatting, paragraph labels, lists, and figure markup.
 
@@ -115,7 +123,7 @@ Create the files from the exact file blocks below in a fresh task directory. The
 
 Use the environment's equivalent Python path on other operating systems. The Anki dependency is for a temporary verification collection; do not open, alter, or synchronize the student's live Anki profile. If dependency installation or verification is unavailable, say exactly what could not be tested and do not claim a verified final deck.
 
-Before building, review coverage and content yourself. The structural validator cannot establish factual accuracy or educational quality. Inspect exact repeats and semantic overlaps; preserve both example directions and useful blurt overlap. Fix distinct findings, not merely the phrasing that happens to satisfy a gate. Investigate warnings about long answers and coverage gaps.
+Before building, review coverage and content yourself. The structural validator cannot establish factual accuracy or educational quality. Inspect exact repeats and semantic overlaps; preserve both example directions and useful blurt overlap. Fix distinct findings, not merely the phrasing that happens to satisfy a gate. Investigate warnings about long answers, coverage gaps, and source chatter. Run the friend test on every card, including its Required answer, before building; a phrase detector cannot establish plain-language understanding.
 
 The builder never overwrites an existing output. Use a fresh output name after changing cards, then rerun verification against that exact file and matching report. Fix failed checks rather than editing a report or weakening the verifier. Inspect generated previews for readable formatting, including Extra and any figures. They show real Anki renderings with embedded media, not a separate approximation of the templates.
 

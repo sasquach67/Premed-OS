@@ -4,12 +4,38 @@ import argparse, base64, hashlib, html, json, re, tempfile
 from anki.collection import Collection, ImportAnkiPackageRequest, ImportAnkiPackageOptions
 from build_deck import validate, CSS, create_models
 
+# Advisory language checks inspect only fields used by the supplied templates.
+# Source metadata intentionally contains titles, authors, and lecture references.
+VISIBLE_FIELDS = ('Front', 'Back', 'Text', 'Extra', 'Type', 'Mindset')
+SOURCE_CHATTER = re.compile(
+    r"\b(?:lectures?|slides?|authors?|transcripts?|instructors?)\b"
+    r"|\b(?:supplemental|supplementary|external)\s+(?:[\w-]+\s+){0,3}(?:clarification|evidence|explanation|context)\b"
+    r"|\baccording\s+to\b"
+    r"|\b(?:the|this|that)\s+reading\b"
+    r"|\breadings?['’]s\b"
+    r"|\breading\s+(?:says|states|describes|explains|links|argues)\b"
+    r"|\bnot\s+[^.!?;\n]{1,60}?['’]s\s+label\b",
+    re.IGNORECASE,
+)
+
+def source_chatter_warnings(card_id, fields):
+    warnings = []
+    for name in VISIBLE_FIELDS:
+        content = fields.get(name, '')
+        # Alt text is visible when an image cannot load, and must obey the rule too.
+        alt = re.findall(r'\balt=["\'](.*?)["\']', content, re.IGNORECASE)
+        text = html.unescape(re.sub(r'<[^>]*>', ' ', content) + ' ' + ' '.join(alt))
+        matches = list(dict.fromkeys(match.group() for match in SOURCE_CHATTER.finditer(text)))
+        if matches:
+            warnings.append(f'{card_id}: {name}: possible source chatter: ' + '; '.join(matches))
+    return warnings
+
 def verify(apkg, report_path, input_path):
     data = json.loads(input_path.read_text()); validate(data)
     report = json.loads(report_path.read_text())
     if hashlib.sha256(apkg.read_bytes()).hexdigest() != report['apkgSha256']: raise ValueError('Package hash differs from its build report.')
     expected = {r['guid']:r for r in report['records']}
-    failures = []; renders = []
+    failures = []; renders = []; warnings = []
     with tempfile.TemporaryDirectory() as temp:
         col = Collection(str(Path(temp) / 'verify.anki2'))
         try:
@@ -26,6 +52,7 @@ def verify(apkg, report_path, input_path):
                 row = expected.get(note.guid)
                 if not row: failures.append('Unexpected note identity.'); continue
                 fields = dict(note.items())
+                warnings.extend(source_chatter_warnings(row['id'], fields))
                 if fields != row['fields']: failures.append(row['id'] + ': field content changed during import.')
                 # Exercise hidden fields with sentinel content; user-facing text stays intact.
                 for name in ['premedos_concept_id', 'premedos_source', 'premedos_spec']:
@@ -61,7 +88,7 @@ def verify(apkg, report_path, input_path):
             if not ok: failures.append('Anki database check: ' + integrity)
         finally:
             col.close()
-    result = {'passed':not failures, 'failures':failures, 'notes':report['notes'], 'reviewCards':report['reviewCards'], 'integrity':integrity, 'scope':'Temporary real-Anki import, exact fields/templates/CSS, counts, cloze blanking, hidden fields, media presence, unseen scheduling, database integrity. Not a source-accuracy or learning-quality verdict.'}
+    result = {'passed':not failures, 'failures':failures, 'warnings':warnings, 'notes':report['notes'], 'reviewCards':report['reviewCards'], 'integrity':integrity, 'scope':'Temporary real-Anki import, exact fields/templates/CSS, counts, cloze blanking, hidden fields, media presence, unseen scheduling, database integrity. Not a source-accuracy or learning-quality verdict.'}
     apkg.with_suffix('.verification.json').write_text(json.dumps(result,indent=2)+'\n')
     # Engine-produced HTML with media inlined, available for visual inspection in both themes.
     body = ''.join('<section><h2>Card '+str(i+1)+'</h2><div class="sample"><div class="card">'+r['question']+'</div><div class="card">'+r['answer']+'</div></div></section>' for i,r in enumerate(renders))
