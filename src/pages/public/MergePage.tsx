@@ -29,6 +29,7 @@ import { supabase } from '@/lib/supabase'
 import { readDashboardForReview } from '@/store/dashboardRows'
 import { snapshotData } from '@/store/store'
 import { accountMutationFailure, prepareAccountMutation, type AccountMutation } from '@/store/accountMutationSafety'
+import { comparableAccountContent } from '@/store/accountCopyComparison'
 import { AccountSyncNotice } from '@/components/layout/AccountSyncNotice'
 import { localCounts, localWorkSince, markMergeSeen } from '@/lib/publicLayer'
 import type { AppData } from '@/lib/types'
@@ -139,6 +140,10 @@ export function MergePage() {
         here: areaSize(local, area.fields),
         account: areaSize(cloud, area.fields),
       })).filter((a) => a.fields.some((field) => JSON.stringify(local[field]) !== JSON.stringify(cloud?.[field]))),
+    [local, cloud],
+  )
+  const sharedContentMatches = useMemo(
+    () => !!cloud && comparableAccountContent(local) === comparableAccountContent(cloud),
     [local, cloud],
   )
 
@@ -269,7 +274,9 @@ export function MergePage() {
 
                 {conflicts.length === 0 ? (
                   <p className="pl-fine">
-                    Both copies look the same. There's nothing to resolve.
+                    {sharedContentMatches
+                      ? "Both copies look the same. There's nothing to resolve."
+                      : "The areas listed here match, but other saved work or settings differ. Anything outside these areas stays as your account has it."}
                   </p>
                 ) : (
                   conflicts.map((area) => (

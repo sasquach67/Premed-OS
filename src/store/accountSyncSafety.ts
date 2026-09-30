@@ -1,10 +1,12 @@
 import { blockAccountSchema, getAccountSchemaBlock } from './accountSchemaBlock'
 export { getAccountSchemaBlock } from './accountSchemaBlock'
-import { assertSupportedWorkspace, isCloudSchema, isWriteRev, prepareWorkspaceData, type CloudClaim } from '@/lib/workspaceSchema'
+import { assertSupportedWorkspace, isCloudSchema, isWriteRev, type CloudClaim } from '@/lib/workspaceSchema'
 import { clearDriveSession } from '@/lib/googleDrive'
 import type { AppData } from '@/lib/types'
 import { accountStorageKey } from '@/lib/demoMode'
-import { dataForRemote } from '@/lib/storyPrivacy'
+import { comparableAccountContent } from './accountCopyComparison'
+import { syncContent } from './accountSyncContent'
+export { syncContent } from './accountSyncContent'
 import { validateAppData } from '@/lib/validateAppData'
 import { assertDurableWorkspace, captureWorkspaceIdentity, snapshotData } from './store'
 import { workspaceRecoveryRepository } from './workspaceRecoveryRepository'
@@ -51,21 +53,6 @@ export function subscribeAccountConflicts(listener: () => void) { listeners.add(
 export function getAccountConflict(id: string | null | undefined) { return id ? conflicts.get(id) : undefined }
 function publish(id: string, value: AccountConflict) { conflicts.set(id, value); pauseAccountSync(id); listeners.forEach(fn => fn()) }
 
-// Stable JSON order is needed because JSONB may reorder object keys.
-function canonical(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonical)
-  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => [k, canonical(v)]))
-  return value
-}
-/** Content identity for sync comparisons. The portable `_schema` marker is version
- *  metadata (the server's `cloud_schema` is authoritative), so it is left out: the
- *  same content hashes exactly as it did before S1 (d60f682), and baselines those
- *  apps recorded stay valid. The version gate still runs first. */
-export function syncContent(data: AppData) {
-  const { _schema: _marker, ...remote } = dataForRemote(prepareWorkspaceData(data)) as AppData & { _schema?: unknown }
-  const settings = { ...remote.settings, backup: undefined }
-  return JSON.stringify(canonical({ ...remote, settings }))
-}
 export async function syncDigest(text: string) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map(b => b.toString(16).padStart(2, '0')).join('')
 }
@@ -73,8 +60,11 @@ export async function syncDigest(text: string) {
  * Accept an older baseline's spelling of that same empty state, while keeping
  * the primary hash unchanged for pre-S1 and T4 clients. Never omit nonempty
  * collections, nested fields, or unknown sections from this comparison. */
-export async function matchesSyncBaseline(data: AppData, digest: string): Promise<boolean> {
-  if (await syncDigest(syncContent(data)) === digest) return true
+export async function matchesSyncBaseline(data: AppData, digest: string, comparableDigestV1?: string): Promise<boolean> {
+  // Capture both representations before yielding so hashes share one snapshot.
+  const exact = syncContent(data), comparable = comparableDigestV1 && comparableAccountContent(data)
+  if (await syncDigest(exact) === digest) return true
+  if (comparable && /^[0-9a-f]{64}$/.test(comparableDigestV1!) && await syncDigest(comparable) === comparableDigestV1) return true
   const earlier = { ...data } as Record<string, unknown>
   let changed = false
   for (const key of ['researchUpcomingItems', 'researchReminders', 'researchTimelineNotes', 'researchMemberships'] as const) {
@@ -86,7 +76,7 @@ export async function matchesSyncBaseline(data: AppData, digest: string): Promis
 /** `claim` is the server row metadata this digest was confirmed at. A baseline
  *  recorded before S1 has none (`undefined`): the next write needs a fresh read,
  *  never an invented revision. */
-export type SyncBaseline = { digest: string; updatedAt: string; claim?: CloudClaim | null }
+export type SyncBaseline = { digest: string; updatedAt: string; claim?: CloudClaim | null; comparableDigestV1?: string }
 const baselineKey = (id: string) => `premed-os:sync-baseline:v2:${id}`
 // Still written so an older open tab keeps its own content comparison.
 const legacyBaselineKey = (id: string) => `premed-os:sync-baseline:v1:${id}`
@@ -100,7 +90,10 @@ export function readSyncBaseline(id: string): SyncBaseline | null {
   const current = read(baselineKey(id))
   if (current) {
     const claim = storedClaim(current.claim)
-    return claim === undefined ? { digest: current.digest, updatedAt: current.updatedAt } : { digest: current.digest, updatedAt: current.updatedAt, claim }
+    const baseline: SyncBaseline = { digest: current.digest, updatedAt: current.updatedAt }
+    if (claim !== undefined) baseline.claim = claim
+    if (typeof current.comparableDigestV1 === 'string' && /^[0-9a-f]{64}$/.test(current.comparableDigestV1)) baseline.comparableDigestV1 = current.comparableDigestV1
+    return baseline
   }
   const legacy = read(legacyBaselineKey(id))
   return legacy && { digest: legacy.digest, updatedAt: legacy.updatedAt }
@@ -108,23 +101,24 @@ export function readSyncBaseline(id: string): SyncBaseline | null {
 type BaselineRevision = { updatedAt: string; claim: CloudClaim | null }
 /** Records the synced workspace (always hashed here) at a server revision. */
 export async function recordSyncBaseline(id: string, data: AppData, revision: BaselineRevision, token: ReturnType<typeof captureSyncSession>) {
-  await writeSyncBaseline(id, () => syncDigest(syncContent(data)), revision, token)
+  const exact = syncContent(data), comparable = comparableAccountContent(data)
+  await writeSyncBaseline(id, async () => ({ digest: await syncDigest(exact), comparableDigestV1: await syncDigest(comparable) }), revision, token)
 }
 /** Moves an existing baseline to a new server revision of unchanged content (a
  *  claim, or metadata read for dirty local edits). The digest must come from a
  *  baseline already on record: it is a separate input, never read from workspace data. */
 export async function rebaseSyncBaseline(id: string, baseline: SyncBaseline, revision: BaselineRevision, token: ReturnType<typeof captureSyncSession>) {
   if (!/^[0-9a-f]{64}$/.test(baseline.digest)) throw new Error('The recorded sync baseline is unreadable. Check the cloud copy again.')
-  await writeSyncBaseline(id, async () => baseline.digest, revision, token)
+  await writeSyncBaseline(id, async () => ({ digest: baseline.digest, comparableDigestV1: baseline.comparableDigestV1 }), revision, token)
 }
-async function writeSyncBaseline(id: string, digestOf: () => Promise<string>, revision: BaselineRevision, token: ReturnType<typeof captureSyncSession>) {
+async function writeSyncBaseline(id: string, digestOf: () => Promise<Pick<SyncBaseline, 'digest' | 'comparableDigestV1'>>, revision: BaselineRevision, token: ReturnType<typeof captureSyncSession>) {
   if (token.id !== id) throw new Error('This sync result belongs to a different account.')
   const owner = captureWorkspaceIdentity()
-  const digest = await digestOf()
+  const { digest, comparableDigestV1 } = await digestOf()
   assertSyncLease(token)
   const current = captureWorkspaceIdentity()
   if (owner.key !== current.key || owner.epoch !== current.epoch) throw new Error('The workspace changed while sync completed. Its metadata was kept.')
-  localStorage.setItem(baselineKey(id), JSON.stringify({ digest, updatedAt: revision.updatedAt, claim: revision.claim }))
+  localStorage.setItem(baselineKey(id), JSON.stringify({ digest, comparableDigestV1, updatedAt: revision.updatedAt, claim: revision.claim }))
   localStorage.setItem(legacyBaselineKey(id), JSON.stringify({ digest, updatedAt: revision.updatedAt }))
 }
 

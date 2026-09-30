@@ -1,10 +1,13 @@
 import { Blob as NodeBlob } from 'node:buffer'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { IDBFactory } from 'fake-indexeddb'
 import { createPersonalInitialData } from '@/data/personalInitialData'
 import { syncNotebookImages, type NotebookCloudTransport } from './sharedNotebookAssets'
 import { binaryDigest } from '@/lib/workspaceAssets'
 import type { ImportedNotebook } from './types'
 import { visualFixture } from './visual.test-fixtures'
+import { createNotebookAssetRepository } from './notebookAssetStore'
+import { CloudRequestError } from '@/store/cloudRequest'
 
 const wire = vi.hoisted(() => ({ download: vi.fn(), upload: vi.fn() }))
 vi.mock('@/lib/supabase', () => ({ supabase: { storage: { from: () => wire } } }))
@@ -30,6 +33,70 @@ it('rejects damaged cloud bytes without replacing them or claiming success', asy
   const f = await fixture(); f.cloud.set(`owner-a/${f.hash}`, new Blob(['wrong']))
   await expect(syncNotebookImages(f.data, 'owner-a', { read: async () => f.blob }, () => {}, f.remote)).rejects.toThrow('could not be verified')
   expect(f.upload).not.toHaveBeenCalled()
+})
+it('verifies intact cloud bytes without depending on a readable local image cache', async () => {
+  const f = await fixture(), read = vi.fn(async () => { throw new Error('Local image storage could not be opened.') })
+  f.cloud.set(`owner-a/${f.hash}`, f.blob)
+  await expect(syncNotebookImages(f.data, 'owner-a', { read }, () => {}, f.remote)).resolves.toEqual({ verified: 1 })
+  expect(read).toHaveBeenCalledTimes(1); expect(f.upload).not.toHaveBeenCalled()
+})
+it('keeps a missing IndexedDB image and missing cloud object unresolved', async () => {
+  const f = await fixture(), repository = createNotebookAssetRepository(new IDBFactory()), progress = vi.fn()
+  await expect(syncNotebookImages(f.data, 'owner-a', repository, () => {}, f.remote, progress)).rejects.toThrow('missing locally and in your account')
+  expect(f.upload).not.toHaveBeenCalled(); expect(progress.mock.calls).toEqual([[0, 1]])
+})
+it('preserves the local read failure when the account image is also absent', async () => {
+  const f = await fixture(), failure = new Error('Local image storage is unavailable.')
+  await expect(syncNotebookImages(f.data, 'owner-a', { read: async () => { throw failure } }, () => {}, f.remote)).rejects.toBe(failure)
+  expect(f.upload).not.toHaveBeenCalled()
+})
+it('times out a stalled image upload and fences its late completion before cloud readback', async () => {
+  const f = await fixture(), progress = vi.fn()
+  let release!: () => void
+  const gate = new Promise<void>(resolve => { release = resolve })
+  const download = vi.fn(async () => f.cloud.get(`owner-a/${f.hash}`))
+  const upload = vi.fn(async () => { await gate; f.cloud.set(`owner-a/${f.hash}`, f.blob) })
+  vi.useFakeTimers()
+  let failure: unknown
+  const work = syncNotebookImages(f.data, 'owner-a', { read: async () => f.blob }, () => {}, { download, upload }, progress).catch(error => { failure = error })
+  try {
+    await vi.waitFor(() => expect(upload).toHaveBeenCalledTimes(1))
+    await vi.advanceTimersByTimeAsync(120_001)
+    expect(failure).toBeInstanceOf(CloudRequestError)
+    expect(failure).toMatchObject({ retryable: true, message: expect.stringContaining('stopped making progress') })
+  } finally { release(); await work; await vi.advanceTimersByTimeAsync(1) }
+  expect(download).toHaveBeenCalledTimes(1)
+  expect(progress.mock.calls).toEqual([[0, 1]])
+})
+it('times out a stalled cloud read and ignores its late verified bytes', async () => {
+  const f = await fixture(), progress = vi.fn(), read = vi.fn(async () => f.blob)
+  let release!: (blob: Blob) => void
+  const gate = new Promise<Blob>(resolve => { release = resolve })
+  const download = vi.fn(() => gate)
+  vi.useFakeTimers()
+  let failure: unknown
+  const work = syncNotebookImages(f.data, 'owner-a', { read }, () => {}, { download, upload: f.upload }, progress).catch(error => { failure = error })
+  try {
+    await vi.waitFor(() => expect(download).toHaveBeenCalledTimes(1))
+    await vi.advanceTimersByTimeAsync(120_001)
+    expect(failure).toMatchObject({ retryable: true, message: expect.stringContaining('stopped making progress') })
+  } finally { release(f.blob); await work; await vi.advanceTimersByTimeAsync(1) }
+  expect(read).toHaveBeenCalledTimes(1); expect(f.upload).not.toHaveBeenCalled()
+  expect(progress.mock.calls).toEqual([[0, 1]])
+})
+it('does not upload local bytes that arrive after the image check timed out', async () => {
+  const f = await fixture(), progress = vi.fn()
+  let release!: (blob: Blob) => void
+  const gate = new Promise<Blob>(resolve => { release = resolve }), read = vi.fn(() => gate)
+  vi.useFakeTimers()
+  let failure: unknown
+  const work = syncNotebookImages(f.data, 'owner-a', { read }, () => {}, f.remote, progress).catch(error => { failure = error })
+  try {
+    await vi.waitFor(() => expect(read).toHaveBeenCalledTimes(1))
+    await vi.advanceTimersByTimeAsync(120_001)
+    expect(failure).toMatchObject({ retryable: true })
+  } finally { release(f.blob); await work; await vi.advanceTimersByTimeAsync(1) }
+  expect(f.upload).not.toHaveBeenCalled(); expect(progress.mock.calls).toEqual([[0, 1]])
 })
 it('stops before upload when the workspace changes during a preceding read', async () => {
   const f = await fixture(); let fresh = true
@@ -76,6 +143,47 @@ it.each([null, { status: 409, statusCode: 'KeyAlreadyExists' }])('recognizes mis
   wire.upload.mockResolvedValue({ error })
   expect(await syncNotebookImages(f.data, 'owner-a', { read: async () => f.blob }, () => {})).toEqual({ verified: 1 })
   expect(wire.upload).toHaveBeenCalledTimes(1); expect(wire.download).toHaveBeenCalledTimes(2)
+})
+it.each([503, 403])('preserves upload HTTP %s retryability after bounded guarded attempts', async status => {
+  const f = await fixture(), error = { status, statusCode: status === 503 ? 'SlowDown' : 'AccessDenied', message: 'Synthetic upload failure' }
+  wire.download.mockResolvedValue({ error: { status: 404, message: 'Missing' } })
+  wire.upload.mockResolvedValue({ error })
+  vi.useFakeTimers()
+  let failure: unknown
+  const work = syncNotebookImages(f.data, 'owner-a', { read: async () => f.blob }, () => {}).catch(error => { failure = error })
+  await vi.waitFor(() => expect(wire.upload).toHaveBeenCalled())
+  await vi.advanceTimersByTimeAsync(15_000); await work
+  expect(failure).toBeInstanceOf(CloudRequestError)
+  expect(failure).toMatchObject({ retryable: status === 503, status, cause: error })
+  expect(wire.upload).toHaveBeenCalledTimes(status === 503 ? 4 : 1)
+  expect(wire.download).toHaveBeenCalledTimes(1)
+  for (const call of wire.upload.mock.calls) expect(call[2]).toMatchObject({ upsert: false })
+})
+it('stops upload retries when the account or sync lease changes during backoff', async () => {
+  const f = await fixture(); let fresh = true, failure: unknown
+  wire.download.mockResolvedValue({ error: { status: 404, message: 'Missing' } })
+  wire.upload.mockResolvedValue({ error: { status: 503, message: 'Busy' } })
+  vi.useFakeTimers()
+  const work = syncNotebookImages(f.data, 'owner-a', { read: async () => f.blob }, () => { if (!fresh) throw new Error('Account sync paused') }).catch(error => { failure = error })
+  await vi.waitFor(() => expect(wire.upload).toHaveBeenCalledTimes(1))
+  fresh = false
+  await vi.advanceTimersByTimeAsync(2000); await work
+  expect(failure).toMatchObject({ message: 'Account sync paused' })
+  expect(wire.upload).toHaveBeenCalledTimes(1); expect(wire.download).toHaveBeenCalledTimes(1)
+})
+it.each([true, false])('verifies immutable readback after an upload retry finds a concurrent object (valid: %s)', async valid => {
+  const f = await fixture(), progress = vi.fn()
+  wire.download.mockResolvedValueOnce({ error: { status: 404, message: 'Missing' } }).mockResolvedValue({ data: valid ? f.blob : new Blob(['wrong']), error: null })
+  wire.upload.mockResolvedValueOnce({ error: { status: 503, message: 'Response lost' } }).mockResolvedValue({ error: { status: 409, message: 'Already exists' } })
+  vi.useFakeTimers()
+  let failure: unknown, result: unknown
+  const work = syncNotebookImages(f.data, 'owner-a', { read: async () => f.blob }, () => {}, undefined, progress).then(value => { result = value }).catch(error => { failure = error })
+  await vi.waitFor(() => expect(wire.upload).toHaveBeenCalledTimes(1))
+  await vi.advanceTimersByTimeAsync(2000); await work
+  expect(wire.upload).toHaveBeenCalledTimes(2); expect(wire.download).toHaveBeenCalledTimes(2)
+  for (const call of wire.upload.mock.calls) expect(call[2]).toMatchObject({ upsert: false })
+  if (valid) { expect(failure).toBeUndefined(); expect(result).toEqual({ verified: 1 }); expect(progress).toHaveBeenLastCalledWith(1, 1) }
+  else { expect(failure).toMatchObject({ message: expect.stringContaining('could not be verified') }); expect(progress.mock.calls).toEqual([[0, 1]]) }
 })
 
 it('reports verified progress for 80 distinct fixture images with a slowed repository', async () => {

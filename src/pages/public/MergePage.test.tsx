@@ -108,6 +108,32 @@ describe('MergePage exits', () => {
     })
   }
 
+  it.each(['settings', 'notes', 'saved history', 'unrecognized sections'] as const)('does not claim equal copies when only %s differs outside the listed merge areas', async difference => {
+    const account = structuredClone(snapshotData())
+    if (difference === 'unrecognized sections') Object.assign(account, { futureSection: { keep: true } })
+    else useStore.getState().update(device => {
+      if (difference === 'settings') device.settings.theme = 'dark'
+      if (difference === 'notes') device.notes.synthetic = 'A saved note outside notePages'
+      if (difference === 'saved history') device.meta.activity.push({ id: 'synthetic-activity', at: 1, pillar: 'overview', label: 'Saved a thought' })
+    })
+    dashboards.rows.set(USER_ID, { data: account, updated_at: '2026-09-12T00:00:00.000Z' })
+    await render()
+    expect(container.textContent).not.toContain("Both copies look the same. There's nothing to resolve.")
+    expect(container.textContent).toContain('The areas listed here match, but other saved work or settings differ.')
+    expect(upserted).toHaveLength(0)
+  })
+
+  it('recognizes shared account content that differs only in device housekeeping', async () => {
+    const account = structuredClone(snapshotData())
+    account.meta.lastOpenedAt = 1
+    account.meta.recentRoutes = ['/research']
+    account.settings.calendar.lastSyncedAt = 2
+    dashboards.rows.set(USER_ID, { data: account, updated_at: '2026-09-12T00:00:00.000Z' })
+    await render()
+    expect(container.textContent).toContain("Both copies look the same. There's nothing to resolve.")
+    expect(upserted).toHaveLength(0)
+  })
+
   it('names the deferral for the workspace switch it performs', async () => {
     await render()
 

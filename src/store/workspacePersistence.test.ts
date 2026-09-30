@@ -150,6 +150,30 @@ it('does not seed an empty workspace when a pointer has no database record', asy
   await expect(createWorkspacePersistence(repo, legacy).load(key, seed)).rejects.toThrow('missing IndexedDB data')
   expect(await repo.read(key)).toBeNull()
 })
+it('recreates empty database stores after external deletion but preserves the pointer and blocks seeding', async () => {
+  legacy.setItem(key, raw('Synthetic saved work'))
+  const disk = createWorkspacePersistence(repo, legacy)
+  await disk.load(key, seed)
+  const pointer = legacy.getItem(key)
+  repo.close()
+  await new Promise<void>((resolve, reject) => {
+    // A test-only external deletion: production code never deletes this DB.
+    const request = factory.deleteDatabase('premed-os-workspaces-v1')
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+  })
+  repo = createWorkspaceRepository(factory)
+  const reloaded = createWorkspacePersistence(repo, legacy), seedMissing = vi.fn(seed)
+  await expect(reloaded.load(key, seedMissing)).rejects.toThrow('missing IndexedDB data')
+  expect(seedMissing).not.toHaveBeenCalled()
+  expect(legacy.getItem(key)).toBe(pointer)
+  expect(reloaded.status(key).phase).toBe('error')
+  // The read itself opens/recreates the DB. A new DB timestamp cannot identify
+  // when or why the preceding database disappeared.
+  expect(await factory.databases()).toEqual([{ name: 'premed-os-workspaces-v1', version: 1 }])
+  expect(await repo.read(key)).toBeNull()
+  expect(await repo.originals(key)).toEqual([])
+})
 it('keeps separate account snapshots and revisions during overlapping saves', async () => {
   const b = 'hq:app-data:account:synthetic-b'; legacy.setItem(key, raw('A')); legacy.setItem(b, raw('B'))
   const disk = createWorkspacePersistence(repo, legacy)

@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { createPersonalInitialData } from '@/data/personalInitialData'
-import { additiveAccountWinner, classifyAccountCopyChanges, comparableAccountContent } from './accountCopyComparison'
+import { additiveAccountWinner, classifyAccountCopyChanges, comparableAccountContent, compareAccountCopies } from './accountCopyComparison'
 const task = (id: string) => ({ id, title: id, type: 'Task', progress: 'Not started' as const, kanban: 'todo' as const, archived: false, order: 0 })
 it('requires the smaller side to match the baseline, not merely contain fewer records', () => {
   const small = createPersonalInitialData(), full = structuredClone(small)
@@ -68,4 +68,35 @@ it('normalizes only the redundant task category link proven by an unambiguous ex
   a.academics.assignmentTypeOptions.push({ id: 'ambiguous', name: ' other ', color: 'red', archived: false })
   b.academics.assignmentTypeOptions = structuredClone(a.academics.assignmentTypeOptions)
   expect(comparableAccountContent(a)).not.toBe(comparableAccountContent(b))
+})
+
+it('shows only meaningful differences after the same housekeeping normalization used by sync', () => {
+  const device = createPersonalInitialData(), cloud = structuredClone(device)
+  cloud.meta.lastOpenedAt = 123
+  cloud.meta.recentRoutes = ['/research']
+  cloud.settings.calendar.lastSyncedAt = 456
+  expect(compareAccountCopies(device, cloud)).toEqual([])
+  cloud.notes.example = 'Saved only in the cloud'
+  expect(compareAccountCopies(device, cloud)).toEqual([
+    { path: 'notes.example', device: 'Not present', cloud: '"Saved only in the cloud"' },
+  ])
+})
+
+it('shows changed common-record order instead of describing reordered copies as matching', () => {
+  const device = createPersonalInitialData()
+  device.tasks = [task('one'), task('two')]
+  const cloud = structuredClone(device)
+  cloud.tasks.reverse()
+  expect(classifyAccountCopyChanges(device, cloud).changed).toBe(true)
+  expect(compareAccountCopies(device, cloud)).toEqual([
+    { path: 'tasks (record order)', device: '["one","two"]', cloud: '["two","one"]' },
+  ])
+})
+
+it('describes added records without falsely reporting unchanged common-record order', () => {
+  const device = createPersonalInitialData()
+  device.tasks = [task('one'), task('two')]
+  const cloud = structuredClone(device)
+  cloud.tasks.splice(1, 0, task('new'))
+  expect(compareAccountCopies(device, cloud).map(difference => difference.path)).toEqual(['tasks[new]'])
 })

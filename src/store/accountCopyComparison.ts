@@ -1,6 +1,6 @@
 import { knownWorkspaceData } from '@/lib/workspaceSchema'
 import type { AppData } from '@/lib/types'
-import { syncContent } from './accountSyncSafety'
+import { syncContent } from './accountSyncContent'
 
 type Difference = { path: string; device: string; cloud: string }
 const short = (value: unknown) => value === undefined ? 'Not present' : JSON.stringify(value).slice(0, 240)
@@ -14,16 +14,20 @@ export function compareAccountCopies(device: AppData, cloud: AppData) {
       for (const key of new Set([...Object.keys(left), ...Object.keys(right)])) walk(left[key], right[key], path ? `${path}.${key}` : key)
     } else if (Array.isArray(a) && Array.isArray(b) && [...a, ...b].every(v => v && typeof v === 'object' && typeof v.id === 'string') && new Set(a.map(v => v.id)).size === a.length && new Set(b.map(v => v.id)).size === b.length) {
       const left = new Map(a.map(v => [v.id, v])), right = new Map(b.map(v => [v.id, v]))
+      const deviceOrder = a.filter(v => right.has(v.id)).map(v => v.id)
+      const cloudOrder = b.filter(v => left.has(v.id)).map(v => v.id)
+      if (JSON.stringify(deviceOrder) !== JSON.stringify(cloudOrder)) differences.push({ path: `${path} (record order)`, device: short(deviceOrder), cloud: short(cloudOrder) })
       for (const id of new Set([...left.keys(), ...right.keys()])) walk(left.get(id), right.get(id), `${path}[${id}]`)
     } else differences.push({ path, device: short(a), cloud: short(b) })
   }
-  walk(knownWorkspaceData(JSON.parse(syncContent(device))), knownWorkspaceData(JSON.parse(syncContent(cloud))), '')
+  walk(knownWorkspaceData(JSON.parse(comparableAccountContent(device))), knownWorkspaceData(JSON.parse(comparableAccountContent(cloud))), '')
   return differences
 }
 
 
-/** Comparison only: these are device housekeeping, not authored work. The
- * persisted baseline digest and all payloads keep their existing contract. */
+/** These V1 rules also define the optional LOCAL comparable baseline digest.
+ * Future normalization changes need a new digest version. The original digest
+ * and cloud payloads keep their existing contract. */
 export function comparableAccountContent(data: AppData): string {
   const value = JSON.parse(syncContent(data))
   if (value.meta) { delete value.meta.lastOpenedAt; delete value.meta.recentRoutes }

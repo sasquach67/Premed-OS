@@ -17,10 +17,14 @@ import { syncNotebookImages } from '@/lib/academics/notebook/sharedNotebookAsset
 import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
 import { getAccountSchemaBlock, getCloudProtection, pauseAccountForSchema, allowAccountSync, assertAccountUpload, assertSyncLease, assertSyncSession, captureSyncSession, getAccountConflict, isAccountSyncReady, observeSyncSession, pauseAccountSync, preserveAccountConflict, preserveAccountReplacement, readSyncBaseline, rebaseSyncBaseline, recordSyncBaseline, subscribeAccountConflicts, syncContent, matchesSyncBaseline, recordAccountRecoveryNotice, ADDITIVE_RECOVERY_NOTICE } from './accountSyncSafety'
 import { DashboardWriteMiss, readDashboard, writeDashboard, type RemoteDashboard } from './dashboardRows'
-import { CloudRequestError } from './cloudRequest'
+import { cloudRequest, CloudRequestError } from './cloudRequest'
 
 const DEBOUNCE_MS = 4000
+const REFRESH_MS = 60_000
 const reconciliationJobs = new Map<string, Promise<void>>()
+class SyncWorkspaceChangedError extends Error {
+  constructor() { super('Saved work changed during sync. Nothing was replaced; sync will check again.'); this.name = 'SyncWorkspaceChangedError' }
+}
 export type CloudStatus = 'idle' | 'signing-in' | 'syncing' | 'synced' | 'error' | 'offline'
 
 export function useCloudSync() {
@@ -76,7 +80,8 @@ export function useCloudSync() {
       setStatus('syncing'); setError(''); setProgress('Checking your saved account…'); retryAfterReconnect.current = false
       const fresh = () => {
         assertSyncSession(token)
-        if (token.id !== u.id || captureWorkspaceIdentity().epoch !== owner.epoch || captureWorkspaceIdentity().key !== owner.key || savedWorkspaceRaw(key) !== before || JSON.stringify(snapshotData()) !== openJson) throw new Error('Saved work or the active workspace changed during sync. Nothing was replaced; check sync again.')
+        if (token.id !== u.id || captureWorkspaceIdentity().epoch !== owner.epoch || captureWorkspaceIdentity().key !== owner.key) throw new Error('The active workspace changed during sync. Nothing was replaced; check sync again.')
+        if (savedWorkspaceRaw(key) !== before || JSON.stringify(snapshotData()) !== openJson) throw new SyncWorkspaceChangedError()
         durableOpen()
       }
       try {
@@ -147,8 +152,8 @@ export function useCloudSync() {
         fresh()
         const housekeepingOnly = !!local && localText !== remoteText && comparableAccountContent(local) === comparableAccountContent(remote.data)
         const equal = localText === remoteText || housekeepingOnly
-        const cleanLocal = baseline && local && await matchesSyncBaseline(local, baseline.digest)
-        const remoteUnchanged = baseline && remote.updatedAt === baseline.updatedAt && await matchesSyncBaseline(remote.data, baseline.digest)
+        const cleanLocal = baseline && local && await matchesSyncBaseline(local, baseline.digest, baseline.comparableDigestV1)
+        const remoteUnchanged = baseline && remote.updatedAt === baseline.updatedAt && await matchesSyncBaseline(remote.data, baseline.digest, baseline.comparableDigestV1)
         fresh(); assertSyncLease(lease)
         const changes = local && !equal ? classifyAccountCopyChanges(local, remote.data) : null
         const additiveWinner = changes && additiveAccountWinner(changes, Boolean(cleanLocal), Boolean(remoteUnchanged))
@@ -170,16 +175,21 @@ export function useCloudSync() {
         await flushWorkspaceStorage(key)
         assertDurableWorkspace()
         assertSyncSession(token)
-        const hydrated = snapshotData(), hydratedOwner = captureWorkspaceIdentity()
+        const hydrated = snapshotData(), hydratedOwner = captureWorkspaceIdentity(), hydratedStore = useStore.getState()
         const checkImages = captureDurableWorkspaceCheck(hydrated, hydratedOwner)
-        await syncNotebookImages(hydrated, u.id, notebookAssetRepository(), () => { assertSyncLease(lease); checkImages() }, undefined, (verified, total) => {
+        const checkHydrated = () => {
+          assertSyncLease(lease)
+          if (captureWorkspaceIdentity().epoch === hydratedOwner.epoch && useStore.getState() !== hydratedStore) throw new SyncWorkspaceChangedError()
+          checkImages()
+        }
+        await syncNotebookImages(hydrated, u.id, notebookAssetRepository(), checkHydrated, undefined, (verified, total) => {
           setProgress(total ? `Checking notebook images (${verified} of ${total})…` : 'Finishing account check…')
         })
         if (!local || equal || cleanLocal) await recordSyncBaseline(u.id, remote.data, remote, lease)
         // Dirty local edits over an unchanged cloud keep their baseline digest, but
         // the next save needs this revision's server metadata, read just now.
         else if (baseline && remoteUnchanged && (baseline.claim?.writeRev !== remote.claim?.writeRev || baseline.claim?.cloudSchema !== remote.claim?.cloudSchema)) await rebaseSyncBaseline(u.id, baseline, remote, lease)
-        assertSyncLease(lease)
+        checkHydrated()
         assertDurableWorkspace()
         allowAccountSync(lease)
         lastSig.current = remoteText
@@ -199,7 +209,7 @@ export function useCloudSync() {
         } catch { /* A target that failed to load stays protected; report the original failure below. */ }
         // Missing columns: no fallback writer. Edits stay on the device; re-read later.
         const missing = isMissingCloudColumnsError(cause)
-        retryAfterReconnect.current = missing || (cause instanceof CloudRequestError && cause.retryable)
+        retryAfterReconnect.current = missing || cause instanceof SyncWorkspaceChangedError || (cause instanceof CloudRequestError && cause.retryable)
         setError(missing ? new CloudColumnsMissingError().message : cause instanceof Error ? cause.message : 'Sync stopped before replacing saved data.'); setStatus('error')
       }
     }
@@ -309,6 +319,47 @@ export function useCloudSync() {
     schedule()
     return () => { unsub(); if (timer.current) clearTimeout(timer.current) }
   }, [user, accountReady, conflict, pushNow])
+
+  useEffect(() => {
+    if (!user || !accountReady || conflict) return
+    let stopped = false, checking = false
+    const available = () => !stopped && !pushing.current && document.visibilityState === 'visible' && navigator.onLine !== false && isAccountSyncReady(user.id)
+    const refresh = async () => {
+      if (checking || !available()) return
+      checking = true
+      const token = captureSyncSession(), owner = captureWorkspaceIdentity(), snapshot = snapshotData()
+      const baseline = readSyncBaseline(user.id)
+      try {
+        // A passive refresh never initiates a conflict review for unsent work.
+        // The ordinary save path still reconciles competing authored edits.
+        if (!baseline || !await matchesSyncBaseline(snapshot, baseline.digest, baseline.comparableDigestV1)) return
+        const fresh = () => {
+          assertSyncLease(token)
+          if (!available()) throw new Error('Background refresh is no longer current.')
+          assertDurableWorkspace(snapshot, owner)
+        }
+        fresh()
+        // A metadata-only probe avoids downloading the full dashboard and all
+        // image objects every minute when the protected revision is unchanged.
+        const { data: revision } = await cloudRequest(() => supabase!.from('dashboards').select('updated_at, cloud_schema, write_rev').eq('user_id', user.id).maybeSingle(), fresh)
+        fresh()
+        if (baseline.claim && revision?.updated_at === baseline.updatedAt && revision.cloud_schema === baseline.claim.cloudSchema && revision.write_rev === baseline.claim.writeRev) return
+        await reconcile(user)
+      } catch { /* Foreground sync reports failures; the next refresh may retry. */ }
+      finally { checking = false }
+    }
+    const resume = () => { void refresh() }
+    const interval = setInterval(resume, REFRESH_MS)
+    window.addEventListener('focus', resume)
+    window.addEventListener('online', resume)
+    document.addEventListener('visibilitychange', resume)
+    return () => {
+      stopped = true; clearInterval(interval)
+      window.removeEventListener('focus', resume)
+      window.removeEventListener('online', resume)
+      document.removeEventListener('visibilitychange', resume)
+    }
+  }, [user, accountReady, conflict, reconcile])
 
   useEffect(() => {
     if (!user || conflict || status !== 'error' || !retryAfterReconnect.current) return
