@@ -10,28 +10,18 @@
  * There is no fallback writer without the columns. */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { AppData } from '@/lib/types'
-import { assertSupportedRemote, cloudClaim, CURRENT_CLOUD_SCHEMA, isMissingCloudColumnsError, logicalSchema, MAX_WRITE_REV, WorkspaceSchemaError, type CloudClaim } from '@/lib/workspaceSchema'
-import { assertSyncSession, pauseAccountForSchema, preserveAccountConflict, recordCloudProtection, syncContent, validateRemoteWorkspace, type captureSyncSession } from './accountSyncSafety'
+import { CURRENT_CLOUD_SCHEMA, isMissingCloudColumnsError, logicalSchema, MAX_WRITE_REV, WorkspaceSchemaError, type CloudClaim } from '@/lib/workspaceSchema'
+import { assertSyncSession, pauseAccountForSchema, preserveAccountConflict, recordCloudProtection, syncContent, type captureSyncSession } from './accountSyncSafety'
 import { cloudRequest } from './cloudRequest'
 
-export const DASHBOARD_SELECT = 'data, updated_at, cloud_schema, write_rev'
+import { DASHBOARD_SELECT, parseDashboardRow, readDashboardRow, type RemoteDashboard } from './dashboardRead'
+export { DASHBOARD_SELECT, parseDashboardRow, type RemoteDashboard } from './dashboardRead'
 
-/** A reviewed server revision: the exact decoded document plus its row metadata. */
-export type RemoteDashboard = { data: AppData; updatedAt: string; claim: CloudClaim | null }
 export type DashboardRevision = Pick<RemoteDashboard, 'updatedAt' | 'claim'>
 
 /** A zero-row conditional write: someone else saved first. Reconcile, don't pause. */
 export class DashboardWriteMiss extends Error {
   constructor() { super('The cloud copy changed before this save. It was checked again; nothing was overwritten.'); this.name = 'DashboardWriteMiss' }
-}
-
-/** Metadata first, then the version gates, then structure. Throws before any hydration. */
-export function parseDashboardRow(row: Record<string, unknown>): RemoteDashboard {
-  const claim = cloudClaim(row)
-  if (typeof row.updated_at !== 'string' || !row.updated_at) throw new Error('The cloud copy has no usable revision. Nothing was replaced.')
-  assertSupportedRemote(row.data, claim)
-  validateRemoteWorkspace(row.data)
-  return { data: row.data, updatedAt: row.updated_at, claim }
 }
 
 /** Where an unsupported cloud copy is preserved before the account is blocked. */
@@ -41,7 +31,7 @@ export type RemoteRecovery = { localRaw: string | null; token: ReturnType<typeof
  *  version blocks the account (uploads, backups, edits) and keeps the raw cloud
  *  document downloadable; nothing is hydrated. Missing columns fail closed. */
 export async function readDashboard(client: SupabaseClient, userId: string, assertFresh: () => void | Promise<void>, recovery?: RemoteRecovery): Promise<RemoteDashboard | null> {
-  const { data: row, error } = await cloudRequest(() => client.from('dashboards').select(DASHBOARD_SELECT).eq('user_id', userId).maybeSingle(), assertFresh)
+  const { data: row, error } = await readDashboardRow(client, userId, assertFresh)
     .catch(failure => { throw noteMissingColumns(userId, failure) })
   if (error) throw noteMissingColumns(userId, error)
   if (!row?.data) return null

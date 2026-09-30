@@ -38,6 +38,7 @@ import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { TimeField } from '@/components/common/DateField'
 import { TrashRecovery } from '@/components/common/TrashRecovery'
+import { BrowserStorageStatus } from '@/components/common/BrowserStorageStatus'
 import { clearStudySourceSyncCache, studyTools } from '@/lib/intelligence/studyTools'
 import { isDemoMode, setDemoMode } from '@/lib/demoMode'
 import { supabase } from '@/lib/supabase'
@@ -218,6 +219,7 @@ export function Settings() {
         <Card>
           <CardHeader><CardTitle>Local data</CardTitle></CardHeader>
           <CardContent className="space-y-3">
+            <BrowserStorageStatus />
             <p className="text-sm text-muted-foreground">Changes save to this browser. A complete backup includes your records, notebook history, images and attached files. JSON-only exports contain records and source references, without file bytes. Unrecognized sections are preserved as metadata; files they reference are not included in complete backups.</p>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => void exportComplete()} disabled={exportingBackup}><Download className="size-4" /> {exportingBackup ? 'Preparing backup…' : 'Export complete backup'}</Button>

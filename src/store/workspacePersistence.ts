@@ -4,6 +4,7 @@ import { getAccountSchemaMutationBlock } from './accountSchemaBlock'
 import { decodeWorkspaceStorage } from './workspaceStorageCodec'
 import { validateAppData } from '@/lib/validateAppData'
 import { CURRENT_STORE_VERSION, OLDEST_SUPPORTED_STORE_VERSION } from './workspaceVersion'
+import { persistentStorage } from '@/lib/persistentStorage'
 import { createWorkspaceRepository, verifyWorkspaceRecord, WorkspaceConflictError, type WorkspaceRecord, type WorkspaceRepository } from './workspaceRepository'
 
 export const WORKSPACE_IDB_PREFIX = 'premed-os:workspace:idb:v1:'
@@ -103,6 +104,7 @@ export function createWorkspacePersistence(repository: WorkspaceRepository, lega
       records.set(key, next)
       const remaining = Math.max(0, status(key).pending - 1)
       publish(key, { phase: remaining ? 'saving' : 'ready', pending: remaining, error: '' })
+      void persistentStorage.requestAfterSave()
     }
     // Rejected queues remain rejected: never skip over a failed snapshot and
     // acknowledge a later write against uncertain state.

@@ -21,6 +21,7 @@ export interface WorkspaceRepository {
   activate(key: string, revision: string): Promise<WorkspaceRecord>
   commit(key: string, revision: string, raw: string): Promise<WorkspaceRecord>
   quarantine(key: string, raw: string | null): Promise<void>
+  recover(key: string, expected: WorkspaceRecord | null, legacyRaw: string | null, raw: string, assertFresh?: () => void): Promise<WorkspaceRecord>
   originals(key: string): Promise<WorkspaceCopy[]>
   close(): void
 }
@@ -115,6 +116,25 @@ export function createWorkspaceRepository(factory: IDBFactory = indexedDB, datab
     async quarantine(key, raw) {
       const copy: WorkspaceCopy = { key, raw, reason: 'legacy-conflict', id: crypto.randomUUID(), createdAt: Date.now() }
       return transaction<void>(['originals'], 'readwrite', (tx, result) => { tx.objectStore('originals').add(copy); result(undefined) })
+    },
+    async recover(key, expected, legacyRaw, raw, assertFresh = () => {}) {
+      const digest = await workspaceDigest(raw), migrationId = crypto.randomUUID()
+      assertFresh()
+      const record: WorkspaceRecord = { key, revision: crypto.randomUUID(), migrationId, phase: 'staged', raw, hasData: true, digest, legacyRaw, updatedAt: Date.now() }
+      // Keep even a corrupt predecessor, atomically with the recovered record.
+      // Pointer publication/activation follows readback verification in the caller.
+      return transaction<WorkspaceRecord>(['workspaces', 'originals'], 'readwrite', (tx, result, fail) => {
+        const store = tx.objectStore('workspaces'), request = store.get(key)
+        request.onsuccess = () => {
+          try { assertFresh() } catch (error) { fail(error instanceof Error ? error : new Error('Recovery context changed.')); return }
+          if (JSON.stringify(request.result ?? null) !== JSON.stringify(expected)) { fail(new WorkspaceConflictError()); return }
+          const originals = tx.objectStore('originals')
+          for (const previous of [legacyRaw, expected ? JSON.stringify(expected) : null]) {
+            if (previous !== null) originals.add({ key, id: crypto.randomUUID(), raw: previous, reason: 'legacy-conflict', createdAt: record.updatedAt } satisfies WorkspaceCopy)
+          }
+          store.put(record); result(record)
+        }
+      })
     },
     async originals(key) {
       return transaction<WorkspaceCopy[]>(['originals'], 'readonly', (tx, result) => {

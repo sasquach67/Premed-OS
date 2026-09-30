@@ -3,9 +3,8 @@ import '@/lib/publicLayer'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import { initializeDurableWorkspaces } from '@/store/workspaceBootstrap'
+import { initializeDurableWorkspaces, WorkspaceBootError } from '@/store/workspaceBootstrap'
 import { workspacePersistence } from '@/store/workspacePersistence'
-import { downloadWorkspaceRecovery } from '@/store/workspaceRecoveryExport'
 import { activeStorageKey } from '@/lib/demoMode'
 
 const root = createRoot(document.getElementById('root')!)
@@ -24,8 +23,8 @@ async function start() {
     migrateLegacyWorkspaceKeys()
     root.render(<StrictMode><AppMotionProvider><AppErrorBoundary><WorkspacePersistenceStatus><App /></WorkspacePersistenceStatus></AppErrorBoundary></AppMotionProvider></StrictMode>)
   } catch (error) {
-
-    root.render(<main className="mx-auto max-w-xl space-y-4 p-6" role="alert"><h1>Saved workspace needs attention</h1><p>{error instanceof Error ? error.message : 'Workspace storage could not be opened.'}</p><p>Your earlier data was kept. Keep this tab open and download a recovery copy before retrying. Editing and sync have not started.</p><button type="button" className="underline" onClick={() => { void downloadWorkspaceRecovery().catch(() => { root.render(<p role="alert" className="p-6">Recovery storage is unavailable. Keep this tab open and do not clear browser data.</p>) }) }}>Download recovery copy</button></main>)
+    const { WorkspaceBootRecovery } = await import('@/components/layout/WorkspaceBootRecovery')
+    root.render(<WorkspaceBootRecovery error={error} workspaceKey={error instanceof WorkspaceBootError ? error.workspaceKey : activeStorageKey()} />)
   }
 }
 void start()
