@@ -9,7 +9,8 @@ import { accountStorageKey } from '@/lib/demoMode'
 import { ACCOUNT_WORKSPACE_READY_EVENT } from '@/lib/accountWorkspace'
 import { activateAccountWorkspace, activateGuestWorkspace, CURRENT_STORE_VERSION, snapshotData, useStore } from './store'
 import { allowAccountSync, getAccountConflict, isAccountSyncReady, observeSyncSession, preserveAccountConflict, pauseAccountSync } from './accountSyncSafety'
-import { accountMutationFailure, prepareAccountMutation, restoreWorkspaceFromSource, prepareAccountConflictResolution } from './accountMutationSafety'
+import { accountMutationFailure, prepareAccountMutation, restoreWorkspaceFromSource, prepareAccountConflictResolution, StaleAccountReviewError } from './accountMutationSafety'
+import { comparableAccountContent } from './accountCopyComparison'
 
 const fake = vi.hoisted(() => ({
   userId: null as string | null,
@@ -130,6 +131,36 @@ it('preserves divergent cached account and cloud before rejecting a public-page 
   expect(fake.listeners.size).toBe(0)
 })
 
+it('does not classify a divergent cached account as a stale merge review', async () => {
+  const id = fake.userId!
+  activateAccountWorkspace(id, data('Unreviewed cached copy')); activateGuestWorkspace()
+  const preparing = prepareAccountMutation(id, fake.remote)
+  await expect(preparing).rejects.toThrow('copies need review')
+  await expect(preparing).rejects.not.toBeInstanceOf(StaleAccountReviewError)
+  expect(fake.writes).toHaveLength(0)
+  expect(getAccountConflict(id)?.saved).toBe(true)
+})
+
+it.each(['authored edit', 'housekeeping timestamp'] as const)('classifies a stale reviewed cloud copy after %s without relaxing the exact guard', async change => {
+  const id = fake.userId!, reviewed = structuredClone(fake.remote!)
+  const before = JSON.stringify(snapshotData())
+  if (change === 'authored edit') fake.remote!.notes.synthetic = 'Saved after the review opened'
+  else fake.remote!.meta.lastOpenedAt = reviewed.meta.lastOpenedAt + 1
+  expect(comparableAccountContent(fake.remote!) === comparableAccountContent(reviewed)).toBe(change === 'housekeeping timestamp')
+  const latest = structuredClone(fake.remote)
+
+  const preparing = prepareAccountMutation(id, reviewed)
+  await expect(preparing).rejects.toBeInstanceOf(StaleAccountReviewError)
+  await expect(preparing).rejects.toThrow('The cloud copy changed after this review opened. Reopen the review; no replacement was started.')
+  expect(fake.writes).toHaveLength(0)
+  expect(fake.snapshots.size).toBe(0)
+  expect(fake.remote).toEqual(latest)
+  expect(JSON.stringify(snapshotData())).toBe(before)
+  expect(localStorage.getItem(accountStorageKey(id))).toBeNull()
+  expect(getAccountConflict(id)).toBeUndefined()
+  expect(fake.listeners.size).toBe(0)
+})
+
 it('does not treat a missing remote row as permission to replace an existing account', async () => {
   const id = fake.userId!
   activateAccountWorkspace(id, data('Saved account')); activateGuestWorkspace()
@@ -206,6 +237,20 @@ it('reports a confirmed server write honestly when the account changes before lo
   expect(accountMutationFailure(failure, mutation)).toContain('cloud accepted')
   expect(snapshotData().profile.name).toBe('Guest copy')
   mutation.dispose()
+})
+
+it('keeps confirmed-server-write uncertainty distinct from a stale merge review', async () => {
+  const mutation = await prepareAccountMutation(fake.userId!, fake.remote)
+  try {
+    fake.beforeWrite = () => setAuth('classification-other-synthetic-account')
+    let failure: unknown
+    try { await mutation.write(data('Accepted before session changed')) } catch (error) { failure = error }
+    expect(failure).toBeInstanceOf(Error)
+    expect(failure).not.toBeInstanceOf(StaleAccountReviewError)
+    expect(mutation.serverSaved).toBe(true)
+    expect(fake.writes).toHaveLength(1)
+    expect(accountMutationFailure(failure, mutation)).toContain('cloud accepted')
+  } finally { mutation.dispose() }
 })
 
 it('keeps invalid target-account bytes instead of seeding over them', async () => {

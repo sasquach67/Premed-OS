@@ -76,6 +76,8 @@ it('keeps main fenced through magic-link sign-in and SIGNED_IN, with no live-sto
   let notify!: (event: AuthChangeEvent, session: Session | null) => void
   const writes = Object.fromEntries(['insert', 'upsert', 'update', 'delete'].map(name => [name, vi.fn()]))
   const from = vi.fn(() => writes), signInWithOtp = vi.fn(async () => ({ data: {}, error: null }))
+  // Resolve the queued default mock before registering another for this module.
+  await import('@/lib/supabase')
   vi.doMock('@/lib/supabase', () => ({ authRedirectTo: 'https://synthetic.invalid/', supabase: { from, auth: {
     getSession: vi.fn(async () => ({ data: { session: null }, error: null })), signInWithOtp,
     onAuthStateChange: vi.fn((callback: typeof notify) => { notify = callback; return { data: { subscription: { unsubscribe: vi.fn() } } } }),
