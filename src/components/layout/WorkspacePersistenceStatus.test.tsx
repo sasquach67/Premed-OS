@@ -8,14 +8,14 @@ import { WorkspacePersistenceStatus } from './WorkspacePersistenceStatus'
 
 const fixture = vi.hoisted(() => ({
   key: 'hq:app-data:account:synthetic-a',
-  state: { phase: 'ready', pending: 0, error: '' } as PersistenceStatus,
+  states: new Map<string, PersistenceStatus>(),
   listeners: new Set<() => void>(),
 }))
 vi.mock('@/lib/demoMode', () => ({ activeStorageKey: () => fixture.key }))
 vi.mock('@/store/store', () => ({ useStore: () => undefined, snapshotData: () => ({}) }))
 vi.mock('@/store/workspaceRecoveryExport', () => ({ downloadWorkspaceRecovery: vi.fn() }))
 vi.mock('@/store/workspacePersistence', () => ({ workspacePersistence: () => ({
-  status: () => fixture.state,
+  status: (key: string) => fixture.states.get(key)!,
   subscribe: (listener: () => void) => {
     fixture.listeners.add(listener)
     return () => { fixture.listeners.delete(listener) }
@@ -28,7 +28,7 @@ const render = () => act(() => root.render(<StrictMode><WorkspacePersistenceStat
 const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms))
 function publish(phase: PersistenceStatus['phase'], pending = phase === 'saving' ? 1 : 0) {
   act(() => {
-    fixture.state = { phase, pending, error: phase === 'error' ? 'Synthetic save failure' : '' }
+    fixture.states.set(fixture.key, { phase, pending, error: phase === 'error' ? 'Synthetic save failure' : '' })
     fixture.listeners.forEach(listener => listener())
   })
 }
@@ -41,7 +41,8 @@ function closeIsProtected() {
 beforeEach(() => {
   vi.useFakeTimers()
   fixture.key = 'hq:app-data:account:synthetic-a'
-  fixture.state = { phase: 'ready', pending: 0, error: '' }
+  fixture.states.clear()
+  fixture.states.set(fixture.key, { phase: 'ready', pending: 0, error: '' })
   fixture.listeners.clear()
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -54,7 +55,7 @@ afterEach(() => {
 })
 
 it('keeps brief startup saves quiet while protecting pending work from closing', () => {
-  fixture.state = { phase: 'saving', pending: 1, error: '' }
+  fixture.states.set(fixture.key, { phase: 'saving', pending: 1, error: '' })
   render()
   expect(closeIsProtected()).toBe(true)
   expect(container.textContent).not.toContain(savingText)
@@ -127,6 +128,7 @@ it.each([900, 1_000])('does not carry another workspace’s saving notice across
   publish('saving')
   advance(elapsed)
   fixture.key = 'hq:app-data:account:synthetic-b'
+  fixture.states.set(fixture.key, { phase: 'saving', pending: 1, error: '' })
   render()
   expect(container.querySelector('aside')).toBeNull()
   advance(999)
@@ -143,4 +145,19 @@ it('cleans up the timer and close-tab protection on unmount', () => {
   expect(vi.getTimerCount()).toBe(0)
   expect(closeIsProtected()).toBe(false)
   root = createRoot(container)
+})
+
+it.each(['error', 'loading'] as const)('follows a new owner’s %s notification without a parent render', (phase) => {
+  render()
+  expect(container.querySelector('aside')).toBeNull()
+  expect(closeIsProtected()).toBe(false)
+  act(() => {
+    fixture.key = 'hq:app-data:account:synthetic-b'
+    fixture.states.set(fixture.key, { phase, pending: 0, error: phase === 'error' ? 'New workspace failed to save' : '' })
+    fixture.listeners.forEach(listener => listener())
+  })
+  expect(container.querySelector('aside')).not.toBeNull()
+  expect(container.querySelector('aside')?.textContent).toContain(phase === 'error' ? 'New workspace failed to save' : 'Loading your saved workspace…')
+  expect(container.querySelector('div[inert]')).not.toBeNull()
+  expect(closeIsProtected()).toBe(true)
 })

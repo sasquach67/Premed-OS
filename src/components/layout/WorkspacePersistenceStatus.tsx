@@ -20,7 +20,7 @@ export function WorkspacePersistenceStatus({ children }: { children: ReactNode }
   const persistence = workspacePersistence()!
   const workspaceKey = activeStorageKey()
   const [exportError, setExportError] = useState('')
-  const state = useSyncExternalStore(persistence.subscribe, () => persistence.status(workspaceKey))
+  const state = useSyncExternalStore(persistence.subscribe, () => persistence.status(activeStorageKey()))
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => { if (state.phase !== 'ready') { event.preventDefault(); event.returnValue = '' } }
     window.addEventListener('beforeunload', warn)
