@@ -18,6 +18,14 @@ import { DashboardWriteMiss, readDashboard, writeDashboard, type RemoteDashboard
 const changed = () => new WorkspaceChangedError('The account or saved workspace changed. Nothing else was replaced. Reopen this review before continuing.')
 const conflictMessage = 'Account copies need review. Sync is paused; download the preserved copies before choosing what to restore.'
 
+/** This refusal happens before a reviewed mutation can archive or write. */
+export class StaleAccountReviewError extends Error {
+  constructor() {
+    super('The cloud copy changed after this review opened. Reopen the review; no replacement was started.')
+    this.name = 'StaleAccountReviewError'
+  }
+}
+
 /** Own an auth observer even on public pages without a mounted sync hook. */
 async function beginMutation(expectedUserId?: string, reviewedConflict?: AccountConflict) {
   const captured = captureWorkspaceIdentity()
@@ -113,7 +121,7 @@ export async function prepareAccountMutation(userId: string, reviewedRemote: App
     }
     if ((remote === null) !== (reviewedRemote === null)
       || (remote && reviewedRemote && syncContent(remote) !== syncContent(reviewedRemote))) {
-      throw new Error('The cloud copy changed after this review opened. Reopen the review; no replacement was started.')
+      throw new StaleAccountReviewError()
     }
     await mutation.archive(mutation.owner.key, mutation.beforeRaw ?? wrapped(mutation.before))
     if (targetRaw !== null && key !== mutation.owner.key) await mutation.archive(key, targetRaw)

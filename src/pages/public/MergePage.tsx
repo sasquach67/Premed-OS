@@ -21,14 +21,16 @@
      • Counts are plain — "4 classes, 61 logged hours" — never bytes,
        never a JSON blob.
    ============================================================ */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PublicShell } from '@/components/public/PublicShell'
 import { PublicNav } from '@/components/public/PublicNav'
 import { supabase } from '@/lib/supabase'
 import { readDashboardForReview } from '@/store/dashboardRows'
-import { snapshotData } from '@/store/store'
-import { accountMutationFailure, prepareAccountMutation, type AccountMutation } from '@/store/accountMutationSafety'
+import { captureWorkspaceIdentity, snapshotData, useStore } from '@/store/store'
+import { savedWorkspaceRaw } from '@/store/storageHealth'
+import { ACCOUNT_STORAGE_PREFIX, accountStorageKey } from '@/lib/demoMode'
+import { accountMutationFailure, prepareAccountMutation, StaleAccountReviewError, type AccountMutation } from '@/store/accountMutationSafety'
 import { comparableAccountContent } from '@/store/accountCopyComparison'
 import { AccountSyncNotice } from '@/components/layout/AccountSyncNotice'
 import { localCounts, localWorkSince, markMergeSeen } from '@/lib/publicLayer'
@@ -36,7 +38,7 @@ import type { AppData } from '@/lib/types'
 import { mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
 import { destinationAfterFirstLogin, notifyAccountWorkspaceReady } from '@/lib/accountWorkspace'
 
-type Phase = 'loading' | 'review' | 'working' | 'error'
+type Phase = 'loading' | 'review' | 'working' | 'stale' | 'error'
 
 /** Areas a student recognises, each mapping to the `AppData` keys behind
  *  it. The review is per-area because "your experiences" is a decision a
@@ -52,6 +54,7 @@ const AREAS = [
 ] as const satisfies readonly { key: string; label: string; fields: readonly (keyof AppData)[] }[]
 
 type AreaKey = (typeof AREAS)[number]['key']
+const accountChoices = () => Object.fromEntries(AREAS.map(a => [a.key, false])) as Record<AreaKey, boolean>
 
 /** How many records an area holds, for the "N here · M in your account"
  *  line. Object-shaped areas (profile, mcat) report 1 when non-empty. */
@@ -78,57 +81,112 @@ export function MergePage() {
 
   const [phase, setPhase] = useState<Phase>('loading')
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [userId, setUserId] = useState('')
   const [cloud, setCloud] = useState<AppData | null>(null)
   /** Per-area resolution. `false` = keep the account's copy (the default,
    *  and the one that cannot lose server-side work). */
-  const [useLocal, setUseLocal] = useState<Record<AreaKey, boolean>>(() =>
-    Object.fromEntries(AREAS.map((a) => [a.key, false])) as Record<AreaKey, boolean>,
-  )
+  const [useLocal, setUseLocal] = useState<Record<AreaKey, boolean>>(accountChoices)
 
-  const local = useMemo(() => snapshotData(), [])
+  const [local, setLocal] = useState(() => snapshotData())
   const counts = useMemo(() => localCounts(local), [local])
   const since = useMemo(() => localWorkSince(local), [local])
+  const generation = useRef(0)
+  const mounted = useRef(false)
+  const stopReading = useRef<(() => void) | undefined>(undefined)
+  const identity = useRef<{ id: string | null | undefined; revision: number }>({ id: undefined, revision: 0 })
+  const navigation = useRef(navigate)
+  const invalidateReview = useCallback(() => {
+    generation.current++
+    stopReading.current?.(); stopReading.current = undefined
+  }, [])
+  useEffect(() => { navigation.current = navigate }, [navigate])
 
-  // ── who is signed in, and what does their account already hold? ──────
-  useEffect(() => {
-    let alive = true
-    void (async () => {
-      if (!supabase) {
-        navigate('/', { replace: true })
-        return
+  // Refresh only captures review snapshots. It never flushes, activates, archives,
+  // chooses a conflict winner, or writes a dashboard. Mutation guards still run
+  // when the student explicitly chooses to continue from the new review.
+  const loadReview = useCallback(async (expectedUserId?: string) => {
+    invalidateReview()
+    const request = generation.current, authRevision = identity.current.revision
+    const current = () => mounted.current && generation.current === request
+    let unsubscribe: (() => void) | undefined
+    try {
+      if (!supabase) { navigation.current('/', { replace: true }); return }
+      const session = await supabase.auth.getSession()
+      if (!current()) return
+      if (session.error) throw session.error
+      const user = session.data.session?.user
+      if (authRevision !== identity.current.revision
+        || (identity.current.id !== undefined && identity.current.id !== (user?.id ?? null))) {
+        throw new Error('Your sign-in changed. Reopen this page to review the current account.')
       }
-      const { data: session } = await supabase.auth.getSession()
-      const user = session.session?.user
       if (!user) {
-        navigate('/auth', { replace: true })
-        return
+        if (expectedUserId) throw new Error('Your sign-in changed. Reopen this page to review the current account.')
+        navigation.current('/auth', { replace: true }); return
       }
-      if (!alive) return
-      setUserId(user.id)
-      try {
-        // Version gates run before the review shows anything to choose from.
-        const row = await readDashboardForReview(supabase, user.id)
-        if (!alive) return
-        const remote = row?.data ?? null
-        if (!remote) {
-          // First-login setup is the only path allowed to create an account
-          // snapshot. Never upload the open browser implicitly here.
-          navigate('/auth/setup', { replace: true })
-          return
+      if (expectedUserId !== undefined && expectedUserId !== user.id) throw new Error('Your sign-in changed. Reopen this page to review the current account.')
+      identity.current.id = user.id
+      const owner = captureWorkspaceIdentity(), device = structuredClone(snapshotData())
+      const deviceText = JSON.stringify(device), raw = savedWorkspaceRaw(owner.key)
+      if (!owner.key || (owner.key.startsWith(ACCOUNT_STORAGE_PREFIX) && owner.key !== accountStorageKey(user.id))) {
+        throw new Error('The open workspace belongs to a different account. Reopen this page with the intended workspace.')
+      }
+      let deviceChanged = false
+      unsubscribe = useStore.subscribe(() => { deviceChanged = true })
+      stopReading.current = unsubscribe
+      const assertCurrent = () => {
+        const latestOwner = captureWorkspaceIdentity()
+        if (authRevision !== identity.current.revision || identity.current.id !== user.id
+          || deviceChanged || owner.key !== latestOwner.key || owner.epoch !== latestOwner.epoch
+          || raw !== savedWorkspaceRaw(owner.key) || deviceText !== JSON.stringify(snapshotData())) {
+          throw new Error('The account or device copy changed while checking. Refresh the review again before continuing.')
         }
-        setCloud(remote)
-        setPhase('review')
-      } catch (err) {
-        if (!alive) return
-        setError(err instanceof Error ? err.message : 'Could not read your account.')
-        setPhase('error')
       }
-    })()
-    return () => {
-      alive = false
+      // Version gates run before either snapshot becomes an actionable review.
+      const row = await readDashboardForReview(supabase, user.id)
+      if (!current()) return
+      assertCurrent()
+      const latestSession = await supabase.auth.getSession()
+      if (!current()) return
+      if (latestSession.error) throw latestSession.error
+      if (latestSession.data.session?.user.id !== user.id) throw new Error('Your sign-in changed. Reopen this page to review the current account.')
+      assertCurrent()
+      if (!row) {
+        if (expectedUserId) throw new Error('The account copy is no longer available. Refresh the review again before continuing.')
+        navigation.current('/auth/setup', { replace: true }); return
+      }
+      setUserId(user.id); setLocal(device); setCloud(row.data)
+      setUseLocal(accountChoices()); setPhase('review')
+      if (expectedUserId) setNotice('Review refreshed. Choose again before continuing.')
+    } catch (err) {
+      if (!current()) return
+      setError(err instanceof Error ? err.message : 'Could not read your account.')
+      setPhase(expectedUserId ? 'stale' : 'error')
+    } finally {
+      unsubscribe?.()
+      if (stopReading.current === unsubscribe) stopReading.current = undefined
     }
-  }, [navigate])
+  }, [invalidateReview])
+
+  useEffect(() => {
+    mounted.current = true
+    let active = true
+    const subscription = supabase?.auth.onAuthStateChange((_event, session) => {
+      const next = session?.user.id ?? null
+      if (identity.current.id !== undefined && identity.current.id !== next) {
+        identity.current.revision++; invalidateReview()
+        setCloud(null); setNotice(''); setPhase('error')
+        setError('Your sign-in changed. Reopen this page to review the current account.')
+      }
+      identity.current.id = next
+    }).data.subscription
+    queueMicrotask(() => { if (active) void loadReview() })
+    return () => {
+      active = false
+      mounted.current = false; invalidateReview()
+      subscription?.unsubscribe()
+    }
+  }, [invalidateReview, loadReview])
 
   /** Areas where the two copies genuinely differ. Areas that match need no
    *  decision and are not shown — a review that lists everything hides the
@@ -159,8 +217,9 @@ export function MergePage() {
    *  this device's version only for the areas explicitly chosen. */
   const applyReview = useCallback(async () => {
     if (!supabase || !userId || !cloud || phase !== 'review') return
+    const request = generation.current
     setPhase('working')
-    setError('')
+    setError(''); setNotice('')
     let mutation: AccountMutation | undefined
     try {
       mutation = await prepareAccountMutation(userId, cloud, local)
@@ -175,11 +234,15 @@ export function MergePage() {
       await mutation.write(result)
       // Server confirmed — only now does the device's copy change.
       await mutation.activate(mergeRemotePreservingLocal(result, local))
+      if (!mounted.current || request !== generation.current) return
       notifyAccountWorkspaceReady(userId)
       finish('/')
     } catch (err) {
-      setError(accountMutationFailure(err, mutation))
-      setPhase('review')
+      const failure = accountMutationFailure(err, mutation)
+      if (!mounted.current || request !== generation.current) return
+      setError(failure)
+      setNotice('')
+      setPhase(err instanceof StaleAccountReviewError && !mutation?.serverSaved ? 'stale' : 'review')
     } finally { mutation?.dispose() }
   }, [userId, cloud, local, useLocal, finish, phase])
 
@@ -197,15 +260,20 @@ export function MergePage() {
    *  the merge can still be completed later from Settings → Data. */
   const openAccountWorkspaceForNow = useCallback(async () => {
     if (!userId || !cloud || phase !== 'review') return
-    setPhase('working'); setError('')
+    const request = generation.current
+    setPhase('working'); setError(''); setNotice('')
     let mutation: AccountMutation | undefined
     try {
       mutation = await prepareAccountMutation(userId, cloud, local)
       await mutation.activate(cloud)
+      if (!mounted.current || request !== generation.current) return
       notifyAccountWorkspaceReady(userId)
       finish('/settings?tab=data')
     } catch (error) {
-      setError(accountMutationFailure(error, mutation)); setPhase('review')
+      const failure = accountMutationFailure(error, mutation)
+      if (!mounted.current || request !== generation.current) return
+      setError(failure); setNotice('')
+      setPhase(error instanceof StaleAccountReviewError && !mutation?.serverSaved ? 'stale' : 'review')
     } finally { mutation?.dispose() }
   }, [userId, cloud, local, finish, phase])
 
@@ -235,6 +303,17 @@ export function MergePage() {
                 {error}
               </p>
             ) : null}
+            {phase === 'stale' && <div>
+              <p className="pl-fine">Load the latest copies, then review your choices again. Nothing is applied by refreshing.</p>
+              <button type="button" className="pl-sbtn" onClick={() => {
+                if (phase !== 'stale') return
+                setPhase('loading'); setError(''); setNotice('')
+                void loadReview(userId)
+              }}>
+                Refresh review
+              </button>
+            </div>}
+            {notice && <p className="pl-fine" role="status">{notice}</p>}
 
             {/* Plain counts. Never bytes, never a JSON blob. */}
             <div
