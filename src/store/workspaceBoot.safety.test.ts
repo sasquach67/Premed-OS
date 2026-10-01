@@ -81,6 +81,8 @@ it('keeps main fenced through magic-link sign-in and SIGNED_IN, with no live-sto
     onAuthStateChange: vi.fn((callback: typeof notify) => { notify = callback; return { data: { subscription: { unsubscribe: vi.fn() } } } }),
   } } }))
   await mountMain()
+  // main starts recovery asynchronously; await its cold module load before polling the UI.
+  await act(async () => { await import('@/components/layout/WorkspaceBootRecovery') })
   await until(() => expect(document.querySelector('input[type="email"]')).not.toBeNull())
   const disk = (await import('./workspacePersistence')).workspacePersistence()!
   expect(disk.status(accountKey).phase).toBe('error')

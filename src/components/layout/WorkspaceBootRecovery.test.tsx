@@ -44,10 +44,11 @@ function clientFixture(initialId: string | null = null) {
   const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle, ...mutations }
   const from = vi.fn(() => query)
   let notify!: (event: AuthChangeEvent, session: Session | null) => void
-  const session = (id: string | null) => id ? { user: { id } } as Session : null
+  const session = (id: string | null) => id ? { user: { id, email: `${id}@example.invalid` } } as Session : null
   const unsubscribe = vi.fn()
   const client = { from, auth: {
     getSession: vi.fn(async () => ({ data: { session: session(initialId) }, error: null })),
+    signOut: vi.fn(async () => { notify('SIGNED_OUT', null); return { error: null } }),
     signInWithOtp: vi.fn(async () => ({ data: {}, error: null })),
     onAuthStateChange: vi.fn((callback: typeof notify) => { notify = callback; return { data: { subscription: { unsubscribe } } } }),
   } } as unknown as SupabaseClient
@@ -221,4 +222,114 @@ it('does not call the browser copy empty when its remaining originals cannot be 
   expect(container.textContent).not.toContain('Your data is not in this browser')
   expect(container.textContent).toContain('This browser couldn’t open your saved work')
   expect(button('Download diagnostics (not a backup)')).toBeDefined()
+})
+
+it('offers a session-only escape from the wrong-account recovery fence', async () => {
+  const fixture = clientFixture('synthetic-wrong-account')
+  await mount(fixture.client)
+  expect(button('Restore from my account').disabled).toBe(true)
+  expect(button('Sign out and use a different account').disabled).toBe(false)
+  expect(fixture.from).not.toHaveBeenCalled()
+  fixture.noCloudWrites()
+})
+
+it('switches accounts without changing the pointer, partial record, originals or cloud data', async () => {
+  const fixture = clientFixture('synthetic-wrong-account')
+  await repository.stage(key, 'synthetic original', JSON.stringify({ state: fixture.data, version: 0 }))
+  const before = { record: await repository.read(key), originals: await repository.originals(key), storage: { ...localStorage } }
+  const onRecovered = vi.fn()
+  await act(async () => root.render(<WorkspaceBootRecovery error={new Error('Synthetic partial record')} workspaceKey={key} client={fixture.client} onRecovered={onRecovered} />))
+  await until(() => expect(container.textContent).toContain('synthetic-wrong-account@example.invalid'))
+  await act(async () => button('Sign out and use a different account').click())
+  expect(fixture.client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
+  expect(container.querySelector('#recovery-email')).not.toBeNull()
+  await act(async () => fixture.emit(userId))
+  expect(button('Restore from my account').disabled).toBe(false)
+  expect(fixture.from).not.toHaveBeenCalled()
+  expect({ record: await repository.read(key), originals: await repository.originals(key), storage: { ...localStorage } }).toEqual(before)
+  expect(onRecovered).not.toHaveBeenCalled()
+  fixture.noCloudWrites()
+})
+
+it('keeps the session on failed sign-out, discards the old review and permits retry', async () => {
+  const fixture = clientFixture(userId)
+  await mount(fixture.client)
+  await act(async () => button('Restore from my account').click())
+  await until(() => expect(container.querySelector('[aria-label="Review this copy"]')).not.toBeNull())
+  vi.mocked(fixture.client.auth.signOut).mockResolvedValueOnce({ error: new Error('Synthetic error') } as never)
+  await act(async () => button('Sign out and use a different account').click())
+  expect(container.querySelector('[aria-label="Review this copy"]')).toBeNull()
+  expect(container.textContent).toContain('Sign-out did not finish')
+  expect(container.textContent).toContain(`${userId}@example.invalid`)
+  expect(button('Restore from my account').disabled).toBe(false)
+  await act(async () => button('Sign out and use a different account').click())
+  expect(container.querySelector('#recovery-email')).not.toBeNull()
+  fixture.noCloudWrites()
+})
+
+it('does not let a late sign-out completion replace a newer session', async () => {
+  const fixture = clientFixture('synthetic-wrong-account')
+  let finish!: (result: { error: null }) => void
+  vi.mocked(fixture.client.auth.signOut).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+  await mount(fixture.client)
+  await act(async () => button('Sign out and use a different account').click())
+  await act(async () => fixture.emit(userId))
+  await act(async () => finish({ error: null }))
+  expect(container.textContent).toContain(`${userId}@example.invalid`)
+  expect(button('Restore from my account').disabled).toBe(false)
+  expect(fixture.from).not.toHaveBeenCalled()
+  fixture.noCloudWrites()
+})
+
+it('invalidates a preview when the same account signs in again', async () => {
+  const fixture = clientFixture(userId)
+  await mount(fixture.client)
+  await act(async () => button('Restore from my account').click())
+  await until(() => expect(container.querySelector('[aria-label="Review this copy"]')).not.toBeNull())
+  await act(async () => fixture.emit(userId))
+  expect(container.querySelector('[aria-label="Review this copy"]')).toBeNull()
+  fixture.noCloudWrites()
+})
+
+it('ignores a stale initial session response after an observed sign-in', async () => {
+  const fixture = clientFixture()
+  let finish!: (value: never) => void
+  vi.mocked(fixture.client.auth.getSession).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+  await mount(fixture.client)
+  await act(async () => fixture.emit(userId))
+  await act(async () => finish({ data: { session: { user: { id: 'old-account', email: 'old@example.invalid' } } }, error: null } as never))
+  expect(button('Restore from my account').disabled).toBe(false)
+  expect(container.textContent).not.toContain('old@example.invalid')
+  expect(fixture.from).not.toHaveBeenCalled()
+})
+
+it('ignores an old sign-out rejection after a newer sign-in', async () => {
+  const fixture = clientFixture('synthetic-wrong-account')
+  let reject!: (failure: Error) => void
+  vi.mocked(fixture.client.auth.signOut).mockImplementationOnce(() => new Promise((_resolve, fail) => { reject = fail }))
+  await mount(fixture.client)
+  await act(async () => button('Sign out and use a different account').click())
+  await act(async () => fixture.emit(userId))
+  await act(async () => reject(new Error('Late synthetic failure')))
+  expect(button('Restore from my account').disabled).toBe(false)
+  expect(container.querySelector('[role="alert"]')).toBeNull()
+  expect(fixture.from).not.toHaveBeenCalled()
+})
+
+it('rejects a file preview that finishes after the session changes', async () => {
+  const fixture = clientFixture(userId)
+  await mount(fixture.client)
+  let release!: (text: string) => void
+  const file = new File([], 'synthetic-delayed.json')
+  Object.defineProperty(file, 'text', { value: () => new Promise<string>(resolve => { release = resolve }) })
+  const input = container.querySelector('input[type="file"]')!
+  Object.defineProperty(input, 'files', { value: [file], configurable: true })
+  await act(async () => input.dispatchEvent(new Event('change', { bubbles: true })))
+  await until(() => expect(release).toBeDefined())
+  await act(async () => { fixture.emit(userId); release(JSON.stringify({ state: fixture.data, version: 0 })) })
+  await until(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain('changed'))
+  expect(container.querySelector('[aria-label="Review this copy"]')).toBeNull()
+  expect(localStorage.getItem(key)).toBe(pointer)
+  expect(fixture.from).not.toHaveBeenCalled()
+  fixture.noCloudWrites()
 })
