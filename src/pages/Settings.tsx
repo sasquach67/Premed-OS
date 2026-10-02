@@ -1,7 +1,7 @@
 import { accountRecoveryDownload } from '@/store/accountRecoveryDownload'
 import { SelectField } from '@/components/ui/select-field'
 import { useConfirm } from '@/components/common/useConfirm'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Archive as ArchiveIcon, Cloud, CloudOff, Download, Upload, RotateCcw, Check, AlertCircle,
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { activateGuestWorkspace, assertDurableWorkspace, captureWorkspaceIdentity, prepareRestoredStoreData, snapshotData, useStore } from '@/store/store'
 import { flushWorkspaceStorage } from '@/store/storageHealth'
+import { workspacePersistence } from '@/store/workspacePersistence'
 import { restoreWorkspaceFromSource } from '@/store/accountMutationSafety'
 import { restoreCompleteWorkspace } from '@/store/restoreCompleteWorkspace'
 import { workspaceRestoreReview } from '@/lib/workspaceRestoreReview'
@@ -40,7 +41,7 @@ import { TimeField } from '@/components/common/DateField'
 import { TrashRecovery } from '@/components/common/TrashRecovery'
 import { BrowserStorageStatus } from '@/components/common/BrowserStorageStatus'
 import { clearStudySourceSyncCache, studyTools } from '@/lib/intelligence/studyTools'
-import { isDemoMode, setDemoMode } from '@/lib/demoMode'
+import { accountStorageKey, activeStorageKey, isDemoMode, setDemoMode } from '@/lib/demoMode'
 import { supabase } from '@/lib/supabase'
 import { useShellActions } from '@/components/layout/shellActions'
 
@@ -421,6 +422,23 @@ function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
   const { requestSignOut } = useShellActions()
   const cloud = useAccountCloud()
   const [email, setEmail] = useState('')
+  const persistence = workspacePersistence()
+  const subscribeToWorkspace = useCallback((onChange: () => void) => {
+    const stopPersistence = persistence?.subscribe(onChange)
+    const stopStore = useStore.subscribe(onChange)
+    return () => { stopPersistence?.(); stopStore() }
+  }, [persistence])
+  const savingAccountWorkspace = useSyncExternalStore(
+    subscribeToWorkspace,
+    () => {
+      if (!cloud.user) return false
+      const key = accountStorageKey(cloud.user.id)
+      return activeStorageKey() === key && captureWorkspaceIdentity().key === key
+        && persistence?.status(key).phase === 'saving'
+    },
+  )
+  const waitingForSave = savingAccountWorkspace && !cloud.conflict
+    && cloud.error === 'Workspace changes are still saving or need recovery. Sync is paused.'
 
   if (!cloud.configured) {
     return (
@@ -468,7 +486,9 @@ function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
                     : cloud.status === 'syncing' ? (cloud.progress || 'Syncing…')
                     : cloud.lastSyncAt ? `Synced ${fmtTimeAgo(cloud.lastSyncAt)}.`
                     : 'Connected — first sync pending.'}
-                  {cloud.error && <span className="ml-1 inline-flex items-center gap-1 text-destructive"><AlertCircle className="size-3" /> {cloud.error}</span>}
+                  {cloud.error && (waitingForSave
+                    ? <span role="status" className="ml-1 text-muted-foreground">Saving your changes. Sync waits until saving finishes.</span>
+                    : <span className="ml-1 inline-flex items-center gap-1 text-destructive"><AlertCircle className="size-3" /> {cloud.error}</span>)}
                 </p>
                 {/* Shown only from server-confirmed row metadata (S1 item 14). */}
                 {cloud.protection !== 'unknown' && <p className="mt-1 text-xs text-muted-foreground" data-testid="cloud-protection">
