@@ -54,7 +54,7 @@ export function QuickAccess() {
           className="group flex w-full items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground"><Lightbulb className="size-4" /></span>
-          <span><span className="block text-sm font-extrabold">Capture a thought</span><span className="block text-xs text-muted-foreground">Saved in Activity & capture below</span></span>
+          <span><span className="block text-sm font-extrabold">Capture a thought</span><span className="sr-only">Saved in Activity & capture below</span></span>
         </button>
       </CardContent>
     </Card>
@@ -207,7 +207,7 @@ export function QuarterlyGoalsPanel() {
                           {current > 0 ? `${formatGoalValue(target, current)} / ${formatGoalValue(target, targetValue)} ${standingTargetUnit(target)}` : 'No recorded value yet'}
                         </p>
                         {progress != null && <Progress value={progress} className="mt-2 h-1.5" aria-label={`${goal.text}: ${Math.round(progress)}% of student-set target`} />}
-                        <p className="mt-2 text-[11px] font-semibold text-muted-foreground">
+                        <p className={current > 0 ? 'sr-only' : 'mt-2 text-[11px] font-semibold text-muted-foreground'}>
                           {current > 0 ? `Connected to recorded ${standingTargetUnit(target).toLowerCase()}` : `${formatGoalValue(target, targetValue)} ${standingTargetUnit(target)} student-set target`}
                         </p>
                       </>
@@ -476,7 +476,6 @@ export function ActivityAndCapture() {
     <Card id="quick-capture" className="h-full scroll-mt-24" role="region" aria-labelledby="activity-capture-heading">
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle id="activity-capture-heading">Recent activity + capture</CardTitle>
-        <span className="text-xs text-muted-foreground">Story Bank coming soon</span>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-1">
@@ -556,7 +555,6 @@ export function ActivityAndCapture() {
               </div>}
           {error && <p role="alert" className="border-l-2 border-destructive pl-2 text-xs font-semibold text-destructive">{error} <Button type="button" size="sm" variant="link" onClick={() => document.getElementById(captureKind === 'link' ? 'overview-capture-link' : captureKind === 'file' ? 'overview-capture-file-choose' : 'overview-capture')?.focus()}>Retry</Button></p>}
           {saved && <p role="status" className="rounded-lg border border-success/30 bg-success/10 px-2.5 py-2 text-xs font-bold text-[color-mix(in_srgb,var(--success)_55%,var(--foreground))]">{saved === 'file' ? 'File saved in Activity & capture.' : 'Saved in Activity & capture.'} <span>Find it in recent activity above.</span></p>}
-          {captureKind !== 'file' && <p className="text-[11px] font-semibold text-muted-foreground">Atlas connection: reserved for a later phase.</p>}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label htmlFor="overview-capture-local" className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">
               <Checkbox id="overview-capture-local" checked={localOnly} onCheckedChange={(checked) => setLocalOnly(Boolean(checked))} />

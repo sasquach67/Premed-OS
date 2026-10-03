@@ -55,6 +55,13 @@ describe('transcript intake', () => {
   it('states plainly that email import is not configured', () => {
     const note = container.querySelector('[data-unconfigured="true"]')
     expect(note?.textContent).toContain('Not configured')
+    expect(note?.textContent).toContain('Email import is not connected.')
+  })
+
+  it('keeps the local-file, sync and unofficial-record boundaries visible', () => {
+    const boundary = [...container.querySelectorAll('.grades-transcript-copy')].find(element => element.textContent?.includes('The file is read on this device.'))
+    expect(boundary?.textContent).toContain('The file is read on this device. Its bytes stay local; reviewed records can sync when cloud sync or backup is enabled. This is not a registrar document or degree audit.')
+    expect(boundary?.closest('details')).toBeNull()
   })
 
   it('reviews parsed lines before writing anything to the store', async () => {

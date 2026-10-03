@@ -107,12 +107,25 @@ describe('MaterialGenerationIntake generation reliability', () => {
     expect(JSON.stringify(useStore.getState().academics.classCenter)).toBe(before)
   })
 
+  it('keeps the original-notes non-replacement protection inline before revision', async () => {
+    const { file, chunks } = material(1)
+    const data = createInitialDataForMode(false)
+    data.academics.classCenter.files = [file]
+    data.academics.classCenter.sourceChunks = chunks
+    useStore.getState().replaceAll(data)
+    await act(async () => root.render(<MaterialGenerationIntake artifact="revised-notes" courseId="course-1" courseLabel="TEST 101" files={[file]} onClose={vi.fn()} />))
+    const protection = [...container.querySelectorAll('p')].find(node => node.textContent === 'Choose your original notes; they are never replaced.')
+    expect(protection).toBeTruthy()
+    expect(protection?.closest('details:not([open]), [hidden], .sr-only')).toBeNull()
+    expect(container.textContent).not.toContain('Choose your original notes; revisions are saved separately.')
+  })
+
   it('keeps a 1,123-passage packet attached while generating from a reliable representative pass', async () => {
     mocks.generateStudyGuide.mockResolvedValue({ ok: false, message: 'Captured bounded request.' })
     await renderIntake(1123)
 
     expect(container.textContent).toContain('Add files or folder')
-    expect(container.textContent).toContain('Add individual files or a whole folder')
+    expect(container.textContent).toContain('Add files or a folder, then choose sources for this output.')
     expect(container.textContent).toContain('Select all ready')
 
     expect(container.textContent).toContain('All 1,123 selected passages stay in Materials. This output will automatically use 480 representative passages across the selected sources.')

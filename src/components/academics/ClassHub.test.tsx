@@ -195,6 +195,7 @@ describe('WritingTools', () => {
     expect(container.textContent).toContain('No papers assigned yet')
     expect(container.textContent).toContain('No readings listed yet')
     expect(container.textContent).toContain('No recurring feedback theme yet')
+    expect(container.textContent).toContain('Themes appear only after the same feedback comes back on another paper.')
     expect(container.textContent).toContain('No full reading list recorded.')
     expect(container.textContent).toContain('Add paper')
     expect(container.textContent).toContain('Add reading')
@@ -324,7 +325,7 @@ describe('ClassHub approved Overview', () => {
     ]
     seed.academics.classCenter.notes = []
     await act(async () => root.render(<MemoryRouter initialEntries={['/?classTab=materials']}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>))
-    expect(container.textContent).toContain('2 items in this course library')
+    expect(container.textContent).not.toContain('2 items in this course library')
     expect(container.querySelector('[role="tab"][data-state="active"]')?.textContent).toContain('Materials2')
     expect(container.textContent).toContain('Lecture handout')
     expect(container.textContent).toContain('Generated concept map')
@@ -884,7 +885,7 @@ describe('ClassHub approved Overview', () => {
     })
     await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())) })
 
-    expect(container.textContent).toContain('Coursework execution, fixed to this class.')
+    expect(container.textContent).not.toContain('Coursework execution, fixed to this class.')
     expect(container.textContent).not.toContain(`${course.code} only`)
     expect([...container.querySelectorAll('a')].some((link) => link.textContent?.includes('All assignments') && link.getAttribute('href')?.includes('tab=assignments'))).toBe(true)
     expect(container.textContent).toContain('Course grade context · supporting')
@@ -1002,7 +1003,8 @@ describe('ClassHub approved Overview', () => {
     expect(container.textContent).toContain('Course weeks')
     expect(container.textContent).toContain('Week 3')
     expect(container.textContent).toContain('Needs organizing')
-    expect(container.textContent).toContain('Choose a week or keep it in General materials')
+    expect(container.querySelector('details.class-hub-material-placement-note')?.hasAttribute('open')).toBe(false)
+    expect(container.querySelector('details.class-hub-material-placement-note')?.textContent).toContain('Choose a week for scheduled work, or General materials for transcripts, reference files, and anything you use across the class.')
     expect(container.textContent).toContain('Study outline · Membrane transport')
     expect(container.querySelector('.class-hub-material-file')?.textContent).not.toContain('Summarize')
     expect(container.querySelector('.class-hub-material-file')?.textContent).not.toContain('Mine')
@@ -1153,7 +1155,7 @@ describe('ClassHub approved Overview', () => {
 
     const inbox = [...container.querySelectorAll<HTMLElement>('.class-hub-material-group')].find((group) => group.textContent?.includes('Needs organizing'))!
     expect(inbox.textContent).toContain('Dated lecture slides')
-    expect(inbox.textContent).toContain('Choose a week or keep it in General materials')
+    expect(inbox.querySelector('details.class-hub-material-placement-note summary')?.textContent).toBe('Placement help')
     expect(container.textContent).not.toMatch(/Week of Sep/)
   })
 
