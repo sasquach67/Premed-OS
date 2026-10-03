@@ -310,7 +310,7 @@ export function Settings() {
             {restoreChoices && <div className="space-y-2 rounded-xl border border-border p-3"><Label htmlFor="drive-restore-point">Restore point (100 most recent verified snapshots)</Label><SelectField id="drive-restore-point" className="w-full rounded-md border border-border bg-card p-2" value={restoreChoice} onValueChange={setRestoreChoice} options={[...restoreChoices.map(point => ({ value: point.id, label: `${new Date(point.createdTime).toLocaleString()} — complete backup` })), { value: 'legacy', label: 'Older JSON-only backup — no image files' }]} /><div className="flex gap-2"><Button variant="outline" onClick={() => void restoreFromDrive()}>Restore selected backup</Button><Button variant="ghost" onClick={() => setRestoreChoices(null)}>Cancel</Button></div></div>}
             <p className="text-xs text-muted-foreground">
               Drive creates at most one automatic complete snapshot per day while the app is open. Use Back up now for another restore point. Backups include known attached files and notebook images; files referenced by unrecognized sections are not included; stories marked local-only stay on this device. Earlier complete snapshots and the older JSON backup are retained.
-              {backup.lastBackupAt ? <>Last backed up {fmtTimeAgo(backup.lastBackupAt)}.</> : 'Not backed up to Drive yet.'}
+              {backup.lastBackupAt ? <>Last backed up {fmtTimeAgo(backup.lastBackupAt)}.</> : null}
               {backup.error && <span className="ml-1 inline-flex items-center gap-1 text-destructive"><AlertCircle className="size-3" /> {backup.error}</span>}
             </p>
           </CardContent>
@@ -370,7 +370,7 @@ export function Settings() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <div><Label className="normal-case">Live daily quote</Label><p className="text-xs text-muted-foreground">Pull from the web source when available.</p></div>
+              <div><Label className="normal-case">Live daily quote</Label><details className="text-xs text-muted-foreground"><summary>Learn more</summary><p>Pull from the web source when available.</p></details></div>
               <Switch checked={settings.quotesApi} onCheckedChange={(v) => update((d) => { d.settings.quotesApi = v })} />
             </div>
 

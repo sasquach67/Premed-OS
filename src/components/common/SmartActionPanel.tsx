@@ -64,9 +64,6 @@ export function SmartActionPanel({
               <Sparkles className="size-5 text-primary" aria-hidden="true" />
               {title}
             </CardTitle>
-            <p className="mt-1 text-xs font-semibold text-muted-foreground">
-              Deterministic suggestions, each with the reason it appeared.
-            </p>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {visibleRecommendations.length > 1 && (

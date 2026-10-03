@@ -50,7 +50,7 @@ export function PlanningColdStart({ currentTerm, onAddCourse }: { currentTerm: s
       <div className="grid gap-4 lg:grid-cols-[19rem_minmax(0,1fr)]">
         <div className="self-center border-l-2 border-primary py-2 pl-4 pr-2">
           <p className={EYEBROW}>Planning needs one durable fact</p>
-          <h3 className="mt-0.5 font-display text-lg font-extrabold">Give the empty plan a starting point.</h3>
+          <h3 className="mt-0.5 font-display text-lg font-extrabold">Start with one course.</h3>
           <p className="mt-1 text-xs font-bold text-muted-foreground">
             Add a course you are taking or completed. If your path began before college, add the
             prior credit exactly as it appears on your record instead.
@@ -63,7 +63,7 @@ export function PlanningColdStart({ currentTerm, onAddCourse }: { currentTerm: s
           <div className="mt-3 divide-y divide-border border-y border-border text-[11px] font-bold">
             <div className="py-2.5">
               <b className="font-display">Current or completed course</b>
-              <p className="mt-0.5 text-muted-foreground">Title, credits, term, and grade.</p>
+              <details className="mt-0.5 text-muted-foreground"><summary>Learn more</summary><p>Title, credits, term, and grade.</p></details>
             </div>
             {/* Subordinate on purpose — starting from AP credit alone is rarer. */}
             <a className="block py-2.5 transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href="#/academics?mode=planning&tab=archive&gradeView=ledger&transcript=intake">

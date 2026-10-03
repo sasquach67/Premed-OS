@@ -156,9 +156,7 @@ export function WhereIStand() {
       <CardHeader className="flex-row items-start justify-between gap-3">
         <div>
           <CardTitle id="where-i-stand-heading" className="text-lg">Where I stand</CardTitle>
-          <p className="mt-1 text-xs font-semibold text-muted-foreground">Honest state from each owning domain.</p>
         </div>
-        <Badge variant="muted">Record facts</Badge>
       </CardHeader>
       <CardContent className="space-y-2">
         {(['Foundation', 'Experiences', 'Application'] as const).map((group) => (

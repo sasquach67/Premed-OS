@@ -74,14 +74,17 @@ export function OverviewHero() {
           </div>
           <TodaySchedulePanel schedule={schedule} now={now} />
         </div>
-        <MascotNote
-          variant="banner"
-          priority={-10}
-          source="r/premed"
-          className="mt-5 w-full max-w-[42rem]"
-        >
-          Reflection matters as much as the activity. Log <strong className="font-extrabold">why</strong> it mattered while it’s fresh.
-        </MascotNote>
+        <details className="mt-5 w-full max-w-[42rem]">
+          <summary className="cursor-pointer text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Study tip</summary>
+          <MascotNote
+            variant="banner"
+            priority={-10}
+            source="r/premed"
+            className="mt-5 w-full max-w-[42rem]"
+          >
+            Reflection matters as much as the activity. Log <strong className="font-extrabold">why</strong> it mattered while it’s fresh.
+          </MascotNote>
+        </details>
       </div>
     </section>
   )
