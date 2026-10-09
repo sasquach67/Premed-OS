@@ -14,7 +14,7 @@ it.each(['new', 'update'] as const)('includes the Assessment exam profile and pr
   expect(assessmentRules).toContain('Without real exams, use the course blueprint and say so.')
   expect(assessmentRules).toContain('Unless the request already says, ask once, in the first reply')
   expect(assessmentRules).toContain('If the student doesn\'t choose, use (a).')
-  expect(prompt).toContain('Prompt build: notebook-instructions-beta-26.')
+  expect(prompt).toContain('Prompt build: notebook-instructions-beta-27.')
 })
 it.each(['new', 'update'] as const)('preserves mock fidelity and cumulative scope boundaries in %s Assessment prompts', mode => {
   const prompt = composeNotebookPrompt('assessment', values, mode)
