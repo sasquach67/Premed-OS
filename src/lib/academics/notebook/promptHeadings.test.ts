@@ -30,7 +30,7 @@ describe('plain notebook headings', () => {
     values.REVISION_INPUT = mode === 'update' ? JSON.stringify({ headings: fixtures.map(fixture => fixture.bad) }) : null
     const prompt = composeNotebookPrompt('review', values, mode)
     expect(prompt).toContain(`${derivedRule} ${prefixRule} ${gapRule}`)
-    expect(prompt).toContain('Prompt build: notebook-instructions-beta-26.')
+    expect(prompt).toContain('Prompt build: notebook-instructions-beta-27.')
     // Composition preserves source objective labels and update input verbatim;
     // the external model receives the instruction to author plain headings.
     const request = JSON.parse(/```json\n([\s\S]*?)\n```/.exec(prompt)![1])

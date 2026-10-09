@@ -18,10 +18,12 @@ BASE_PROMPT_HASHES = {
     'assignment':'95c9b8ae7c41023eafd7f42c4d1c8138e7246387822f43a4bf06f9113ae1ae03',
 }
 PIN = 'notebook-prompt-v4.schema.json'
-PIN_HASH = 'd571a6e58a2953cc1e939e7236a98925bc582cb7b77418e4604b48ee1bc30097'
+PIN_HASH = 'aae31d034e109e8ac4d64cbe2fba0bdb41068b76b5f5c2ddbeb9a4595095ca35'
 READER_HASH = 'aae31d034e109e8ac4d64cbe2fba0bdb41068b76b5f5c2ddbeb9a4595095ca35'
 PREFIX = 'The prefix belongs only on mastery-objective labels. Section titles and every other heading are plain, concrete titles with no numbers, objective numbers, Review or Practice prefixes or other labels.'
 GAP = 'A gap or source-limit section gets a plain student-facing title such as "Figures not supplied" or "Not covered yet", never "unfinished tasks"; administrative narration stays in the companion message.'
+DETAIL = '- `EC-READING-DETAIL`: For guide teaching in new and update notebooks, author two coherent reading layers using the existing `more` field on `paragraph`, `bullets` and `illustration` blocks. The field is optional on paragraphs and bullets and required on illustrations. Full detail is the default: the visible block plus its `more` text must retain the real explanation in compact wording, including relevant definitions, mechanisms, reasoning steps, distinctions and useful examples. Do not remove substantive teaching to meet a word count or percentage. Condensed hides `more`: the visible block must still name the concept, state its central relationship and define terms needed to understand that statement. Put additional explanation in `more` next to the idea it develops, without repeating the visible text. Both layers remove fluff and repetition; source narration belongs in neither layer. Use plain prose for `more`, at most 1200 characters per field, never an empty or whitespace-only string. When no useful explanation is needed, omit `more` or use null on paragraphs and bullets; illustrations must include `more: null`. Distribute longer explanations among relevant supported blocks without truncating the teaching or padding the guide to force a switch. Steps, tables and other block types do not accept `more`; keep their content intact and use an adjacent paragraph or bullets block for a needed explanation. Do not put practice answers or worked solutions in `more`; retain their existing reveal behavior and the requested assignment help stage. The app supplies the guide-wide switch; do not write duplicate Full detail/Condensed sections or interface instructions into the notebook.'
+DETAIL_CHECK = '- `EC-DETAIL-CHECK`: Before delivery, read the guide once with `more` hidden and once with it visible. Condensed must make sense by itself; Full detail must contain the complete relevant explanation without duplicated sentences, source narration or unsupported additions. Apply EC-PERTINENT-ONLY to both layers, including phrases such as "the lecture reports" and "the outline says". Keep genuine evidence limits in the existing limitations/gap records, and keep scientific uncertainty when it changes the claim. Check the declared schema and every `more` field; successful JSON validation alone does not establish teaching completeness.'
 GOALS = ('review', 'assessment', 'assignment')
 
 
@@ -77,10 +79,17 @@ class PromptSchemaTests(unittest.TestCase):
     def assert_heading_scope(self, goal, prompt):
         self.assertEqual(prompt.count(PREFIX), 2 if goal == 'review' else 1)
         self.assertEqual(prompt.count(GAP), 1)
-        normalized = prompt.replace('notebook-instructions-beta-26', 'notebook-instructions-beta-25').replace(' '+PREFIX, '').replace(' '+GAP, '')
-        self.assertEqual(sha(normalized.encode()), BASE_PROMPT_HASHES[goal], 'Only build label and approved heading rules may change, including embedded schema')
+        self.assertEqual(prompt.count(DETAIL), 1)
+        self.assertEqual(prompt.count(DETAIL_CHECK), 1)
+        current_schema = embedded(prompt)
+        legacy_schema = json.loads(current_schema)
+        for variant in legacy_schema['$defs']['block']['oneOf'][:2]:
+            del variant['properties']['more']
+        legacy_schema = json.dumps(legacy_schema, ensure_ascii=False, separators=(',', ':'))
+        normalized = prompt.replace(current_schema, legacy_schema).replace('notebook-instructions-beta-27', 'notebook-instructions-beta-25').replace(' '+PREFIX, '').replace(' '+GAP, '').replace(DETAIL+'\n\n', '').replace(DETAIL_CHECK+'\n\n', '')
+        self.assertEqual(sha(normalized.encode()), BASE_PROMPT_HASHES[goal], 'Only build label, approved heading/detail rules and the two existing reader detail fields may change')
 
-    def test_default_pin_and_exact_beta25_scope(self):
+    def test_default_pin_and_bounded_prose_schema_scope(self):
         self.assertEqual(sha((self.out/PIN).read_bytes()), PIN_HASH)
         self.assertEqual(self.manifest['promptSchema']['sha256'], PIN_HASH)
         self.assertEqual(self.manifest['schema']['sha256'], READER_HASH)
@@ -95,13 +104,11 @@ class PromptSchemaTests(unittest.TestCase):
             name = f'copy-prompt-{goal}.md'
             self.assertEqual((self.out/name).read_bytes(), (self.root/APP/'prompts'/name).read_bytes())
 
-    def test_reader_prompt_divergence_is_only_existing_more_fields(self):
-        reader = json.loads((ROOT/SCHEMAS/'notebook-package-v4.schema.json').read_text())
-        self.assertEqual(sha((ROOT/SCHEMAS/'notebook-package-v4.schema.json').read_bytes()), READER_HASH)
-        for variant in reader['$defs']['block']['oneOf'][:2]:
-            self.assertIn('more', variant['properties'])
-            del variant['properties']['more']
-        self.assertEqual(reader, json.loads((self.out/PIN).read_text()))
+    def test_reader_and_prompt_contracts_match_without_a_reader_change(self):
+        reader = (ROOT/SCHEMAS/'notebook-package-v4.schema.json').read_bytes()
+        self.assertEqual(sha(reader), READER_HASH)
+        self.assertEqual(reader, (self.out/PIN).read_bytes())
+        self.assertIn('Prompt and installed v4 reader schemas match', self.manifest['promptSchema']['relationship'])
 
     def test_explicit_pin_matches_default(self):
         before = {goal: (self.out/f'copy-prompt-{goal}.md').read_bytes() for goal in GOALS}
@@ -114,7 +121,9 @@ class PromptSchemaTests(unittest.TestCase):
             self.build(self.root/'missing.schema.json')
 
     def test_explicit_reader_schema_cannot_bypass_pin_at_sync(self):
-        self.build(ROOT/SCHEMAS/'notebook-package-v4.schema.json')
+        altered = self.root/'altered.schema.json'
+        altered.write_bytes((ROOT/SCHEMAS/PIN).read_bytes()+b'\n')
+        self.build(altered)
         manifest = json.loads((self.out/'canonical-manifest.json').read_text())
         self.assertIn('Explicit override differs from the committed prompt pin', manifest['promptSchema']['relationship'])
         self.sync('Prompt schema differs from the committed pin')

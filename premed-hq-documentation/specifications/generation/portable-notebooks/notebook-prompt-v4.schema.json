@@ -159,6 +159,15 @@
               },
               "minItems": 0,
               "maxItems": 64
+            },
+            "more": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1,
+              "maxLength": 1200,
+              "pattern": "\\S"
             }
           },
           "required": [
@@ -230,6 +239,15 @@
               },
               "minItems": 0,
               "maxItems": 64
+            },
+            "more": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1,
+              "maxLength": 1200,
+              "pattern": "\\S"
             }
           },
           "required": [
