@@ -1,8 +1,8 @@
 {
   "instructionsVersion": "notebook-workflows-draft-4",
-  "promptBuild": "notebook-instructions-beta-26",
-  "canonicalHeadAtBuild": "236a90ab60ad3c5255c26b105dac3d40ff4efae5",
-  "canonicalRootAtBuild": "/Users/andyquach/.codex/worktrees/6754/premed-os",
+  "promptBuild": "notebook-instructions-beta-27",
+  "canonicalHeadAtBuild": "4a3b1cbe6a3ce08c998f6063996a8aafd52fbcf5",
+  "canonicalRootAtBuild": "/private/tmp/premed-full-detail-publication-20261009",
   "sources": {
     "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
       "sha256": "67dc7c5ce49da9d97a7dcf8c521bc4711983a358d8c36f45575e8b41d4ad1e83",
@@ -28,9 +28,9 @@
       }
     },
     "premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md": {
-      "sha256": "7f17f97cefa3823b43ab32be0128c4e38395754f63a150ab7fb365b62c0eca1c",
+      "sha256": "b19c8d9fbdbc6c7fc28dfac044b934f5e9c0006a793c7942b2f2efe11f1df572",
       "sections": {
-        "full": "7f17f97cefa3823b43ab32be0128c4e38395754f63a150ab7fb365b62c0eca1c"
+        "full": "b19c8d9fbdbc6c7fc28dfac044b934f5e9c0006a793c7942b2f2efe11f1df572"
       }
     },
     "premed-hq-documentation/specifications/generation/03-study-guide-v1.md": {
@@ -101,7 +101,7 @@
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_conversation_examples.py": "bc0c36b25bb604056a5e2342957887aed7be86987271e86fe2cee6aeb667cb81",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_feasibility_case.py": "61ea50db75f7901d6b7f733d02db1204ea7e8dde7a8165b9715e1d5dff88efcc",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_fixtures.py": "31d262db6aafa9788e30e20be0f2b3d4af3c80eba634990984d25a2d623ff169",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "c73f2db9087ee0adc7b8f3038408d3deb8aeb8f4e0bb4f5eea8d73dc9d0f3289",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "ad85b0823cffa52c7ae112949737a738fcb8c32cf44e24a0a9053e6071c37176",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_revision_cases.py": "1532a4cec4e1333b3c63c877cc34d8913e0c034a0c220aa090d020532ce201a1",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_schema.py": "86cee42747b37f0dc735f28e21a1aa586f77015454b6fcfd593eb8178684085d",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_standardization.py": "65276c633874b1821335d2774f8543bae3a1293312582cd6ffb25fbdbd368c56",
@@ -117,41 +117,41 @@
   },
   "outputs": {
     "copy-prompt-review.md": {
-      "sha256": "f56ce63b75b8f92707d9094512c9b5a3b40007badf9829a8e5dbaa458d379f25",
-      "bytes": 168780,
-      "words": 19800,
+      "sha256": "693984125bd57d678ccd1f5ace12386ffcaf1c0a262372e72f87e579ff0bb577",
+      "bytes": 171285,
+      "words": 20142,
       "componentBytes": {
         "request": 5997,
         "commonLearningRules": 16010,
         "goalLearningRules": 28401,
-        "externalWorkflow": 86618,
-        "schema": 30644,
+        "externalWorkflow": 88961,
+        "schema": 30806,
         "assembly": 1110
       }
     },
     "copy-prompt-assessment.md": {
-      "sha256": "1a347fe9b56505d342fcb051524440c4530c8185d07c4c20a0f25a7e28394e7a",
-      "bytes": 156442,
-      "words": 17703,
+      "sha256": "01e9bd54de36ffe43464f270f279310e99cf77397d2a19e10c590daa5550d3e1",
+      "bytes": 158947,
+      "words": 18045,
       "componentBytes": {
         "request": 6005,
         "commonLearningRules": 16010,
         "goalLearningRules": 16047,
-        "externalWorkflow": 86618,
-        "schema": 30644,
+        "externalWorkflow": 88961,
+        "schema": 30806,
         "assembly": 1118
       }
     },
     "copy-prompt-assignment.md": {
-      "sha256": "d106a928a8ad29db963a3513e9c5cd24c50f3f084537b5a28da89002659d8916",
-      "bytes": 148785,
-      "words": 16666,
+      "sha256": "e40c9a233700fdd42e4176284d415d7684df37b98eaf15fb985ef5f28a2e8ea2",
+      "bytes": 151290,
+      "words": 17008,
       "componentBytes": {
         "request": 6005,
         "commonLearningRules": 16010,
         "goalLearningRules": 8390,
-        "externalWorkflow": 86618,
-        "schema": 30644,
+        "externalWorkflow": 88961,
+        "schema": 30806,
         "assembly": 1118
       }
     }
@@ -173,7 +173,8 @@
     "Beta 6 standardizes ten shared safeguards and a content-specific companion summary with full accessible draft, optional grounded discussion and unambiguous current-version approval. Consolidates repeated workflow wording; retains complete methodology/schema, exactly three prompts and eleven tokens. Adds standalone component/dependency audit and one authored manual cross-provider packet; no provider runs or ratings.",
     "Beta 7 adds only the EC-BASELINE missing-file request, app re-export and no-surviving-baseline new-recovery boundary. Exactly three full goal prompts and unchanged schema/tokens; beta 6 archived. No provider trials or ratings.",
     "Beta 8 adds one canonical update-mode heading/intro and explicit reference composer mode before input insertion. Same three full goal templates, unchanged shared rules/schema/eleven tokens; no six-template duplication or user-text rewriting.",
-    "Beta 9 emits agreed v3 with real source figure assets, persisted visualReview, closed neutral practice stimuli and safe evidence-labelled study diagrams. Preserves exact v2 input compatibility and all three goals/new-update composition. JSON metadata is separate from actual local asset binding and complete visual backups."
+    "Beta 9 emits agreed v3 with real source figure assets, persisted visualReview, closed neutral practice stimuli and safe evidence-labelled study diagrams. Preserves exact v2 input compatibility and all three goals/new-update composition. JSON metadata is separate from actual local asset binding and complete visual backups.",
+    "Beta 27 completes Full detail/Condensed authoring, matches the prompt pin to the existing v4 reader schema, and checks both layers for completeness and source narration. No unrelated R2 rules."
   ],
   "visualRepertoireIncrement": "Beta15 embeds the frozen v4 schema and purposeful new visual rules. Old schemas, eleven request fields, three goal templates and new/update composition remain supported. App renderer/reveal/save/export/update acceptance is required separately.",
   "teachingKnowledgeIncrement": "Beta20 teaches directly with established knowledge, resolves ordinary source errors, adds original examples and keeps material corrections secondary; exact evidence, scope and explicit source-only constraints remain intact.",
@@ -201,9 +202,9 @@
   "promptSchema": {
     "path": "premed-hq-documentation/specifications/generation/portable-notebooks/notebook-prompt-v4.schema.json",
     "outputFile": "notebook-prompt-v4.schema.json",
-    "sha256": "d571a6e58a2953cc1e939e7236a98925bc582cb7b77418e4604b48ee1bc30097",
-    "embeddedSha256": "974c5ca556f28f9862df02aeca3becdd3fc92de17b2a788ea137c3c23ed1642b",
+    "sha256": "aae31d034e109e8ac4d64cbe2fba0bdb41068b76b5f5c2ddbeb9a4595095ca35",
+    "embeddedSha256": "9418a41430fa4c13b7bea389dd4db99e643e96e6b6c4559a651b458a3c298228",
     "serialization": "sha256 hashes raw file bytes; embeddedSha256 hashes UTF-8 JSON serialized with ensure_ascii=False and separators=(comma, colon), without a trailing newline.",
-    "relationship": "Intentional reader/prompt divergence: the reader supports optional more fields; prompt generation stays on the beta25 schema without those fields until a separately approved R2 change."
+    "relationship": "Prompt and installed v4 reader schemas match, including optional paragraph/bullets more. Beta27 completes the reading-detail authoring contract; no reader, storage or cloud schema change."
   }
 }
