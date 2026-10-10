@@ -335,10 +335,10 @@ function Overview({ course, workspace, data, assignments, onTab }: {
   }
   return <div className="class-hub-overview overview-approved">
     <section className="class-hub-course-pulse" aria-label="Your class at a glance">
-      <div className="course-pulse-heading"><p>Today</p><b>Your class at a glance</b></div>
+      <div className="course-pulse-heading"><p>Today</p><b className="sr-only">Your class at a glance</b></div>
       <button type="button" className="course-pulse-item is-urgent" onClick={() => onTab('assignments')}><span>Next Assignment</span><b>{nextAssignment?.title ?? 'No upcoming assignment'}</b><i>{nextAssignment ? assignmentDateLabel(nextAssignment) : 'View class work'} →</i></button>
       <button type="button" className="course-pulse-item" onClick={() => onTab('assignments')}><span>Next Exam</span><b>{exam?.title ?? 'No exam scheduled'}</b><i>{exam ? assignmentDateLabel(exam) : 'View assignments'} →</i></button>
-      <button type="button" className="course-pulse-item overview-focus" onClick={() => {setFocusDraft(workspace.studyFocus ?? '');setFocusOpen(true)}}><span>Your focus</span><b>{workspace.studyFocus || 'Choose a focus for this class'}</b><i>{workspace.studyFocus ? 'Set by you · Edit focus' : 'What would you like to work on?'} →</i></button>
+      <button type="button" className="course-pulse-item overview-focus" onClick={() => {setFocusDraft(workspace.studyFocus ?? '');setFocusOpen(true)}}><span>Your focus</span><b>{workspace.studyFocus || 'Choose a focus for this class'}</b><i>{workspace.studyFocus ? 'Set by you · Edit focus' : <span className="sr-only">What would you like to work on?</span>} →</i></button>
     </section>
     <div className="overview-approved-columns">
       <section className="lecture-journal" aria-labelledby="lecture-ledger-title">
@@ -511,7 +511,7 @@ export function WritingTools({ courseId, readingListState, drafts, readings, fee
         <p className="text-sm font-semibold text-muted-foreground">Themes appear only after the same feedback comes back on another paper.</p>
         <div className="mt-3 grid gap-2 sm:grid-cols-2"><Input value={feedbackTheme} onChange={(event) => setFeedbackTheme(event.target.value)} placeholder="Feedback theme" aria-label="Feedback theme" /><Select value={feedbackAssignmentId || 'none'} onValueChange={(value) => setFeedbackAssignmentId(value === 'none' ? '' : value)}><SelectTrigger aria-label="Paper for feedback"><SelectValue placeholder="Link a paper (optional)" /></SelectTrigger><SelectContent><SelectItem value="none">No paper linked</SelectItem>{assignments.map((assignment) => <SelectItem key={assignment.id} value={assignment.id}>{assignment.title}</SelectItem>)}</SelectContent></Select></div>
         <Textarea value={feedbackQuote} onChange={(event) => setFeedbackQuote(event.target.value)} className="mt-2 min-h-20" placeholder="Professor quote (optional)" aria-label="Professor quote" />
-        <div className="mt-3 space-y-2">{feedbackThemes.map((theme) => <WritingFeedbackTheme key={theme.key} theme={theme} assignments={assignments} />)}{!feedbackThemes.length && <p className="writing-empty-copy">No recurring feedback theme yet. Individual notes are saved, but one comment is not a pattern.</p>}</div>
+        <div className="mt-3 space-y-2">{feedbackThemes.map((theme) => <WritingFeedbackTheme key={theme.key} theme={theme} assignments={assignments} />)}{!feedbackThemes.length && <p className="writing-empty-copy">No recurring feedback theme yet.</p>}</div>
       </Panel>
       <Panel title="Feedback notes">
         {feedback.map((note) => <article key={note.id} className="border-b border-border py-3 last:border-0"><p className="font-bold">{note.theme}</p>{note.quote && <p className="mt-1 text-sm text-muted-foreground">{note.quote}</p>}<p className="mt-1 text-xs text-muted-foreground">{assignments.find((item) => item.id === note.assignmentId)?.title ?? 'General class feedback'}</p></article>)}
@@ -528,7 +528,7 @@ export function WritingTools({ courseId, readingListState, drafts, readings, fee
         setRecordEditor(undefined)
       }}>Remove entry</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
       <Dialog open={Boolean(recordEditor)} onOpenChange={(open) => { if (!open) setRecordEditor(undefined) }}>
-        <DialogContent><DialogHeader><DialogTitle>{recordEditor?.id ? 'Edit' : 'Add'} {recordEditor?.kind === 'paper' ? 'paper' : 'reading'}</DialogTitle><DialogDescription>Name this item before saving it to your class.</DialogDescription></DialogHeader>
+        <DialogContent><DialogHeader><DialogTitle>{recordEditor?.id ? 'Edit' : 'Add'} {recordEditor?.kind === 'paper' ? 'paper' : 'reading'}</DialogTitle><DialogDescription className="sr-only">Name this item before saving it to your class.</DialogDescription></DialogHeader>
           {recordEditor && <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); saveWritingRecord() }}>
             <label className="block text-sm font-bold">Title<Input autoFocus required value={recordEditor.title} onChange={(event) => setRecordEditor({ ...recordEditor, title: event.target.value })} /></label>
             {recordEditor.kind === 'reading' ? <label className="block text-sm font-bold">Week<Input value={recordEditor.week} onChange={(event) => setRecordEditor({ ...recordEditor, week: event.target.value })} /></label> : <label className="block text-sm font-bold">Assignment<SelectField aria-label="Assignment" className="mt-1 min-h-11" value={recordEditor.assignmentId} onValueChange={value => setRecordEditor({ ...recordEditor, assignmentId: value })} options={[{ value: '', label: 'No assignment linked' }, ...assignments.map(item => ({ value: item.id, label: item.title }))]} /></label>}
@@ -688,7 +688,7 @@ function Materials({
     <div className="class-hub-materials space-y-3">
       <SectionToolbar
         title="Materials"
-        detail={`${primaryFiles.length + materialNotes.length} ${(primaryFiles.length + materialNotes.length) === 1 ? 'item' : 'items'} in this course library`}
+        detail=""
         action={<div className="class-hub-material-add"><Button variant="outline" size="sm" onClick={() => { const next = new URLSearchParams(materialParams); next.set('materialView', 'folder'); setMaterialParams(next, { replace: true }) }}><FolderOpen className="size-4" />Folder pilot</Button><SyncOriginalFilesButton files={primaryFiles} /><MaterialIntakeDialog courseId={courseId} trigger={<Button size="sm"><Plus className="size-4" /> Add material</Button>} /></div>}
       />
       {supportingCount > 0 && <Button type="button" variant="ghost" size="sm" aria-pressed={showSupportingImages} onClick={() => setShowSupportingImages(value => !value)}>
@@ -737,11 +737,11 @@ function Materials({
           {groupBy === 'week' && <div className="class-hub-material-week-marker" aria-hidden="true"><span>{group.weekNumber ?? '—'}</span><small>{group.unassigned ? 'To sort' : group.key === 'general' ? 'General' : group.weekNumber ? 'Week' : 'Span'}</small></div>}
           <div className="class-hub-material-group-main">
             <CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3">
-              <div><p className="class-hub-material-eyebrow">{group.unassigned ? 'Choose a home' : group.eyebrow}</p><CardTitle>{group.unassigned ? 'Needs organizing' : group.label}</CardTitle><p className="mt-1 text-xs font-bold text-muted-foreground">{materialGroupDetail(group, groupBy)}</p></div>
+              <div><p className="class-hub-material-eyebrow">{group.unassigned ? '' : group.eyebrow}</p><CardTitle>{group.unassigned ? 'Needs organizing' : group.label}</CardTitle><p className="mt-1 text-xs font-bold text-muted-foreground">{materialGroupDetail(group, groupBy)}</p></div>
               <Badge variant="outline">{group.files.length + group.notes.length} {group.files.length + group.notes.length === 1 ? 'item' : 'items'}</Badge>
             </CardHeader>
             <CardContent className="class-hub-material-group-content">
-              {group.unassigned && <div className="class-hub-material-placement-note">Choose a week for scheduled work, or General materials for transcripts, reference files, and anything you use across the class.</div>}
+              {group.unassigned && <details className="class-hub-material-placement-note"><summary className="cursor-pointer">Placement help</summary><p>Choose a week for scheduled work, or General materials for transcripts, reference files, and anything you use across the class.</p></details>}
               {mergedMaterialItems(group.files, group.notes, sortBy).map((entry) => entry.kind === 'file'
                 ? <FileRow key={entry.item.id} file={entry.item} data={data} courseLabel={`${course.code} · ${course.title}`} ownership={entry.item.owner} courseWeek={materialCourseWeekForFile(entry.item, topics, workspace.syllabusSchedule ?? [])} onWeekChange={(courseWeek) => setMaterialFileWeek(entry.item.id, courseWeek)} onReimport={entry.item.type === 'syllabus' ? () => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}&reimport=1&reimportFile=${entry.item.id}`) : undefined} />
                 : <MaterialNoteRow key={entry.item.id} note={entry.item} open={entry.item.id === requestedNoteId} courseWeek={materialCourseWeekForNote(entry.item, topics, sourceFiles, workspace.syllabusSchedule ?? [])} onWeekChange={(courseWeek) => setMaterialNoteWeek(entry.item.id, courseWeek)} />)}
@@ -752,7 +752,7 @@ function Materials({
       ))}
       {!visible.length && <EmptyState icon={FolderOpen} title="No materials in this view" detail={files.length ? 'Try another filter.' : 'Add course files from the class actions menu.'} />}
 
-      <Collapsible title="Material tools" badge={<span className="class-hub-material-tools-badge">Import · generate · prepare</span>}>
+      <Collapsible title="Material tools" badge={<span className="sr-only">Import · generate · prepare</span>}>
         <div className="class-hub-material-tools-actions">
           <Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button>
           <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline"><FileStack className="size-4" /> Create study resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems classType={classType} onChoose={openArtifact} /><DropdownMenuSeparator /><DropdownMenuItem onClick={openFolderIntake}><FolderOpen className="size-4" /> Connect a notes folder</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
@@ -858,7 +858,7 @@ function Assignments({ courseId, assignments, categories, focusWhatIf = false }:
   }, [focusWhatIf])
   return (
     <div className="class-hub-assignments space-y-4">
-      <SectionToolbar title="Assignments" detail="Coursework execution, fixed to this class." />
+      <SectionToolbar title="Assignments" detail="" />
       <AssignmentsPanel courseId={courseId} />
       <section ref={whatIfRef} aria-labelledby="course-grade-context" tabIndex={-1}>
         <p id="course-grade-context" className="class-hub-support-label">Course grade context · supporting</p>
@@ -905,7 +905,7 @@ function GuideReference({ courseId, workspace, notes, assignments, contacts, dat
   return (
     <div className="mt-8 border-t border-border pt-6">
       <div className="space-y-4">
-        <SectionToolbar title="Dates, support & course information" detail="Keep schedules, contacts, policies, and other useful notes here in your Guide." action={<Button onClick={() => { setNewTitle(''); setNewContent(''); setNewKind('other'); setCreateOpen(true) }}><Plus className="size-4" /> New reference note</Button>} />
+        <SectionToolbar title="Dates, support & course information" detail="" action={<Button onClick={() => { setNewTitle(''); setNewContent(''); setNewKind('other'); setCreateOpen(true) }}><Plus className="size-4" /> New reference note</Button>} />
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogContent><DialogHeader><DialogTitle>New reference note</DialogTitle><DialogDescription>Keep a policy, administrative note, or question for this class.</DialogDescription></DialogHeader>
             <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); saveItem() }}>
@@ -1038,7 +1038,7 @@ function GuideSuggestions({ courseId, data, onOpenMaterials }: { courseId: strin
     useStore.getState().update((draft) => {
       outcome = acceptGuideProposal(draft.academics.classCenter, courseId, proposalId)
     })
-    toast(outcome.ok ? { title: 'Added to Guide', description: 'The saved item keeps its reviewed source.' } : { title: 'Suggestion not saved', description: outcome.reason, tone: 'error' })
+    toast(outcome.ok ? { title: 'Added to Guide' } : { title: 'Suggestion not saved', description: outcome.reason, tone: 'error' })
   }
 
   function dismiss(proposalId: string) {
@@ -1099,7 +1099,7 @@ function WhatIf({ assignments, categories }: { assignments: ClassAssignment[]; c
   const current = coursePercent(assignments)
   return (
     <Card className="class-hub-panel class-hub-what-if">
-      <CardHeader className="class-hub-panel-header"><CardTitle>What if…</CardTitle><p className="text-sm text-muted-foreground">Assume a result for one remaining category.</p></CardHeader>
+      <CardHeader className="class-hub-panel-header"><CardTitle>What if…</CardTitle><details className="text-sm text-muted-foreground"><summary className="cursor-pointer">Learn more</summary><p>Assume a result for one remaining category.</p></details></CardHeader>
       <CardContent className="class-hub-panel-content">
         {weighted.length ? (
           <div className="class-hub-what-if-grid">
@@ -1326,7 +1326,7 @@ function NoteRow({ note }: { note: ClassNote }) {
         <div className="flex flex-wrap justify-end gap-2"><Button size="sm" variant="ghost" onClick={cancel}>Cancel</Button><Button size="sm" disabled={!title.trim()} onClick={save}>Save changes</Button></div>
       </div> : <div className="flex items-start gap-3">
         <NotebookText className="mt-0.5 size-4 shrink-0 text-primary" />
-        <div className="min-w-0 flex-1"><p className="font-extrabold">{note.title}</p><details className="mt-2 text-sm text-muted-foreground"><summary className="cursor-pointer">View saved details</summary><p className="mt-2 whitespace-pre-wrap">{note.content || 'No note text yet.'}</p></details><p className="mt-1 text-xs text-muted-foreground">{[note.unit, note.date].filter(Boolean).join(' · ')}{sourceCount ? ` · ${sourceCount} reviewed ${sourceCount === 1 ? 'source' : 'sources'}` : ''}</p></div>
+        <div className="min-w-0 flex-1"><p className="font-extrabold">{note.title}</p><details className="mt-2 text-sm text-muted-foreground"><summary className="cursor-pointer">View saved details</summary><p className="mt-2 whitespace-pre-wrap">{note.content || 'No note text yet.'}</p>{sourceCount > 0 && <p className="mt-2">The saved item keeps its reviewed source.</p>}</details><p className="mt-1 text-xs text-muted-foreground">{[note.unit, note.date].filter(Boolean).join(' · ')}{sourceCount ? ` · ${sourceCount} reviewed ${sourceCount === 1 ? 'source' : 'sources'}` : ''}</p></div>
         <div className="flex shrink-0 gap-1"><Button size="sm" variant="ghost" aria-label={`Edit ${note.title}`} onClick={() => setEditing(true)}>Edit</Button><Button size="sm" variant="ghost" aria-label={`Delete ${note.title}`} className="text-destructive hover:text-destructive" onClick={() => setDeleting(true)}>Delete</Button></div>
       </div>}
       <AlertDialog open={deleting} onOpenChange={setDeleting}>
@@ -1672,7 +1672,7 @@ function mergedMaterialItems(files: AcademicFile[], notes: ClassNote[], sortBy: 
 }
 
 function materialGroupDetail(group: MaterialGroup, groupBy: MaterialGroupBy) {
-  if (group.unassigned) return 'Choose a week or keep it in General materials'
+  if (group.unassigned) return ''
   if (group.key === 'general') return 'Class-wide resources · no week needed'
   if (groupBy === 'category') return `${group.files.length + group.notes.length} ${group.files.length + group.notes.length === 1 ? 'material' : 'materials'}`
   if (groupBy === 'unit') return 'Course materials'

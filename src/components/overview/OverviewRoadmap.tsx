@@ -76,7 +76,10 @@ export function OverviewRoadmap() {
               title="Your Plan"
               className="mb-5"
             >
-              This roadmap comes from your milestone records on Timeline, not a generic hardcoded schedule.
+              <details>
+                <summary className="cursor-pointer text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">About roadmap</summary>
+                <p>This roadmap comes from your milestone records on Timeline, not a generic hardcoded schedule.</p>
+              </details>
             </MascotNote>
             <div className="overflow-x-auto pb-2">
               <div className="relative min-w-[58rem] px-3 pt-5">

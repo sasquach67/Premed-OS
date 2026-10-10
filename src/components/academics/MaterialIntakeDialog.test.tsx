@@ -39,6 +39,18 @@ describe('MaterialIntakeDialog clipboard intake', () => {
       .find((item) => item.textContent?.includes('Paste a screenshot'))!
   }
 
+  it('keeps the on-device and AI disclosure boundary inline and preserves the dialog description', async () => {
+    await openDialog()
+    const dialog = document.body.querySelector('[role="dialog"]')!
+    const description = document.getElementById(dialog.getAttribute('aria-describedby')!)!
+    expect(description).toBeTruthy()
+    const protectedCopy = 'Text and scanned pages are read on this device. File bytes stay local; only readable source text is copied to your private server workspace after disclosure when you request an AI output.'
+    expect(description.textContent).toContain(protectedCopy)
+    expect(description.closest('details:not([open]), [hidden], .sr-only')).toBeNull()
+    expect([...description.childNodes].some(node => node.nodeType === Node.TEXT_NODE && node.textContent?.includes(protectedCopy))).toBe(true)
+    expect(description.textContent).toContain('Choose files or a folder, paste a screenshot, or paste text—including a transcript.')
+  })
+
   it('focuses the screenshot paste target without opening the file picker', async () => {
     await openDialog()
 

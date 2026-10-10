@@ -46,7 +46,7 @@ describe('Daily Assignments first-run boundary', () => {
     })
 
     expect(container.textContent).toContain('Add a class before an assignment')
-    expect(container.textContent).toContain('Assignments are coursework commitments')
+    expect(container.textContent).toContain('Add a class from its syllabus or enter it manually.')
     expect(container.textContent).toContain('Import a syllabus')
     expect(container.textContent).not.toContain('All classes')
 
