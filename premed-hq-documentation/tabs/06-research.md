@@ -246,3 +246,18 @@ Lab-note capture is the mobile-critical flow — one screen, standard `input`/`t
 ### Content-blocked, not code-blocked
 
 **`D-1` venues · `D-2` grants · `D-4` labs (`RS-BIG-1`) — plus `SD-1`, `C-BIG-1`, `V-BIG-1` in other pillars.** **These are sourcing passes, not engineering.** **UNC's Office for Undergraduate Research already publishes an opportunities database (`our.unc.edu/find/opportunities/`) — `U-12` says check it before hand-building `D-4`.**
+
+---
+
+## 19. Document import — Oct 2026 (built on `claude/fervent-cori-gkxe4a`, not yet released)
+
+**Andy, Oct 11:** Research needs an import that *"automatically detects a type of data"*, like the syllabus import. Full brief: `implementation/briefs/T4b-research-document-import.md`.
+
+- **Same contract as syllabus import:** on-device extraction, deterministic typed proposals with source quotes, review before any write, no AI key.
+- **Lab notes rule:** every dated entry is a **lab day** unless a date says otherwise. A future heading date, or a dated deadline inside an entry, becomes **Upcoming**.
+- **Onboarding documents:**
+  - Lab details fill **empty fields only**.
+  - People link by email, never merged globally by name.
+  - Standing meetings, the onboarding checklist, the reading list and guidelines become **pinned reminders** ("Use existing fields now", Andy). Reading and guidelines start unchecked.
+  - The document's own dates never become lab days.
+- **No schema change.** A real checklist/reading record type needs its own migration-safe brief (S1 old-client risk).

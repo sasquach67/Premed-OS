@@ -1,7 +1,7 @@
 import { envelope } from '@/components/research/researchRecord'
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search } from 'lucide-react'
+import { FileUp, Plus, Search } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { InlineAddRow } from '@/components/common/InlineAddRow'
 import { ExpandableEntryRow } from '@/components/common/ExpandableEntryRow'
@@ -19,6 +19,7 @@ import { trashResearchRecord } from '@/lib/researchLifecycle'
 import { fmtDate } from '@/lib/date'
 import { useResearchSave, type ResearchSave } from '@/components/research/useResearchSave'
 import { LabEditor, LabList, LastContact, ResearchField, ResearchPeople, SaveState } from '@/components/research/ResearchEditors'
+import { ResearchImportDialog } from '@/components/research/ResearchImportDialog'
 import './research.css'
 
 /** Workspace-keyed drafts cannot spill into a different signed-in account. */
@@ -67,6 +68,7 @@ function ResearchWorkspace() {
   const labs = activeResearchLabs(data.experiences)
   const current = currentResearchLab(data.experiences, data.experienceHourEntries)
   const [labEditor, setLabEditor] = useState<CollectionRecord<ExperienceEntry> | 'new' | null>(null)
+  const [importing, setImporting] = useState(false)
   const [search, setSearch] = useState('')
   const [range, setRange] = useState<'term' | '30-days' | 'all' | 'custom'>('term')
   const [start, setStart] = useState('')
@@ -92,8 +94,8 @@ function ResearchWorkspace() {
     <PageHeader title="Research" scene="research" subtitle={current?.org || 'Your lab and the work you record'} contentGlass={false} className="research-header" footer={<nav aria-label="Research sections"><span aria-current="page" className="research-log-tab">Log <span>{allLogs.length}</span></span></nav>}>
       <div className="research-stats" role="group" aria-label="Research totals"><div><strong>{stats.termHours} <small>h</small></strong><span>This term · {stats.term.label}</span></div>{stats.goal && <div><strong>Total {stats.totals.total} / {stats.goal} <small>h</small></strong><span>Goal</span>{stats.projection ? <small>At your logged pace: {fmtDate(stats.projection.projectedDate)}</small> : <small>Two dated logs on different days give a pace.</small>}</div>}<div><strong>{stats.totals.total} <small>h</small></strong><span>Total{stats.totals.estimated ? ` · ${stats.totals.estimated} est.` : ''}</span></div><div><strong>{stats.labDays}</strong><span>Lab days</span></div></div>
     </PageHeader>
-    {!empty && <div className="research-controls"><label className="research-search"><Search className="size-4 shrink-0" /><Input aria-label="Search log" placeholder="Search what you did and your thoughts" value={search} onChange={event => { setSearch(event.target.value); setLimit(20) }} /></label><SelectField aria-label="Date range" value={range} onValueChange={value => { setRange(value as typeof range); setLimit(20) }} options={[{ value: 'term', label: `This term (${stats.term.label})` }, { value: '30-days', label: 'Last 30 days' }, { value: 'all', label: 'All time' }, { value: 'custom', label: 'Custom range' }]} /><Button className="rounded-full" onClick={begin}><Plus />Log a lab day</Button>{range === 'custom' && <div className="flex w-full min-w-0 flex-wrap gap-2"><ResearchField label="From"><Input type="date" value={start} onChange={event => setStart(event.target.value)} /></ResearchField><ResearchField label="Through"><Input type="date" value={end} onChange={event => setEnd(event.target.value)} /></ResearchField>{rangeError && <p role="alert">Choose a valid date range with the start before the end.</p>}</div>}</div>}
-    {empty ? <section className="research-panel p-5"><p className="mb-3">Add your lab to start keeping your research days together.</p><Button className="rounded-full" onClick={() => setLabEditor('new')}><Plus />Add your lab</Button></section> : <div className="research-layout">
+    {!empty && <div className="research-controls"><label className="research-search"><Search className="size-4 shrink-0" /><Input aria-label="Search log" placeholder="Search what you did and your thoughts" value={search} onChange={event => { setSearch(event.target.value); setLimit(20) }} /></label><SelectField aria-label="Date range" value={range} onValueChange={value => { setRange(value as typeof range); setLimit(20) }} options={[{ value: 'term', label: `This term (${stats.term.label})` }, { value: '30-days', label: 'Last 30 days' }, { value: 'all', label: 'All time' }, { value: 'custom', label: 'Custom range' }]} /><Button variant="outline" className="rounded-full" onClick={() => setImporting(true)}><FileUp />Import</Button><Button className="rounded-full" onClick={begin}><Plus />Log a lab day</Button>{range === 'custom' && <div className="flex w-full min-w-0 flex-wrap gap-2"><ResearchField label="From"><Input type="date" value={start} onChange={event => setStart(event.target.value)} /></ResearchField><ResearchField label="Through"><Input type="date" value={end} onChange={event => setEnd(event.target.value)} /></ResearchField>{rangeError && <p role="alert">Choose a valid date range with the start before the end.</p>}</div>}</div>}
+    {empty ? <section className="research-panel p-5"><p className="mb-3">Add your lab to start keeping your research days together.</p><div className="flex flex-wrap gap-2"><Button className="rounded-full" onClick={() => setLabEditor('new')}><Plus />Add your lab</Button><Button variant="outline" className="rounded-full" onClick={() => setImporting(true)}><FileUp />Import from a document</Button></div></section> : <div className="research-layout">
       <div className="grid min-w-0 content-start gap-3"><section className="research-panel" aria-label="Lab log"><div className="research-panel-heading"><h2>{allLogs.length ? 'Log a lab day' : 'Log your first lab day'}</h2><span className="text-muted-foreground">Hours optional</span></div><div className="research-panel-body">
         <InlineAddRow label="Save" className="research-capture-shell" onSubmit={async () => {
           const value = hours.trim() ? Number(hours) : 0
@@ -119,6 +121,7 @@ function ResearchWorkspace() {
         {(['researchUpcomingItems', 'researchReminders', 'researchTimelineNotes'] as const).map(kind => <LabList key={`${current.id}:${kind}`} kind={kind} labId={current.id} data={data} today={today} writer={writer} />)}<SaveState writer={writer} /></div></section><ResearchPeople key={current.id} labId={current.id} data={data} writer={writer} /></aside>}
     </div>}
     {empty && <EarlierNotes data={data} />}
+    <ResearchImportDialog open={importing} onOpenChange={setImporting} data={data} writer={writer} />
     <Dialog open={!!labEditor} onOpenChange={open => { if (!open && !writer.pending) setLabEditor(null) }}><DialogContent className="max-h-[85vh] overflow-y-auto"><DialogTitle>{labEditor === 'new' ? 'Add your lab' : 'Edit lab'}</DialogTitle><DialogDescription>Keep the lab and your role in your own words.</DialogDescription>{labEditor && <LabEditor key={labEditor === 'new' ? 'new' : labEditor.id} lab={labEditor === 'new' ? undefined : labEditor} data={data} writer={writer} close={() => setLabEditor(null)} />}{labEditor && labEditor !== 'new' && <div className="flex flex-wrap gap-2"><Button variant="ghost" size="sm" disabled={writer.pending} onClick={() => setLabEditor('new')}><Plus />Add another lab</Button><Button variant="ghost" size="sm" disabled={writer.pending} onClick={async () => { if (await writer.save(draft => { trashResearchRecord(draft, 'experiences', labEditor.id) })) setLabEditor(null) }}>Delete lab</Button></div>}{labs.length > 1 && <div className="grid gap-1 border-t pt-3"><p className="text-xs font-bold">Edit another lab</p>{labs.filter(lab => labEditor === 'new' || lab.id !== labEditor?.id).map(lab => <Button key={lab.id} variant="ghost" size="sm" disabled={writer.pending} onClick={() => setLabEditor(lab)}>{lab.org}</Button>)}</div>}</DialogContent></Dialog>
   </div>
 }
