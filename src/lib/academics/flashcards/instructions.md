@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-09-30 — plain-language answers and no source chatter.
+Prompt revision: 2026-10-11 — own-words answers, before/after examples, default plus Technical or Readings emphasis.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal and the same underlying course materials. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -8,9 +8,9 @@ The complete portable builder and instructions are included below. No other inst
 
 ## First: confirm the prerequisite and actual source access
 
-A completed Journal for the requested lecture is required. Use its study guide and Mastery Map to establish the learning targets, scope, and relationships. Use the underlying lecture materials to verify tested claims. Use the Journal's mastery objectives as the checklist of learning targets. Take card wording, terms, numbers, and the instructor's examples from the original materials, because the study guide is intentionally concise and may leave out card-worthy detail. First inspect this conversation and its accessible attachments for the completed Journal and the same materials used to create it. The selected Journal content included at the end of this prompt can supply the Journal when complete; do not ask for a duplicate upload unnecessarily. A Journal export may contain references/excerpts without full originals.
+A completed Journal for the requested lecture is required. Use its study guide and Mastery Map to establish the learning targets, scope, and relationships. Use the underlying lecture materials to verify tested claims. Use the Journal's mastery objectives as the checklist of learning targets. Take the facts from the original materials: terms, numbers, conditions, cautious words such as “may”, the instructor's examples, what the instructor stressed, and any phrase the instructor said belongs in an answer, because the study guide is intentionally concise and may leave out card-worthy detail. Write each Required answer yourself in the wording this prompt sets below; do not copy a textbook or slide definition as the Required answer. First inspect this conversation and its accessible attachments for the completed Journal and the same materials used to create it. The selected Journal content included at the end of this prompt can supply the Journal when complete; do not ask for a duplicate upload unnecessarily. A Journal export may contain references/excerpts without full originals.
 
-If the completed Journal and necessary original materials are accessible and the student has finished uploading, begin creating the finished deck immediately. This pasted prompt is the request to proceed; do not ask for another confirmation or return only a plan.
+If the completed Journal and necessary original materials are accessible and the student has finished uploading, begin creating the finished deck immediately. This pasted prompt is the request to proceed; do not ask for another confirmation or return only a plan. The single exception is the one emphasis suggestion described under Default wording and emphasis.
 
 If necessary material is missing, try to locate the original Notebook conversation using chat/file search only if your environment actually provides that capability. Use the selected course, lecture title, and source titles to identify the matching materials; a search hit, filename, or remembered summary does not establish access to the full files. Do not claim you can search other chats when you cannot.
 
@@ -50,7 +50,7 @@ Front: a natural, precise question that stands alone when shuffled. Ask “What 
 
 Required answer: the shortest complete response the student can grade against the question. Keep essential qualifiers and causal links. A naming answer may be a term; an explanation should state a claim in complete, direct sentences. Do not add “The answer is…” merely to satisfy a verb check. Preserve the instructor's necessary technical terms while explaining unfamiliar ones. Difficulty comes from knowledge, not ornate wording. Do not inflate cautious claims such as “may contribute.” Apply the friend test to the Required answer (Back) itself, not just Extra: could a first-year student who skipped the lecture understand every word except the course's own named terms? If not, rewrite in plainer words and explain each necessary named term in the same sentence. “Shortest” must not mean compressed jargon. Keep the existing Q&A format, with cloze as the exception; apply the same plain-language test to cloze sentences and blurt checklist answers.
 
-No source chatter in any student-facing card field: Front, Back, cloze text, Extra, labels, or figure captions/alt text. Never mention lectures, readings, authors, slides, or phrases such as “not X's label” as commentary about where an idea came from. Teach the idea only. Keep source references and attribution in sourceRefs / hidden premedos_source metadata; keep unresolved source conflicts in the separate audit/limitations report, never as a recall task or explanatory aside.
+No source chatter in any student-facing card field: Front, Back, cloze text, Extra, labels, or figure captions/alt text. Never mention lectures, readings, authors, slides, or phrases such as “not X's label” as commentary about where an idea came from. Teach the idea only. Keep source references and attribution in sourceRefs / hidden premedos_source metadata; keep unresolved source conflicts in the separate audit/limitations report, never as a recall task or explanatory aside. Under the Readings emphasis, naming the scholar, people or place as the holder or subject of an argument is content, not source chatter. Commentary about where an idea was found, such as “the reading says”, is still excluded.
 
 Extra: teach understanding, particularly when the idea is difficult, abstract, or unintuitive. This is a firm requirement, not optional decorative text:
 
@@ -71,7 +71,23 @@ Second accepted style example, from a theory subject (not content to insert into
 - In other words: Being good at the job does not mean you get to choose how to do it: your job is to follow the manager's chosen steps. Faster output also does not automatically mean better working conditions for you.
 - Illustrative example: You pack orders at a warehouse. Instead of arranging your station and packing boxes your own way, your manager times each step and tells you exactly where to put each item and in what order to pack it. That puts decisions about how you work in management's hands.
 
+### Before and after, style only (not content to insert into unrelated decks)
+
+- Q: What does it mean for the US dollar to function as a global currency? Before: "It is widely used internationally to price and settle transactions, denominate finance, and hold reserves." After: "People worldwide use dollars to set prices, make payments, borrow and lend, and hold money for future needs."
+- Q: What distinguishes territory from a location or place? Before: "Territory is space demarcated and controlled through power or jurisdiction." After: "Territory is an area with boundaries where a person, group, or government exercises control over what happens."
+- Q: What makes colonialism more than trade between two societies? Before: "It establishes enduring domination and dispossession: colonizers take control of land, labor, resources, and political life." After: "Colonialism means lasting control over another society: colonizers take land and resources, control people's work, and shape political life."
+- Q: Why can a commodity chain not be explained as just a route on a map? Before: "It also depends on labor, money, nature, infrastructure and governing rules that organize production, distribution and consumption." After: "It also depends on workers, money, land and materials, transport, and rules that shape how goods are made, moved, and used."
+
 Use short connected sentences. Explain enough to make the idea understandable without turning Extra into a mini study guide. Use plain text in the build fields; do not author HTML, CSS, or script inside card content. The supplied builder handles safe formatting, paragraph labels, lists, and figure markup.
+
+## Default wording and emphasis
+
+Every deck starts from the default: Required answers are plain sentences, with each course term explained where it appears (the friend test above).
+Two emphases exist for classes where plain wording would lose what is graded. Use at most one per deck.
+- Technical: the Required answer uses the course's exact terms, directions, numbers, units and formulas as they are, without stopping to explain each term. The friend test then applies to “In other words”, not to the Required answer. Suits mechanism-heavy science and quantitative lectures. Style example: “One initial primer for the leading strand; one new primer for every lagging-strand Okazaki fragment.”
+- Readings: the Required answer names who made the argument, the people or place studied, and the scholar's own term, with plain wording around them. Suits classes examined on authors, cases and texts. Style example: “Massey's power geometry: people have unequal control over movement and connections. Some direct them; others depend on them or are excluded.”
+After you have inspected the materials, decide whether an emphasis fits this lecture. If the default fits, say nothing and build. If an emphasis fits, send one short message naming it and the reason, and offer the default as the alternative, for example: “This lecture is mostly named enzymes and mechanisms, so I suggest the Technical emphasis. Reply ok, or say keep it plain.” Then build with the student's answer. Ask this once per deck and ask nothing else about wording. If the student's Guide or message already states how this class should be worded, follow it and do not ask. A class may use different emphases for different lectures.
+In every case: keep the instructor's examples, what the instructor stressed, phrases the instructor wants in an answer, stated exclusions and the exam format; keep terms, numbers and cautious wording exact; write “In other words” and the example in plain language.
 
 ## Card types and cloze mechanics
 
