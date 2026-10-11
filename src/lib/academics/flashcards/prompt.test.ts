@@ -13,9 +13,9 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the September 30 plain-language prompt revision', () => {
+  it('copies the October 11 plain-language prompt revision', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-09-30')
+    expect(prompt).toContain('Prompt revision: 2026-10-11')
     expect(prompt).toContain('Apply the friend test to the Required answer (Back) itself, not just Extra')
     expect(prompt).toContain('Instead of a worker deciding how to do the job, management breaks it into small tasks and sets the method it thinks is most efficient.')
     expect(prompt).toContain('No source chatter in any student-facing card field')
@@ -74,7 +74,7 @@ describe('flashcard prompt handoff', () => {
   it('adds mastery coverage, original wording, explicit references, and missed-question reinforcement', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'Demo', lecture: lecture() })
     for (const addition of [
-      "Use the Journal's mastery objectives as the checklist of learning targets. Take card wording, terms, numbers, and the instructor's examples from the original materials, because the study guide is intentionally concise and may leave out card-worthy detail.",
+      "Use the Journal's mastery objectives as the checklist of learning targets. Take the facts from the original materials: terms, numbers, conditions, cautious words such as “may”, the instructor's examples, what the instructor stressed, and any phrase the instructor said belongs in an answer, because the study guide is intentionally concise and may leave out card-worthy detail. Write each Required answer yourself in the wording this prompt sets below; do not copy a textbook or slide definition as the Required answer.",
       'Every mastery objective item (Understand, Be able to do, Watch for) maps to at least one target.',
       'or “the lecture\'s example” and “what class identified”; name the concept or example instead.',
       'If the student supplies missed practice or exam questions, add one or two cards on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.',
@@ -106,7 +106,9 @@ describe('flashcard prompt handoff', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'Demo', lecture: record })
     expect(prompt).toContain('"contextTruncated": true')
     expect(prompt).toContain('"omitted": true')
-    expect(prompt.length).toBeLessThan(60_000)
+    // Bound omitted-context overhead independently of intentional static instruction growth.
+    const instructions = readFileSync(resolve('src/lib/academics/flashcards/instructions.md'), 'utf8')
+    expect(prompt.length).toBeLessThan(instructions.length + 2_000)
     const context = JSON.parse(prompt.slice(prompt.lastIndexOf('\n\n{') + 2))
     expect(context.journal).toEqual({ omitted: true, reason: 'Selected Journal exceeds the copy budget. Attach the complete selected Journal and its original materials before creating cards.' })
   })
