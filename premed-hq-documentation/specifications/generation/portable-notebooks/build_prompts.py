@@ -5,7 +5,7 @@ import argparse, hashlib, json, re, subprocess
 GEN = 'premed-hq-documentation/specifications/generation/'
 BRIEFS = 'premed-hq-documentation/implementation/briefs/'
 TOKENS = ['COURSE_CODE','COURSE_TITLE','TERM','SCOPE','MATERIALS','DEPTH','CLASS_PREFERENCES','HELP_STAGE','ASSESSMENT_FORMAT','USER_REQUEST','REVISION_INPUT']
-PROMPT_BUILD = 'notebook-instructions-beta-27'
+PROMPT_BUILD = 'notebook-instructions-beta-28'
 PROMPT_SCHEMA = GEN+'portable-notebooks/notebook-prompt-v4.schema.json'
 KEYS = ['courseCode','courseTitle','term','scope','materials','depth','classPreferences','helpStage','assessmentFormat','userRequest','revisionInput']
 MODE_CONFIG = json.loads((Path(__file__).parent/'prompt-modes.json').read_text())

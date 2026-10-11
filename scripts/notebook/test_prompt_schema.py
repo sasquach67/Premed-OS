@@ -24,6 +24,17 @@ PREFIX = 'The prefix belongs only on mastery-objective labels. Section titles an
 GAP = 'A gap or source-limit section gets a plain student-facing title such as "Figures not supplied" or "Not covered yet", never "unfinished tasks"; administrative narration stays in the companion message.'
 DETAIL = '- `EC-READING-DETAIL`: For guide teaching in new and update notebooks, author two coherent reading layers using the existing `more` field on `paragraph`, `bullets` and `illustration` blocks. The field is optional on paragraphs and bullets and required on illustrations. Full detail is the default: the visible block plus its `more` text must retain the real explanation in compact wording, including relevant definitions, mechanisms, reasoning steps, distinctions and useful examples. Do not remove substantive teaching to meet a word count or percentage. Condensed hides `more`: the visible block must still name the concept, state its central relationship and define terms needed to understand that statement. Put additional explanation in `more` next to the idea it develops, without repeating the visible text. Both layers remove fluff and repetition; source narration belongs in neither layer. Use plain prose for `more`, at most 1200 characters per field, never an empty or whitespace-only string. When no useful explanation is needed, omit `more` or use null on paragraphs and bullets; illustrations must include `more: null`. Distribute longer explanations among relevant supported blocks without truncating the teaching or padding the guide to force a switch. Steps, tables and other block types do not accept `more`; keep their content intact and use an adjacent paragraph or bullets block for a needed explanation. Do not put practice answers or worked solutions in `more`; retain their existing reveal behavior and the requested assignment help stage. The app supplies the guide-wide switch; do not write duplicate Full detail/Condensed sections or interface instructions into the notebook.'
 DETAIL_CHECK = '- `EC-DETAIL-CHECK`: Before delivery, read the guide once with `more` hidden and once with it visible. Condensed must make sense by itself; Full detail must contain the complete relevant explanation without duplicated sentences, source narration or unsupported additions. Apply EC-PERTINENT-ONLY to both layers, including phrases such as "the lecture reports" and "the outline says". Keep genuine evidence limits in the existing limitations/gap records, and keep scientific uncertainty when it changes the claim. Check the declared schema and every `more` field; successful JSON validation alone does not establish teaching completeness.'
+# Exact current live beta27 bodies at 4b54197; independent of shallow Git history.
+BETA27_PROMPT_HASHES = {
+    'review': '693984125bd57d678ccd1f5ace12386ffcaf1c0a262372e72f87e579ff0bb577',
+    'assessment': '01e9bd54de36ffe43464f270f279310e99cf77397d2a19e10c590daa5550d3e1',
+    'assignment': 'e40c9a233700fdd42e4176284d415d7684df37b98eaf15fb985ef5f28a2e8ea2',
+}
+OLD_VISUAL = 'Use a visual in the main guide only when it clarifies a difficult relationship or materially replaces text; otherwise use the clearer shorter explanation. Place necessary neutral source-question stimuli in Practice. A figure used there need not receive a second walkthrough in the guide.'
+GUIDE_VISUAL = 'Show source visuals where they are taught. When a guide section teaches something that a supplied slide, figure, graph, diagram or image depicts, place that figure in that section beside its explanation, using the supplied pixels and a faithful caption; use the answer-neutral version when the original would reveal a practice answer. Practice may reuse the same asset: a figure used in Practice still appears in the guide section that teaches it. Decorative, title, administrative and duplicate slides stay out.'
+VISUAL_GAPS = "- `EC-VISUAL-GAPS`: For every guide section, check whether the idea is visual: a structure, process, pathway, comparison, map, data reading or before-and-after. If it is and no supplied image depicts it, build a native visual from supported facts with the existing block types (study-diagram, sequence-strip, timeline, venn, continuum, table, illustration, worked-example). If the materials refer to a figure that was not supplied or could not be extracted, name it in the plain-titled gap section with exactly what to supply, and still teach the idea with a native visual where the facts support one. Never generate a synthetic image file for a missing visual; extracting or faithfully cropping supplied source pixels under EC-FIGURES stays allowed. Never present a native visual as the instructor's figure, and never reconstruct an unavailable question stimulus."
+VISUAL_REVIEW = 'A candidate that depicts content taught in the guide may not be skipped as overlapping or unnecessary; record the guide section it was placed in.'
+COMPANION_VISUAL = 'List each guide section with the figure or native visual it uses, or the reason none is needed.'
 GOALS = ('review', 'assessment', 'assignment')
 
 
@@ -81,6 +92,15 @@ class PromptSchemaTests(unittest.TestCase):
         self.assertEqual(prompt.count(GAP), 1)
         self.assertEqual(prompt.count(DETAIL), 1)
         self.assertEqual(prompt.count(DETAIL_CHECK), 1)
+        self.assertEqual(prompt.count(GUIDE_VISUAL), 1)
+        self.assertEqual(prompt.count(VISUAL_GAPS), 1)
+        self.assertEqual(prompt.count(VISUAL_REVIEW), 1)
+        self.assertEqual(prompt.count(COMPANION_VISUAL), 1)
+        self.assertNotIn(OLD_VISUAL, prompt)
+        beta27 = prompt.replace('notebook-instructions-beta-28', 'notebook-instructions-beta-27').replace(GUIDE_VISUAL, OLD_VISUAL).replace(VISUAL_GAPS+'\n\n', '').replace(' '+VISUAL_REVIEW, '').replace(' '+COMPANION_VISUAL, '')
+        self.assertEqual(sha(beta27.encode()), BETA27_PROMPT_HASHES[goal], 'Only beta label and the exact approved visual edits may differ from live beta27')
+        # Preserve the prior beta25-to-beta27 heading/detail scope guard too.
+        prompt = beta27
         current_schema = embedded(prompt)
         legacy_schema = json.loads(current_schema)
         for variant in legacy_schema['$defs']['block']['oneOf'][:2]:
