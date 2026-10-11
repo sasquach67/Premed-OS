@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button'
 import { useStore } from '@/store/store'
 import { composeNotebookPrompt, type PromptValues } from '@/lib/academics/notebook/prompt'
 import type { NotebookGoal, NotebookUpdateSession } from '@/lib/academics/notebook/types'
-import { revisionInput, notebookUpdateBaselineFilename } from '@/lib/academics/notebook/revision'
+import { revisionInput } from '@/lib/academics/notebook/revision'
 import { clearNotebookWorkflowDraft, hasCurrentPromptAcknowledgment, loadNotebookWorkflowDraft, notebookWorkflowStep, persistNotebookWorkflowDraft, type NotebookWorkflowDraft, type NotebookWorkflowStep as Step, type PromptAcknowledgment } from '@/lib/academics/notebook/workflowDraft'
 import { NotebookImportPanel } from './NotebookImportPanel'
 import { downloadNotebookText, notebookTransaction } from './ExternalNotebookView'
+import { NotebookUpdateImageFiles } from './NotebookPortableExports'
 import { NotebookUpdateGuide } from './NotebookUpdateGuide'
 
 const GOALS = {
@@ -70,6 +71,7 @@ const STEPS = [
 
 export function ExternalNotebookWorkflow({ courseId, onImported, revision, baselineFresh = true }: { courseId: string; onImported: (id: string) => void; revision?: NotebookUpdateSession; baselineFresh?: boolean }) {
   const course = useStore(s => s.courses.find(c => c.id === courseId))
+  const revisionLecture = useStore(s => s.academics.classCenter.lectures.find(item => item.id === revision?.localId))
   const workspace = useStore(s => s.academics.classCenter.workspaces.find(w => w.courseId === courseId))
   const files = useStore(s => s.academics.classCenter.files)
   const storageId = revision ? `${courseId}:update:${revision.localId}:${revision.id}` : courseId
@@ -95,7 +97,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision, basel
   const latestPrompt = useRef('')
   const classFiles = files.filter(file => file.courseId === courseId)
   const guideSelection = useStudentGuide({ courseId, lessonIds: classFiles.filter(file => selected.includes(file.id)).map(file => file.lectureId).filter((id): id is string => Boolean(id)), choice: { target: draft.guideTarget ?? '', excludedIds: draft.excludedGuideIds ?? [] }, onChange: choice => setDraft(previous => ({ ...previous, guideTarget: choice.target, excludedGuideIds: choice.excludedIds, confirmedPrompt: null, acknowledgedBy: null, jsonReady: false })) })
-  const values: PromptValues = { COURSE_CODE: revision?.baseline.course.code ?? course?.code ?? '', COURSE_TITLE: revision?.baseline.course.title ?? course?.title ?? '', TERM: revision ? revision.baseline.course.term : term || null, SCOPE: scope.trim() ? `${scope}\nScope authority: ${scopeSource || 'Not supplied; label provisional scope.'}` : null, MATERIALS: [revision ? `${notebookUpdateBaselineFilename(revision)}: attach this exact saved baseline plus the new material; retained excerpts do not imply complete original files.` : '', ...classFiles.filter(f => selected.includes(f.id)).map(f => `${f.title} (${f.type}; attach the actual original file in the AI conversation)`), materials].filter(Boolean).join('\n'), DEPTH: depth, CLASS_PREFERENCES: preferencesWithGuide(preferences, guideSelection.directions, goal === 'assessment' ? 'assessment' : 'notebook'), HELP_STAGE: revision ? stage || null : stage, ASSESSMENT_FORMAT: goal === 'assessment' ? format || null : null, USER_REQUEST: request, REVISION_INPUT: revision ? revisionInput(revision) : null }
+  const values: PromptValues = { COURSE_CODE: revision?.baseline.course.code ?? course?.code ?? '', COURSE_TITLE: revision?.baseline.course.title ?? course?.title ?? '', TERM: revision ? revision.baseline.course.term : term || null, SCOPE: scope.trim() ? `${scope}\nScope authority: ${scopeSource || 'Not supplied; label provisional scope.'}` : null, MATERIALS: [revision ? `notebook.json: attach this exact saved baseline plus the new material; retained excerpts do not imply complete original files. The folder export calls this baseline notebook.json; attach that file and the accompanying images and bindings.json.` : '', ...classFiles.filter(f => selected.includes(f.id)).map(f => `${f.title} (${f.type}; attach the actual original file in the AI conversation)`), materials].filter(Boolean).join('\n'), DEPTH: depth, CLASS_PREFERENCES: preferencesWithGuide(preferences, guideSelection.directions, goal === 'assessment' ? 'assessment' : 'notebook'), HELP_STAGE: revision ? stage || null : stage, ASSESSMENT_FORMAT: goal === 'assessment' ? format || null : null, USER_REQUEST: request, REVISION_INPUT: revision ? revisionInput(revision, 'notebook.json') : null }
   const fullPrompt = goal ? composeNotebookPrompt(goal, values, revision ? 'update' : 'new') : ''
   const promptLines = fullPrompt ? fullPrompt.split('\n').length : 0
   useLayoutEffect(() => { latestPrompt.current = fullPrompt }, [fullPrompt])
@@ -248,7 +250,10 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision, basel
 
     {step === 'prompt' && <div className="en-stage-content">
       <p className="en-selected-goal">{goalInfo.title} / {course.code} / {course.title}</p>
-      {revision && <section className="en-stage-panel" aria-label="Saved update baseline"><h2>{baselineBlocked ? 'Restart to get the latest saved notebook' : 'Bring the latest saved notebook too'}</h2><p>This JSON contains saved content and retained source excerpts. Notes, practice progress and unsaved edits stay outside the AI handoff. Use it together with the complete update prompt below.</p><div className="en-actions"><Button variant="outline" disabled={baselineBlocked} onClick={() => { if (baselineBlocked) return; try { downloadNotebookText(notebookUpdateBaselineFilename(revision), JSON.stringify(revision.baseline, null, 2)); setMessage('Current notebook JSON download requested. Confirm when you have the file.') } catch { setMessage('Download unavailable. Expand the saved baseline and copy its complete JSON instead.') } }}>Download current notebook JSON</Button><Button variant="outline" disabled={baselineBlocked} aria-pressed={Boolean(draft.baselineReady)} onClick={() => { if (!baselineBlocked) setDraft(previous => ({ ...previous, baselineReady: true })) }}>I have the baseline file or full JSON</Button></div><details className="en-small-detail"><summary>Show saved baseline JSON</summary><textarea className="en-json" aria-label="Saved baseline JSON" readOnly value={baselineBlocked ? '' : JSON.stringify(revision.baseline, null, 2)} /></details></section>}
+      {revision && revisionLecture && <>
+        <NotebookUpdateImageFiles lecture={revisionLecture} revision={revision} disabled={baselineBlocked}><Button variant="outline" disabled={baselineBlocked} aria-pressed={Boolean(draft.baselineReady)} onClick={() => { if (!baselineBlocked) setDraft(previous => ({ ...previous, baselineReady: true })) }}>I have the notebook folder</Button></NotebookUpdateImageFiles>
+        <details className="en-small-detail"><summary>Show saved baseline JSON</summary><textarea className="en-json" aria-label="Saved baseline JSON" readOnly value={baselineBlocked ? '' : JSON.stringify(revision.baseline, null, 2)} /></details>
+      </>}
       <section className="en-code-panel" aria-label="Your prepared prompt">
         <header className="en-code-head">
           <p className="en-code-name"><FileCode2 aria-hidden="true" />{promptFilename}</p>
