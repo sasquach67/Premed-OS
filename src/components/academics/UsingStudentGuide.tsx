@@ -17,7 +17,8 @@ export function useStudentGuide({ courseId, lessonIds = [], choice, onChange }: 
   })
   const directions = guideDirections(available.filter(note => !value.excludedIds.includes(note.id)))
   const hasGuide = data.notes.some(note => note.courseId === courseId && note.studentGuidance)
-  const preview = <section className="my-3 rounded-xl border border-border bg-muted/30 p-3" aria-label="Using your Guide">
+  // A class with no Guide notes has nothing to preview or adjust; an empty box only gets in the way.
+  const preview = !hasGuide ? null : <section className="my-3 rounded-xl border border-border bg-muted/30 p-3" aria-label="Using your Guide">
     <details><summary className="cursor-pointer text-sm font-bold">Using your Guide · {directions.length} {directions.length === 1 ? 'direction' : 'directions'}</summary>
       <p className="my-2 text-xs text-muted-foreground">Whole-class and matching lesson notes are included automatically. Choose an exam or assignment to include its guidance. Adjust this list for this output only.</p>
       <GuideScopeField courseId={courseId} data={data} value={value.target} label="Additional lesson or assessment (optional)" onChange={target => update({ ...value, target })} />
