@@ -46,6 +46,8 @@ it('marks the notebook required and lecture materials recommended', async () => 
   const inputs = container.querySelector('[aria-label="What to attach in your AI chat"]')!
   expect([...inputs.querySelectorAll('li')].map(item => item.textContent)).toEqual(['NotebookRequired', 'Lecture materialsRecommended'])
   expect(container.textContent).not.toContain('Downloads, notes and history')
+  // No Guide notes for this class, so the Guide preview stays out of the way.
+  expect(container.querySelector('[aria-label="Using your Guide"]')).toBeNull()
   expect(container.querySelector('ol')?.textContent).toContain('Get your notebook.')
   expect(container.querySelector('ol')?.textContent).toContain('Open a new AI chat and attach it.')
 })
