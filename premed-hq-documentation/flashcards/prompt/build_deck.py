@@ -39,6 +39,21 @@ def require(condition, message):
 def word_count(value):
     return len(value.split())
 
+def direct_card_candidate(card):
+    # No direct-card flag or canonical term exists in v1; this is advisory only.
+    front = card['front'].strip()
+    return (card['type'] == 'basic' and not card['clozePattern'] and bool(front)
+            and not re.search(r'[?!;:\n]', front)
+            and (not front.endswith('.') or bool(re.search(r'\b(?:[A-Za-z]\.){2,}$', front)))
+            and not re.match(r'^(?:what|why|how|which|when|where|who|whose|is|are|does|do|can|could|should|would|define|describe|explain|compare|give|name|list|recall)\b', front, re.IGNORECASE))
+
+def names_instructor_emphasis(reason):
+    # Detect a named emphasis cue, not whether the course evidence is true.
+    return bool(re.search(r'\b(?:objective|review[- ]sheet|guide)\b\s*\S', reason, re.IGNORECASE)
+                or re.search(r'\b(?:instructor|professor|teacher|lecturer)\b.{0,120}\b(?:stress\w*|emphasi\w*|repeat\w*|test\w*|exam\w*)\b', reason, re.IGNORECASE)
+                or re.search(r'\bsaid\b.{0,120}\b(?:will|would)\s+be\s+tested\b', reason, re.IGNORECASE)
+                or re.search(r'\breturned\s+to\b.{1,120}\brepeatedly\b', reason, re.IGNORECASE))
+
 def validate(data):
     errors = sorted(Draft202012Validator(SCHEMA).iter_errors(data), key=lambda e: str(list(e.path)))
     require(not errors, '\n'.join(f'{list(e.path)}: {e.message}' for e in errors[:10]))
@@ -97,8 +112,8 @@ def validate(data):
         if c['type'] == 'comparison': require(c['axis'].strip(), f'{cid}: name the comparison axis.')
         else: require(not c['axis'], f'{cid}: axis belongs on comparison cards.')
         if c['type'] == 'exemplar':
-            require(c['exampleDirection'] and c['examplePairId'], f'{cid}: name example pair and direction.')
-            pairs[c['examplePairId']].append(c)
+            require(c['exampleDirection'], f'{cid}: declare example direction; a partner is optional.')
+            if c['examplePairId']: pairs[c['examplePairId']].append(c)
         else:
             require(c['exampleDirection'] is None and not c['examplePairId'], f'{cid}: example direction metadata belongs on exemplar cards.')
         ex = c['example']
@@ -117,7 +132,7 @@ def validate(data):
         prompts[re.sub(r'\W+', ' ', prompt.casefold()).strip()] += 1
     require(all(n == 1 for n in prompts.values()), 'Exact repeated question text; inspect whether these are duplicate notes.')
     for pair, values in pairs.items():
-        require(len(values) == 2 and {v['exampleDirection'] for v in values} == {'instance-to-concept', 'concept-to-instance'}, f'{pair}: keep one card in each example direction.')
+        require(len(values) <= 2 and len({v['exampleDirection'] for v in values}) == len(values), f'{pair}: paired examples must use distinct directions; a partner is optional.')
     for t in data['targets']:
         require(len(t['cardIds']) == len(set(t['cardIds'])) and all(i in cards for i in t['cardIds']), f'{t["id"]}: invalid coverage references.')
         own = {c['id'] for c in data['cards'] if t['id'] in c['targetIds']}
@@ -129,8 +144,15 @@ def validate(data):
         if t['core'] and t['coverage'] != 'tested': warnings.append(f'{t["id"]}: core target is {t["coverage"]}. {t["reason"]}')
     groups = defaultdict(list)
     for c in data['cards']: groups[c['conceptId']].append(c)
-    for group in groups.values():
-        for c in group[1:]: require(c['reinforcementReason'].strip(), f'{c["id"]}: explain the additional retrieval purpose; useful pairs/blurt overlap are allowed.')
+    for concept, group in groups.items():
+        # Count authored records; indices() still reports actual cloze review load.
+        require(len(group) <= 3, f'{concept}: more than three cards for one idea.')
+        if not any(direct_card_candidate(c) for c in group):
+            warnings.append(f'{concept}: no direct term card detected; inspect this concept.')
+        if len(group) >= 2:
+            require(group[1]['reinforcementReason'].strip(), f'{group[1]["id"]}: explain the additional retrieval purpose; useful pairs/blurt overlap are allowed.')
+        if len(group) == 3 and not names_instructor_emphasis(group[2]['reinforcementReason']):
+            warnings.append(f'{concept}: third card {group[2]["id"]} needs a reinforcementReason naming instructor emphasis.')
     return warnings
 
 def create_models():
