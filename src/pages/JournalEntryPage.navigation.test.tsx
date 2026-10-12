@@ -69,6 +69,7 @@ it('opens the complete prompt for this saved Journal without changing notebook c
   expect(panel.textContent).toContain(pkg.entries[0].title)
   expect([...panel.querySelectorAll('select')].every(select => select.closest('[aria-label="Using your Guide"]'))).toBe(true)
   expect(panel.textContent).toContain('Copy complete prompt')
+  await act(async () => [...panel.querySelectorAll('button')].find(button => button.textContent === 'I have the notebook folder')!.click())
   const prompt = panel.querySelector<HTMLTextAreaElement>('textarea')!.value
   expect(prompt).toContain('build_deck.py')
   expect(prompt).toContain('card-styles.css')
