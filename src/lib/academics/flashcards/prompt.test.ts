@@ -13,9 +13,13 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the October 12 Journal-required prompt revision', () => {
+  it('copies the October 12 direct-card-first prompt revision', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-12')
+    expect(prompt).toContain('Prompt revision: 2026-10-12 — direct card first, any card type, at most two or three per idea.')
+    expect(prompt).toContain('every named term or concept gets a direct card first')
+    expect(prompt).toContain('Never more than three cards for one idea')
+    expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
+    expect(prompt).not.toContain('Keep BOTH example directions')
     expect(prompt).toContain('The completed Journal is the required input.')
     expect(prompt).toContain('If only learning targets are present, or the supplied Journal context says content was omitted')
     expect(prompt).toContain('do not ask for them and do not look for another chat')
@@ -79,7 +83,7 @@ describe('flashcard prompt handoff', () => {
     const files = [...prompt.matchAll(/### File: ([^\n]+)\n\n```[^\n]+\n([\s\S]*?)\n```/g)]
     expect(files.map(match => match[1])).toEqual(['cards.schema.json', 'card-styles.css', 'requirements.txt', 'build_deck.py', 'verify_deck.py'])
     for (const [, name, content] of files) expect(`${content}\n`).toBe(readFileSync(resolve('premed-hq-documentation/flashcards/prompt', name), 'utf8'))
-    for (const phrase of ['Keep BOTH example directions', 'Keep useful blurt overlap', 'In other words', 'Illustrative example', 'smaller sans-serif Extra', 'Native image occlusion is not supported in v1', 'completed Journal']) expect(prompt).toContain(phrase)
+    for (const phrase of ['Both example directions remain available', 'Keep useful blurt overlap', 'In other words', 'Illustrative example', 'smaller sans-serif Extra', 'Native image occlusion is not supported in v1', 'completed Journal']) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('review draft')
   })
 
@@ -89,7 +93,7 @@ describe('flashcard prompt handoff', () => {
       "Use the Journal's mastery objectives as the checklist of learning targets. Take the facts from the original materials: terms, numbers, conditions, cautious words such as “may”, the instructor's examples, what the instructor stressed, and any phrase the instructor said belongs in an answer, because the study guide is intentionally concise and may leave out card-worthy detail. Write each Required answer yourself in the wording this prompt sets below; do not copy a textbook or slide definition as the Required answer.",
       'Every mastery objective item (Understand, Be able to do, Watch for) maps to at least one target.',
       'or “the lecture\'s example” and “what class identified”; name the concept or example instead.',
-      'If the student supplies missed practice or exam questions, add one or two cards on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.',
+      'If the student supplies missed practice or exam questions, add one or two cards, within the limit per idea, on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.',
     ]) expect(prompt).toContain(addition)
   })
 

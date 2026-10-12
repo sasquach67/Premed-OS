@@ -31,11 +31,11 @@ def source_chatter_warnings(card_id, fields):
     return warnings
 
 def verify(apkg, report_path, input_path):
-    data = json.loads(input_path.read_text()); validate(data)
+    data = json.loads(input_path.read_text()); structural_warnings = validate(data)
     report = json.loads(report_path.read_text())
     if hashlib.sha256(apkg.read_bytes()).hexdigest() != report['apkgSha256']: raise ValueError('Package hash differs from its build report.')
     expected = {r['guid']:r for r in report['records']}
-    failures = []; renders = []; warnings = []
+    failures = []; renders = []; warnings = list(structural_warnings)
     with tempfile.TemporaryDirectory() as temp:
         col = Collection(str(Path(temp) / 'verify.anki2'))
         try:

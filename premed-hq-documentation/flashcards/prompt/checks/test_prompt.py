@@ -9,13 +9,15 @@ from verify_deck import source_chatter_warnings
 class PromptChecks(unittest.TestCase):
     def setUp(self):self.data=json.loads((BASE/'checks/cards.json').read_text())
     def test_accepts_all_supported_types_and_both_example_directions(self):
-        self.assertEqual(validate(self.data),[])
+        warnings = validate(self.data)
+        self.assertTrue(warnings)
+        self.assertTrue(all("no direct term card detected" in warning for warning in warnings))
     def test_rejects_preset_deck_hierarchy(self):
         self.data['deckName']='University::Semester::Class::Lecture'
         with self.assertRaisesRegex(ValueError,'standalone deck'):validate(self.data)
-    def test_rejects_lost_reverse_direction(self):
+    def test_rejects_duplicate_direction_when_a_pair_is_declared(self):
         self.data['cards'][6]['exampleDirection']='instance-to-concept'
-        with self.assertRaisesRegex(ValueError,'each example direction'):validate(self.data)
+        with self.assertRaisesRegex(ValueError,'distinct directions'):validate(self.data)
     def test_rejects_duplicate_blurt_item(self):
         self.data['cards'][7]['recallItems'][1]=self.data['cards'][7]['recallItems'][0]
         with self.assertRaisesRegex(ValueError,'duplicate blurt'):validate(self.data)
@@ -32,7 +34,7 @@ class PromptChecks(unittest.TestCase):
         self.data['cards'][0]['front']='How does hot water differ from cold water in temperature?'
         self.data['cards'][0]['back']='His research centred on child development and evolutionary theory.'
         # Deliberately mismatched semantics: grammar heuristics do not pretend to verify correctness.
-        self.assertEqual(validate(self.data),[])
+        self.assertTrue(all("no direct term card detected" in warning for warning in validate(self.data)))
     def test_source_chatter_in_all_visible_fields_warns(self):
         fields = {
             'Front': 'What does the lecture link?',
@@ -68,6 +70,140 @@ class PromptChecks(unittest.TestCase):
         self.assertEqual(source_chatter_warnings('figure', {'Front': '<img src="lecture-slides.png" alt="Packing boxes">'}), [])
         self.assertTrue(source_chatter_warnings('figure', {'Front': '<img src="packing.png" alt="Lecture slide">'}))
         self.assertTrue(source_chatter_warnings('theory', {'Extra': 'not <b>Cook&#39;s</b> label'}))
+    def concept_fixture(self, count=1):
+        data=copy.deepcopy(self.data)
+        data['cards']=[]
+        for i in range(count):
+            card=copy.deepcopy(self.data['cards'][0])
+            card.update(id=f'idea-{i}',conceptId='sample-shape',targetIds=['sample-shape'],
+                        front='Sample shape' if i == 0 else f'Why does sample variation {i} matter?',
+                        back='A shape describes the outline of an object.',
+                        type='basic' if i == 0 else 'conceptual',
+                        reinforcementReason='' if i == 0 else 'Explains a distinct condition.')
+            if i == 2:card['reinforcementReason']='Instructor stressed this condition repeatedly in the review sheet.'
+            data['cards'].append(card)
+        data['targets']=[{'id':'sample-shape','topic':'Synthetic','statement':'Define and explain sample shape.',
+                          'core':True,'coverage':'tested','cardIds':[c['id'] for c in data['cards']],'reason':''}]
+        return data
+
+    def pipeline_fixture(self, data):
+        # Build and verify the actual embedded handoff, with no user profile.
+        prompt=(BASE.parents[2]/'src/lib/academics/flashcards/instructions.md').read_text()
+        blocks=dict(re.findall(r'### File: ([^\n]+)\n\n```[^\n]+\n(.*?)\n```',prompt,re.S))
+        with tempfile.TemporaryDirectory() as temp:
+            work=Path(temp)
+            for name,content in blocks.items():(work/name).write_text(content+'\n')
+            (work/'cards.json').write_text(json.dumps(data))
+            built=subprocess.run([sys.executable,'build_deck.py','cards.json','result.apkg'],cwd=work,capture_output=True,text=True)
+            self.assertEqual(built.returncode,0,built.stdout+built.stderr)
+            verified=subprocess.run([sys.executable,'verify_deck.py','result.apkg','result.build-report.json','cards.json'],cwd=work,capture_output=True,text=True)
+            self.assertEqual(verified.returncode,0,verified.stdout+verified.stderr)
+            return json.loads((work/'result.build-report.json').read_text()),json.loads((work/'result.verification.json').read_text())
+
+    def test_term_only_front_builds_and_verifies_without_warnings(self):
+        data=self.concept_fixture()
+        self.assertEqual(validate(data),[])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['warnings'],[])
+        self.assertEqual(verified['warnings'],[])
+        self.assertEqual(built['reviewCards'],1)
+
+    def test_qualified_and_abbreviated_terms_are_direct_candidates(self):
+        for front in ['DNA polymerase (replication)', 'Massey’s power geometry', 'U.S. dollar', 'U.S.']:
+            with self.subTest(front=front):
+                data=self.concept_fixture();data['cards'][0]['front']=front
+                self.assertEqual(validate(data),[])
+
+    def test_unpaired_exemplar_builds_and_verifies_without_warnings(self):
+        for direction in ['instance-to-concept','concept-to-instance']:
+            with self.subTest(direction=direction):
+                data=self.concept_fixture(2);card=data['cards'][1]
+                card.update(type='exemplar',exampleDirection=direction,examplePairId='')
+                self.assertEqual(validate(data),[])
+                built,verified=self.pipeline_fixture(data)
+                self.assertEqual(built['warnings'],[])
+                self.assertEqual(verified['warnings'],[])
+
+    def test_three_cards_with_named_emphasis_build_cleanly(self):
+        data=self.concept_fixture(3)
+        self.assertEqual(validate(data),[])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['warnings'],[])
+        self.assertEqual(verified['warnings'],[])
+        self.assertEqual(built['reviewCards'],3)
+
+    def test_third_card_accepts_the_briefs_emphasis_cues(self):
+        for reason in ['Lecturer stressed sample shape in the exam review.',
+                       'Said sample shape will be tested.',
+                       'Returned to sample shape repeatedly.',
+                       'Objective 2: explain sample shape.',
+                       'Review sheet item 4: sample shape.',
+                       'Student Guide: retain the shape distinction.']:
+            with self.subTest(reason=reason):
+                data=self.concept_fixture(3);data['cards'][2]['reinforcementReason']=reason
+                self.assertEqual(validate(data),[])
+
+    def test_singleton_with_pair_id_needs_no_partner(self):
+        data=self.concept_fixture(2)
+        data['cards'][1].update(type='exemplar',exampleDirection='instance-to-concept',examplePairId='optional-pair')
+        self.assertEqual(validate(data),[])
+
+    def test_third_card_without_named_emphasis_warns_and_verifier_retains_it(self):
+        for reason in ['', 'Tests a different angle.']:
+            with self.subTest(reason=reason):
+                data=self.concept_fixture(3);data['cards'][2]['reinforcementReason']=reason
+                warnings=validate(data)
+                self.assertEqual(len(warnings),1)
+                self.assertIn('sample-shape: third card idea-2',warnings[0])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(verified['warnings'],built['warnings'])
+
+    def test_four_cards_sharing_concept_fail_before_package_creation(self):
+        data=self.concept_fixture(4)
+        with self.assertRaisesRegex(ValueError,'sample-shape: more than three'):validate(data)
+        with tempfile.TemporaryDirectory() as temp:
+            work=Path(temp);(work/'cards.json').write_text(json.dumps(data))
+            result=subprocess.run([sys.executable,str(BASE/'build_deck.py'),'cards.json','result.apkg'],cwd=work,capture_output=True,text=True)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('sample-shape: more than three',result.stderr)
+            self.assertFalse((work/'result.apkg').exists())
+
+    def test_missing_direct_warns_with_concept_and_reaches_verifier(self):
+        data=self.concept_fixture();data['cards'][0].update(type='conceptual',front='Why does the shape matter?')
+        warnings=validate(data)
+        self.assertEqual(warnings,['sample-shape: no direct term card detected; inspect this concept.'])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['warnings'],warnings)
+        self.assertEqual(verified['warnings'],warnings)
+
+    def test_second_card_still_needs_a_distinct_retrieval_reason(self):
+        data=self.concept_fixture(2);data['cards'][1]['reinforcementReason']=''
+        with self.assertRaisesRegex(ValueError,'idea-1: explain the additional retrieval purpose'):validate(data)
+
+    def test_family_blurt_counts_once_under_its_family_concept(self):
+        data=self.concept_fixture(3)
+        family=copy.deepcopy(self.data['cards'][7])
+        family.update(id='family-overview',conceptId='shape-family',targetIds=['sample-shape','family-target'])
+        data['cards'].append(family)
+        data['targets'][0]['cardIds'].append(family['id'])
+        data['targets'].append({'id':'family-target','topic':'Synthetic','statement':'Recall the family.',
+                                'core':True,'coverage':'tested','cardIds':[family['id']],'reason':''})
+        warnings=validate(data)
+        self.assertEqual(warnings,['shape-family: no direct term card detected; inspect this concept.'])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['notes'],4)
+        self.assertEqual(built['reviewCards'],4)
+        self.assertEqual(verified['warnings'],warnings)
+
+    def test_record_cap_preserves_actual_cloze_review_count(self):
+        data=self.concept_fixture(2);card=data['cards'][1]
+        card.update(type='cloze',front='',back='',clozePattern='independent',
+                    cloze='The markers are {{c1::red}}, {{c2::blue}}, {{c3::green}} and {{c4::yellow}}.')
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['notes'],2)
+        self.assertEqual(built['reviewCards'],5)
+        self.assertEqual(verified['reviewCards'],5)
+
     def test_embedded_files_and_actual_package_roundtrip(self):
         prompt=(BASE.parents[2]/'src/lib/academics/flashcards/instructions.md').read_text()
         blocks=dict(re.findall(r'### File: ([^\n]+)\n\n```[^\n]+\n(.*?)\n```',prompt,re.S))

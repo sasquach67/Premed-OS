@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-12 — Journal required, original materials optional.
+Prompt revision: 2026-10-12 — direct card first, any card type, at most two or three per idea.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -33,21 +33,23 @@ For each target, record whether it is directly tested, retained only in Extra, o
 
 ## Useful reinforcement versus unnecessary repetition
 
-If the student supplies missed practice or exam questions, add one or two cards on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.
+If the student supplies missed practice or exam questions, add one or two cards, within the limit per idea, on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.
 
-Keep BOTH example directions: recognizing the concept from a source-based example, and producing a source-based example of the concept. Group each pair with examplePairId and declare its direction. These are useful complementary tasks, not automatically redundant. Do not satisfy the pair by reversing words while giving away the answer.
+Both example directions remain available: recognizing the concept from an example, and producing an example of the concept. Use either or both where they add the most, within the limit per idea. When both are used, group them with examplePairId and declare each direction; do not satisfy a pair by reversing words while giving away the answer.
 
 Keep useful blurt overlap with individual cards. The blurt assembles knowledge that shorter cards test separately. Within a single blurt, every checklist point must be distinct; two paraphrases are not two achievements. State the actual item count and do not add filler to preserve a count.
 
-For each additional card about a concept, record what useful retrieval demand it adds. Different phrasing alone does not earn a card. A meaningful reverse direction, misconception, condition, explanation, or application can earn one. Repeated form across different required distinctions is not automatically redundant either.
+For each additional card about a concept, record what useful retrieval demand it adds. For the third card, reinforcementReason must also name the instructor emphasis that earns it, such as the stated test emphasis or the specific objective, review-sheet item or Guide direction. Keep the direct card and its reinforcements under the same conceptId; use a distinct family conceptId for an overview or blurt that tests the family as a whole. Different phrasing alone does not earn a card. A meaningful reverse direction, misconception, condition, explanation, or application can earn one. Repeated form across different required distinctions is not automatically redundant either.
 
 Compare the final combined set, especially when using older decks for reference. A revision replaces an older question testing the same thing unless both add useful practice. Do not blindly append old and revised decks. Do not combine a mechanism, every exception, and a long list into one exhausting question to reduce the count.
 
-There is no universal pedagogical deck maximum or per-concept cap. Do not invent one, pad to a target, or add questions merely to hit a type percentage. If the student states a workload preference, plan core coverage first and explain any tension instead of silently dropping essential targets. Report actual review cards, not just authored notes. Multiple cloze indices and long blurt checklists carry real workload.
+Limit per idea: after its direct card, an idea may have one more card, or two more when the instructor stressed it (said it will be tested, returned to it repeatedly, or named it in an objective, review sheet or the student's Guide). Never more than three cards for one idea. Any card type may fill those places; none is required. There is no deck-wide maximum, no target to pad toward and no type percentage. An overview or blurt card covering a family of terms counts once for the family, not against each term. If the student states a workload preference, plan core coverage first and explain any tension instead of silently dropping essential targets. Report actual review cards, not just authored notes. Multiple cloze indices and long blurt checklists carry real workload.
 
 ## Card language and information order
 
-Front: a natural, precise question that stands alone when shuffled. Ask “What causes X?” or “How does X affect Y?” when sufficient. Name the situation/concepts, specify the comparison dimension, and give only context needed to answer. Avoid vague “it,” “the study,” or “the next step” without an antecedent, or “the lecture's example” and “what class identified”; name the concept or example instead. A pronoun with clear same-card context is fine.
+Front: every named term or concept gets a direct card first, whose Front is the term or name by itself, for example “Retroactive interference”; the student defines it. Add a few words of context in parentheses only when the bare term would be ambiguous within this deck. Do not use a comparison, a “why” question or a scenario as a substitute for the direct card. Other cards use a natural, precise question that stands alone when shuffled, such as “What causes X?” or “How does X affect Y?”; name the situation or concepts, state the comparison dimension where there is one, and give only the context needed to answer. Avoid vague “it,” “the study,” or “the next step” without an antecedent, or “the lecture's example” and “what class identified”; name the concept or example instead. A pronoun with clear same-card context is fine.
+
+Use type basic without a clozePattern for the direct term card. Its Back is one plain sentence under the default wording, or the exact-terms sentence under Technical or Readings; put its example in Extra. The missing-direct warning uses a term-shaped basic Front as an advisory signal, not proof of a good definition.
 
 Required answer: the shortest complete response the student can grade against the question. Keep essential qualifiers and causal links. A naming answer may be a term; an explanation should state a claim in complete, direct sentences. Do not add “The answer is…” merely to satisfy a verb check. Preserve the instructor's necessary technical terms while explaining unfamiliar ones. Difficulty comes from knowledge, not ornate wording. Do not inflate cautious claims such as “may contribute.” Apply the friend test to the Required answer (Back) itself, not just Extra: could a first-year student who skipped the lecture understand every word except the course's own named terms? If not, rewrite in plainer words and explain each necessary named term in the same sentence. “Shortest” must not mean compressed jargon. Keep the existing Q&A format, with cloze as the exception; apply the same plain-language test to cloze sentences and blurt checklist answers.
 
@@ -57,7 +59,7 @@ Extra: teach understanding, particularly when the idea is difficult, abstract, o
 
 1. Explain what is happening, why it makes sense, or what the relationship means in ordinary language. “In other words…” should unpack the idea rather than just replace formal words with synonyms. Address the likely misunderstanding.
 2. Give a concrete real-life or conceptual example and explain its connection to the idea. Prefer the instructor's example, then another supplied example. An invented everyday scenario is labeled “Illustrative example”; an analogy must identify its limits where needed. Do not invent research findings or present added examples as lecture evidence.
-3. Keep this help separate from the required answer. The student need not recite every Extra sentence to pass the card. Preserve the useful source-based paired examples without automatically turning every explanatory detail into another card.
+3. Keep this help separate from the required answer. The student need not recite every Extra sentence to pass the card. Keep useful source-based examples, using either or both directions within the limit per idea, without automatically turning every explanatory detail into another card.
 
 For biology, a concrete biological situation can work better than an everyday analogy. Never force a metaphor that changes the mechanism. A simple naming card does not need artificial elaboration, but for a hard concept do not use that exception to skip the explanation. If an explanation or example cannot usefully be included, record a specific omission reason rather than leave a silent gap.
 
@@ -97,7 +99,7 @@ In every case: keep the instructor's examples, what the instructor stressed, phr
 - comparison: named ideas on an explicit axis, stored in axis.
 - process: a meaningful sequence or step; supply expected count for a list and order where it matters.
 - application: apply a supported principle to a clear situation with necessary conditions. Do not invent factual evidence.
-- exemplar: one member of a source-based example pair; keep both directions.
+- exemplar: one member of a source-based example pair; either direction is available within the limit per idea; a partner is not required.
 - free-recall: bounded synthesis. Supply front and distinct recallItems; leave back empty. State the checklist count as a numeral on the front. A blurt is not a license for a paragraph or arbitrary trivia.
 - cloze: cue meaningful recall with a short deletion. Keep the term visible and hide its meaning for ordinary definition clozes. Hiding a term is appropriate only when naming/recognition is genuinely the target; do not expose the whole answer through surrounding context.
 
@@ -142,7 +144,7 @@ Create the files from the exact file blocks below in a fresh task directory. The
 
 Use the environment's equivalent Python path on other operating systems. The Anki dependency is for a temporary verification collection; do not open, alter, or synchronize the student's live Anki profile. If dependency installation or verification is unavailable, say exactly what could not be tested and do not claim a verified final deck.
 
-Before building, review coverage and content yourself. The structural validator cannot establish factual accuracy or educational quality. Inspect exact repeats and semantic overlaps; preserve both example directions and useful blurt overlap. Fix distinct findings, not merely the phrasing that happens to satisfy a gate. Investigate warnings about long answers, coverage gaps, and source chatter. Run the friend test on every card, including its Required answer, before building; a phrase detector cannot establish plain-language understanding.
+Before building, review coverage and content yourself. The structural validator cannot establish factual accuracy or educational quality. Inspect exact repeats and semantic overlaps; use either or both example directions within the limit per idea, and preserve useful blurt overlap. Fix distinct findings, not merely the phrasing that happens to satisfy a gate. Investigate warnings about long answers, coverage gaps, and source chatter. Run the friend test on every card, including its Required answer, before building; a phrase detector cannot establish plain-language understanding.
 
 The builder never overwrites an existing output. Use a fresh output name after changing cards, then rerun verification against that exact file and matching report. Fix failed checks rather than editing a report or weakening the verifier. Inspect generated previews for readable formatting, including Extra and any figures. They show real Anki renderings with embedded media, not a separate approximation of the templates.
 
@@ -720,6 +722,21 @@ def require(condition, message):
 def word_count(value):
     return len(value.split())
 
+def direct_card_candidate(card):
+    # No direct-card flag or canonical term exists in v1; this is advisory only.
+    front = card['front'].strip()
+    return (card['type'] == 'basic' and not card['clozePattern'] and bool(front)
+            and not re.search(r'[?!;:\n]', front)
+            and (not front.endswith('.') or bool(re.search(r'\b(?:[A-Za-z]\.){2,}$', front)))
+            and not re.match(r'^(?:what|why|how|which|when|where|who|whose|is|are|does|do|can|could|should|would|define|describe|explain|compare|give|name|list|recall)\b', front, re.IGNORECASE))
+
+def names_instructor_emphasis(reason):
+    # Detect a named emphasis cue, not whether the course evidence is true.
+    return bool(re.search(r'\b(?:objective|review[- ]sheet|guide)\b\s*\S', reason, re.IGNORECASE)
+                or re.search(r'\b(?:instructor|professor|teacher|lecturer)\b.{0,120}\b(?:stress\w*|emphasi\w*|repeat\w*|test\w*|exam\w*)\b', reason, re.IGNORECASE)
+                or re.search(r'\bsaid\b.{0,120}\b(?:will|would)\s+be\s+tested\b', reason, re.IGNORECASE)
+                or re.search(r'\breturned\s+to\b.{1,120}\brepeatedly\b', reason, re.IGNORECASE))
+
 def validate(data):
     errors = sorted(Draft202012Validator(SCHEMA).iter_errors(data), key=lambda e: str(list(e.path)))
     require(not errors, '\n'.join(f'{list(e.path)}: {e.message}' for e in errors[:10]))
@@ -778,8 +795,8 @@ def validate(data):
         if c['type'] == 'comparison': require(c['axis'].strip(), f'{cid}: name the comparison axis.')
         else: require(not c['axis'], f'{cid}: axis belongs on comparison cards.')
         if c['type'] == 'exemplar':
-            require(c['exampleDirection'] and c['examplePairId'], f'{cid}: name example pair and direction.')
-            pairs[c['examplePairId']].append(c)
+            require(c['exampleDirection'], f'{cid}: declare example direction; a partner is optional.')
+            if c['examplePairId']: pairs[c['examplePairId']].append(c)
         else:
             require(c['exampleDirection'] is None and not c['examplePairId'], f'{cid}: example direction metadata belongs on exemplar cards.')
         ex = c['example']
@@ -798,7 +815,7 @@ def validate(data):
         prompts[re.sub(r'\W+', ' ', prompt.casefold()).strip()] += 1
     require(all(n == 1 for n in prompts.values()), 'Exact repeated question text; inspect whether these are duplicate notes.')
     for pair, values in pairs.items():
-        require(len(values) == 2 and {v['exampleDirection'] for v in values} == {'instance-to-concept', 'concept-to-instance'}, f'{pair}: keep one card in each example direction.')
+        require(len(values) <= 2 and len({v['exampleDirection'] for v in values}) == len(values), f'{pair}: paired examples must use distinct directions; a partner is optional.')
     for t in data['targets']:
         require(len(t['cardIds']) == len(set(t['cardIds'])) and all(i in cards for i in t['cardIds']), f'{t["id"]}: invalid coverage references.')
         own = {c['id'] for c in data['cards'] if t['id'] in c['targetIds']}
@@ -810,8 +827,15 @@ def validate(data):
         if t['core'] and t['coverage'] != 'tested': warnings.append(f'{t["id"]}: core target is {t["coverage"]}. {t["reason"]}')
     groups = defaultdict(list)
     for c in data['cards']: groups[c['conceptId']].append(c)
-    for group in groups.values():
-        for c in group[1:]: require(c['reinforcementReason'].strip(), f'{c["id"]}: explain the additional retrieval purpose; useful pairs/blurt overlap are allowed.')
+    for concept, group in groups.items():
+        # Count authored records; indices() still reports actual cloze review load.
+        require(len(group) <= 3, f'{concept}: more than three cards for one idea.')
+        if not any(direct_card_candidate(c) for c in group):
+            warnings.append(f'{concept}: no direct term card detected; inspect this concept.')
+        if len(group) >= 2:
+            require(group[1]['reinforcementReason'].strip(), f'{group[1]["id"]}: explain the additional retrieval purpose; useful pairs/blurt overlap are allowed.')
+        if len(group) == 3 and not names_instructor_emphasis(group[2]['reinforcementReason']):
+            warnings.append(f'{concept}: third card {group[2]["id"]} needs a reinforcementReason naming instructor emphasis.')
     return warnings
 
 def create_models():
@@ -931,11 +955,11 @@ def source_chatter_warnings(card_id, fields):
     return warnings
 
 def verify(apkg, report_path, input_path):
-    data = json.loads(input_path.read_text()); validate(data)
+    data = json.loads(input_path.read_text()); structural_warnings = validate(data)
     report = json.loads(report_path.read_text())
     if hashlib.sha256(apkg.read_bytes()).hexdigest() != report['apkgSha256']: raise ValueError('Package hash differs from its build report.')
     expected = {r['guid']:r for r in report['records']}
-    failures = []; renders = []; warnings = []
+    failures = []; renders = []; warnings = list(structural_warnings)
     with tempfile.TemporaryDirectory() as temp:
         col = Collection(str(Path(temp) / 'verify.anki2'))
         try:
