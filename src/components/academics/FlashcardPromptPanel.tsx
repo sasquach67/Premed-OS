@@ -3,7 +3,7 @@ import { SelectField } from '@/components/ui/select-field'
 import { useStudentGuide } from './UsingStudentGuide'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Copy, Download, NotebookText, X } from 'lucide-react'
+import { Check, Copy, Download, NotebookText, Paperclip, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -114,10 +114,13 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
       <div><h2 className="font-display text-xl font-bold">Create flashcards</h2><p className="mt-1 text-sm text-muted-foreground">{courseLabel} · From your completed Class Journal</p></div>
       <Button type="button" variant="ghost" size="icon" aria-label="Close flashcard prompt" onClick={onClose}><X className="size-4" /></Button>
     </header>}
-    <ul aria-label="What to attach in your AI chat" className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-      <li className="flex items-center gap-2"><span className="font-semibold">Notebook</span><Badge>{hasNotebookFile || !eligibility.eligible ? 'Required' : 'In your prompt'}</Badge></li>
-      <li className="flex items-center gap-2"><span className="font-semibold">Lecture materials</span><Badge variant="outline">Recommended</Badge></li>
-    </ul>
+    <div className="space-y-2">
+      <p className="text-xs font-semibold text-muted-foreground">Attach in your AI chat</p>
+      <ul aria-label="What to attach in your AI chat" className="grid gap-2 sm:grid-cols-2">
+        <li className="flex items-center justify-between gap-3 rounded-lg border border-primary/60 bg-card p-3 sm:p-4"><span className="flex items-center gap-2 text-base font-semibold"><NotebookText aria-hidden="true" className="size-5 text-primary" />Notebook</span><Badge className="shrink-0 whitespace-nowrap px-2.5 py-1 text-xs sm:px-3 sm:text-sm">{hasNotebookFile || !eligibility.eligible ? 'Required' : 'In your prompt'}</Badge></li>
+        <li className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 sm:p-4"><span className="flex items-center gap-2 text-base font-semibold"><Paperclip aria-hidden="true" className="size-5 text-muted-foreground" />Lecture materials</span><Badge variant="outline" className="shrink-0 whitespace-nowrap px-2.5 py-1 text-xs sm:px-3 sm:text-sm">Recommended</Badge></li>
+      </ul>
+    </div>
     {lectureId ? <div className="rounded-lg border p-3"><p className="text-xs font-semibold text-muted-foreground">Selected Class Journal</p><p className="mt-1 font-semibold">{lecture?.title ?? 'Journal unavailable'}</p></div> : <label className="block space-y-2 text-sm font-semibold">
       <span>Class Journal</span>
       <SelectField aria-label="Class Journal" className="field-solid min-h-11 w-full" value={selection ?? ''} disabled={copyBusy} onValueChange={setChosenId} options={[
