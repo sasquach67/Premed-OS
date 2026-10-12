@@ -13,9 +13,21 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the October 11 plain-language prompt revision', () => {
+  it('copies the October 12 Journal-required prompt revision', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-11')
+    expect(prompt).toContain('Prompt revision: 2026-10-12')
+    expect(prompt).toContain('The completed Journal is the required input.')
+    expect(prompt).toContain('If only learning targets are present, or the supplied Journal context says content was omitted')
+    expect(prompt).toContain('do not ask for them and do not look for another chat')
+    expect(prompt).toContain('keep every named term, abbreviation, number, condition and instructor example')
+    expect(prompt).toContain('was not checked against the original materials')
+    expect(prompt).not.toContain('still required inputs')
+    expect(prompt).not.toContain('find the chat where they uploaded')
+    expect(prompt).not.toContain('try to locate the original Notebook conversation')
+    expect(prompt).not.toContain('use available chat/file search')
+    expect(prompt).not.toContain('paste this prompt into the original Notebook chat')
+    expect(prompt).not.toContain('and its original materials before creating cards')
+    expect(prompt).toContain('do not search for another chat or ask for original materials')
     expect(prompt).toContain('Apply the friend test to the Required answer (Back) itself, not just Extra')
     expect(prompt).toContain('Instead of a worker deciding how to do the job, management breaks it into small tasks and sets the method it thinks is most efficient.')
     expect(prompt).toContain('No source chatter in any student-facing card field')
@@ -95,7 +107,7 @@ describe('flashcard prompt handoff', () => {
     expect(context.journal).not.toHaveProperty('omitted')
     expect(context.journal.entry).not.toHaveProperty('sections')
     expect(context.journal).not.toHaveProperty('sources')
-    expect(context.journal.sourceAccessNotice).toContain('Attach the complete selected Journal and its original materials before creating cards.')
+    expect(context.journal.sourceAccessNotice).toContain('Attach the complete selected Journal before creating cards. Original materials are optional and recommended.')
     expect(JSON.stringify(context.journal, null, 2).length).toBeLessThanOrEqual(100_000)
     for (const secret of ['PRIVATE RAW', 'PRIVATE RESPONSE', 'PRIVATE NOTES', 'PRIVATE BLOCK', 'UNRELATED SOURCE EXCERPT', 'New separate topic', 'OTHER ENTRY OBJECTIVE', 'OVERSIZED TEACHING']) expect(prompt).not.toContain(secret)
   })
@@ -110,7 +122,7 @@ describe('flashcard prompt handoff', () => {
     const instructions = readFileSync(resolve('src/lib/academics/flashcards/instructions.md'), 'utf8')
     expect(prompt.length).toBeLessThan(instructions.length + 2_000)
     const context = JSON.parse(prompt.slice(prompt.lastIndexOf('\n\n{') + 2))
-    expect(context.journal).toEqual({ omitted: true, reason: 'Selected Journal exceeds the copy budget. Attach the complete selected Journal and its original materials before creating cards.' })
+    expect(context.journal).toEqual({ omitted: true, reason: 'Selected Journal exceeds the copy budget. Attach the complete selected Journal before creating cards. Original materials are optional and recommended.' })
   })
 
   it('supports completed legacy guides only when a saved Mastery Map exists', () => {

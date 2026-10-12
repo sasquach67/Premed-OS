@@ -65,7 +65,7 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
       <div><h2 className="font-display text-xl font-bold">Create flashcards</h2><p className="mt-1 text-sm text-muted-foreground">{courseLabel} · From your completed Class Journal</p></div>
       <Button type="button" variant="ghost" size="icon" aria-label="Close flashcard prompt" onClick={onClose}><X className="size-4" /></Button>
     </header>}
-    <p className="text-sm leading-6">Your lecture’s Class Journal must already be made and saved here. The flashcards use its learning targets and the same original materials as its study guide and Mastery Map.</p>
+    <p className="text-sm leading-6">Your completed Class Journal is required. Download it from the Journal’s “Downloads, notes and history” and attach it in a new AI chat. Original lecture materials are optional and recommended.</p>
     {lectureId ? <div className="rounded-lg border p-3"><p className="text-xs font-semibold text-muted-foreground">Selected Class Journal</p><p className="mt-1 font-semibold">{lecture?.title ?? 'Journal unavailable'}</p></div> : <label className="block space-y-2 text-sm font-semibold">
       <span>Class Journal</span>
       <SelectField aria-label="Class Journal" className="field-solid min-h-11 w-full" value={selection ?? ''} disabled={copyBusy} onValueChange={setChosenId} options={[
@@ -79,9 +79,9 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
       <Button variant="outline" onClick={() => { onClose(); navigate(`/academics/classes/${encodeURIComponent(courseId)}/journal/new`) }}><NotebookText className="size-4" />Create or import Class Journal</Button>
     </div> : <>
       <ol className="list-decimal space-y-3 pl-5 text-sm leading-6">
-        <li><strong>Copy the complete prompt.</strong> It includes the card instructions, simple explanations and examples, formatting, and Anki styling.</li>
-        <li><strong>Try to find the chat where you uploaded the materials for this Class Notebook.</strong> Paste the complete prompt there. If you cannot find that chat, re-upload the same materials in a new chat and paste the prompt. It includes the selected Journal context; attach the complete Journal too if the AI asks for missing content.</li>
-        <li><strong>Use an AI that can run code and create downloadable files.</strong> Once it has the materials, it will start making the deck. If files are missing or no longer accessible, it will ask you to re-upload them or return to the original chat and paste the prompt there. Download the finished <code>.apkg</code> file and import it into Anki.</li>
+        <li><strong>Download your notebook.</strong> Open your Class Journal’s “Downloads, notes and history” and download the complete notebook file.</li>
+        <li><strong>Open a new AI chat and attach your notebook.</strong> Attach the original lecture files too if you have them (recommended).</li>
+        <li><strong>Copy the complete prompt and paste it into that chat.</strong> Use an AI that can run code and create downloadable files. Download the finished <code>.apkg</code> file and import it into Anki.</li>
       </ol>
       <p className="text-sm text-muted-foreground">Tip: Missed a practice or mock-exam question? Paste it into the same chat along with this prompt. The deck adds a card or two on the concept you missed, not a copy of the question.</p>
       <p className="text-sm text-muted-foreground">Premed OS supplies the prompt and stops here. The finished deck goes directly into Anki as one standalone deck. Rename it or move it under your own decks after importing.</p>
