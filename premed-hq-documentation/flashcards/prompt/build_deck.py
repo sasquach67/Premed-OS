@@ -16,7 +16,7 @@ SPEC = 'journal-flashcards-v1:' + STYLE_ID
 BASIC_FIELDS = ['Front', 'Back', 'Extra', 'Type', 'Mindset', 'premedos_concept_id', 'premedos_source', 'premedos_spec']
 CLOZE_FIELDS = ['Text', 'Extra', 'Type', 'Mindset', 'premedos_concept_id', 'premedos_source', 'premedos_spec']
 TYPE = '<div class="type">{{Type}}</div>'
-EXTRA = '{{#Extra}}<div class="extra"><span class="extra-label">Extra</span>{{Extra}}</div>{{/Extra}}'
+EXTRA = '{{#Extra}}<div class="extra">{{Extra}}</div>{{/Extra}}'
 BASIC_Q = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}</div>'
 BASIC_A = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + '</div>'
 CLOZE_Q = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}</div>'
@@ -38,6 +38,13 @@ def require(condition, message):
 
 def word_count(value):
     return len(value.split())
+
+def extra_text(card):
+    # Preserve authored content without mandatory prose or decorative labels.
+    return ' '.join(part for part in [card['explanation'].strip(), card['example']['text'].strip() if card['example'] else ''] if part)
+
+def topic_key(target):
+    return ' '.join(target['topic'].casefold().split())
 
 def direct_card_candidate(card):
     # No direct-card flag or canonical term exists in v1; this is advisory only.
@@ -84,19 +91,24 @@ def validate(data):
             spans = list(re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', c['cloze']))
             remaining = re.sub(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', '', c['cloze'])
             require(spans and '{{' not in remaining and '}}' not in remaining, f'{cid}: malformed cloze.')
-            require(all('::' not in m[2] and m[2].strip() for m in spans), f'{cid}: use nonempty deletions without hints.')
+            require(all(len(m[2].split('::')) <= 2 and all(part.strip() for part in m[2].split('::')) for m in spans), f'{cid}: use a nonempty answer and at most one nonempty hint.')
             nums = indices(c)
             require(nums == list(range(1, len(nums) + 1)), f'{cid}: use consecutive c1..cn indices.')
             if cp == 'single': require(len(nums) == 1, f'{cid}: single needs one index.')
             if cp == 'definition': require(len(spans) == 1, f'{cid}: definition needs one deletion.')
-            if cp in ['independent', 'enumerated-list']: require(len(nums) >= 2, f'{cid}: this mechanism needs multiple indices.')
+            if cp == 'independent': require(len(nums) >= 2, f'{cid}: this mechanism needs multiple indices.')
             if cp == 'enumerated-list':
+                require(nums == [1], f'{cid}: blank list items together with c1.')
                 require(type(c['listOrdered']) is bool, f'{cid}: declare list order.')
-                require(str(len(nums)) in remaining or any(w in remaining.lower() for w in ['two','three','four','five','six']), f'{cid}: state list count outside deletions.')
+                number_words = {2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',8:'eight',9:'nine',10:'ten'}
+                if len(spans) > 1:
+                    count = len(spans)
+                    require(re.search(r'\b' + str(count) + r'\b', remaining) or re.search(r'\b' + number_words.get(count, str(count)) + r'\b', remaining, re.IGNORECASE), f'{cid}: state list count outside deletions.')
+                else:
+                    require(re.search(r'\b(?:[2-9]|[1-9][0-9]+)\b', remaining) or any(re.search(r'\b' + word + r'\b', remaining, re.IGNORECASE) for word in number_words.values()), f'{cid}: state list count outside deletions.')
                 if not c['listOrdered']: require('any order' in remaining.lower(), f'{cid}: mark unordered list as in any order.')
-                if len(nums) > 6: warnings.append(f'{cid}: list exceeds inherited six-item guidance; review its scope.')
             for span in spans:
-                if word_count(span[2]) > (25 if cp == 'definition' else 12): warnings.append(f'{cid}: long cloze deletion; inspect recall burden.')
+                if word_count(span[2].split('::')[0]) > (25 if cp == 'definition' else 12): warnings.append(f'{cid}: long cloze deletion; inspect recall burden.')
         else:
             require(c['type'] != 'cloze' and c['front'].strip() and not c['cloze'], f'{cid}: missing question or stray cloze text.')
             if c['type'] == 'free-recall':
@@ -122,10 +134,9 @@ def validate(data):
                 require(ex['source'] is not None, f'{cid}: source example needs evidence.')
                 evidence(ex['source'])
             else: require(ex['source'] is None, f'{cid}: illustrative scenario must not claim a source citation.')
-        if not c['explanation'].strip() or ex is None:
-            require(c['extraOmissionReason'].strip(), f'{cid}: explain any omitted plain-language explanation or concrete example.')
-        if c['explanation'].strip() and ex is not None:
-            require(not c['extraOmissionReason'], f'{cid}: no omission to explain.')
+        extra = extra_text(c)
+        if word_count(extra) > 20 or '\n' in c['explanation'] or (ex is not None and '\n' in ex['text']) or (c['explanation'].strip() and ex is not None):
+            warnings.append(f'{cid}: Extra exceeds one short line (about 20 words); choose the single most useful detail.')
         if word_count(c['back']) > 45 or any(word_count(i) > 35 for i in c['recallItems']): warnings.append(f'{cid}: long required answer; inspect grading burden.')
         for img in c['frontImages'] + c['extraImages']: evidence(img['source'])
         prompt = c['cloze'] if cp else c['front']
@@ -133,26 +144,68 @@ def validate(data):
     require(all(n == 1 for n in prompts.values()), 'Exact repeated question text; inspect whether these are duplicate notes.')
     for pair, values in pairs.items():
         require(len(values) <= 2 and len({v['exampleDirection'] for v in values}) == len(values), f'{pair}: paired examples must use distinct directions; a partner is optional.')
+    tested_by_target = {}
+    tested_by_topic = defaultdict(set)
     for t in data['targets']:
+        require(topic_key(t), f'{t["id"]}: name a topic.')
         require(len(t['cardIds']) == len(set(t['cardIds'])) and all(i in cards for i in t['cardIds']), f'{t["id"]}: invalid coverage references.')
         own = {c['id'] for c in data['cards'] if t['id'] in c['targetIds']}
-        if t['coverage'] == 'tested': require(own and own == set(t['cardIds']), f'{t["id"]}: tested coverage must match its cards.')
+        if t['coverage'] == 'tested':
+            require(own and own == set(t['cardIds']), f'{t["id"]}: tested coverage must match its cards.')
+            tested_by_target[t['id']] = own
+            tested_by_topic[topic_key(t)].update(own)
         else:
             require(not own and t['reason'].strip(), f'{t["id"]}: explain the coverage gap; do not label tested content untested.')
-            if t['coverage'] == 'extra-only': require(t['cardIds'], f'{t["id"]}: name where the supporting explanation is retained.')
+            if t['coverage'] == 'extra-only':
+                require(t['cardIds'], f'{t["id"]}: name where the supporting explanation is retained.')
+                require(all(extra_text(cards[i]) for i in t['cardIds']), f'{t["id"]}: extra-only caution coverage needs a nonempty Extra line on its linked cards.')
             else: require(not t['cardIds'], f'{t["id"]}: missing target cannot claim card coverage.')
-        if t['core'] and t['coverage'] != 'tested': warnings.append(f'{t["id"]}: core target is {t["coverage"]}. {t["reason"]}')
+        if t['kind'] in ['understand', 'be-able-to-do', 'topic']:
+            require(t['coverage'] == 'tested', f'{t["id"]}: {t["kind"]} target needs a tested card; coverage wins over the card limit.')
+        elif t['core'] and t['coverage'] == 'missing': warnings.append(f'{t["id"]}: core target is missing. {t["reason"]}')
+    for topic in {topic_key(t) for t in data['targets']}:
+        require(tested_by_topic[topic], f'{topic}: topic needs at least one tested card; do not trim its only card.')
     groups = defaultdict(list)
     for c in data['cards']: groups[c['conceptId']].append(c)
+    exceptions = {e['conceptId']: e for e in data['coverageExceptions']}
+    require(len(exceptions) == len(data['coverageExceptions']), 'Duplicate coverage exception for an idea.')
+    require(all(concept in groups for concept in exceptions), 'Coverage exception names an unknown idea.')
     for concept, group in groups.items():
-        # Count authored records; indices() still reports actual cloze review load.
-        require(len(group) <= 3, f'{concept}: more than three cards for one idea.')
+        reviews = sum(len(indices(c)) for c in group)
+        exception = exceptions.get(concept)
+        if exception:
+            require(reviews > 3, f'{concept}: no over-limit coverage exception is needed.')
+            require(exception['reason'].strip(), f'{concept}: explain the coverage exception.')
+            witnesses = exception['targetIds']
+            require(len(witnesses) == len(group) and all(t in targets for t in witnesses), f'{concept}: name one sole-coverage target witness per indispensable note.')
+            witnessed_cards = set()
+            for tid in witnesses:
+                t = targets[tid]
+                require(t['coverage'] == 'tested', f'{concept}: exception witness must be a tested target.')
+                own = tested_by_target[tid]
+                require(len(own) == 1, f'{concept}: exception witness is not sole coverage.')
+                require(t['kind'] in ['understand', 'be-able-to-do', 'topic'] or tested_by_topic[topic_key(t)] == own, f'{concept}: exception witness must retain required coverage or a topic\'s only tested card.')
+                witnessed_cards.update(own)
+            require(witnessed_cards == {c['id'] for c in group} and all(len(indices(c)) == 1 for c in group), f'{concept}: coverage exception only permits indispensable single-review notes, not surplus cloze indices.')
+            warnings.append(f'{concept}: coverage exception keeps {reviews} review cards. {exception["reason"]}')
+        else:
+            require(reviews <= 3, f'{concept}: more than three review cards for one idea.')
         if not any(direct_card_candidate(c) for c in group):
             warnings.append(f'{concept}: no direct term card detected; inspect this concept.')
         if len(group) >= 2:
-            require(group[1]['reinforcementReason'].strip(), f'{group[1]["id"]}: explain the additional retrieval purpose; useful pairs/blurt overlap are allowed.')
-        if len(group) == 3 and not names_instructor_emphasis(group[2]['reinforcementReason']):
-            warnings.append(f'{concept}: third card {group[2]["id"]} needs a reinforcementReason naming instructor emphasis.')
+            require(group[1]['reinforcementReason'].strip() or exception, f'{group[1]["id"]}: explain the additional retrieval purpose; no automatic mirrors.')
+        if reviews == 3 and not any(names_instructor_emphasis(c['reinforcementReason']) for c in group):
+            warnings.append(f'{concept}: third review card needs a reinforcementReason naming instructor emphasis.')
+        require(sum(c['type'] in ['application', 'exemplar'] for c in group) <= 1, f'{concept}: keep at most one scenario or example card per idea.')
+        answers = []
+        for c in group:
+            if c['clozePattern']:
+                for index in indices(c):
+                    answers.append(' '.join(m[2].split('::')[0] for m in re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', c['cloze']) if int(m[1]) == index))
+            else:
+                answers.append(c['back'] or '\n'.join(c['recallItems']))
+        normalized_answers = [' '.join(answer.casefold().split()).rstrip('.') for answer in answers]
+        require(len(set(normalized_answers)) == len(normalized_answers), f'{concept}: exact repeated required answer; trim redundant review cards.')
     return warnings
 
 def create_models():
@@ -190,12 +243,7 @@ def build(data, out, input_dir):
             if card['type'] == 'exemplar': label = 'example → concept' if card['exampleDirection'] == 'instance-to-concept' else 'concept → example'
             if card['type'] == 'cloze': label = card['clozePattern'].replace('-', ' ')
             typ = '<span class="verb">' + verb + '</span><span class="tname">' + label + '</span>'
-            extra = ''
-            if card['axis']: extra += '<div class="axis"><b>Compare:</b> ' + escape(card['axis']) + '</div>'
-            if card['explanation']: extra += '<div><b>In other words:</b> ' + escape(card['explanation']) + '</div>'
-            if card['example']:
-                title = 'Example' if card['example']['kind'] == 'source' else 'Illustrative example'
-                extra += '<div><b>' + title + ':</b> ' + escape(card['example']['text']) + '</div>'
+            extra = escape(extra_text(card))
             extra += render_images(card['extraImages'])
             evidence = card['sourceRefs'] + [im['source'] for im in card['frontImages'] + card['extraImages']]
             if card['example'] and card['example']['source']: evidence += [card['example']['source']]
@@ -221,7 +269,9 @@ def build(data, out, input_dir):
         with staged_out.open('rb') as src, out.open('xb') as dst: dst.write(src.read())
     with zipfile.ZipFile(out) as archive:
         require(archive.testzip() is None, 'Package CRC check failed.')
-    report = {'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'media':sorted(all_media), 'targets':data['targets'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
+    concept_reviews = Counter()
+    for card in data['cards']: concept_reviews[card['conceptId']] += len(indices(card))
+    report = {'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'conceptReviewCards':dict(concept_reviews), 'media':sorted(all_media), 'targets':data['targets'], 'coverageExceptions':data['coverageExceptions'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
     report_path = out.with_suffix('.build-report.json')
     require(not report_path.exists(), 'Build report already exists; choose a fresh output name.')
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n')

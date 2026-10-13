@@ -16,14 +16,19 @@ class PromptChecks(unittest.TestCase):
         self.data['deckName']='University::Semester::Class::Lecture'
         with self.assertRaisesRegex(ValueError,'standalone deck'):validate(self.data)
     def test_rejects_duplicate_direction_when_a_pair_is_declared(self):
+        self.data['cards'][5]['examplePairId']='explicit-pair'
+        self.data['cards'][6]['examplePairId']='explicit-pair'
         self.data['cards'][6]['exampleDirection']='instance-to-concept'
         with self.assertRaisesRegex(ValueError,'distinct directions'):validate(self.data)
     def test_rejects_duplicate_blurt_item(self):
         self.data['cards'][7]['recallItems'][1]=self.data['cards'][7]['recallItems'][0]
         with self.assertRaisesRegex(ValueError,'duplicate blurt'):validate(self.data)
-    def test_rejects_missing_plain_language_help_without_reason(self):
-        self.data['cards'][1]['explanation']=''
-        with self.assertRaisesRegex(ValueError,'omitted plain-language'):validate(self.data)
+    def test_empty_extra_builds_and_verifies(self):
+        data=self.concept_fixture();data['cards'][0].update(explanation='',example=None)
+        self.assertEqual(validate(data),[])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['records'][0]['fields']['Extra'],'')
+        self.assertTrue(verified['passed'])
     def test_rejects_fictional_source_reference(self):
         self.data['cards'][0]['sourceRefs'][0]['sourceId']='not-attached'
         with self.assertRaisesRegex(ValueError,'Unknown source'):validate(self.data)
@@ -77,13 +82,13 @@ class PromptChecks(unittest.TestCase):
             card=copy.deepcopy(self.data['cards'][0])
             card.update(id=f'idea-{i}',conceptId='sample-shape',targetIds=['sample-shape'],
                         front='Sample shape' if i == 0 else f'Why does sample variation {i} matter?',
-                        back='A shape describes the outline of an object.',
+                        back='A shape describes the outline of an object.' if i == 0 else f'Variation {i} changes a distinct property.',
                         type='basic' if i == 0 else 'conceptual',
                         reinforcementReason='' if i == 0 else 'Explains a distinct condition.')
             if i == 2:card['reinforcementReason']='Instructor stressed this condition repeatedly in the review sheet.'
             data['cards'].append(card)
         data['targets']=[{'id':'sample-shape','topic':'Synthetic','statement':'Define and explain sample shape.',
-                          'core':True,'coverage':'tested','cardIds':[c['id'] for c in data['cards']],'reason':''}]
+                          'kind':'understand','core':True,'coverage':'tested','cardIds':[c['id'] for c in data['cards']],'reason':''}]
         return data
 
     def pipeline_fixture(self, data):
@@ -154,7 +159,7 @@ class PromptChecks(unittest.TestCase):
                 data=self.concept_fixture(3);data['cards'][2]['reinforcementReason']=reason
                 warnings=validate(data)
                 self.assertEqual(len(warnings),1)
-                self.assertIn('sample-shape: third card idea-2',warnings[0])
+                self.assertIn('sample-shape: third review card',warnings[0])
         built,verified=self.pipeline_fixture(data)
         self.assertEqual(verified['warnings'],built['warnings'])
 
@@ -187,7 +192,7 @@ class PromptChecks(unittest.TestCase):
         data['cards'].append(family)
         data['targets'][0]['cardIds'].append(family['id'])
         data['targets'].append({'id':'family-target','topic':'Synthetic','statement':'Recall the family.',
-                                'core':True,'coverage':'tested','cardIds':[family['id']],'reason':''})
+                                'kind':'understand','core':True,'coverage':'tested','cardIds':[family['id']],'reason':''})
         warnings=validate(data)
         self.assertEqual(warnings,['shape-family: no direct term card detected; inspect this concept.'])
         built,verified=self.pipeline_fixture(data)
@@ -195,14 +200,127 @@ class PromptChecks(unittest.TestCase):
         self.assertEqual(built['reviewCards'],4)
         self.assertEqual(verified['warnings'],warnings)
 
-    def test_record_cap_preserves_actual_cloze_review_count(self):
+    def test_final_hinted_cloze_is_accepted(self):
+        data=self.concept_fixture(2);card=data['cards'][1]
+        card.update(type='cloze',front='',back='',clozePattern='single',cloze='The sample marker is {{c1::red::color}}.')
+        validate(data)
+
+    def test_final_empty_extra_is_accepted(self):
+        data=self.concept_fixture();data['cards'][0].update(explanation='',example=None)
+        validate(data)
+
+    def test_final_four_review_cards_fail(self):
+        data=self.concept_fixture();card=data['cards'][0]
+        card.update(type='cloze',front='',back='',clozePattern='independent',cloze='The markers are {{c1::red}}, {{c2::blue}}, {{c3::green}} and {{c4::yellow}}.')
+        with self.assertRaisesRegex(ValueError,'more than three'):validate(data)
+
+    def test_final_topic_without_tested_card_fails(self):
+        data=self.concept_fixture()
+        data['targets'].append({'id':'uncovered','topic':'Untested topic','statement':'Untested content','kind':'watch-for','core':False,'coverage':'extra-only','cardIds':[data['cards'][0]['id']],'reason':'Retained in Extra.'})
+        with self.assertRaisesRegex(ValueError,'topic.*tested card'):validate(data)
+
+    def test_review_card_cap_includes_cloze_indices(self):
         data=self.concept_fixture(2);card=data['cards'][1]
         card.update(type='cloze',front='',back='',clozePattern='independent',
                     cloze='The markers are {{c1::red}}, {{c2::blue}}, {{c3::green}} and {{c4::yellow}}.')
+        with self.assertRaisesRegex(ValueError,'more than three review cards'):validate(data)
+
+    def test_hinted_cloze_builds_and_creates_two_review_cards(self):
+        data=self.concept_fixture(2);card=data['cards'][1]
+        card.update(type='cloze',front='',back='',clozePattern='single',cloze='The sample marker is {{c1::red::color}}.')
         built,verified=self.pipeline_fixture(data)
-        self.assertEqual(built['notes'],2)
-        self.assertEqual(built['reviewCards'],5)
-        self.assertEqual(verified['reviewCards'],5)
+        self.assertEqual(built['reviewCards'],2)
+        self.assertEqual(verified['reviewCards'],2)
+        self.assertTrue(verified['passed'])
+
+    def test_hint_and_grouped_list_uses_one_review_card(self):
+        data=self.concept_fixture(2);card=data['cards'][1]
+        card.update(type='process',front='',back='',clozePattern='enumerated-list',listOrdered=True,
+                    cloze='The 3 steps are {{c1::open::first step}}, {{c1::read}}, then {{c1::close}}.')
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['reviewCards'],2)
+        self.assertEqual(verified['reviewCards'],2)
+
+    def test_rejects_empty_extra_hint_and_nested_cloze(self):
+        for text in ['The marker is {{c1::red::}}.', 'The marker is {{c1::red::color::extra}}.',
+                     'The marker is {{c1::::color}}.', 'The marker is {{c1::{{c2::red}}}}.']:
+            with self.subTest(text=text):
+                data=self.concept_fixture(2);card=data['cards'][1]
+                card.update(type='cloze',front='',back='',clozePattern='single',cloze=text)
+                with self.assertRaises(ValueError):validate(data)
+
+    def test_extra_is_one_unlabelled_line_or_warning_not_gate(self):
+        data=self.concept_fixture();card=data['cards'][0]
+        card['explanation']='Corners meet at the edges.'
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['records'][0]['fields']['Extra'],'Corners meet at the edges.')
+        self.assertTrue(verified['passed'])
+        card['explanation']='A useful caution.'*1+'\n'+' '.join(['word']*21)
+        warnings=validate(data)
+        self.assertTrue(any('Extra exceeds one short line' in w for w in warnings))
+
+    def test_watch_for_extra_only_passes_and_requires_actual_extra(self):
+        data=self.concept_fixture()
+        data['targets'].append({'id':'caution','topic':'Synthetic','statement':'Keep the shape distinction.',
+                                'kind':'watch-for','core':True,'coverage':'extra-only','cardIds':['idea-0'],'reason':'Caution retained in Extra.'})
+        self.assertEqual(validate(data),[])
+        built,verified=self.pipeline_fixture(data)
+        self.assertTrue(verified['passed'])
+        data['cards'][0].update(explanation='',example=None)
+        with self.assertRaisesRegex(ValueError,'nonempty Extra line'):validate(data)
+
+    def test_extra_only_caution_cannot_credit_an_unrelated_picture(self):
+        data=self.concept_fixture();data['cards'][0].update(explanation='',example=None,extraImages=self.data['cards'][-1]['frontImages'])
+        data['targets'].append({'id':'caution','topic':'Synthetic','statement':'Keep the distinction.',
+                                'kind':'watch-for','core':True,'coverage':'extra-only','cardIds':['idea-0'],'reason':'Claims caution in picture.'})
+        with self.assertRaisesRegex(ValueError,'nonempty Extra line'):validate(data)
+
+    def test_understand_and_skill_cannot_be_extra_only_or_missing(self):
+        for kind in ['understand','be-able-to-do']:
+            for coverage in ['extra-only','missing']:
+                with self.subTest(kind=kind,coverage=coverage):
+                    data=self.concept_fixture()
+                    data['targets'].append({'id':'required','topic':'Synthetic','statement':'Required target.',
+                                            'kind':kind,'core':False,'coverage':coverage,
+                                            'cardIds':['idea-0'] if coverage == 'extra-only' else [],'reason':'Not tested.'})
+                    with self.assertRaisesRegex(ValueError,'needs a tested card'):validate(data)
+
+    def test_coverage_exception_only_keeps_indispensable_single_review_notes(self):
+        data=self.concept_fixture(4)
+        data['targets']=[]
+        for i,card in enumerate(data['cards']):
+            tid=f'unique-{i}';card['targetIds']=[tid]
+            data['targets'].append({'id':tid,'topic':'Synthetic','statement':f'Distinct required skill {i}.',
+                                    'kind':'be-able-to-do','core':True,'coverage':'tested','cardIds':[card['id']],'reason':''})
+        data['coverageExceptions']=[{'conceptId':'sample-shape','targetIds':[t['id'] for t in data['targets']],
+                                     'reason':'Each single-review note retains the only tested card for its required skill.'}]
+        warnings=validate(data)
+        self.assertTrue(any('coverage exception keeps 4 review cards' in w for w in warnings))
+        data['targets'][-1].update(kind='watch-for',topic='Essential tested caution')
+        self.assertTrue(any('coverage exception keeps 4 review cards' in w for w in validate(data)))
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['reviewCards'],4)
+        self.assertEqual(built['coverageExceptions'],data['coverageExceptions'])
+        self.assertTrue(verified['passed'])
+        data['cards'][1]['targetIds'].append('unique-0');data['targets'][0]['cardIds'].append('idea-1')
+        with self.assertRaisesRegex(ValueError,'not sole coverage'):validate(data)
+
+    def test_multi_index_cloze_cannot_claim_a_coverage_exception(self):
+        data=self.concept_fixture();card=data['cards'][0]
+        card.update(type='cloze',front='',back='',clozePattern='independent',
+                    cloze='The markers are {{c1::red}}, {{c2::blue}}, {{c3::green}} and {{c4::yellow}}.')
+        data['coverageExceptions']=[{'conceptId':'sample-shape','targetIds':['sample-shape'],'reason':'Claims four cards are needed.'}]
+        with self.assertRaisesRegex(ValueError,'single-review notes'):validate(data)
+
+    def test_repeated_required_answer_same_idea_is_rejected(self):
+        data=self.concept_fixture(2);data['cards'][1]['back']=data['cards'][0]['back']
+        with self.assertRaisesRegex(ValueError,'exact repeated required answer'):validate(data)
+
+    def test_at_most_one_scenario_or_example_per_idea(self):
+        data=self.concept_fixture(3)
+        data['cards'][1]['type']='application'
+        data['cards'][2].update(type='exemplar',exampleDirection='concept-to-instance')
+        with self.assertRaisesRegex(ValueError,'at most one scenario'):validate(data)
 
     def test_embedded_files_and_actual_package_roundtrip(self):
         prompt=(BASE.parents[2]/'src/lib/academics/flashcards/instructions.md').read_text()

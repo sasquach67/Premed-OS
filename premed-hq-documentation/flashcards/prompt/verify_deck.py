@@ -2,7 +2,7 @@
 from pathlib import Path
 import argparse, base64, hashlib, html, json, re, tempfile
 from anki.collection import Collection, ImportAnkiPackageRequest, ImportAnkiPackageOptions
-from build_deck import validate, CSS, create_models
+from build_deck import validate, CSS, create_models, indices
 
 # Advisory language checks inspect only fields used by the supplied templates.
 # Source metadata intentionally contains titles, authors, and lecture references.
@@ -34,6 +34,10 @@ def verify(apkg, report_path, input_path):
     data = json.loads(input_path.read_text()); structural_warnings = validate(data)
     report = json.loads(report_path.read_text())
     if hashlib.sha256(apkg.read_bytes()).hexdigest() != report['apkgSha256']: raise ValueError('Package hash differs from its build report.')
+    if report['targets'] != data['targets'] or report.get('coverageExceptions') != data['coverageExceptions']: raise ValueError('Coverage ledger differs from the validated input.')
+    if report['notes'] != len(data['cards']) or report['reviewCards'] != sum(len(indices(c)) for c in data['cards']): raise ValueError('Review-card counts differ from the validated input.')
+    input_cards = {c['id']:c for c in data['cards']}
+    if {r['id'] for r in report['records']} != set(input_cards): raise ValueError('Build records differ from the validated input.')
     expected = {r['guid']:r for r in report['records']}
     failures = []; renders = []; warnings = list(structural_warnings)
     with tempfile.TemporaryDirectory() as temp:
@@ -51,6 +55,7 @@ def verify(apkg, report_path, input_path):
                 note = col.get_note(nid); model_ids.add(note.mid)
                 row = expected.get(note.guid)
                 if not row: failures.append('Unexpected note identity.'); continue
+                if len(col.find_cards('nid:' + str(nid))) != len(indices(input_cards[row['id']])): failures.append(row['id'] + ': actual review-card count differs, including hinted/grouped cloze.')
                 fields = dict(note.items())
                 warnings.extend(source_chatter_warnings(row['id'], fields))
                 if fields != row['fields']: failures.append(row['id'] + ': field content changed during import.')
@@ -72,7 +77,10 @@ def verify(apkg, report_path, input_path):
                 if q == a: failures.append('Question and answer are identical.')
                 if 'HIDDEN_AUDIT_SENTINEL_' in q + a: failures.append('Hidden metadata renders.')
                 if card.type != 0 or card.reps: failures.append('Review history unexpectedly present.')
-                if card.note_type()['type'] == 1 and '[...]' not in q: failures.append('Cloze does not show its active blank.')
+                if card.note_type()['type'] == 1:
+                    # Hints replace [...] with [hint]; inspect the active Anki span.
+                    spans = re.findall(r'<span\b[^>]*\bclass=["\']([^"\']+)["\'][^>]*>(.*?)</span>', q, re.DOTALL)
+                    if not any('cloze' in classes.split() and re.sub(r'<[^>]*>', '', text).strip().startswith('[') for classes, text in spans): failures.append('Cloze does not show its active blank or hint.')
                 renders.append({'question':q,'answer':a})
             missing = list(col.media.check().missing)
             if missing: failures.append('Missing media: ' + ', '.join(missing))

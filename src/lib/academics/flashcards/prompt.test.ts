@@ -13,11 +13,10 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the October 12 direct-card-first prompt revision', () => {
+  it('copies the October 13 reference-deck prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-12 — direct card first, any card type, at most two or three per idea.')
-    expect(prompt).toContain('every named term or concept gets a direct card first')
-    expect(prompt).toContain('Never more than three cards for one idea')
+    expect(prompt).toContain('Prompt revision: 2026-10-13 — reference-deck cloze, one-line Extra, fewest review cards with full topic coverage.')
+    expect(prompt).toContain('Every named term or concept gets a direct card first')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
     expect(prompt).toContain('The completed Journal is the required input.')
@@ -36,6 +35,90 @@ describe('flashcard prompt handoff', () => {
     expect(prompt).toContain('Instead of a worker deciding how to do the job, management breaks it into small tasks and sets the method it thinks is most efficient.')
     expect(prompt).toContain('No source chatter in any student-facing card field')
     expect(prompt).toContain('Run the friend test on every card')
+  })
+
+  it('uses fixed card shapes, term-only definitions, and reference-deck cloze', () => {
+    const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
+    for (const phrase of [
+      'the Front is the term alone',
+      'Definitions do not move to cloze',
+      '| Direct definition | The term alone | One sentence |',
+      '| Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |',
+      '| Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |',
+      '| Scenario | One or two sentences of situation, then one question | The term, plus a short “because” only if needed |',
+      '| Example | `Example of <term>` | The instructor\'s example |',
+      '| Comparison | `<A> vs. <B>` | The one difference that separates them |',
+      '| Why / how | One direct question | One sentence |',
+      'One question per card.',
+      'Front: Scientific management (Taylorism)',
+      'Blank the term, name or number; keep the meaning visible.',
+      '{{c1::answer::hint}}',
+      '{{c1::hippocampus::brain structure}}',
+      'No nested cloze.',
+      'A list is one note with its items blanked together under the same index.',
+      'Under Technical, the Back retains the course\'s exact terms.',
+    ]) expect(prompt).toContain(phrase)
+    for (const obsolete of [
+      'Front: What is scientific management or Taylorism?',
+      'Keep the term visible and hide its meaning',
+      'use no hints or nested cloze syntax',
+      'use nonempty deletions without hints',
+    ]) expect(prompt).not.toContain(obsolete)
+  })
+
+  it('counts review cards and preserves tested coverage while trimming reinforcement', () => {
+    const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
+    for (const phrase of [
+      'Limit per idea: two review cards, or three only when the instructor stressed it',
+      'a cloze note with c1 and c2 creates two review cards',
+      'Coverage guard: every topic keeps at least one tested card, and every Understand and Be-able-to-do item is tested by at least one card.',
+      'Coverage wins when the limit conflicts with the coverage guard.',
+      'explicitly report the exception and its review-card count',
+      'Set each target\'s kind to understand, be-able-to-do, watch-for, or topic',
+      'coverageExceptions is normally []',
+      'one witness per note',
+      'A multi-index cloze cannot earn an over-limit exception',
+      'Watch-for items are extra-only by default',
+      'only when the caution is itself a fact the instructor tests',
+      'Both directions are never automatic.',
+      'Do not add a separate mirror note.',
+      'No card may have an answer that merely repeats another card\'s answer on the same idea.',
+      'Use at most one scenario or example card per idea',
+      'Do not automatically create both directions, an example pair, or an invented extra situation.',
+    ]) expect(prompt).toContain(phrase)
+    expect(prompt).not.toContain('Both example directions remain available')
+    expect(prompt).not.toContain('Never more than three cards for one idea')
+  })
+
+  it('keeps Extra concise or empty, pictures source-based, and the suspension note last in delivery', () => {
+    const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
+    for (const phrase of [
+      'Extra: one short line, or empty.',
+      'Empty Extra is correct when nothing helps; no omission reason is required.',
+      'The default Back is already plain, so Extra must not restate it.',
+      'Under Technical or Readings, Extra may be a short plain-words gloss',
+      'explanation and example are alternative ways to supply the one optional Extra line',
+      'The builder renders the selected optional Extra as one unlabelled line or source picture.',
+      'Pictures are optional.',
+      'if they do not, build the card without one',
+      'Never generate or invent an image.',
+      'Inspect the actual source figure before using it.',
+      'A front figure must not expose the tested answer.',
+      'end the delivery message with this note:',
+      'Some of these cards may treat a detail as more important than it really is for your class.',
+      'press @ (Shift+2) while reviewing to suspend that individual card. Press ! to suspend the whole note.',
+    ]) expect(prompt).toContain(phrase)
+    for (const obsolete of [
+      'This is a firm requirement, not optional decorative text',
+      'record a specific omission reason',
+      'extraOmissionReason',
+      'The builder displays explanation as “In other words” and the example separately.',
+      '- In other words:',
+      '- Illustrative example:',
+    ]) expect(prompt).not.toContain(obsolete)
+    expect(prompt).toContain('Two emphases exist')
+    expect(prompt).toContain('- Technical:')
+    expect(prompt).toContain('- Readings:')
   })
 
   it('requires a completed saved entry with both a guide and learning objectives', () => {
@@ -83,7 +166,7 @@ describe('flashcard prompt handoff', () => {
     const files = [...prompt.matchAll(/### File: ([^\n]+)\n\n```[^\n]+\n([\s\S]*?)\n```/g)]
     expect(files.map(match => match[1])).toEqual(['cards.schema.json', 'card-styles.css', 'requirements.txt', 'build_deck.py', 'verify_deck.py'])
     for (const [, name, content] of files) expect(`${content}\n`).toBe(readFileSync(resolve('premed-hq-documentation/flashcards/prompt', name), 'utf8'))
-    for (const phrase of ['Both example directions remain available', 'Keep useful blurt overlap', 'In other words', 'Illustrative example', 'smaller sans-serif Extra', 'Native image occlusion is not supported in v1', 'completed Journal']) expect(prompt).toContain(phrase)
+    for (const phrase of ['Both directions are never automatic', 'optional bounded synthesis', 'one unlabelled line', 'smaller sans-serif Extra', 'Native image occlusion is not supported in v1', 'completed Journal']) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('review draft')
   })
 

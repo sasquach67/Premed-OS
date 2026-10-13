@@ -225,11 +225,6 @@
             }
           ]
         },
-        "extraOmissionReason": {
-          "type": "string",
-          "minLength": 0,
-          "maxLength": 800
-        },
         "reinforcementReason": {
           "type": "string",
           "minLength": 0,
@@ -286,7 +281,6 @@
         "examplePairId",
         "explanation",
         "example",
-        "extraOmissionReason",
         "reinforcementReason",
         "sourceRefs",
         "frontImages",
@@ -376,11 +370,20 @@
             "type": "string",
             "minLength": 0,
             "maxLength": 3000
+          },
+          "kind": {
+            "enum": [
+              "understand",
+              "be-able-to-do",
+              "watch-for",
+              "topic"
+            ]
           }
         },
         "required": [
           "id",
           "topic",
+          "kind",
           "statement",
           "core",
           "coverage",
@@ -409,6 +412,42 @@
       },
       "maxItems": 100,
       "minItems": 0
+    },
+    "coverageExceptions": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "properties": {
+          "conceptId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "targetIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "minItems": 1,
+            "maxItems": 500,
+            "uniqueItems": true
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 3000
+          }
+        },
+        "required": [
+          "conceptId",
+          "targetIds",
+          "reason"
+        ],
+        "additionalProperties": false
+      }
     }
   },
   "required": [
@@ -421,7 +460,8 @@
     "sources",
     "targets",
     "cards",
-    "limitations"
+    "limitations",
+    "coverageExceptions"
   ],
   "additionalProperties": false
 }
