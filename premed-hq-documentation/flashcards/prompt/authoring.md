@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-12 — direct card first, any card type, at most two or three per idea.
+Prompt revision: 2026-10-13 — reference-deck cloze, one-line Extra, fewest review cards with full topic coverage.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -27,101 +27,120 @@ The Journal organizes learning; it does not make unsupported claims true. Surfac
 
 Produce a manageable deck covering the Journal's core learning targets. The study guide explains, the Mastery Map organizes recall, and the deck practices the same targets. Do not translate every sentence or bullet into a separate card. Group tightly related facts when their relationship is the retrieval task. Separate important distinctions, conditions, and skills when needed.
 
-Build the target map first. Every mastery objective item (Understand, Be able to do, Watch for) maps to at least one target. Assign stable target IDs tied to the Journal and meaningful concept IDs for related groups. IDs are organizational metadata, not proof that questions are redundant. Check overlap across IDs too. Do not create a new ID for every paraphrase to disguise duplication.
+Build the target map first. Every mastery objective item (Understand, Be able to do, Watch for) maps to at least one target. Set each target's kind to understand, be-able-to-do, watch-for, or topic, matching the actual Journal item; use topic for a distinct topic-level learning target. Set topic to the stable Journal topic name so its targets stay grouped. Assign stable target IDs tied to the Journal and meaningful concept IDs for related groups. IDs are organizational metadata, not proof that questions are redundant. Check overlap across IDs too. Do not create a new ID for every paraphrase to disguise duplication.
 
-For each target, record whether it is directly tested, retained only in Extra, or missing. Link it to the actual cards; explain gaps. Do not mark a supporting explanation as active recall. Essential information cannot be moved into Extra merely because it is difficult. Incidental details can stay there without requiring their own cards.
+Coverage guard: every topic keeps at least one tested card, and every Understand and Be-able-to-do item is tested by at least one card. For each target, record whether it is tested, extra-only, or missing, and link it to the actual cards. Extra is supporting help, not active recall. Never move an Understand or Be-able-to-do item into Extra to lower the card count. Explain source gaps before agreeing a partial scope; do not claim complete coverage when an essential target is missing.
+
+Watch-for items are extra-only by default: put the caution in the Extra of the card for the idea it warns about, and link that target to the card. A Watch-for item earns its own tested card only when the caution is itself a fact the instructor tests. Do not generate a caution card for every Watch-for bullet. If several cautions apply, distribute concise cautions among existing relevant cards. Mark extra-only only when the actual caution is retained; report an omitted caution as a limitation instead of falsely claiming coverage.
 
 ## Useful reinforcement versus unnecessary repetition
 
-If the student supplies missed practice or exam questions, add one or two cards, within the limit per idea, on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.
+Limit per idea: two review cards, or three only when the instructor stressed it (said it will be tested or returned to it repeatedly). Count review cards, not notes: a cloze note with c1 and c2 creates two review cards and spends both of the idea's cards. Repeated regions using c1 together create one review card. For every additional card, reinforcementReason records the distinct retrieval demand it adds; for a third review card, it also names the specific instructor emphasis that earns it. Keep a direct card and its reinforcements under the same conceptId.
 
-Both example directions remain available: recognizing the concept from an example, and producing an example of the concept. Use either or both where they add the most, within the limit per idea. When both are used, group them with examplePairId and declare each direction; do not satisfy a pair by reversing words while giving away the answer.
+Coverage wins when the limit conflicts with the coverage guard. Trim second and third cards before removing the only tested card on a topic or any Understand or Be-able-to-do target. If full coverage genuinely requires an exception, retain the necessary cards, explain which otherwise uncovered targets need them, and explicitly report the exception and its review-card count. In cards.json, coverageExceptions is normally []; a necessary exception records conceptId, targetIds, and reason. Every note in an over-limit concept must create exactly one review card and be the sole tested card for a required Understand, Be-able-to-do, or topic target, or the sole tested card for its topic. Include those sole-coverage target IDs, one witness per note, and explain the collision in reason. A multi-index cloze cannot earn an over-limit exception: group list items together or trim reinforcement first. An exception is not permission to keep duplicates. There is no deck-wide maximum to aim for, target to pad toward, or card-type quota.
 
-Keep useful blurt overlap with individual cards. The blurt assembles knowledge that shorter cards test separately. Within a single blurt, every checklist point must be distinct; two paraphrases are not two achievements. State the actual item count and do not add filler to preserve a count.
+Both directions are never automatic. When both directions matter for a fact, use two blanks in one cloze sentence, with different indices; that spends two review cards. Do not add a separate mirror note. Definitions stay term-on-front Q&A. No card may have an answer that merely repeats another card's answer on the same idea.
 
-For each additional card about a concept, record what useful retrieval demand it adds. For the third card, reinforcementReason must also name the instructor emphasis that earns it, such as the stated test emphasis or the specific objective, review-sheet item or Guide direction. Keep the direct card and its reinforcements under the same conceptId; use a distinct family conceptId for an overview or blurt that tests the family as a whole. Different phrasing alone does not earn a card. A meaningful reverse direction, misconception, condition, explanation, or application can earn one. Repeated form across different required distinctions is not automatically redundant either.
+Scenario and example cards stay. Use at most one scenario or example card per idea, only when the instructor gave the example or the idea is applied on exams. Use the instructor's own example when one exists. Choose the useful retrieval direction: recognize the concept from a scenario, or produce the instructor's example. Do not automatically create both directions, an example pair, or an invented extra situation.
 
-Compare the final combined set, especially when using older decks for reference. A revision replaces an older question testing the same thing unless both add useful practice. Do not blindly append old and revised decks. Do not combine a mechanism, every exception, and a long list into one exhausting question to reduce the count.
+If the student supplies missed practice or exam questions, add one or two cards, within the limit per idea, on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question. Reuse a card that already tests that demand before adding another.
 
-Limit per idea: after its direct card, an idea may have one more card, or two more when the instructor stressed it (said it will be tested, returned to it repeatedly, or named it in an objective, review sheet or the student's Guide). Never more than three cards for one idea. Any card type may fill those places; none is required. There is no deck-wide maximum, no target to pad toward and no type percentage. An overview or blurt card covering a family of terms counts once for the family, not against each term. If the student states a workload preference, plan core coverage first and explain any tension instead of silently dropping essential targets. Report actual review cards, not just authored notes. Multiple cloze indices and long blurt checklists carry real workload.
+A bounded synthesis or blurt is optional only when synthesizing the family is itself a learning target. Its checklist points must be distinct and its count accurate. Give it a meaningful family conceptId, and count its review card once for the family. Do not use a blurt or a new family ID to hide duplicate answers or bypass the limit. Do not compress a mechanism, every exception, and a long list into one exhausting question to lower the count.
+
+Compare the final combined set, especially when using older decks for reference. A revision replaces an older question testing the same thing unless both add distinct, useful practice. Do not blindly append old and revised decks. Report authored notes and actual review cards separately.
 
 ## Card language and information order
 
-Front: every named term or concept gets a direct card first, whose Front is the term or name by itself, for example “Retroactive interference”; the student defines it. Add a few words of context in parentheses only when the bare term would be ambiguous within this deck. Do not use a comparison, a “why” question or a scenario as a substitute for the direct card. Other cards use a natural, precise question that stands alone when shuffled, such as “What causes X?” or “How does X affect Y?”; name the situation or concepts, state the comparison dimension where there is one, and give only the context needed to answer. Avoid vague “it,” “the study,” or “the next step” without an antecedent, or “the lecture's example” and “what class identified”; name the concept or example instead. A pronoun with clear same-card context is fine.
+Every named term or concept gets a direct card first: the Front is the term alone, for example “Retroactive interference”. Context in parentheses is allowed only when the bare term would be ambiguous within this deck. Use type basic without a clozePattern for this definition card. Its Back is one sentence. Definitions do not move to cloze, and a comparison, why/how question, or scenario does not replace the definition card.
 
-Use type basic without a clozePattern for the direct term card. Its Back is one plain sentence under the default wording, or the exact-terms sentence under Technical or Readings; put its example in Extra. The missing-direct warning uses a term-shaped basic Front as an advisory signal, not proof of a good definition.
+Use one fixed shape per card type:
 
-Required answer: the shortest complete response the student can grade against the question. Keep essential qualifiers and causal links. A naming answer may be a term; an explanation should state a claim in complete, direct sentences. Do not add “The answer is…” merely to satisfy a verb check. Preserve the instructor's necessary technical terms while explaining unfamiliar ones. Difficulty comes from knowledge, not ornate wording. Do not inflate cautious claims such as “may contribute.” Apply the friend test to the Required answer (Back) itself, not just Extra: could a first-year student who skipped the lecture understand every word except the course's own named terms? If not, rewrite in plainer words and explain each necessary named term in the same sentence. “Shortest” must not mean compressed jargon. Keep the existing Q&A format, with cloze as the exception; apply the same plain-language test to cloze sentences and blurt checklist answers.
+| Card | Front or cloze text | Required answer (Back) |
+|---|---|---|
+| Direct definition | The term alone | One sentence |
+| Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |
+| Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |
+| Scenario | One or two sentences of situation, then one question | The term, plus a short “because” only if needed |
+| Example | `Example of <term>` | The instructor's example |
+| Comparison | `<A> vs. <B>` | The one difference that separates them |
+| Why / how | One direct question | One sentence |
+
+One question per card. Never join two questions with “and” or use a two-part front. Each card must stand alone when shuffled. Name the situation or concepts and give only the context needed to answer. Avoid vague “it,” “the study,” or “the next step” without an antecedent, or “the lecture's example” and “what class identified”; name the concept or example instead. A pronoun with clear same-card context is fine.
+
+Required answer: the shortest complete response the student can grade against the question, in the fixed shape above. Keep essential qualifiers and causal links. Do not add “The answer is…” merely to satisfy a verb check. Preserve necessary course terms, numbers, units, and cautious claims such as “may contribute”. Apply the friend test to the Required answer (Back) itself, not just Extra, under the default wording: could a first-year student who skipped the lecture understand every word except the course's own named terms? If not, rewrite in plainer words and briefly explain unfamiliar terms where needed. Difficulty comes from knowledge, not ornate wording; “shortest” must not mean compressed jargon. Apply the same plain-language test to cloze sentences and bounded checklist answers unless the Technical emphasis requires exact terms.
+
+These shapes also apply to biology: pathways and ordered steps use the cloze list/steps shape, structures use an available source figure when it helps, and numbers and units stay exact. Under Technical, the Back retains the course's exact terms.
 
 No source chatter in any student-facing card field: Front, Back, cloze text, Extra, labels, or figure captions/alt text. Never mention lectures, readings, authors, slides, or phrases such as “not X's label” as commentary about where an idea came from. Teach the idea only. Keep source references and attribution in sourceRefs / hidden premedos_source metadata; keep unresolved source conflicts in the separate audit/limitations report, never as a recall task or explanatory aside. Under the Readings emphasis, naming the scholar, people or place as the holder or subject of an argument is content, not source chatter. Commentary about where an idea was found, such as “the reading says”, is still excluded.
 
-Extra: teach understanding, particularly when the idea is difficult, abstract, or unintuitive. This is a firm requirement, not optional decorative text:
+Extra: one short line, or empty. Pick the one thing that helps most: a plain fact, an abbreviation spelled out, the instructor's example, a mnemonic, a caution, or a useful source picture. Aim for about 20 words or fewer. Empty Extra is correct when nothing helps; no omission reason is required. Never a paragraph or a mini study guide.
 
-1. Explain what is happening, why it makes sense, or what the relationship means in ordinary language. “In other words…” should unpack the idea rather than just replace formal words with synonyms. Address the likely misunderstanding.
-2. Give a concrete real-life or conceptual example and explain its connection to the idea. Prefer the instructor's example, then another supplied example. An invented everyday scenario is labeled “Illustrative example”; an analogy must identify its limits where needed. Do not invent research findings or present added examples as lecture evidence.
-3. Keep this help separate from the required answer. The student need not recite every Extra sentence to pass the card. Keep useful source-based examples, using either or both directions within the limit per idea, without automatically turning every explanatory detail into another card.
+The default Back is already plain, so Extra must not restate it. Under Technical or Readings, Extra may be a short plain-words gloss when it helps. Keep Extra unlabelled: no “In other words:” or “Example:” prefixes, headings, or repeated answer. The student need not recite Extra to pass the card.
 
-For biology, a concrete biological situation can work better than an everyday analogy. Never force a metaphor that changes the mechanism. A simple naming card does not need artificial elaboration, but for a hard concept do not use that exception to skip the explanation. If an explanation or example cannot usefully be included, record a specific omission reason rather than leave a silent gap.
+For the build fields, explanation and example are alternative ways to supply the one optional Extra line. Use explanation for a short fact, gloss, mnemonic, or caution, or example for one short supplied example; leave the unused alternative empty or null. A useful source picture may instead occupy extraImages. If no Extra helps, use explanation="", example=null, and extraImages=[]. Do not fill both text alternatives or add text around a picture merely to satisfy a field.
 
-Accepted style example, not content to insert into unrelated decks:
+Accepted style examples, not content to insert into unrelated decks:
+
+- Front: Negative reinforcement
 - Required answer: Negative reinforcement increases a behavior by removing an unpleasant stimulus.
-- In other words: You become more likely to do something because doing it makes something unpleasant stop. “Negative” means something is removed, not that the behavior is bad.
-- Illustrative example: Buckling your seat belt stops the car's annoying warning sound. If that makes you buckle up more readily next time, the behavior has been negatively reinforced.
+- Extra: “Negative” means something is removed.
 
-Second accepted style example, from a theory subject (not content to insert into unrelated decks):
-- Front: What is scientific management or Taylorism?
+- Front: Scientific management (Taylorism)
 - Required answer: Instead of a worker deciding how to do the job, management breaks it into small tasks and sets the method it thinks is most efficient.
-- In other words: Being good at the job does not mean you get to choose how to do it: your job is to follow the manager's chosen steps. Faster output also does not automatically mean better working conditions for you.
-- Illustrative example: You pack orders at a warehouse. Instead of arranging your station and packing boxes your own way, your manager times each step and tells you exactly where to put each item and in what order to pack it. That puts decisions about how you work in management's hands.
+- Extra: empty
 
 ### Before and after, style only (not content to insert into unrelated decks)
 
-- Q: What does it mean for the US dollar to function as a global currency? Before: "It is widely used internationally to price and settle transactions, denominate finance, and hold reserves." After: "People worldwide use dollars to set prices, make payments, borrow and lend, and hold money for future needs."
-- Q: What distinguishes territory from a location or place? Before: "Territory is space demarcated and controlled through power or jurisdiction." After: "Territory is an area with boundaries where a person, group, or government exercises control over what happens."
-- Q: What makes colonialism more than trade between two societies? Before: "It establishes enduring domination and dispossession: colonizers take control of land, labor, resources, and political life." After: "Colonialism means lasting control over another society: colonizers take land and resources, control people's work, and shape political life."
-- Q: Why can a commodity chain not be explained as just a route on a map? Before: "It also depends on labor, money, nature, infrastructure and governing rules that organize production, distribution and consumption." After: "It also depends on workers, money, land and materials, transport, and rules that shape how goods are made, moved, and used."
+- Front: Global currency. Before: “It is widely used internationally to price and settle transactions, denominate finance, and hold reserves.” After: “People worldwide use it to set prices, make payments, borrow and lend, and hold money for future needs.”
+- Front: Territory. Before: “Territory is space demarcated and controlled through power or jurisdiction.” After: “Territory is an area with boundaries where a person, group, or government controls what happens.”
+- Front: Colonialism. Before: “It establishes enduring domination and dispossession: colonizers take control of land, labor, resources, and political life.” After: “Colonialism means lasting control over another society: colonizers take land and resources, control people's work, and shape political life.”
+- Front: Why does a commodity chain depend on more than a route? Before: “It also depends on labor, money, nature, infrastructure and governing rules that organize production, distribution and consumption.” After: “Workers, money, land, transport, and rules shape how goods are made, moved, and used.”
 
-Use short connected sentences. Explain enough to make the idea understandable without turning Extra into a mini study guide. Use plain text in the build fields; do not author HTML, CSS, or script inside card content. The supplied builder handles safe formatting, paragraph labels, lists, and figure markup.
+Use plain text in the build fields; do not author HTML, CSS, or script inside card content. The supplied builder handles safe formatting, lists, and figure markup.
 
 ## Default wording and emphasis
 
 Every deck starts from the default: Required answers are plain sentences, with each course term explained where it appears (the friend test above).
 Two emphases exist for classes where plain wording would lose what is graded. Use at most one per deck.
-- Technical: the Required answer uses the course's exact terms, directions, numbers, units and formulas as they are, without stopping to explain each term. The friend test then applies to “In other words”, not to the Required answer. Suits mechanism-heavy science and quantitative lectures. Style example: “One initial primer for the leading strand; one new primer for every lagging-strand Okazaki fragment.”
-- Readings: the Required answer names who made the argument, the people or place studied, and the scholar's own term, with plain wording around them. Suits classes examined on authors, cases and texts. Style example: “Massey's power geometry: people have unequal control over movement and connections. Some direct them; others depend on them or are excluded.”
+- Technical: the Required answer uses the course's exact terms, directions, numbers, units and formulas as they are, without stopping to explain each term. A short plain-words gloss may go in Extra when useful; it remains optional. Suits mechanism-heavy science and quantitative lectures. Style example: “The leading strand needs one initial primer; each lagging-strand Okazaki fragment needs a new primer.”
+- Readings: the Required answer names who made the argument, the people or place studied, and the scholar's own term, with plain wording around them. Suits classes examined on authors, cases and texts. Style example: “Massey's power geometry means people have unequal control over movement and connections.”
 After you have inspected the materials, decide whether an emphasis fits this lecture. If the default fits, say nothing and build. If an emphasis fits, send one short message naming it and the reason, and offer the default as the alternative, for example: “This lecture is mostly named enzymes and mechanisms, so I suggest the Technical emphasis. Reply ok, or say keep it plain.” Then build with the student's answer. Ask this once per deck and ask nothing else about wording. If the student's Guide or message already states how this class should be worded, follow it and do not ask. A class may use different emphases for different lectures.
-In every case: keep the instructor's examples, what the instructor stressed, phrases the instructor wants in an answer, stated exclusions and the exam format; keep terms, numbers and cautious wording exact; write “In other words” and the example in plain language.
+In every case: keep the instructor's examples, what the instructor stressed, phrases the instructor wants in an answer, stated exclusions and the exam format; keep terms, numbers and cautious wording exact; write any optional Extra in plain language.
 
 ## Card types and cloze mechanics
 
-- basic: direct factual recall or identification.
-- conceptual: a short why/how relationship.
-- comparison: named ideas on an explicit axis, stored in axis.
-- process: a meaningful sequence or step; supply expected count for a list and order where it matters.
-- application: apply a supported principle to a clear situation with necessary conditions. Do not invent factual evidence.
-- exemplar: one member of a source-based example pair; either direction is available within the limit per idea; a partner is not required.
-- free-recall: bounded synthesis. Supply front and distinct recallItems; leave back empty. State the checklist count as a numeral on the front. A blurt is not a license for a paragraph or arbitrary trivia.
-- cloze: cue meaningful recall with a short deletion. Keep the term visible and hide its meaning for ordinary definition clozes. Hiding a term is appropriate only when naming/recognition is genuinely the target; do not expose the whole answer through surrounding context.
+- basic: a direct term-on-front definition or short factual recall.
+- conceptual: the why/how shape.
+- comparison: the comparison shape; record its single separating axis in axis.
+- process: the cloze list/steps shape for a pathway, sequence, or meaningful list.
+- application: the scenario shape, with necessary conditions and one question; do not invent factual evidence.
+- exemplar: the example shape, or a source-based recognition scenario. Set the appropriate exampleDirection; a partner is never required.
+- free-recall: optional bounded synthesis only when the family is itself a learning target. Supply front and distinct recallItems; leave back empty. State the checklist count as a numeral on the front.
+- cloze: the fact or list/steps shape. Blank the term, name or number; keep the meaning visible. Definitions stay direct Q&A.
 
-Purpose and mechanism are separate. A comparison or process may use a clozePattern too. When clozePattern is set, front/back/recallItems are empty and cloze carries the sentence. Use {{c1::answer}}, then consecutive c2, c3, etc. A repeated index retrieves its regions together; distinct indices make distinct review cards. Do not hide unrelated facts in one sentence. In this build contract use no hints or nested cloze syntax.
+When clozePattern is set, front/back/recallItems are empty and cloze carries the sentence or short list. Use {{c1::answer}}, with an optional short hint as {{c1::answer::hint}} only when the blank would otherwise be ambiguous, for example {{c1::hippocampus::brain structure}}. Hints must narrow the cue without giving away the answer. No nested cloze. Keep one fact per sentence; do not hide unrelated facts together.
 
-Patterns: single uses one index; definition uses exactly one deletion; independent uses two or more related targets retrieved separately; enumerated-list uses peer items with the count visible. For ordered lists, indices follow the real order. For unordered lists, say “in any order.” Never hide the count itself.
+Use consecutive indices beginning at c1. Distinct indices create distinct review cards: c1 and c2 are two, even in one note. Use two blanks in one sentence only when both retrieval directions matter, without a separate mirror note. Example of the shape only: {{c1::hippocampus::brain structure}} supports forming new {{c2::explicit memories::memory type}}. Do not insert that fact into an unrelated lecture.
 
-The builder flags potentially burdensome answers, lists, and deletions for human inspection. These heuristics are advisory, not quotas: do not pad or remove necessary meaning to satisfy them. The schema's 500-note maximum is only a technical guardrail, never a suggested deck size.
+A list is one note with its items blanked together under the same index. Use enumerated-list, keep its count visible, and set listOrdered. For ordered steps, preserve the real order; for unordered lists, say “in any order”. For example, “The 3 stages, in order, are {{c1::stage A}}, {{c1::stage B}}, and {{c1::stage C}}.” is one review card. Never blank the count or use separate indices for every list item by default.
+
+Patterns: single uses one index for one factual answer; independent uses two or more related blanks retrieved separately; enumerated-list groups list items under one index. The legacy definition pattern does not authorize moving term definitions out of Q&A.
+
+The builder flags potentially burdensome answers, lists, deletions, and Extra beyond one line or about 20 words for human inspection. These warnings are advisory, not quotas: do not pad or remove necessary meaning to satisfy them. The schema's 500-note maximum is only a technical guardrail, never a suggested deck size.
 
 ## Source grounding and figures
 
 Every card carries sourceRefs: actual sourceId, page/slide/heading/timestamp, and a short accurate supporting excerpt. Do not invent locations. “Location unavailable” is acceptable when the source genuinely has no usable locator. Cite the original material that supports the required answer, not just the existence of the Journal.
 
-For examples from a source, include source evidence. Illustrative examples use source=null and cannot supply new tested factual claims. Include uncertainty and missing coverage in limitations.
+For examples from a source, include source evidence. Prefer the instructor's own example; added scenarios cannot supply new tested factual claims. Include uncertainty and missing coverage in limitations.
 
-The supplied builder can embed available PNG/JPEG source figures on the front or in Extra. Only use a figure after inspecting its relevance and content. A front figure must not expose the tested answer. Keep necessary orientation, scale, and labels; provide meaningful alt text and source evidence. Supply real local image bytes beside cards.json. Never reference unavailable files or remote URLs as though they were packaged.
+Pictures are optional. If the attached materials contain a figure that helps a card, use it; if they do not, build the card without one. Many cards have none, and that is normal. Do not add a warning, placeholder, or apology for missing pictures. Never generate or invent an image. The supplied builder can embed available PNG/JPEG source figures on the front or in Extra. Inspect the actual source figure before using it. A front figure must not expose the tested answer. Keep necessary orientation, scale, and labels; provide meaningful alt text and source evidence. Supply real local image bytes beside cards.json. Never reference unavailable files or remote URLs as though they were packaged.
 
 Native image occlusion is not supported in v1. Do not call an ordinary picture an occlusion card or claim parity with existing occlusion decks. If occlusion is essential for the requested target, explain that limit and ask how to handle the target; do not silently discard it or improvise a different package implementation.
 
 ## Design and exact build contract
 
-Keep the supplied serif question/answer design, small action/type labels, five mindset accents, answer divider, numbered blurt checklist, and smaller sans-serif Extra. The builder displays explanation as “In other words” and the example separately. Anki supplies the background; embedded CSS supports light and dark presentation. Do not replace the CSS with an approximation or add invented layouts.
+Keep the supplied serif question/answer design, small action/type labels, five mindset accents, answer divider, numbered blurt checklist, and smaller sans-serif Extra. The builder renders the selected optional Extra as one unlabelled line or source picture. Anki supplies the background; embedded CSS supports light and dark presentation. Do not replace the CSS with an approximation or add invented layouts.
 
 Basic fields: Front, Back, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec. Cloze fields: Text, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec. Metadata travels with the note but stays off the recall face. The embedded templates and builder, not prose interpretation, determine the final layout and field order. Versioned model identities keep this format distinct from older exports.
 
@@ -144,11 +163,13 @@ Create the files from the exact file blocks below in a fresh task directory. The
 
 Use the environment's equivalent Python path on other operating systems. The Anki dependency is for a temporary verification collection; do not open, alter, or synchronize the student's live Anki profile. If dependency installation or verification is unavailable, say exactly what could not be tested and do not claim a verified final deck.
 
-Before building, review coverage and content yourself. The structural validator cannot establish factual accuracy or educational quality. Inspect exact repeats and semantic overlaps; use either or both example directions within the limit per idea, and preserve useful blurt overlap. Fix distinct findings, not merely the phrasing that happens to satisfy a gate. Investigate warnings about long answers, coverage gaps, and source chatter. Run the friend test on every card, including its Required answer, before building; a phrase detector cannot establish plain-language understanding.
+Before building, review coverage and content yourself. The structural validator cannot establish factual accuracy or educational quality. Inspect exact repeats and semantic overlaps; remove automatic mirrors and redundant answers. Reconcile every topic and Understand / Be-able-to-do target against tested cards, place Watch-for cautions in Extra by default, and report any justified coverage exception to the review-card limit. Fix distinct findings, not merely the phrasing that happens to satisfy a gate. Investigate warnings about long answers, long Extra, and source chatter; fix failed coverage checks. Run the friend test on every card, including its Required answer, before building; a phrase detector cannot establish plain-language understanding.
 
 The builder never overwrites an existing output. Use a fresh output name after changing cards, then rerun verification against that exact file and matching report. Fix failed checks rather than editing a report or weakening the verifier. Inspect generated previews for readable formatting, including Extra and any figures. They show real Anki renderings with embedded media, not a separate approximation of the templates.
 
-Deliver the actual downloadable .apkg after checking that it exists. State authored notes AND actual review-card count, source/coverage limitations, and verification results. If any check was skipped, state that clearly. A successful import is package evidence, not proof of mastering the lecture. Do not append the synthetic fixture to the student deck.
+Deliver the actual downloadable .apkg after checking that it exists. State authored notes AND actual review-card count, source/coverage limitations, and verification results. If any check was skipped, state that clearly. A successful import is package evidence, not proof of mastering the lecture. Do not append the synthetic fixture to the student deck. After the count, coverage, exceptions, and limitations summary, end the delivery message with this note:
+
+“Some of these cards may treat a detail as more important than it really is for your class. That is expected. If a card is not worth your time, suspend it: press @ (Shift+2) while reviewing to suspend that individual card. Press ! to suspend the whole note.”
 
 ## Embedded files
 
