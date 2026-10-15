@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-15 — Codex: understanding first, condense within reason, every combined meaning retained.
+Prompt revision: 2026-10-15b — one answer per card, no question that gives away its answer; related terms combined, reference-deck wording.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -66,12 +66,16 @@ Use one fixed shape per card type:
 | Standalone definition | The term alone | Its meaning, without hedge tails |
 | Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |
 | Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |
-| Scenario | One or two sentences of situation, then one question | A concrete term, choice between named options, or one short cause |
+| Scenario | One or two sentences of situation, then one question about one term | The term, plus a short “because” only if needed |
 | Example | `Example of <term>` | The instructor's example |
 | Comparison / related terms | `<A> vs. <B>` or the named group | One short meaning per term, preserving the distinction |
 | Why / how | One direct question | One sentence |
 
-One question per card. Never join two questions with “and” or use a two-part front. Each card must stand alone when shuffled. Name the situation or concepts and give only the context needed to answer. Avoid vague “it,” “the study,” or “the next step” without an antecedent, or “the lecture's example” and “what class identified”; name the concept or example instead. A pronoun with clear same-card context is fine.
+One question per card. Never join two questions with “and” or use a two-part front.
+
+One answer per card. A scenario, why/how or example card asks for one term, one step or one cause. Never write “Match the 3 behaviors to…”, “What does each of the 3 theories predict?”, or any card whose answer is a set of pairings. The combined card already tests the set; a scenario then picks the one term in the group most likely to be confused and asks only about it, within the limit per idea. For example, after the combined card “Activation vs. persistence vs. intensity”, a scenario is “A student keeps working after a hard question stops her. Which component of motivation is this?” → “Persistence.” A cloze list or a combined comparison card is the only place several items are recalled together.
+
+Never let the question give away its answer. If the answer only restates the question, as in “How is intrinsic motivation related to success?” → “Greater intrinsic motivation is associated with greater success”, test the actual finding instead, usually as a cloze that blanks it: “Children who wait longer for a reward tend to have better later {{c1::social, emotional, and academic}} outcomes.” Ask a why/how question only when its answer adds something the question does not already say. Each card must stand alone when shuffled. Name the situation or concepts and give only the context needed to answer. Avoid vague “it,” “the study,” or “the next step” without an antecedent, or “the lecture's example” and “what class identified”; name the concept or example instead. A pronoun with clear same-card context is fine.
 
 Scenario answers are concrete: a term, a choice between named options, or one short cause. Never make the answer “nothing can be concluded”, “it is unresolved”, “X is not established”, or another non-conclusion. Rewrite the situation to test the concept, or let the related term card cover the hedge-only bullet and record that decision. Do not invent certainty where the source leaves an event unresolved.
 
