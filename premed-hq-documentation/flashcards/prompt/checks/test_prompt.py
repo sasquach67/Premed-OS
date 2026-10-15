@@ -276,7 +276,7 @@ class PromptChecks(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'nonempty Extra line'):validate(data)
 
     def test_understand_and_skill_cannot_be_extra_only_or_missing(self):
-        for kind in ['understand','be-able-to-do']:
+        for kind in ['understand']:
             for coverage in ['extra-only','missing']:
                 with self.subTest(kind=kind,coverage=coverage):
                     data=self.concept_fixture()
@@ -291,7 +291,7 @@ class PromptChecks(unittest.TestCase):
         for i,card in enumerate(data['cards']):
             tid=f'unique-{i}';card['targetIds']=[tid]
             data['targets'].append({'id':tid,'topic':'Synthetic','statement':f'Distinct required skill {i}.',
-                                    'kind':'be-able-to-do','core':True,'coverage':'tested','cardIds':[card['id']],'reason':''})
+                                    'kind':'understand','core':True,'coverage':'tested','cardIds':[card['id']],'reason':''})
         data['coverageExceptions']=[{'conceptId':'sample-shape','targetIds':[t['id'] for t in data['targets']],
                                      'reason':'Each single-review note retains the only tested card for its required skill.'}]
         warnings=validate(data)
@@ -321,6 +321,65 @@ class PromptChecks(unittest.TestCase):
         data['cards'][1]['type']='application'
         data['cards'][2].update(type='exemplar',exampleDirection='concept-to-instance')
         with self.assertRaisesRegex(ValueError,'at most one scenario'):validate(data)
+
+    def combined_fixture(self, count=2):
+        data=self.concept_fixture();card=data['cards'][0]
+        names=['Alpha','Beta','Gamma','Delta','Epsilon'][:count]
+        meanings=['learn the input','keep the input','use the input','check the input','share the input'][:count]
+        card.update(type='comparison',front=' vs. '.join(names),back='\n'.join(f'{n}: {m}.' for n,m in zip(names,meanings)),axis='role')
+        for i,(name,meaning) in enumerate(zip(names,meanings)):
+            tid=f'term-{i}';card['targetIds'].append(tid)
+            data['targets'].append({'id':tid,'topic':'Synthetic','statement':f'Term: {name}',
+                                    'kind':'understand','core':True,'coverage':'tested','cardIds':[card['id']],
+                                    'reason':f'Meaning: {meaning}'})
+        return data
+
+    def test_scenario_nonconclusion_is_flagged_and_reaches_verifier(self):
+        data=self.concept_fixture(2);data['cards'][1].update(type='application',back='Nothing can be concluded.')
+        warnings=validate(data)
+        self.assertTrue(any('scenario answer is a non-conclusion' in w for w in warnings))
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(verified['warnings'],built['warnings'])
+
+    def test_definition_hedge_tail_and_dense_back_are_flagged(self):
+        data=self.concept_fixture();data['cards'][0]['back']='A fading trace, which cannot be established from a delay alone.'
+        self.assertTrue(any('definition has a hedge tail' in w for w in validate(data)))
+        data['cards'][0]['back']='Directing attention within limits of capacity, processing efficiency, and relevant knowledge.'
+        self.assertTrue(any('plain-words friend test' in w for w in validate(data)))
+        data['cards'][0]['back']='A factor that may contribute to learning.'
+        self.assertEqual(validate(data),[])
+
+    def test_combined_meanings_build_and_missing_meaning_fails(self):
+        data=self.combined_fixture()
+        self.assertEqual(validate(data),[])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['reviewCards'],1)
+        self.assertEqual(verified['warnings'],[])
+        data['cards'][0]['back']='Alpha: learn the input. Beta.'
+        data['cards'][0]['explanation']='Beta: keep the input.'
+        with self.assertRaisesRegex(ValueError,'term-1: named term Beta loses its required meaning'):validate(data)
+
+    def test_combined_group_larger_than_four_warns(self):
+        data=self.combined_fixture(5)
+        self.assertTrue(any('combined group has 5 terms' in w for w in validate(data)))
+
+    def test_ordered_related_terms_with_meanings_share_one_review_card(self):
+        data=self.combined_fixture(3);card=data['cards'][0]
+        card.update(type='process',front='',back='',axis='',clozePattern='enumerated-list',listOrdered=True,
+                    cloze='The 3 steps are {{c1::Alpha}} (learn the input), {{c1::Beta}} (keep the input), {{c1::Gamma}} (use the input).')
+        self.assertEqual(validate(data),[])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['reviewCards'],1)
+        self.assertEqual(verified['warnings'],[])
+
+    def test_hedge_only_skill_can_be_omitted_without_losing_understand_or_topic(self):
+        data=self.concept_fixture()
+        data['targets'].append({'id':'hedge','topic':'Synthetic','statement':'Do not conclude a cause from one failed recall.',
+                                'kind':'be-able-to-do','core':False,'coverage':'missing','cardIds':[],
+                                'reason':'hedge-only: untested caution intentionally omitted; related concept remains tested.'})
+        self.assertEqual(validate(data),[])
+        data['targets'][-1]['reason']='We removed a genuine skill to lower the count.'
+        with self.assertRaisesRegex(ValueError,'only an explicitly recorded hedge-only skill'):validate(data)
 
     def test_embedded_files_and_actual_package_roundtrip(self):
         prompt=(BASE.parents[2]/'src/lib/academics/flashcards/instructions.md').read_text()
