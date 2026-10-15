@@ -46,6 +46,32 @@ def extra_text(card):
 def topic_key(target):
     return ' '.join(target['topic'].casefold().split())
 
+def coverage_text(text):
+    # Compare declared literal meaning witnesses, not semantic equivalence.
+    text = re.sub(r'\{\{c\d+::([^{}]+)\}\}', lambda m: m[1].split('::')[0], text)
+    return ' '.join(re.sub(r'[^\w]+', ' ', text.casefold()).split())
+
+def term_spec(target):
+    if not target['statement'].strip().casefold().startswith('term:'):
+        return None
+    term = target['statement'].split(':', 1)[1].strip()
+    require(target['kind'] == 'understand' and term, f'{target["id"]}: named-term coverage must be an Understand target with a term.')
+    require(target['reason'].strip().casefold().startswith('meaning:'), f'{target["id"]}: record Meaning: with the required meaning phrase.')
+    meaning = target['reason'].split(':', 1)[1].strip()
+    require(meaning, f'{target["id"]}: the term needs its meaning, not just its name.')
+    return term, meaning
+
+def card_language_warnings(card):
+    warnings = []
+    back = card['back']
+    if card['type'] in ['application', 'exemplar'] and re.search(r'\b(?:nothing (?:can be|is) concluded|(?:it is |origin[ :]+)?unresolved|not established|cannot be concluded|does not (?:establish|identify)|neither .{0,100} established)\b', back, re.IGNORECASE):
+        warnings.append(f'{card["id"]}: scenario answer is a non-conclusion; test a concrete term, named choice or short cause.')
+    if direct_card_candidate(card) and re.search(r'\b(?:without establishing|which cannot be|without necessarily|while competing material|so .{0,80}(?:cannot establish|inaccurate memory))\b', back, re.IGNORECASE):
+        warnings.append(f'{card["id"]}: definition has a hedge tail; keep the meaning and remove the untested caution.')
+    if re.search(r'\b(?:This refers to|It is the process by which|verbal or semantic and visual representations|within limits of capacity, processing efficiency)\b', back, re.IGNORECASE):
+        warnings.append(f'{card["id"]}: review Back with the plain-words friend test; avoid stock filler or compressed abstractions (exact course terms may be needed under an emphasis).')
+    return warnings
+
 def direct_card_candidate(card):
     # No direct-card flag or canonical term exists in v1; this is advisory only.
     front = card['front'].strip()
@@ -138,6 +164,7 @@ def validate(data):
         if word_count(extra) > 20 or '\n' in c['explanation'] or (ex is not None and '\n' in ex['text']) or (c['explanation'].strip() and ex is not None):
             warnings.append(f'{cid}: Extra exceeds one short line (about 20 words); choose the single most useful detail.')
         if word_count(c['back']) > 45 or any(word_count(i) > 35 for i in c['recallItems']): warnings.append(f'{cid}: long required answer; inspect grading burden.')
+        warnings.extend(card_language_warnings(c))
         for img in c['frontImages'] + c['extraImages']: evidence(img['source'])
         prompt = c['cloze'] if cp else c['front']
         prompts[re.sub(r'\W+', ' ', prompt.casefold()).strip()] += 1
@@ -146,10 +173,12 @@ def validate(data):
         require(len(values) <= 2 and len({v['exampleDirection'] for v in values}) == len(values), f'{pair}: paired examples must use distinct directions; a partner is optional.')
     tested_by_target = {}
     tested_by_topic = defaultdict(set)
+    term_witnesses = defaultdict(set)
     for t in data['targets']:
         require(topic_key(t), f'{t["id"]}: name a topic.')
         require(len(t['cardIds']) == len(set(t['cardIds'])) and all(i in cards for i in t['cardIds']), f'{t["id"]}: invalid coverage references.')
         own = {c['id'] for c in data['cards'] if t['id'] in c['targetIds']}
+        term = term_spec(t)
         if t['coverage'] == 'tested':
             require(own and own == set(t['cardIds']), f'{t["id"]}: tested coverage must match its cards.')
             tested_by_target[t['id']] = own
@@ -160,9 +189,27 @@ def validate(data):
                 require(t['cardIds'], f'{t["id"]}: name where the supporting explanation is retained.')
                 require(all(extra_text(cards[i]) for i in t['cardIds']), f'{t["id"]}: extra-only caution coverage needs a nonempty Extra line on its linked cards.')
             else: require(not t['cardIds'], f'{t["id"]}: missing target cannot claim card coverage.')
-        if t['kind'] in ['understand', 'be-able-to-do', 'topic']:
+        if t['kind'] in ['understand', 'topic']:
             require(t['coverage'] == 'tested', f'{t["id"]}: {t["kind"]} target needs a tested card; coverage wins over the card limit.')
+        elif t['kind'] == 'be-able-to-do' and t['coverage'] != 'tested':
+            require(re.search(r'\b(?:hedge-only|limit-only|untested caution)\b', t['reason'], re.IGNORECASE), f'{t["id"]}: only an explicitly recorded hedge-only skill may be omitted; retain genuine tested skills.')
         elif t['core'] and t['coverage'] == 'missing': warnings.append(f'{t["id"]}: core target is missing. {t["reason"]}')
+        if term:
+            name, meaning = map(coverage_text, term)
+            require(name and meaning, f'{t["id"]}: record nonempty term and meaning words.')
+            witnesses = []
+            for cid in own:
+                card = cards[cid]
+                direct = direct_card_candidate(card) or (card['type'] == 'comparison' and not card['clozePattern']) or (card['clozePattern'] == 'enumerated-list' and card['listOrdered'] is True)
+                required = coverage_text(card['back'] or card['cloze'])
+                visible = coverage_text(card['front'] + ' ' + (card['back'] or card['cloze']))
+                if direct and f' {name} ' in f' {visible} ' and f' {meaning} ' in f' {required} ':
+                    witnesses.append(cid)
+            require(witnesses, f'{t["id"]}: named term {term[0]} loses its required meaning; Extra or a name alone is not direct coverage.')
+            for cid in witnesses: term_witnesses[cid].add(t['id'])
+    for cid, terms in term_witnesses.items():
+        if len(terms) > 4:
+            warnings.append(f'{cid}: combined group has {len(terms)} terms; keep related groups to 2 to 4 without losing meanings.')
     for topic in {topic_key(t) for t in data['targets']}:
         require(tested_by_topic[topic], f'{topic}: topic needs at least one tested card; do not trim its only card.')
     groups = defaultdict(list)
@@ -184,13 +231,13 @@ def validate(data):
                 require(t['coverage'] == 'tested', f'{concept}: exception witness must be a tested target.')
                 own = tested_by_target[tid]
                 require(len(own) == 1, f'{concept}: exception witness is not sole coverage.')
-                require(t['kind'] in ['understand', 'be-able-to-do', 'topic'] or tested_by_topic[topic_key(t)] == own, f'{concept}: exception witness must retain required coverage or a topic\'s only tested card.')
+                require(t['kind'] in ['understand', 'topic'] or tested_by_topic[topic_key(t)] == own, f'{concept}: exception witness must retain required coverage or a topic\'s only tested card.')
                 witnessed_cards.update(own)
             require(witnessed_cards == {c['id'] for c in group} and all(len(indices(c)) == 1 for c in group), f'{concept}: coverage exception only permits indispensable single-review notes, not surplus cloze indices.')
             warnings.append(f'{concept}: coverage exception keeps {reviews} review cards. {exception["reason"]}')
         else:
             require(reviews <= 3, f'{concept}: more than three review cards for one idea.')
-        if not any(direct_card_candidate(c) for c in group):
+        if not any(direct_card_candidate(c) or len(term_witnesses[c['id']]) >= 2 for c in group):
             warnings.append(f'{concept}: no direct term card detected; inspect this concept.')
         if len(group) >= 2:
             require(group[1]['reinforcementReason'].strip() or exception, f'{group[1]["id"]}: explain the additional retrieval purpose; no automatic mirrors.')

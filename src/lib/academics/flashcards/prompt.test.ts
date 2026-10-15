@@ -13,10 +13,10 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the October 15 condense prompt revision and preserves source access rules', () => {
+  it('copies the Codex understanding-first prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-15 — understanding first, then fewest cards: related terms combined, no hedge cards, reference-deck wording.')
-    expect(prompt).toContain('Every named term or concept gets a direct card first')
+    expect(prompt).toContain('Prompt revision: 2026-10-15 — Codex: understanding first, condense within reason, every combined meaning retained.')
+    expect(prompt).toContain("Every named term's meaning gets direct recall")
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
     expect(prompt).toContain('The completed Journal is the required input.')
@@ -40,14 +40,14 @@ describe('flashcard prompt handoff', () => {
   it('uses fixed card shapes, term-only definitions, and reference-deck cloze', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'the Front is the term alone',
-      'Definitions do not move to cloze',
-      '| Direct definition | The term alone | One sentence |',
+      'keeps a term-alone Front',
+      'not permission to cloze isolated definitions',
+      '| Standalone definition | The term alone | Its meaning, without hedge tails |',
       '| Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |',
       '| Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |',
-      '| Scenario | One or two sentences of situation, then one question | The term, plus a short “because” only if needed |',
+      '| Scenario | One or two sentences of situation, then one question | A concrete term, choice between named options, or one short cause |',
       '| Example | `Example of <term>` | The instructor\'s example |',
-      '| Comparison | `<A> vs. <B>` | The one difference that separates them |',
+      '| Comparison / related terms | `<A> vs. <B>` or the named group | One short meaning per term, preserving the distinction |',
       '| Why / how | One direct question | One sentence |',
       'One question per card.',
       'Front: Scientific management (Taylorism)',
@@ -71,19 +71,19 @@ describe('flashcard prompt handoff', () => {
     for (const phrase of [
       'Limit per idea: two review cards, or three only when the instructor stressed it',
       'a cloze note with c1 and c2 creates two review cards',
-      'Coverage guard: every topic keeps at least one tested card, and every Understand and Be-able-to-do item is tested by at least one card.',
+      'Coverage guard: every objective (topic) keeps at least one tested card; every Understand item is tested;',
       'Coverage wins when the limit conflicts with the coverage guard.',
       'explicitly report the exception and its review-card count',
       'Set each target\'s kind to understand, be-able-to-do, watch-for, or topic',
       'coverageExceptions is normally []',
       'one witness per note',
       'A multi-index cloze cannot earn an over-limit exception',
-      'Watch-for items are not cards by default.',
-      'Combine related terms, as a rule of thumb',
-      'Every term\'s meaning must appear on the combined card',
-      'Never write a scenario whose answer is a non-conclusion',
-      'A definition Back states what the term means and stops',
-      'only when the caution is itself a fact the instructor tests',
+      'A bullet that merely restates a limit or hedge does not need a separate card',
+      'Combine as a rule of thumb',
+      'Every term\'s meaning must remain on the combined card',
+      'Scenario answers are concrete',
+      'Definition Backs carry the meaning only',
+      'Keep a caution only when the instructor tests it',
       'Both directions are never automatic.',
       'Do not add a separate mirror note.',
       'No card may have an answer that merely repeats another card\'s answer on the same idea.',
@@ -178,7 +178,7 @@ describe('flashcard prompt handoff', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'Demo', lecture: lecture() })
     for (const addition of [
       "Use the Journal's mastery objectives as the checklist of learning targets. Take the facts from the original materials: terms, numbers, conditions, cautious words such as “may”, the instructor's examples, what the instructor stressed, and any phrase the instructor said belongs in an answer, because the study guide is intentionally concise and may leave out card-worthy detail. Write each Required answer yourself in the wording this prompt sets below; do not copy a textbook or slide definition as the Required answer.",
-      'Every mastery objective item (Understand, Be able to do, Watch for) maps to at least one target.',
+      'Keep a target for every Journal objective (topic), every Understand item and every named term;',
       'or “the lecture\'s example” and “what class identified”; name the concept or example instead.',
       'If the student supplies missed practice or exam questions, add one or two cards, within the limit per idea, on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.',
     ]) expect(prompt).toContain(addition)
