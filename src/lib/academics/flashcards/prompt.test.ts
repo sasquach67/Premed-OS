@@ -13,9 +13,9 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the October 13 reference-deck prompt revision and preserves source access rules', () => {
+  it('copies the October 15 condense prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-13 — reference-deck cloze, one-line Extra, fewest review cards with full topic coverage.')
+    expect(prompt).toContain('Prompt revision: 2026-10-15 — understanding first, then fewest cards: related terms combined, no hedge cards, reference-deck wording.')
     expect(prompt).toContain('Every named term or concept gets a direct card first')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -78,7 +78,11 @@ describe('flashcard prompt handoff', () => {
       'coverageExceptions is normally []',
       'one witness per note',
       'A multi-index cloze cannot earn an over-limit exception',
-      'Watch-for items are extra-only by default',
+      'Watch-for items are not cards by default.',
+      'Combine related terms, as a rule of thumb',
+      'Every term\'s meaning must appear on the combined card',
+      'Never write a scenario whose answer is a non-conclusion',
+      'A definition Back states what the term means and stops',
       'only when the caution is itself a fact the instructor tests',
       'Both directions are never automatic.',
       'Do not add a separate mirror note.',
