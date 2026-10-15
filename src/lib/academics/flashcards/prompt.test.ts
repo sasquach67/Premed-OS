@@ -13,9 +13,9 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the Codex understanding-first prompt revision and preserves source access rules', () => {
+  it('copies the October 15b prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-15 — Codex: understanding first, condense within reason, every combined meaning retained.')
+    expect(prompt).toContain('Prompt revision: 2026-10-15b — one answer per card, no question that gives away its answer; related terms combined, reference-deck wording.')
     expect(prompt).toContain("Every named term's meaning gets direct recall")
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -45,7 +45,7 @@ describe('flashcard prompt handoff', () => {
       '| Standalone definition | The term alone | Its meaning, without hedge tails |',
       '| Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |',
       '| Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |',
-      '| Scenario | One or two sentences of situation, then one question | A concrete term, choice between named options, or one short cause |',
+      '| Scenario | One or two sentences of situation, then one question about one term | The term, plus a short “because” only if needed |',
       '| Example | `Example of <term>` | The instructor\'s example |',
       '| Comparison / related terms | `<A> vs. <B>` or the named group | One short meaning per term, preserving the distinction |',
       '| Why / how | One direct question | One sentence |',
@@ -84,6 +84,8 @@ describe('flashcard prompt handoff', () => {
       'Scenario answers are concrete',
       'Definition Backs carry the meaning only',
       'Keep a caution only when the instructor tests it',
+      'One answer per card.',
+      'Never let the question give away its answer.',
       'Both directions are never automatic.',
       'Do not add a separate mirror note.',
       'No card may have an answer that merely repeats another card\'s answer on the same idea.',
