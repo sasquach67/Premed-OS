@@ -2,8 +2,8 @@
   "cards.schema.json": "afed898cdbb37e70e73fad7f43ee5b7090f7cd8ea6e5390c417813b94f5bdf71",
   "card-styles.css": "85b26bcb4f80b082a27ea47c80ab1672dbac52fd7ef30554ea08abeba96c0dd9",
   "requirements.txt": "3eb30e606f1c387d5f50044ed341350d87faa3e912b3024ac11e23d7609ade24",
-  "build_deck.py": "b4160a131a6cc4abbadf55a70dbebf2c96d6f12b70497ee0851c3a0049347be5",
+  "build_deck.py": "7466c13e64755d8435f4a58ff3787fa11172d1badc7c24394d70294d5f13874e",
   "verify_deck.py": "601aec4cf99fec5332aea3594a7e27bbc30de89fae47f10fdcf30fa4b4f47eac",
   "authoring.md": "674c2ee3fee2b2e1aeca2e3a44689c385ed501106c9750f3b633a0835b00ea86",
-  "instructions.md": "9473acc158982b4ab13628288f027399ccd1e83a9f721596c50628b59c294224"
+  "instructions.md": "077ef9e291e26ba12a2b99b5e550ff400e3366b9f2625a45434e3cd7c92ee992"
 }

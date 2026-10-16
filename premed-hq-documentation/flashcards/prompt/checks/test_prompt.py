@@ -393,6 +393,30 @@ class PromptChecks(unittest.TestCase):
         data['cards'][0]['explanation']='Beta: keep the input.'
         with self.assertRaisesRegex(ValueError,'term-1: named term Beta loses its required meaning'):validate(data)
 
+    def test_single_blank_named_term_formats_build_and_verify(self):
+        for text in ['{{c1::Alpha::term}} means learn the input.', 'Alpha means {{c1::learn the input}}.']:
+            with self.subTest(text=text):
+                data=self.combined_fixture(1)
+                data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',cloze=text)
+                self.assertEqual(validate(data),[])
+                built,verified=self.pipeline_fixture(data)
+                self.assertEqual(built['reviewCards'],1)
+                self.assertEqual(verified['warnings'],[])
+
+    def test_parallel_contrast_named_meanings_build_and_verify(self):
+        data=self.combined_fixture(2)
+        data['cards'][0].update(type='comparison',front='',back='',clozePattern='independent',
+            cloze='{{c1::Alpha::Alpha/Beta}} means learn the input; {{c2::Beta::Alpha/Beta}} means keep the input.')
+        self.assertEqual(validate(data),[])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['reviewCards'],2)
+        self.assertEqual(verified['warnings'],[])
+
+    def test_new_direct_shapes_still_require_the_recorded_meaning(self):
+        data=self.combined_fixture(1)
+        data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',cloze='{{c1::Alpha::term}}.')
+        with self.assertRaisesRegex(ValueError,'loses its required meaning'):validate(data)
+
     def test_combined_group_larger_than_four_warns(self):
         data=self.combined_fixture(5)
         self.assertTrue(any('combined group has 5 terms' in w for w in validate(data)))

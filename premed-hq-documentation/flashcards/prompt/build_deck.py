@@ -77,8 +77,10 @@ def card_language_warnings(card):
 
 def direct_card_candidate(card):
     # No direct-card flag or canonical term exists in v1; this is advisory only.
-    if card['clozePattern'] == 'independent' and card['type'] == 'cloze' and len(indices(card)) == 2:
-        return True  # two-blank term or theory note: c1 term, c2 meaning
+    if card['type'] in ['cloze', 'comparison'] and card['clozePattern'] == 'independent' and len(indices(card)) == 2:
+        return True  # two-blank definition or parallel contrast
+    if card['type'] == 'cloze' and card['clozePattern'] == 'single' and len(indices(card)) == 1:
+        return True  # passing-term or meaning-only note; coverage still checks name and meaning
     front = card['front'].strip()
     return (card['type'] == 'basic' and not card['clozePattern'] and bool(front)
             and not re.search(r'[?!;:\n]', front)
