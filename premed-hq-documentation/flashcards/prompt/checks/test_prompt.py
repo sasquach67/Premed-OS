@@ -448,6 +448,24 @@ class PromptChecks(unittest.TestCase):
             self.assertEqual(built['reviewCards'],2)
             self.assertEqual(verified['warnings'],[])
 
+    def test_source_monitoring_overlapping_pair_builds_three_reviews(self):
+        data=self.standalone_pair_fixture('non-opposite')
+        serialized=json.dumps(data).replace('Alpha','source monitoring').replace('Beta','source-monitoring error')
+        serialized=serialized.replace('learn the input','identifying where a memory came from')
+        serialized=serialized.replace('keep the input','attributing a memory to the wrong source')
+        data=json.loads(serialized)
+        contrast=copy.deepcopy(data['cards'][0])
+        contrast.update(id='names-contrast',targetIds=['term-0','term-1'],
+            cloze='Identifying where a memory came from is {{c1::source monitoring}}; attributing a memory to the wrong source is {{c1::source-monitoring error}}.',
+            reinforcementReason='Tests the distinction with both names hidden together.')
+        data['cards'].append(contrast)
+        for target in data['targets'][1:]:target['cardIds'].append(contrast['id'])
+        self.assertEqual(validate(data),[])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['notes'],3)
+        self.assertEqual(built['reviewCards'],3)
+        self.assertEqual(verified['warnings'],[])
+
     def test_headline_pairs_use_individual_meanings_and_shared_names_contrast(self):
         for relation in ('opposite','non-opposite'):
             data=self.standalone_pair_fixture(relation)

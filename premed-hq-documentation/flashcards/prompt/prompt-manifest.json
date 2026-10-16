@@ -6,9 +6,9 @@
   "image_occlusion.py": "2d39b1cfbb4a541891516581c044c3656b050a7ce5c98e65b28ddcd4e1f20298",
   "prepare_occlusion.py": "bacdd1e99210377f89cf2ddcc1360981c63681e984c630a1eb885402c74dd747",
   "read_previous.py": "dc87a8be076d9a40fc5c54b7460062ebee94c48e5d6a0ce9610dd22a823ac644",
-  "pair_rules.py": "bad42783427af4322e8a6acf5ec4051cfdad41d7adb9ed64f3d705702d1363b0",
+  "pair_rules.py": "91e3a0993cd14c5cbd3d6d3a75ff4ca125dce18860ff83edec4344e32b1cb0ff",
   "build_deck.py": "830e3c7cc004a8b63583c8e880db973edda01889ad6f7395a300d676194fad7c",
   "verify_deck.py": "9019cdbdf50397763139b8590dc8941ace783afe76019c12bb44ac594f1e47df",
   "authoring.md": "cf2357f5a0634600caed9c0a7b4650e2b1d9934c6674e7fd8b05f89cc710ee8b",
-  "instructions.md": "5915bc219db59f59e31e95dddb9a3a9a466fbc4ac4e33539ff622d322a77d7da"
+  "instructions.md": "cda67c8096fe8a1fe8845190211b2d38f970c5d4c0f1856fd1ff5c042a4a75e4"
 }
