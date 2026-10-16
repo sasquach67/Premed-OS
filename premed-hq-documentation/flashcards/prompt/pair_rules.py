@@ -44,7 +44,7 @@ def expanded(text, hidden=None):
 
 
 def pair_role(card, targets):
-    """Classify one declared single-index review as meanings, names, or name:<0/1>."""
+    """Classify a single-index review as meaning:<0/1> or shared names contrast."""
     declaration = declared_pair(card)
     if declaration is None:
         return None
@@ -65,20 +65,16 @@ def pair_role(card, targets):
     name_visible = [contains(visible, n) for n in names]
     meaning_hidden = [any(contains(a, meaning) for a in answers) for meaning in meanings]
     if all(name_visible) and all(meaning_hidden):
-        return 'meanings'
+        raise ValueError('parallel term meanings must be separate cards; recall each term meaning alone')
+    for i in range(2):
+        other = 1 - i
+        if (name_visible[i] and meaning_hidden[i]
+                and not contains(full, names[other]) and not contains(full, meanings[other])):
+            return 'meaning:' + str(i)
     if (all(contains(full, n) for n in names) and not any(name_visible)
             and all(contains(visible, m) for m in meanings)):
         return 'names'
-    if relation == 'non-opposite':
-        for i in range(2):
-            other = 1 - i
-            if (contains(full, names[i]) and not name_visible[i]
-                    and contains(visible, meanings[i])
-                    and not contains(full, names[other])
-                    and not contains(full, meanings[other])):
-                return 'name:' + str(i)
-        raise ValueError('non-opposite pair needs shared meanings or a separate name-only sister')
-    raise ValueError('opposite pair must hide both names or both meanings under the same cloze index')
+    raise ValueError('pair needs one standalone meaning card per term or a contrast hiding both names under one shared cloze index')
 
 
 def slash_option_hint_warnings(card):
@@ -105,14 +101,12 @@ def validate_pair_rules(card, targets):
             raise ValueError('cloze hint must name a category, not list answer options')
     declaration = declared_pair(card)
     if declaration:
-        role = pair_role(card, targets)
-        if declaration[0] == 'non-opposite' and role == 'names':
-            raise ValueError('non-opposite names require separate name-only sister cards')
+        pair_role(card, targets)
     return None
 
 
 def valid_headline_pair_core(group, targets):
-    """The approved three-review non-opposite core earns its third name sister."""
+    """Two standalone meaning cards plus one shared names contrast form the headline core."""
     if len(group) != 3 or len({c.get('conceptId') for c in group}) != 1 or not group[0].get('conceptId'):
         return False
     try:
@@ -120,16 +114,16 @@ def valid_headline_pair_core(group, targets):
         for card in group:
             validate_pair_rules(card, targets)
             declaration = declared_pair(card)
-            if not declaration or declaration[0] != 'non-opposite': return False
+            if not declaration: return False
             declarations.append(declaration)
-        return (len({tuple(map(normalized, d[1])) for d in declarations}) == 1
-                and sorted(pair_role(c, targets) for c in group) == ['meanings', 'name:0', 'name:1'])
+        return (len({(d[0], tuple(map(normalized, d[1]))) for d in declarations}) == 1
+                and sorted(pair_role(c, targets) for c in group) == ['meaning:0', 'meaning:1', 'names'])
     except (ValueError, TypeError):
         return False
 
 
 def valid_headline_pair_allowance(group, targets):
-    """Only the three-note non-opposite headline set plus one actual example earns four."""
+    """Only the three-note headline pair plus one actual instructor example earns four."""
     if len(group) != 4 or len({c.get('conceptId') for c in group}) != 1 or not group[0].get('conceptId'):
         return False
     pair_cards, examples = [], []
@@ -138,8 +132,6 @@ def valid_headline_pair_allowance(group, targets):
             validate_pair_rules(card, targets)
             declaration = declared_pair(card)
             if declaration:
-                if declaration[0] != 'non-opposite':
-                    return False
                 pair_cards.append((card, declaration))
             else:
                 examples.append(card)
@@ -158,3 +150,19 @@ def valid_headline_pair_allowance(group, targets):
                     and one_review)
     except (ValueError, TypeError):
         return False
+
+
+def validate_pair_group(group, targets):
+    """Reserved pair declarations keep both own meanings in the same idea group."""
+    pair_cards = [c for c in group if declared_pair(c)]
+    if not pair_cards:
+        return
+    declarations = [declared_pair(c) for c in pair_cards]
+    if len({(d[0], tuple(map(normalized, d[1]))) for d in declarations}) != 1:
+        raise ValueError('pair group must use one consistent pair declaration')
+    roles = sorted(pair_role(c, targets) for c in pair_cards)
+    simple = roles == ['meaning:0', 'meaning:1'] and len(group) == 2
+    headline = (valid_headline_pair_core(group, targets)
+                or valid_headline_pair_allowance(group, targets))
+    if not (simple or headline):
+        raise ValueError('pair group requires two own meaning cards, plus a shared names contrast for a headline pair and at most one sourced instructor example; keep them in one conceptId')

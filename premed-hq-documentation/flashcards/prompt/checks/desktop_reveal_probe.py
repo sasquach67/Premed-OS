@@ -64,12 +64,12 @@ def stale(value):
  # Exercise the real package-import template upgrade, not a direct DOM patch.
  mw.moveToState('deckBrowser')
  import_current()
- later(lambda:show('opposite-pair',lambda:query(upgraded)))
+ later(lambda:show(CONFIG['primary'],lambda:query(upgraded)))
 
 def upgraded(value):
  record('opposite-pair-upgraded',value)
  assert value['button'] and len(value['texts'])==2 and value['revealed']==0,value
- check_reveals('opposite-pair',2,lambda:show('drive',lambda:query(single)))
+ check_reveals(CONFIG['primary'],2,lambda:show('drive',lambda:query(single)))
 
 def check_reveals(name,count,done,index=1):
  mw.web.eval("document.querySelector('.pm-list-reveal').click()")
@@ -103,7 +103,7 @@ def next_group():
     assert not value['button'] and len(value['texts'])==1,value
     next_group()
    show(note,lambda:query(checked_single));return
-  show('opposite-pair',lambda:query(returned));return
+  show(CONFIG['primary'],lambda:query(returned));return
  note,count=groups.pop(0)
  def initial(value):
   record(note+'-initial',value)
@@ -130,17 +130,17 @@ def start():
  results['reviewerWidth']=CONFIG.get('reviewWidth') or 'default'
  guids={r['id']:r['guid'] for r in json.loads(Path(CONFIG['report']).read_text())['records']}
  import_current()
- note=next(mw.col.get_note(n) for n in mw.col.find_notes('') if mw.col.get_note(n).guid==guids['opposite-pair'])
+ note=next(mw.col.get_note(n) for n in mw.col.find_notes('') if mw.col.get_note(n).guid==guids[CONFIG['primary']])
  model=note.note_type()
  q=model['tmpls'][0]['qfmt']
  marker="if (!root) return;"
  assert marker in q,'cannot simulate legacy gate'
  model['tmpls'][0]['qfmt']=q.replace(marker,marker+" if (root.querySelector('.verb').textContent.trim() !== 'list') return;")
  mw.col.models.update_dict(model)
- # Test the existing list plus optional 3/4-term meaning fixtures supplied by caller.
+ # Test the existing list plus optional permitted names contrasts or list fixtures.
  groups=[('components',3)]+[(name,count) for name,count in CONFIG['groups'] if name in guids]
  singles=[name for name in CONFIG.get('singles',[]) if name in guids]
- show('opposite-pair',lambda:query(stale))
+ show(CONFIG['primary'],lambda:query(stale))
 
 gui_hooks.profile_did_open.append(lambda:later(start))
 '''
@@ -153,6 +153,7 @@ def main():
     parser.add_argument('--work-dir',required=True,type=Path)
     parser.add_argument('--app',type=Path,default=Path('/Applications/Anki.app/Contents/MacOS/Anki'))
     parser.add_argument('--group',action='append',default=[],help='note-id:blank-count')
+    parser.add_argument('--primary',default='intrinsic-extrinsic-names',help='Two-blank names-contrast note used to test template upgrades')
     parser.add_argument('--names-chip',choices=['visible','hidden'],default='visible')
     parser.add_argument('--review-width',type=int,default=0,help='Optional native reviewer viewport width')
     parser.add_argument('--single',action='append',default=[],help='single-blank note ID to check in the native reviewer')
@@ -163,7 +164,7 @@ def main():
     addon=base/'addons21'/'premedos_reveal_probe'
     addon.mkdir(parents=True)
     (addon/'__init__.py').write_text(ADDON)
-    (work/'config.json').write_text(json.dumps({'package':str(args.package.resolve()),'report':str(args.report.resolve()),'groups':[(x.rsplit(':',1)[0],int(x.rsplit(':',1)[1])) for x in args.group],'singles':args.single,'namesChip':args.names_chip,'reviewWidth':args.review_width}))
+    (work/'config.json').write_text(json.dumps({'package':str(args.package.resolve()),'report':str(args.report.resolve()),'groups':[(x.rsplit(':',1)[0],int(x.rsplit(':',1)[1])) for x in args.group],'singles':args.single,'namesChip':args.names_chip,'primary':args.primary,'reviewWidth':args.review_width}))
     now=int(time.time())
     meta=dict(ver=0,updates=False,created=now,id=123456781231,lastMsg=0,suppressUpdate=True,firstRun=False,defaultLang='en_US')
     profile=dict(mainWindowGeom=None,mainWindowState=None,numBackups=0,lastOptimize=now,searchHistory=[],syncKey=None,syncMedia=False,autoSync=False,lastColour='#00f',stripHTML=True,deleteMedia=False,allowHTML=False,importMode=1)

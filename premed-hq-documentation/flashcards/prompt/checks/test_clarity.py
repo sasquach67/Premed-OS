@@ -83,7 +83,7 @@ class ClarityChecks(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'term has no definition-recall card'):
             validate(data)
 
-    def test_shared_index_contrast_recalls_both_meanings(self):
+    def test_shared_index_meanings_are_rejected_for_standalone_recall(self):
         data = self.cloze(self.term_fixture(),
                           'Round shapes are {{c1::outlines without corners}}; '
                           'angular shapes are {{c1::outlines with corners}}.')
@@ -96,7 +96,8 @@ class ClarityChecks(unittest.TestCase):
                       reason='Meaning: outlines with corners')
         data['targets'] = [first, second]
         card['targetIds'] = ['round', 'angular']
-        validate(data)
+        with self.assertRaisesRegex(ValueError, 'recall each term meaning alone'):
+            validate(data)
 
     def test_short_visible_context_warns_without_rejecting_card(self):
         data = fixture(1)

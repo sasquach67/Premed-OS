@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from pair_rules import declared_pair, pair_role, validate_pair_rules, valid_headline_pair_allowance, slash_option_hint_warnings
+from pair_rules import declared_pair, pair_role, validate_pair_rules, valid_headline_pair_allowance, valid_headline_pair_core, validate_pair_group, slash_option_hint_warnings
 
 
 class PairRuleChecks(unittest.TestCase):
@@ -34,22 +34,29 @@ class PairRuleChecks(unittest.TestCase):
         return self.card('{{c1::Intrinsic}} motivation means ' + self.meanings[0]
                          + '; {{c1::extrinsic}} motivation means ' + self.meanings[1] + '.')
 
-    def sisters(self):
-        return [self.card('{{c1::' + name + '::type of motivation}} means ' + meaning + '.',
-                          'non-opposite') for name, meaning in zip(self.names, self.meanings)]
+    def meaning_cards(self, relation='opposite'):
+        return [self.card(name + ' means {{c1::' + meaning + '}}.', relation)
+                for name, meaning in zip(self.names, self.meanings)]
 
-    def allowance_group(self):
-        card = self.card(relation='non-opposite')
+    def allowance_group(self, relation='non-opposite'):
+        contrast = self.names_card()
+        contrast['axis'] = relation + ': ' + ' | '.join(self.names)
         example = {'id': 'example', 'conceptId': 'motivation', 'type': 'application',
                    'clozePattern': None, 'axis': '', 'cloze': '',
                    'reinforcementReason': "instructor's own example from the lecture",
                    'sourceRefs': [{'sourceId': 'slides', 'location': 'Slide 12',
                                    'excerpt': 'A student does the activity for a prize.'}]}
-        return [card, *self.sisters(), example]
+        return [*self.meaning_cards(relation), contrast, example]
 
-    def test_shared_meanings_pass(self):
-        validate_pair_rules(self.card(), self.targets)
-        self.assertEqual(pair_role(self.card(), self.targets), 'meanings')
+    def test_shared_meanings_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'parallel term meanings must be separate'):
+            validate_pair_rules(self.card(), self.targets)
+
+    def test_standalone_meanings_pass_for_both_relationships(self):
+        for relation in ('opposite', 'non-opposite'):
+            for i, card in enumerate(self.meaning_cards(relation)):
+                validate_pair_rules(card, self.targets)
+                self.assertEqual(pair_role(card, self.targets), 'meaning:' + str(i))
 
     def test_shared_partial_term_names_pass(self):
         validate_pair_rules(self.names_card(), self.targets)
@@ -83,19 +90,19 @@ class PairRuleChecks(unittest.TestCase):
     def test_half_meaning_visible_rejected(self):
         card = self.card()
         card['cloze'] = card['cloze'].replace('{{c1::' + self.meanings[1] + '}}', self.meanings[1])
-        with self.assertRaisesRegex(ValueError, 'hide both names or both meanings'):
+        with self.assertRaisesRegex(ValueError, 'pair needs one standalone meaning'):
             validate_pair_rules(card, self.targets)
 
     def test_half_name_visible_rejected(self):
         card = self.names_card()
         card['cloze'] = card['cloze'].replace('{{c1::extrinsic}}', 'extrinsic')
-        with self.assertRaisesRegex(ValueError, 'hide both names or both meanings'):
+        with self.assertRaisesRegex(ValueError, 'pair needs one standalone meaning'):
             validate_pair_rules(card, self.targets)
 
     def test_meaning_only_in_hint_does_not_count(self):
         card = self.card('Intrinsic motivation means {{c1::something::' + self.meanings[0]
                          + '}}; Extrinsic motivation means {{c1::something::' + self.meanings[1] + '}}.')
-        with self.assertRaisesRegex(ValueError, 'hide both names or both meanings'):
+        with self.assertRaisesRegex(ValueError, 'pair needs one standalone meaning'):
             pair_role(card, self.targets)
 
     def test_no_semantic_opposite_guessing(self):
@@ -118,16 +125,32 @@ class PairRuleChecks(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'recorded meanings'):
             validate_pair_rules(self.card(), {})
 
-    def test_non_opposite_name_only_sisters_pass(self):
-        for i, card in enumerate(self.sisters()):
-            validate_pair_rules(card, self.targets)
-            self.assertEqual(pair_role(card, self.targets), 'name:' + str(i))
+    def test_standalone_name_only_sisters_are_replaced_by_contrast(self):
+        for name, meaning in zip(self.names, self.meanings):
+            card = self.card('{{c1::' + name + '}} means ' + meaning + '.', 'non-opposite')
+            with self.assertRaisesRegex(ValueError, 'pair needs one standalone meaning'):
+                validate_pair_rules(card, self.targets)
 
-    def test_non_opposite_shared_names_rejected(self):
+    def test_non_opposite_shared_names_pass(self):
         card = self.names_card()
         card['axis'] = card['axis'].replace('opposite:', 'non-opposite:')
-        with self.assertRaisesRegex(ValueError, 'separate name-only sister'):
-            validate_pair_rules(card, self.targets)
+        validate_pair_rules(card, self.targets)
+        self.assertEqual(pair_role(card, self.targets), 'names')
+
+    def test_core_and_example_allowance_cover_both_relationships(self):
+        for relation in ('opposite', 'non-opposite'):
+            group = self.allowance_group(relation)
+            self.assertTrue(valid_headline_pair_core(group[:3], self.targets))
+            self.assertTrue(valid_headline_pair_allowance(group, self.targets))
+            self.assertFalse(valid_headline_pair_core(group[:2], self.targets))
+
+    def test_pair_group_requires_standalone_meanings_in_same_concept(self):
+        validate_pair_group(self.meaning_cards(), self.targets)
+        for group in ([self.names_card()], [self.meaning_cards()[0]],
+                      [self.meaning_cards()[0], self.meaning_cards()[0]],
+                      self.allowance_group()[:2] + [self.allowance_group()[-1]]):
+            with self.subTest(group=group), self.assertRaisesRegex(ValueError, 'pair group requires'):
+                validate_pair_group(group, self.targets)
 
     def test_narrow_four_review_allowance(self):
         self.assertTrue(valid_headline_pair_allowance(self.allowance_group(), self.targets))
@@ -172,7 +195,7 @@ class PairRuleChecks(unittest.TestCase):
         card = self.card('Intrinsic motivation means {{c1::something}}; '
                          'Extrinsic motivation means {{c1::another thing}}.')
         card['explanation'] = '; '.join(self.meanings)
-        with self.assertRaisesRegex(ValueError, 'hide both names or both meanings'):
+        with self.assertRaisesRegex(ValueError, 'pair needs one standalone meaning'):
             validate_pair_rules(card, self.targets)
 
 

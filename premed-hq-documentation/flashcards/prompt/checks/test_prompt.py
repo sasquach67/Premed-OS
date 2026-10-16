@@ -400,12 +400,9 @@ class PromptChecks(unittest.TestCase):
         data['cards'][0]['back']='A factor that may contribute to learning.'
         self.assertEqual(validate(data),[])
 
-    def test_combined_meanings_build_and_missing_meaning_fails(self):
+    def test_combined_meanings_fail_and_extra_cannot_rescue_missing_meaning(self):
         data=self.combined_fixture()
-        self.assertEqual(validate(data),[])
-        built,verified=self.pipeline_fixture(data)
-        self.assertEqual(built['reviewCards'],1)
-        self.assertEqual(verified['warnings'],[])
+        with self.assertRaisesRegex(ValueError,'recall each term meaning alone'):validate(data)
         data['cards'][0]['back']='Alpha: learn the input. Beta.'
         data['cards'][0]['explanation']='Beta: keep the input.'
         with self.assertRaisesRegex(ValueError,'term-1: named term Beta loses its required meaning'):validate(data)
@@ -429,61 +426,60 @@ class PromptChecks(unittest.TestCase):
                 clozePattern='single',listOrdered=None,cloze=f'For this synthetic concept, {name} means {{{{c1::{meaning}}}}}.')
             data['cards'].append(card);target['cardIds'].append(cid)
 
-    def test_simple_opposite_meanings_share_one_card_and_keep_both_term_witnesses(self):
-        data=self.combined_fixture(2)
-        data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',
-            cloze='Positive regulators {{c1::promote cell-cycle progression}}; negative regulators {{c1::restrain cell-cycle progression}}.')
-        for target,name,meaning in zip([t for t in data['targets'] if t['statement'].startswith('Term: ')],
-                ['Positive regulators','negative regulators'],
-                ['promote cell-cycle progression','restrain cell-cycle progression']):
-            target.update(statement='Term: '+name,reason='Meaning: '+meaning)
-        self.assertEqual(validate(data),[])
-        built,verified=self.pipeline_fixture(data)
-        self.assertEqual(built['notes'],1)
-        self.assertEqual(built['reviewCards'],1)
-        self.assertEqual(verified['warnings'],[])
-        data['cards'][0]['cloze']='Positive regulators {{c1::promote cell-cycle progression}}; negative regulators.'
-        with self.assertRaisesRegex(ValueError,'loses its required meaning'):validate(data)
-
-    def test_headline_non_opposite_pair_uses_meanings_then_separate_names(self):
+    def standalone_pair_fixture(self, relation='opposite'):
         data=self.combined_fixture(2)
         first=data['cards'][0]
-        first.update(type='cloze',front='',back='',axis='non-opposite: Alpha | Beta',
-                     clozePattern='single',cloze='For these two memory tasks, Alpha means {{c1::learn the input}}; Beta means {{c1::keep the input}}.')
-        for index,(name,meaning) in enumerate([('Alpha','learn the input'),('Beta','keep the input')]):
-            card=copy.deepcopy(first);cid='name-'+name.lower()
-            card.update(id=cid,targetIds=[data['targets'][index]['id']],
-                        cloze='For this memory task, {{c1::'+name+'}} means '+meaning+'.',
-                        reinforcementReason='Retrieves the name from its meaning, distinct from producing the meaning.')
-            data['cards'].append(card);data['targets'][index]['cardIds'].append(cid)
-        self.assertEqual(validate(data),[])
-        built,verified=self.pipeline_fixture(data)
-        self.assertEqual(built['reviewCards'],3)
-        self.assertEqual(verified['warnings'],[])
-        # The approved sourced example is the only route to a fourth review here.
-        example=copy.deepcopy(first)
-        example.update(id='source-example',type='application',axis='',clozePattern=None,cloze='',
-                       front='A source task introduces a new input. Which memory task is demonstrated?',back='Alpha',
-                       targetIds=[data['targets'][0]['id']],reinforcementReason="Instructor's own example from the lecture.")
-        data['cards'].append(example);data['targets'][0]['cardIds'].append(example['id'])
-        validate(data)
-        built,verified=self.pipeline_fixture(data)
-        self.assertEqual(built['reviewCards'],4)
-        # A one-blank instructor example may recall the same term from its distinct situation.
-        example.update(type='cloze',front='',back='',clozePattern='single',
-                       cloze='The source task introducing a new input illustrates {{c1::Alpha}}.')
-        validate(data)
-        example['reinforcementReason']='An invented scenario for practice.'
-        with self.assertRaisesRegex(ValueError,'more than three'):validate(data)
+        first.update(type='cloze',front='',back='',axis=relation+': Alpha | Beta',
+                     clozePattern='single',cloze='For this memory task, Alpha means {{c1::learn the input}}.',
+                     targetIds=[data['targets'][0]['id'],data['targets'][1]['id']])
+        second=copy.deepcopy(first)
+        second.update(id='meaning-beta',targetIds=[data['targets'][2]['id']],
+                      cloze='For this memory task, Beta means {{c1::keep the input}}.',
+                      reinforcementReason='Recalls the second term meaning independently.')
+        data['cards'].append(second);data['targets'][2]['cardIds']=[second['id']]
+        return data
+
+    def test_simple_pair_has_two_own_meaning_cards(self):
+        for relation in ('opposite','non-opposite'):
+            data=self.standalone_pair_fixture(relation)
+            self.assertEqual(validate(data),[])
+            built,verified=self.pipeline_fixture(data)
+            self.assertEqual(built['notes'],2)
+            self.assertEqual(built['reviewCards'],2)
+            self.assertEqual(verified['warnings'],[])
+
+    def test_headline_pairs_use_individual_meanings_and_shared_names_contrast(self):
+        for relation in ('opposite','non-opposite'):
+            data=self.standalone_pair_fixture(relation)
+            first=data['cards'][0]
+            contrast=copy.deepcopy(first)
+            contrast.update(id='names-contrast',targetIds=['term-0','term-1'],
+                cloze='{{c1::Alpha}} means learn the input; {{c1::Beta}} means keep the input.',
+                reinforcementReason='Tests the distinction with both names hidden together.')
+            data['cards'].append(contrast)
+            for target in data['targets'][1:]:target['cardIds'].append(contrast['id'])
+            self.assertEqual(validate(data),[])
+            built,verified=self.pipeline_fixture(data)
+            self.assertEqual(built['reviewCards'],3)
+            self.assertEqual(verified['warnings'],[])
+            example=copy.deepcopy(first)
+            example.update(id='source-example',type='application',axis='',clozePattern=None,cloze='',
+                front='A source task introduces a new input. Which memory task is demonstrated?',back='Alpha',
+                targetIds=['term-0'],reinforcementReason="Instructor's own example from the lecture.")
+            data['cards'].append(example);data['targets'][1]['cardIds'].append(example['id'])
+            validate(data)
+            built,verified=self.pipeline_fixture(data)
+            self.assertEqual(built['reviewCards'],4)
+            example['reinforcementReason']='An invented scenario for practice.'
+            with self.assertRaisesRegex(ValueError,'pair group requires'):validate(data)
 
     def test_new_direct_shapes_still_require_the_recorded_meaning(self):
         data=self.combined_fixture(1)
         data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',cloze='{{c1::Alpha::term}}.')
         with self.assertRaisesRegex(ValueError,'loses its required meaning'):validate(data)
 
-    def test_combined_group_larger_than_four_warns(self):
-        data=self.combined_fixture(5)
-        self.assertTrue(any('combined group has 5 terms' in w for w in validate(data)))
+    def test_combined_group_larger_than_four_fails(self):
+        with self.assertRaisesRegex(ValueError,'recall each term meaning alone'):validate(self.combined_fixture(5))
 
     def test_ordered_list_needs_member_definition_recall_notes(self):
         data=self.combined_fixture(3);card=data['cards'][0]

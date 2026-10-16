@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 import genanki
 from jsonschema import Draft202012Validator
 from image_occlusion import native_model, native_occlusion
-from pair_rules import declared_pair, validate_pair_rules, valid_headline_pair_allowance, valid_headline_pair_core
+from pair_rules import declared_pair, validate_pair_rules, valid_headline_pair_allowance, valid_headline_pair_core, validate_pair_group
 
 HERE = Path(__file__).resolve().parent
 SCHEMA = json.loads((HERE / 'cards.schema.json').read_text())
@@ -94,21 +94,20 @@ def term_spec(target):
     return term, meaning
 
 def parallel_meaning_terms(card, targets, term_ids):
-    """Declared names visible outside one shared answer index, with meanings recalled.
+    """Count distinct defined terms whose meanings are recalled on this note.
 
-    Counting these witnesses rather than blank spans keeps ordinary name lists,
-    pathways, duplicate declarations and supporting glosses from inflating the cap.
-    The source inventory and the relationship between terms still need human review.
+    Inspect every defined target, not only author-linked targets. Lists of names
+    and contrast names remain allowed because their meanings are visible, not answers.
+    Independent cloze indices and Q&A formatting cannot bypass standalone recall.
     """
-    if not card['clozePattern'] or len(indices(card)) != 1:
-        return set()
     pattern = r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}'
-    visible = coverage_text(re.sub(pattern, ' ', card['cloze']))
-    answers = [coverage_text(m[2].split('::')[0]) for m in re.finditer(pattern, card['cloze'])]
+    full = coverage_text(card['front'] + ' ' + (card['cloze'] or card['back']))
+    answers = ([coverage_text(m[2].split('::')[0]) for m in re.finditer(pattern, card['cloze'])]
+               if card['clozePattern'] else [coverage_text(card['back'])])
     names = set()
     for tid in term_ids:
         name, meaning = map(coverage_text, term_spec(targets[tid]))
-        if f' {name} ' in f' {visible} ' and any(f' {meaning} ' in f' {answer} ' for answer in answers):
+        if f' {name} ' in f' {full} ' and any(f' {meaning} ' in f' {answer} ' for answer in answers):
             names.add(name)
     return names
 
@@ -323,12 +322,11 @@ def validate(data, updating=False):
                     recall.append(cid)
             require(recall, f'{t["id"]}: term has no definition-recall card ({term[0]}); put its recorded meaning inside a cloze answer or the Back, not only in visible text, a hint or Extra.')
             for cid in witnesses: term_witnesses[cid].add(t['id'])
-    for cid, terms in term_witnesses.items():
-        parallel = parallel_meaning_terms(cards[cid], targets, terms)
-        require(len(parallel) <= 4,
-                f'{cid}: parallel meaning group has {len(parallel)} terms; use 2–4 terms and split groups larger than 4.')
-        if len(terms) > 4:
-            warnings.append(f'{cid}: combined group has {len(terms)} terms; keep related groups to 2 to 4 without losing meanings.')
+    defined_terms = [tid for tid, target in targets.items() if term_spec(target)]
+    for cid, card in cards.items():
+        parallel = parallel_meaning_terms(card, targets, defined_terms)
+        require(len(parallel) <= 1,
+                f'{cid}: parallel meaning group has {len(parallel)} terms; recall each term meaning alone on separate cards.')
     for topic in {topic_key(t) for t in data['targets']}:
         require(tested_by_topic[topic], f'{topic}: topic needs at least one tested card; do not trim its only card.')
     groups = defaultdict(list)
@@ -337,6 +335,7 @@ def validate(data, updating=False):
     require(len(exceptions) == len(data['coverageExceptions']), 'Duplicate coverage exception for an idea.')
     require(all(concept in groups for concept in exceptions), 'Coverage exception names an unknown idea.')
     for concept, group in groups.items():
+        validate_pair_group(group, targets)
         reviews = sum(len(indices(c)) for c in group)
         exception = exceptions.get(concept)
         pair_allowance = reviews == 4 and valid_headline_pair_allowance(group, targets)
@@ -356,7 +355,7 @@ def validate(data, updating=False):
             require(witnessed_cards == {c['id'] for c in group} and all(len(indices(c)) == 1 for c in group), f'{concept}: coverage exception only permits indispensable single-review notes, not surplus cloze indices.')
             warnings.append(f'{concept}: coverage exception keeps {reviews} review cards. {exception["reason"]}')
         else:
-            require(reviews <= 3 or pair_allowance, f'{concept}: more than three review cards for one idea; only the exact non-opposite headline set plus instructor example earns four.')
+            require(reviews <= 3 or pair_allowance, f'{concept}: more than three review cards for one idea; only the exact headline pair set plus instructor example earns four.')
         if not any(direct_card_candidate(c) or len(term_witnesses[c['id']]) >= 2 for c in group):
             warnings.append(f'{concept}: no direct term card detected; inspect this concept.')
         if len(group) >= 2:

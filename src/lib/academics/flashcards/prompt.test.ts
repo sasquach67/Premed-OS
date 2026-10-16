@@ -13,9 +13,9 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the pending October 16j prompt revision and preserves source access rules', () => {
+  it('copies the pending October 16k prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-16j — short notebook-derived topic labels, single-line chips and a 40-character limit; category hints, meanings-first pairs and export-based updates retained.')
+    expect(prompt).toContain('Prompt revision: 2026-10-16k — each defined term recalls its meaning alone; headline pairs add one names contrast; short notebook-derived chips and export-based updates retained.')
     expect(prompt).toContain('A standalone headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -55,32 +55,30 @@ describe('flashcard prompt handoff', () => {
       'One fact per card.',
       'Cut a trailing second fact',
       'A short causal explanation needed to understand the same fact stays.',
-      'Every headline pair starts with one shared meaning card',
+      'EVERY pair starts with TWO separate meaning notes',
     ]) expect(prompt).toContain(phrase)
   })
 
-  it('groups two to four meanings and uses uncued names for each pair relationship', () => {
+  it('recalls each meaning alone and adds only the approved headline names contrast', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'Parallel meaning groups may contain 2–4 terms, not just an opposite pair.',
-      'Activation is {{c1::starting a behavior}}; persistence is {{c1::continuing despite difficulty}}; intensity is {{c1::the effort put into the behavior}}.',
-      'Split groups larger than four into smaller related groups or individual cards',
-      'Positive regulators {{c1::promote cell-cycle progression}}; negative regulators {{c1::restrain cell-cycle progression}}.',
-      'declare a genuine opposite pair with the reserved axis format below',
-      'do not add separate notes that ask for these same meanings again.',
-      'Do not blank the term names in this format.',
-      'All meanings disappear together',
-      'an objective asks the student to define or explain the terms, or the instructor builds on them',
-      'Opposite headline pair: add one name card with both names hidden under the same c1',
-      'Non-opposite headline pair: add one separate name-only sister card per term',
-      'Simple pairs that are not headline keep only their shared meaning card',
-      'A category hint such as “type of motivation” is allowed',
-      'hints must never list the candidate answers',
+      'EVERY term the lecture defines keeps its OWN card',
+      'Never group parallel term meanings on one review card',
+      'Do not author grouped-meanings cards.',
+      'Positive regulators {{c1::promote cell-cycle progression}}.',
+      'Negative regulators {{c1::restrain cell-cycle progression}}.',
+      'Headline pair, opposite or non-opposite: add ONE contrast note',
+      'both meanings visible and both names hidden together under the same c1',
+      'Simple pair: keep only the TWO individual meaning notes.',
+      'Intrinsic motivation is {{c1::doing an activity because it is enjoyable or satisfying}}.',
+      'Extrinsic motivation is {{c1::doing an activity for an outside reward or to avoid a consequence}}.',
+      'Never blank one opposite name while leaving its partner name visible.',
+      'Category hints can name the answer kind but never list candidates.',
       '{{c2::inactivates::effect on Rb}}',
       'The builder emits a warning when a slash-separated word-choice hint contains the answer',
-      'The only four-review reinforcement allowance is the exact non-opposite headline-pair set',
     ]) expect(prompt).toContain(phrase)
-    expect(prompt).not.toContain('A contrasting pair becomes one contrast sentence')
+    expect(prompt).not.toContain('Parallel meaning groups may contain 2–4 terms')
+    expect(prompt).not.toContain('Non-opposite headline pair: add one separate name-only sister')
     expect(prompt).not.toContain('Incentive theory focuses on {{c1::positive::positive/negative}} reinforcement')
   })
 
@@ -119,15 +117,14 @@ describe('flashcard prompt handoff', () => {
   it('uses fixed card shapes, two-blank definition notes, and reference-deck cloze', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'a standalone headline term or theory keeps its two-blank note',
+      'A standalone headline term retains its two-blank note',
       '| Standalone headline term or theory | One sentence: “{{c1::term::hint}} is {{c2::meaning}}” or “The {{c1::theory::hint}} states that {{c2::claim}}” | No separate Back; two review cards |',
       '| Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |',
       '| Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |',
       '| Scenario (instructor\'s example) | One or two sentences of situation, then one short plain question about one term | The term alone; the explanation, if any, goes in Extra |',
       '| Example | `Example of <term>` | The instructor\'s example |',
-      '| Simple contrast or parallel meaning group | Names of 2–4 terms visible; all meanings blanked together under c1',
-      '| Opposite headline pair | Shared meanings under c1; a second note hides both names together under c1',
-      '| Non-opposite headline pair | Shared meanings under c1; a separate name-only sister for each term',
+      '| Simple pair | Two separate notes, each term visible and its meaning under c1',
+      '| Headline pair, opposite or non-opposite | Two individual meaning notes, then one contrast with meanings visible and both names under c1',
       '| Umbrella | “The N parts of X are {{c1::a}}, {{c1::b}} …”, placed before its members | No separate Back; one review card |',
       'Bold the cue.',
       'Keep why/how cards to a minimum.',
@@ -140,12 +137,12 @@ describe('flashcard prompt handoff', () => {
       'tag:premedos::retired',
       'One-time migration:',
       'with --previous on both commands',
-      'A member of an umbrella group never gets a name blank',
-      'If the lecture defines that sub-term, give it a target and a meaning blank in its own note or an eligible parallel meaning group',
+      'A member of an umbrella group never gets an extra name blank',
+      'If the lecture defines that sub-term, give it a target and a meaning blank in its own note',
       'Biology and other figure-heavy lectures',
-      'A look-alike group of three or four can use one short shared-meaning card',
+      'Each defined member gets its OWN meaning card',
       'Umbrella first.',
-      'Every other defined term gets one blank, on its meaning, with the term visible',
+      'Every other defined term gets its OWN note with one blank on its meaning and the term visible',
       'use a famous standard one only if the lecture has none',
       'a one-word card label (recall, list, application, example, compare, why)',
       '| Why / how | One direct question | One sentence |',
@@ -169,8 +166,8 @@ describe('flashcard prompt handoff', () => {
   it('counts review cards and preserves tested coverage while trimming reinforcement', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'Limit per idea: two review cards, or three when the instructor gave an example of it or stressed it',
-      'a cloze note with c1 and c2 creates two review cards',
+      'Limit per idea: two review cards, or three when the instructor gave an example or stressed it',
+      'c1 and c2 create two reviews',
       'Coverage guard: every objective (topic) keeps at least one tested card; every Understand item is tested;',
       'Coverage wins when the limit conflicts with the coverage guard.',
       'explicitly report the exception and its review-card count',
@@ -179,10 +176,10 @@ describe('flashcard prompt handoff', () => {
       'one witness per note',
       'A multi-index cloze cannot earn an over-limit exception',
       'A bullet that merely restates a limit or hedge does not need a separate card',
-      'Do not group terms merely because they concern the same topic',
+      'Do not group parallel meanings, even if the terms contrast or belong together',
       'Lecture example cards stay',
       'Question fronts follow the reference decks too',
-      'Every term\'s meaning must remain on the combined card',
+      'Every defined term\'s complete meaning stays on its OWN meaning-recall card',
       'Scenario answers are concrete',
       'carry the meaning only',
       'Keep a caution only when the instructor tests it',

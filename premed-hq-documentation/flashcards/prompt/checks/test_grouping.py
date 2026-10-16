@@ -1,4 +1,4 @@
-"""Bound parallel definitions without imposing a cap on ordinary name lists."""
+"""Reject grouped definitions while retaining lists and independent member cards."""
 import copy
 import unittest
 
@@ -33,32 +33,31 @@ class GroupingChecks(unittest.TestCase):
         ]
         return data
 
-    def test_two_parallel_meanings_make_one_review_card(self):
-        data = self.parallel_fixture(2)
-        validate(data)
-        self.assertEqual(indices(data['cards'][0]), [1])
+    def test_parallel_meanings_are_rejected_for_two_to_five_terms(self):
+        for count in (2, 3, 4, 5):
+            with self.subTest(count=count), self.assertRaisesRegex(ValueError, 'recall each term meaning alone'):
+                validate(self.parallel_fixture(count))
 
-    def test_activation_persistence_intensity_share_one_meaning_card(self):
+    def test_list_label_cannot_disguise_parallel_meanings(self):
         data = self.parallel_fixture(3)
-        validate(data)
-        self.assertEqual(indices(data['cards'][0]), [1])
-        self.assertEqual(len(data['targets']), 3)
+        data['cards'][0].update(clozePattern='enumerated-list', listOrdered=True)
+        data['cards'][0]['cloze'] = 'The 3 meanings, in order: ' + data['cards'][0]['cloze']
+        with self.assertRaisesRegex(ValueError, 'recall each term meaning alone'):
+            validate(data)
 
-    def test_four_parallel_meanings_keep_their_definition_recall(self):
-        data = self.parallel_fixture(4)
-        validate(data)
-        self.assertEqual(indices(data['cards'][0]), [1])
+    def test_independent_indices_cannot_disguise_parallel_meanings(self):
+        data = self.parallel_fixture(2)
+        data['cards'][0].update(clozePattern='independent')
+        data['cards'][0]['cloze'] = data['cards'][0]['cloze'].replace('{{c1::continuing', '{{c2::continuing')
+        with self.assertRaisesRegex(ValueError, 'recall each term meaning alone'):
+            validate(data)
 
-    def test_five_parallel_meanings_must_be_split(self):
-        with self.assertRaisesRegex(ValueError, r'parallel meaning group.*5.*split'):
-            validate(self.parallel_fixture(5))
-
-    def test_list_label_cannot_disguise_five_parallel_meanings(self):
-        data = self.parallel_fixture(5)
-        card = data['cards'][0]
-        card.update(clozePattern='enumerated-list', listOrdered=True,
-                    cloze='The 5 meanings, in order: ' + card['cloze'])
-        with self.assertRaisesRegex(ValueError, r'parallel meaning group.*5.*split'):
+    def test_qa_cannot_disguise_parallel_meanings(self):
+        data = self.parallel_fixture(2)
+        data['cards'][0].update(type='basic', clozePattern=None, cloze='',
+                               front='What are Activation and Persistence?',
+                               back='Activation is starting a behavior; Persistence is continuing despite difficulty.')
+        with self.assertRaisesRegex(ValueError, 'recall each term meaning alone'):
             validate(data)
 
     def test_missing_one_meaning_blank_still_fails_definition_recall(self):
@@ -68,13 +67,29 @@ class GroupingChecks(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'term has no definition-recall card'):
             validate(data)
 
-    def test_duplicate_target_declarations_do_not_count_as_a_fifth_term(self):
-        data = self.parallel_fixture(4)
+    def test_duplicate_target_declarations_are_one_meaning(self):
+        data = self.parallel_fixture(1)
         duplicate = copy.deepcopy(data['targets'][0])
         duplicate['id'] = 'same-term-another-target'
         data['targets'].append(duplicate)
         data['cards'][0]['targetIds'].append(duplicate['id'])
         validate(data)
+
+    def test_unlinked_second_term_and_existing_own_cards_do_not_allow_grouped_meanings(self):
+        data = self.parallel_fixture(2)
+        grouped = data['cards'][0]
+        for index, (name, meaning) in enumerate(self.definitions[:2]):
+            member = copy.deepcopy(grouped)
+            member.update(id=f'own-{index}', conceptId=f'own-{index}',
+                          targetIds=[f'term-{index}'],
+                          cloze=name + ' is {{c1::' + meaning + '}}.')
+            data['cards'].append(member)
+            data['targets'][index]['cardIds'] = [member['id']]
+        # The author links only one term, but both meanings still get recalled.
+        grouped['targetIds'] = ['term-0']
+        data['targets'][0]['cardIds'].append(grouped['id'])
+        with self.assertRaisesRegex(ValueError, 'recall each term meaning alone'):
+            validate(data)
 
     def test_five_item_umbrella_with_separate_definitions_is_allowed(self):
         data = self.parallel_fixture(5)
