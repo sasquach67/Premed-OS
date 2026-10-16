@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-15d — simplify by explaining, not by cutting words; one checkable answer per card; related terms combined.
+Prompt revision: 2026-10-15e — explain plainly in the neutral register of established review decks; one checkable answer per card; related terms combined.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -105,8 +105,9 @@ Accepted style examples, not content to insert into unrelated decks:
 - Required answer: Instead of a worker deciding how to do the job, management breaks it into small tasks and sets the method it thinks is most efficient.
 - Extra: empty
 
-House style for every Back, cloze sentence and Extra: simplify by explaining, not by cutting words. Fewer words is not the same as simpler. Write each answer the way a good TA would say it out loud to a classmate who missed class: everyday words, concrete, a complete thought, with a short explanation when it helps the idea make sense, but never a paragraph.
-- Say-it-aloud test: if a student would not say the sentence while explaining the idea to a friend, rewrite it.
+House style for every Back, cloze sentence and Extra: simplify by explaining, not by cutting words. Fewer words is not the same as simpler. Use the neutral register of established review decks such as AnKing and MileDown: plain, clear and complete, neither casual nor textbook-dense. Each answer is a complete thought in everyday words, with a short explanation when it helps the idea make sense, but never a paragraph.
+- Explain-it test: a classmate who missed the lecture should understand the sentence on first read. If the sentence contains a phrase nobody would use when explaining the idea, rewrite it.
+- Keep personal pronouns (you, we, our, us) to a minimum; they are allowed when a sentence would be awkward without them. Prefer the subject itself, “a person” or “people”.
 - Never squeeze an idea into an abstract phrase nobody says out loud, such as “adaptive value”, “promotes action toward a goal”, “goal-directed”, “processing efficiency” or “cognitive appraisal”. If it is the course's own named term, keep it and say what it means in plain words. Say what actually happens.
 - Avoid AI-sounding wording: stock words (“crucial”, “key role”, “facilitates”, “various”, “plays a role in”), vague verbs (“involves”, “relates to”) and stacked abstract nouns.
 - Cut filler, not explanation: no “This refers to”, “It is the process by which”, or restating the Front; no hedge clause or stacked qualifiers. Concision must never remove a causal link or distinction the student needs.
@@ -120,9 +121,9 @@ House style for every Back, cloze sentence and Extra: simplify by explaining, no
 - Front: Colonialism. Before: “It establishes enduring domination and dispossession: colonizers take control of land, labor, resources, and political life.” After: “Colonialism means lasting control over another society: colonizers take land and resources, control people's work, and shape political life.”
 - Front: Why does a commodity chain depend on more than a route? Before: “It also depends on labor, money, nature, infrastructure and governing rules that organize production, distribution and consumption.” After: “Workers, money, land, transport, and rules shape how goods are made, moved, and used.”
 
-- Scenario answer: evolutionary theory of motivation. Before: “Evolutionary theory, because it explains motivation through adaptive value.” After: “Evolutionary theory: we are driven to do things that helped our ancestors survive and have children.”
-- Scenario answer: functionalist approach to emotion. Before: “Functionalist approach, because the emotion promotes action toward a goal.” After: “Functionalist approach: emotions exist to push us into useful action. Here, fear gets the child to move toward safety.”
-- Front: Rehearsal. Before: “Repeatedly thinking about or verbalizing information to keep it active, while competing material can still interfere with retention.” After: “Repeating information to yourself so it stays in mind.”
+- Scenario answer: evolutionary theory of motivation. Before: “Evolutionary theory, because it explains motivation through adaptive value.” After: “Evolutionary theory: people are motivated to do things that helped their ancestors survive and reproduce.”
+- Scenario answer: functionalist approach to emotion. Before: “Functionalist approach, because the emotion promotes action toward a goal.” After: “Functionalist approach: emotions prepare a person to act in useful ways; here, fear moves the child toward safety.”
+- Front: Rehearsal. Before: “Repeatedly thinking about or verbalizing information to keep it active, while competing material can still interfere with retention.” After: “Repeating information to keep it active in short-term memory.”
 - Front: Long-term memory. Before: “Retaining information over extended periods with very large capacity, without establishing that every memory is stored permanently.” After: “Memory that holds information for a long time, with nearly unlimited room.”
 - Front: Misinformation effect. Before: “An event is reconstructed rather than replayed exactly, so misleading post-event information can alter later recall.” After: “Misleading information after an event changes how you remember it.”
 - Front: Executive control. Before: “Directing attention, selecting strategies, and coordinating a task within limits of capacity, processing efficiency, and relevant knowledge.” After: “Directing your attention and choosing how to tackle a task.”
