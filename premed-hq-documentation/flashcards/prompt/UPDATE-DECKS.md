@@ -31,3 +31,5 @@ Breadcrumb defaults to target topic. Source is a collapsed back-side locator, di
 List reveal uses no external code: current Anki data-cloze attributes, one click/tap or supported key per reveal, ordinary all-blanks fallback without scripts, all items on answer. Listener cleanup prevents reviewer-window accumulation. Browser DOM tests cover interaction; physical AnkiMobile/AnkiDroid are not tested. Built-in MathJax/mhchem typesetting was exercised using installed Anki assets with actual core-rendered clozes.
 
 Current Anki 26.9.3 native IO runtime was exercised in an isolated Chrome profile with a synthetic diagram: an active mask covers its label, and the surrounding context stays visible. Native model/package recognition, media, updates, personal notes and scheduling are also checked in disposable real collections. These do not establish physical mobile behavior or arbitrary authoring accuracy.
+
+A current export may carry an existing parent-deck path (for example UNC::Fall26::Memory). Update mode preserves that exact name and deckKey; new builds still require standalone titles. Verification permits only its exact ancestors, never unrelated decks.

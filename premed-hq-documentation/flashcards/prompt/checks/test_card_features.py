@@ -246,4 +246,49 @@ class CardFeatureChecks(unittest.TestCase):
             finally:col.close()
 
 
+    def test_update_preserves_exported_nested_deck_name_and_student_history(self):
+        with tempfile.TemporaryDirectory() as temp:
+            work=Path(temp);data=fixture(1);first=build(data,work/'standalone.apkg')
+            col=Collection(str(work/'nested-student.anki2'))
+            try:
+                import_package(col,work/'standalone.apkg')
+                nid=col.find_notes('')[0];cid=col.find_cards('')[0]
+                card=col.get_card(cid);did=card.did
+                col.decks.rename(did,'UNC::Fall26::Memory')
+                note=col.get_note(nid);note['My notes']='<b>Keep this student reminder</b>';col.update_note(note)
+                card.type=2;card.queue=2;card.reps=9;card.ivl=17;card.due=345;col.update_card(card)
+                col.db.execute('insert into revlog values (?,?,?,?,?,?,?,?,?)',1700000000000,cid,-1,3,17,10,2500,1200,1)
+                history=col.db.all('select * from revlog where cid=?',cid)
+                names_before={deck['name'] for deck in col.decks.all()}
+                export_current(col,work/'current.apkg')
+                from read_previous import read_previous
+                prior=read_previous(work/'current.apkg')
+                self.assertEqual(prior['deckName'],'UNC::Fall26::Memory')
+                self.assertEqual(prior['deckKey'],data['deckKey'])
+                data['deckName']=prior['deckName']
+                data['cards'][0].update(reuseGuid=first['records'][0]['guid'],back='A shape is the outline around an object.')
+                with self.assertRaisesRegex(ValueError,'standalone deck title'):
+                    build_deck.validate(data)
+                with self.assertRaisesRegex(ValueError,'standalone deck title'):
+                    build(data,work/'new-nested.apkg')
+                mismatched=copy.deepcopy(data);mismatched['deckName']='UNC::Fall26::Another lecture'
+                with self.assertRaisesRegex(ValueError,'previous deckKey and deckName'):
+                    build(mismatched,work/'wrong-name.apkg',work/'current.apkg')
+                build(data,work/'nested-update.apkg',work/'current.apkg')
+                (work/'cards.json').write_text(json.dumps(data))
+                from verify_deck import verify
+                with contextlib.redirect_stdout(io.StringIO()):
+                    verified=verify(work/'nested-update.apkg',work/'nested-update.build-report.json',work/'cards.json',work/'current.apkg')
+                self.assertTrue(verified['passed'])
+                import_package(col,work/'nested-update.apkg')
+                self.assertEqual(col.find_notes(''),[nid]);self.assertEqual(col.find_cards(''),[cid])
+                note=col.get_note(nid);card=col.get_card(cid)
+                self.assertEqual(note['Back'],data['cards'][0]['back'])
+                self.assertEqual(note['My notes'],'<b>Keep this student reminder</b>')
+                self.assertEqual((card.did,card.reps,card.ivl,card.due),(did,9,17,345))
+                self.assertEqual(col.db.all('select * from revlog where cid=?',cid),history)
+                self.assertEqual({deck['name'] for deck in col.decks.all()},names_before)
+            finally:col.close()
+
+
 if __name__=='__main__':unittest.main(verbosity=2)

@@ -101,7 +101,7 @@ def names_instructor_emphasis(reason):
                 or re.search(r'\breturned\s+to\b.{1,120}\brepeatedly\b', reason, re.IGNORECASE)
                 or re.search(r"\b(?:instructor|professor|teacher|lecturer)(?:['’]s)?\s+(?:own\s+)?example\b|\bexample\s+from\s+the\s+lecture\b", reason, re.IGNORECASE))
 
-def validate(data):
+def validate(data, updating=False):
     errors = sorted(Draft202012Validator(SCHEMA).iter_errors(data), key=lambda e: str(list(e.path)))
     require(not errors, '\n'.join(f'{list(e.path)}: {e.message}' for e in errors[:10]))
     warnings = []
@@ -110,7 +110,7 @@ def validate(data):
     for key in ['sources', 'targets', 'cards']:
         ids = [r['id'] for r in data[key]]
         require(len(ids) == len(set(ids)), f'Duplicate {key} IDs.')
-    require(data['deckName'].strip() and '::' not in data['deckName'], 'Use one standalone deck title without :: nesting.')
+    require(data['deckName'].strip() and (updating or '::' not in data['deckName']), 'Use one standalone deck title without :: nesting.')
     sources = {s['id']: s for s in data['sources']}
     targets = {t['id']: t for t in data['targets']}
     cards = {c['id']: c for c in data['cards']}
@@ -296,7 +296,7 @@ def create_models():
     return [genanki.Model(NOTE_TYPE_IDS[name], 'premedOS ' + name + ' (prompt v1)', fields=[{'name': f} for f in fields], templates=[{'name': name, 'qfmt': q, 'afmt': a}], css=CSS, model_type=kind) for name, fields, q, a, kind in [('Basic', BASIC_FIELDS, BASIC_Q, BASIC_A, genanki.Model.FRONT_BACK), ('Cloze', CLOZE_FIELDS, CLOZE_Q, CLOZE_A, genanki.Model.CLOZE)]]
 
 def build(data, out, input_dir, previous=None):
-    warnings = validate(data)
+    warnings = validate(data, updating=previous is not None)
     require(out.suffix == '.apkg' and not out.exists(), 'Choose a new .apkg output filename; existing files are never overwritten.')
     require(not out.with_suffix('.build-report.json').exists(), 'Build report already exists; choose a fresh output name.')
     basic, cloze, io_model = all_models()
