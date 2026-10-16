@@ -28,8 +28,9 @@
 .type {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 12px; letter-spacing: .08em; margin-bottom: 18px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
 }
-.verb { color: var(--ac); font-weight: 700; }
+.verb { color: var(--ac); font-weight: 700; flex: 0 0 auto; white-space: nowrap; }
 .verb::before { content: "■ "; font-size: 9px; vertical-align: 2px; margin-right: 2px; }
 .tname { color: #8a8172; margin-left: 8px; }
 .tname::before { content: "/  "; }
@@ -79,10 +80,22 @@ ol.blurt li::before {
 .pm img { max-width: 100%; height: auto; }
 
 /* Supporting information follows the existing muted sans-serif Extra treatment. */
-.topic { font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #6f675a; margin-bottom: 10px; }
+.topic-chip {
+  display: inline-block; flex: 1 1 0; min-width: 0; max-width: max-content; box-sizing: border-box;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11.5px; line-height: 1.45; letter-spacing: .02em;
+  border-radius: 999px; padding: 4px 9px; overflow-wrap: anywhere;
+  background: #efe9de; color: #6f675a;
+}
+.nightMode .topic-chip, .night_mode .topic-chip { background: #3a342b; color: #cfc6b6; }
 .source, .my-notes { margin-top: 16px; font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #6f675a; }
 .source summary { cursor: pointer; }
 .pm-list-reveal-controls { margin-top: 16px; display: flex; align-items: center; gap: 8px; }
 .pm-list-reveal-status { font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #6f675a; }
 .pm-list-reveal { margin-top: 0; color: var(--ac); background: transparent; border: 1px solid currentColor; border-radius: 6px; padding: 7px 12px; font: 14px system-ui; cursor: pointer; }
-.nightMode .pm-list-reveal-status, .night_mode .pm-list-reveal-status, .nightMode .topic, .night_mode .topic, .nightMode .source, .night_mode .source, .nightMode .my-notes, .night_mode .my-notes { color: #a39a89; }
+.nightMode .pm-list-reveal-status, .night_mode .pm-list-reveal-status, .nightMode .source, .night_mode .source, .nightMode .my-notes, .night_mode .my-notes { color: #a39a89; }
+
+/* Preserve exact answer-giving titles on the answer, without cueing the question. */
+.pm-question .topic-answer-cue + .topic-chip { display: none; }
+
+@media (max-width: 480px) { .topic-chip { flex-basis: 100%; } }

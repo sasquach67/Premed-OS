@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 import genanki
 from jsonschema import Draft202012Validator
 from image_occlusion import native_model, native_occlusion
+from pair_rules import declared_pair, validate_pair_rules, valid_headline_pair_allowance, valid_headline_pair_core
 
 HERE = Path(__file__).resolve().parent
 SCHEMA = json.loads((HERE / 'cards.schema.json').read_text())
@@ -19,14 +20,14 @@ LEGACY_CLOZE_FIELDS = ['Text', 'Extra', 'Type', 'Mindset', 'premedos_concept_id'
 NOTE_TYPE_IDS = {'Basic':646888316168, 'Cloze':623388404634}
 BASIC_FIELDS = LEGACY_BASIC_FIELDS + ['Topic', 'Source', 'My notes']
 CLOZE_FIELDS = LEGACY_CLOZE_FIELDS + ['Topic', 'Source', 'My notes']
-TYPE = '<div class="type">{{Type}}</div>'
-TOPIC = '{{#Topic}}<div class="topic">{{Topic}}</div>{{/Topic}}'
+TOPIC = '{{#Topic}}<span class="topic-chip">{{Topic}}</span>{{/Topic}}'
+TYPE = '<div class="type card-meta">{{Type}}' + TOPIC + '</div>'
 FOOTER = '{{#My notes}}<div class="my-notes">{{My notes}}</div>{{/My notes}}{{#Source}}<details class="source"><summary>Source</summary>{{Source}}</details>{{/Source}}'
 EXTRA = '{{#Extra}}<div class="extra">{{Extra}}</div>{{/Extra}}'
-BASIC_Q = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{Front}}</div>'
-BASIC_A = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + FOOTER + '</div>'
-CLOZE_Q = '<div id="pm-list-question" class="pm {{Mindset}}">' + TOPIC + TYPE + '{{cloze:Text}}</div><script>' + (HERE / 'list-reveal.js').read_text() + '</script>'
-CLOZE_A = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{cloze:Text}}' + EXTRA + FOOTER + '</div>'
+BASIC_Q = '<div class="pm pm-question {{Mindset}}">' + TYPE + '{{Front}}</div>'
+BASIC_A = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + FOOTER + '</div>'
+CLOZE_Q = '<div id="pm-list-question" class="pm pm-question {{Mindset}}">' + TYPE + '{{cloze:Text}}</div><script>' + (HERE / 'list-reveal.js').read_text() + '</script>'
+CLOZE_A = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}' + EXTRA + FOOTER + '</div>'
 LABELS = {'basic': 'recall', 'cloze': 'recall', 'process': 'list', 'conceptual': 'why', 'comparison': 'compare', 'exemplar': 'example', 'application': 'application', 'free-recall': 'list', 'image-occlusion':'recall'}
 MINDSETS = {'basic': ('say', 'say it'), 'cloze': ('say', 'say it'), 'process': ('say', 'say it'), 'conceptual': ('explain', 'explain it'), 'comparison': ('connect', 'connect it'), 'exemplar': ('connect', 'connect it'), 'application': ('use', 'use it'), 'free-recall': ('blurt', 'blurt it'), 'image-occlusion':('say','say it')}
 
@@ -34,6 +35,18 @@ def escape(value):
     # **word** marks a bold cue word; everything else stays plain text.
     escaped = html.escape(value, quote=True).replace('\n', '<br>')
     return re.sub(r'\*\*([^*<>]+?)\*\*', r'<b>\1</b>', escaped)
+
+def topic_reveals_answer(topic, card):
+    """Keep exact titles on the answer without using them as an answer cue.
+
+    Only literal answer phrases are detected. The required cold-read pass still
+    handles synonyms or an indirect clue. A per-note marker needs no new fields.
+    """
+    title = coverage_text(topic)
+    answers = ([m[2].split('::')[0] for m in re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', card['cloze'])]
+               if card['clozePattern'] else [card['back']])
+    return any(len(coverage_text(answer)) >= 3 and
+               f' {coverage_text(answer)} ' in f' {title} ' for answer in answers)
 
 def stable_id(value):
     return 1_000_000_000 + int(hashlib.sha256(value.encode()).hexdigest()[:10], 16)
@@ -211,8 +224,10 @@ def validate(data, updating=False):
                 require(c['back'].strip() and not c['recallItems'], f'{cid}: missing answer or stray blurt items.')
             require('{{c' not in c['front'] + c['back'], f'{cid}: cloze syntax without cloze mechanism.')
         if cp != 'enumerated-list': require(c['listOrdered'] is None, f'{cid}: listOrdered is for enumerated lists only.')
+        validate_pair_rules(c, targets)
+        pair = declared_pair(c)
         if c['type'] == 'comparison': require(c['axis'].strip(), f'{cid}: name the comparison axis.')
-        else: require(not c['axis'], f'{cid}: axis belongs on comparison cards.')
+        else: require(not c['axis'] or (pair and cp), f'{cid}: axis belongs on comparison cards or declared cloze pairs.')
         if c['type'] == 'exemplar':
             require(c['exampleDirection'], f'{cid}: declare example direction; a partner is optional.')
             if c['examplePairId']: pairs[c['examplePairId']].append(c)
@@ -309,6 +324,7 @@ def validate(data, updating=False):
     for concept, group in groups.items():
         reviews = sum(len(indices(c)) for c in group)
         exception = exceptions.get(concept)
+        pair_allowance = reviews == 4 and valid_headline_pair_allowance(group, targets)
         if exception:
             require(reviews > 3, f'{concept}: no over-limit coverage exception is needed.')
             require(exception['reason'].strip(), f'{concept}: explain the coverage exception.')
@@ -325,12 +341,12 @@ def validate(data, updating=False):
             require(witnessed_cards == {c['id'] for c in group} and all(len(indices(c)) == 1 for c in group), f'{concept}: coverage exception only permits indispensable single-review notes, not surplus cloze indices.')
             warnings.append(f'{concept}: coverage exception keeps {reviews} review cards. {exception["reason"]}')
         else:
-            require(reviews <= 3, f'{concept}: more than three review cards for one idea.')
+            require(reviews <= 3 or pair_allowance, f'{concept}: more than three review cards for one idea; only the exact non-opposite headline set plus instructor example earns four.')
         if not any(direct_card_candidate(c) or len(term_witnesses[c['id']]) >= 2 for c in group):
             warnings.append(f'{concept}: no direct term card detected; inspect this concept.')
         if len(group) >= 2:
             require(group[1]['reinforcementReason'].strip() or exception, f'{group[1]["id"]}: explain the additional retrieval purpose; no automatic mirrors.')
-        if reviews == 3 and not any(names_instructor_emphasis(c['reinforcementReason']) for c in group):
+        if reviews == 3 and not valid_headline_pair_core(group, targets) and not any(names_instructor_emphasis(c['reinforcementReason']) for c in group):
             warnings.append(f'{concept}: third review card needs a reinforcementReason naming instructor emphasis.')
         require(sum(c['type'] in ['application', 'exemplar'] for c in group) <= 1, f'{concept}: keep at most one scenario or example card per idea.')
         answers = []
@@ -338,6 +354,7 @@ def validate(data, updating=False):
             # A scenario or example card legitimately answers with the term itself;
             # its retrieval cue (the instructor's situation) is what makes it distinct.
             if c['type'] in ['application', 'exemplar'] and not c['clozePattern']: continue
+            if pair_allowance and not declared_pair(c): continue  # The evidenced instructor example has its own cue.
             if c['clozePattern']:
                 for index in indices(c):
                     answers.append(' '.join(m[2].split('::')[0] for m in re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', c['cloze']) if int(m[1]) == index))
@@ -406,6 +423,9 @@ def build(data, out, input_dir, previous=None):
             label = LABELS[card['type']]
             if card['clozePattern'] == 'enumerated-list': label = 'list'
             typ = '<span class="verb">' + label + '</span>'
+            topic = card.get('breadcrumb') or next(t['topic'] for t in data['targets'] if t['id'] in card['targetIds'])
+            if topic_reveals_answer(topic, card):
+                typ += '<span class="topic-answer-cue" hidden></span>'
             extra = escape(extra_text(card))
             extra += render_images(card['extraImages'])
             evidence = card['sourceRefs'] + [im['source'] for im in card['frontImages'] + card['extraImages']]

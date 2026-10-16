@@ -10,6 +10,8 @@ from test_card_features import CardFeatureChecks
 from test_occlusion_pdf import PdfOcclusionChecks
 from test_clarity import ClarityChecks
 from test_grouping import GroupingChecks
+from test_topic_chips import TopicChipChecks
+from test_pair_rules import PairRuleChecks
 
 class PromptChecks(unittest.TestCase):
     def setUp(self):self.data=json.loads((BASE/'checks/cards.json').read_text())
@@ -443,16 +445,36 @@ class PromptChecks(unittest.TestCase):
         data['cards'][0]['cloze']='Positive regulators {{c1::promote cell-cycle progression}}; negative regulators.'
         with self.assertRaisesRegex(ValueError,'loses its required meaning'):validate(data)
 
-    def test_parallel_contrast_named_meanings_build_and_verify(self):
+    def test_headline_non_opposite_pair_uses_meanings_then_separate_names(self):
         data=self.combined_fixture(2)
-        data['cards'][0].update(type='comparison',front='',back='',clozePattern='independent',
-            cloze='{{c1::Alpha::Alpha/Beta}} means learn the input; {{c2::Beta::Alpha/Beta}} means keep the input.')
-        with self.assertRaisesRegex(ValueError,'term has no definition-recall card'):validate(data)
-        self.add_member_meaning_notes(data)
+        first=data['cards'][0]
+        first.update(type='cloze',front='',back='',axis='non-opposite: Alpha | Beta',
+                     clozePattern='single',cloze='For these two memory tasks, Alpha means {{c1::learn the input}}; Beta means {{c1::keep the input}}.')
+        for index,(name,meaning) in enumerate([('Alpha','learn the input'),('Beta','keep the input')]):
+            card=copy.deepcopy(first);cid='name-'+name.lower()
+            card.update(id=cid,targetIds=[data['targets'][index]['id']],
+                        cloze='For this memory task, {{c1::'+name+'}} means '+meaning+'.',
+                        reinforcementReason='Retrieves the name from its meaning, distinct from producing the meaning.')
+            data['cards'].append(card);data['targets'][index]['cardIds'].append(cid)
         self.assertEqual(validate(data),[])
         built,verified=self.pipeline_fixture(data)
-        self.assertEqual(built['reviewCards'],4)
+        self.assertEqual(built['reviewCards'],3)
         self.assertEqual(verified['warnings'],[])
+        # The approved sourced example is the only route to a fourth review here.
+        example=copy.deepcopy(first)
+        example.update(id='source-example',type='application',axis='',clozePattern=None,cloze='',
+                       front='A source task introduces a new input. Which memory task is demonstrated?',back='Alpha',
+                       targetIds=[data['targets'][0]['id']],reinforcementReason="Instructor's own example from the lecture.")
+        data['cards'].append(example);data['targets'][0]['cardIds'].append(example['id'])
+        validate(data)
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['reviewCards'],4)
+        # A one-blank instructor example may recall the same term from its distinct situation.
+        example.update(type='cloze',front='',back='',clozePattern='single',
+                       cloze='The source task introducing a new input illustrates {{c1::Alpha}}.')
+        validate(data)
+        example['reinforcementReason']='An invented scenario for practice.'
+        with self.assertRaisesRegex(ValueError,'more than three'):validate(data)
 
     def test_new_direct_shapes_still_require_the_recorded_meaning(self):
         data=self.combined_fixture(1)
@@ -486,7 +508,7 @@ class PromptChecks(unittest.TestCase):
     def test_embedded_files_and_actual_package_roundtrip(self):
         prompt=(BASE.parents[2]/'src/lib/academics/flashcards/instructions.md').read_text()
         blocks=dict(re.findall(r'### File: ([^\n]+)\n\n```[^\n]+\n(.*?)\n```',prompt,re.S))
-        names=['cards.schema.json','card-styles.css','requirements.txt','list-reveal.js','image_occlusion.py','prepare_occlusion.py','read_previous.py','build_deck.py','verify_deck.py']
+        names=['cards.schema.json','card-styles.css','requirements.txt','list-reveal.js','image_occlusion.py','prepare_occlusion.py','read_previous.py','pair_rules.py','build_deck.py','verify_deck.py']
         self.assertEqual(set(blocks),set(names))
         with tempfile.TemporaryDirectory() as temp:
             work=Path(temp)

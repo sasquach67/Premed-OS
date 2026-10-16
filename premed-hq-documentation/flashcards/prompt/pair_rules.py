@@ -1,0 +1,143 @@
+"""Structural checks for author-declared term pairs; no inferred opposite lexicon."""
+import re
+
+CLOZE = re.compile(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}')
+PAIR = re.compile(r'^(opposite|non-opposite)\s*:\s*(.*?)\s*\|\s*(.*?)\s*$', re.I)
+
+
+def normalized(text):
+    return ' '.join(re.findall(r'\w+', str(text).casefold()))
+
+
+def contains(text, phrase):
+    return bool(phrase) and (' ' + phrase + ' ') in (' ' + text + ' ')
+
+
+def declared_pair(card):
+    """Return (relationship, (canonical A, canonical B)), or None for ordinary axes."""
+    axis = card.get('axis', '').strip()
+    if not re.match(r'^(?:non-opposite|opposite)\s*:', axis, re.I):
+        return None
+    match = PAIR.fullmatch(axis)
+    if not match or not all(match.group(i).strip() for i in (2, 3)):
+        raise ValueError('pair axis must declare two canonical terms separated by |')
+    names = tuple(match.group(i).strip() for i in (2, 3))
+    if '|' in ''.join(names) or normalized(names[0]) == normalized(names[1]):
+        raise ValueError('pair axis must declare two distinct canonical terms')
+    return match.group(1).lower(), names
+
+
+def target_definitions(targets):
+    values = targets.values() if isinstance(targets, dict) else targets
+    result = {}
+    for target in values:
+        statement, reason = target.get('statement', ''), target.get('reason', '')
+        if statement.startswith('Term: ') and reason.startswith('Meaning: '):
+            result[normalized(statement[6:])] = normalized(reason[9:])
+    return result
+
+
+def expanded(text, hidden=None):
+    return normalized(CLOZE.sub(lambda m: '' if int(m.group(1)) == hidden
+                              else m.group(2).split('::', 1)[0], text))
+
+
+def pair_role(card, targets):
+    """Classify one declared single-index review as meanings, names, or name:<0/1>."""
+    declaration = declared_pair(card)
+    if declaration is None:
+        return None
+    relation, raw_names = declaration
+    names = tuple(map(normalized, raw_names))
+    definitions = target_definitions(targets)
+    if any(name not in definitions for name in names):
+        raise ValueError('pair axis requires named-term targets with recorded meanings')
+    meanings = tuple(definitions[name] for name in names)
+    text = card.get('cloze', '')
+    spans = list(CLOZE.finditer(text))
+    active = {int(m.group(1)) for m in spans}
+    if len(active) != 1:
+        raise ValueError('declared pair must use one shared cloze index per note')
+    index = next(iter(active))
+    full, visible = expanded(text), expanded(text, index)
+    answers = [normalized(m.group(2).split('::', 1)[0]) for m in spans]
+    name_visible = [contains(visible, n) for n in names]
+    meaning_hidden = [any(contains(a, meaning) for a in answers) for meaning in meanings]
+    if all(name_visible) and all(meaning_hidden):
+        return 'meanings'
+    if (all(contains(full, n) for n in names) and not any(name_visible)
+            and all(contains(visible, m) for m in meanings)):
+        return 'names'
+    if relation == 'non-opposite':
+        for i in range(2):
+            other = 1 - i
+            if (contains(full, names[i]) and not name_visible[i]
+                    and contains(visible, meanings[i])
+                    and not contains(full, names[other])
+                    and not contains(full, meanings[other])):
+                return 'name:' + str(i)
+        raise ValueError('non-opposite pair needs shared meanings or a separate name-only sister')
+    raise ValueError('opposite pair must hide both names or both meanings under the same cloze index')
+
+
+def validate_pair_rules(card, targets):
+    """Reject explicit option hints and invalid declared pair shapes; raises ValueError."""
+    for match in CLOZE.finditer(card.get('cloze', '')):
+        parts = match.group(2).split('::', 1)
+        if len(parts) == 2 and re.search(r'[/|,;]|\b(?:or|either|versus|vs)\b', parts[1], re.I):
+            raise ValueError('cloze hint must name a category, not list answer options')
+    declaration = declared_pair(card)
+    if declaration:
+        role = pair_role(card, targets)
+        if declaration[0] == 'non-opposite' and role == 'names':
+            raise ValueError('non-opposite names require separate name-only sister cards')
+    return None
+
+
+def valid_headline_pair_core(group, targets):
+    """The approved three-review non-opposite core earns its third name sister."""
+    if len(group) != 3 or len({c.get('conceptId') for c in group}) != 1 or not group[0].get('conceptId'):
+        return False
+    try:
+        declarations = []
+        for card in group:
+            validate_pair_rules(card, targets)
+            declaration = declared_pair(card)
+            if not declaration or declaration[0] != 'non-opposite': return False
+            declarations.append(declaration)
+        return (len({tuple(map(normalized, d[1])) for d in declarations}) == 1
+                and sorted(pair_role(c, targets) for c in group) == ['meanings', 'name:0', 'name:1'])
+    except (ValueError, TypeError):
+        return False
+
+
+def valid_headline_pair_allowance(group, targets):
+    """Only the three-note non-opposite headline set plus one actual example earns four."""
+    if len(group) != 4 or len({c.get('conceptId') for c in group}) != 1 or not group[0].get('conceptId'):
+        return False
+    pair_cards, examples = [], []
+    try:
+        for card in group:
+            validate_pair_rules(card, targets)
+            declaration = declared_pair(card)
+            if declaration:
+                if declaration[0] != 'non-opposite':
+                    return False
+                pair_cards.append((card, declaration))
+            else:
+                examples.append(card)
+        if len(pair_cards) != 3 or len(examples) != 1:
+            return False
+        if not valid_headline_pair_core([c for c, _ in pair_cards], targets):
+            return False
+        example = examples[0]
+        reason = example.get('reinforcementReason', '').casefold()
+        is_example = example.get('type') in ('application', 'exemplar', 'cloze')
+        example_indices = {int(m.group(1)) for m in CLOZE.finditer(example.get('cloze', ''))}
+        one_review = (len(example_indices) == 1 if example.get('clozePattern')
+                      else not example_indices)
+        evidence = re.search(r"instructor(?:'s|’s)?\s+(?:own\s+)?example|example from the lecture", reason)
+        return bool(is_example and evidence and example.get('sourceRefs')
+                    and one_review)
+    except (ValueError, TypeError):
+        return False

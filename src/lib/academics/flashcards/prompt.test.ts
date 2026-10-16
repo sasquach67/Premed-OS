@@ -13,10 +13,10 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the pending October 16f prompt revision and preserves source access rules', () => {
+  it('copies the pending October 16h prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-16g — two to four parallel meanings per card, revealed one by one; cold-read clarity, definition recall, exact Journal breadcrumbs and export-based updates retained.')
-    expect(prompt).toContain('A headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
+    expect(prompt).toContain('Prompt revision: 2026-10-16h — inline breadcrumb chips; meanings-first pairs, uncued name recall and sequential reveal; clarity and export-based updates retained.')
+    expect(prompt).toContain('A standalone headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
     expect(prompt).toContain('The completed Journal is the required input.')
@@ -55,25 +55,28 @@ describe('flashcard prompt handoff', () => {
       'One fact per card.',
       'Cut a trailing second fact',
       'A short causal explanation needed to understand the same fact stays.',
-      'so the pair makes four review cards and each asks one thing',
+      'Every headline pair starts with one shared meaning card',
     ]) expect(prompt).toContain(phrase)
   })
 
-  it('groups two to four parallel meanings and keeps four reviews for evidenced headline pairs', () => {
+  it('groups two to four meanings and uses uncued names for each pair relationship', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
       'Parallel meaning groups may contain 2–4 terms, not just an opposite pair.',
       'Activation is {{c1::starting a behavior}}; persistence is {{c1::continuing despite difficulty}}; intensity is {{c1::the effort put into the behavior}}.',
       'Split groups larger than four into smaller related groups or individual cards',
       'Positive regulators {{c1::promote cell-cycle progression}}; negative regulators {{c1::restrain cell-cycle progression}}.',
-      'type cloze with clozePattern single and an empty axis field',
+      'declare a genuine opposite pair with the reserved axis format below',
       'do not add separate notes that ask for these same meanings again.',
       'Do not blank the term names in this format.',
       'All meanings disappear together',
       'an objective asks the student to define or explain the terms, or the instructor builds on them',
-      'Headline pairs, such as homologs versus sister chromatids or retroactive versus proactive interference',
-      'keep the existing four cards',
-      'Do not add individual two-blank definition notes on top of that set.',
+      'Opposite headline pair: add one name card with both names hidden under the same c1',
+      'Non-opposite headline pair: add one separate name-only sister card per term',
+      'Simple pairs that are not headline keep only their shared meaning card',
+      'A category hint such as “type of motivation” is allowed',
+      'hints must never list the candidate answers',
+      'The only four-review reinforcement allowance is the exact non-opposite headline-pair set',
     ]) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('A contrasting pair becomes one contrast sentence')
     expect(prompt).not.toContain('Incentive theory focuses on {{c1::positive::positive/negative}} reinforcement')
@@ -94,6 +97,12 @@ describe('flashcard prompt handoff', () => {
       '<Journal objective title> › <Journal section title>',
       'breadcrumb is not a notebook title',
       'Report every background term moved into a lecture-specific card.',
+      'Topic uses the F2 chip on the label row',
+      '11.5px, padding 4px 9px',
+      'light background #efe9de with text #6f675a',
+      'night background #3a342b with text #cfc6b6',
+      'At 390px the chip may wrap under the label',
+      'guard hides an answer-giving chip on the question and retains it on the answer',
     ]) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('Extra: one short line, or empty.')
     expect(prompt).not.toContain('at most 80 characters')
@@ -103,13 +112,14 @@ describe('flashcard prompt handoff', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
       'a standalone headline term or theory keeps its two-blank note',
-      '| Headline term or theory | One sentence: “{{c1::term::hint}} is {{c2::meaning}}” or “The {{c1::theory::hint}} states that {{c2::claim}}” | No separate Back; two review cards |',
+      '| Standalone headline term or theory | One sentence: “{{c1::term::hint}} is {{c2::meaning}}” or “The {{c1::theory::hint}} states that {{c2::claim}}” | No separate Back; two review cards |',
       '| Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |',
       '| Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |',
       '| Scenario (instructor\'s example) | One or two sentences of situation, then one short plain question about one term | The term alone; the explanation, if any, goes in Extra |',
       '| Example | `Example of <term>` | The instructor\'s example |',
       '| Simple contrast or parallel meaning group | Names of 2–4 terms visible; all meanings blanked together under c1',
-      '| Headline contrast | Parallel halves with names blanked under separate indices',
+      '| Opposite headline pair | Shared meanings under c1; a second note hides both names together under c1',
+      '| Non-opposite headline pair | Shared meanings under c1; a separate name-only sister for each term',
       '| Umbrella | “The N parts of X are {{c1::a}}, {{c1::b}} …”, placed before its members | No separate Back; one review card |',
       'Bold the cue.',
       'Keep why/how cards to a minimum.',
@@ -125,7 +135,7 @@ describe('flashcard prompt handoff', () => {
       'A member of an umbrella group never gets a name blank',
       'If the lecture defines that sub-term, give it a target and a meaning blank in its own note or an eligible parallel meaning group',
       'Biology and other figure-heavy lectures',
-      'Look-alike groups of three or four',
+      'A look-alike group of three or four can use one short shared-meaning card',
       'Umbrella first.',
       'Every other defined term gets one blank, on its meaning, with the term visible',
       'use a famous standard one only if the lecture has none',
@@ -258,7 +268,7 @@ describe('flashcard prompt handoff', () => {
   it('includes the complete exact build files and approved teaching/design rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     const files = [...prompt.matchAll(/### File: ([^\n]+)\n\n```[^\n]+\n([\s\S]*?)\n```/g)]
-    expect(files.map(match => match[1])).toEqual(['cards.schema.json', 'card-styles.css', 'requirements.txt', 'list-reveal.js', 'image_occlusion.py', 'prepare_occlusion.py', 'read_previous.py', 'build_deck.py', 'verify_deck.py'])
+    expect(files.map(match => match[1])).toEqual(['cards.schema.json', 'card-styles.css', 'requirements.txt', 'list-reveal.js', 'image_occlusion.py', 'prepare_occlusion.py', 'read_previous.py', 'pair_rules.py', 'build_deck.py', 'verify_deck.py'])
     for (const [, name, content] of files) expect(`${content}\n`).toBe(readFileSync(resolve('premed-hq-documentation/flashcards/prompt', name), 'utf8'))
     for (const phrase of ['Both directions are never automatic', 'Do not use free-recall (blurt) cards', 'up to three useful Extra lines', 'smaller sans-serif Extra', 'use native image occlusion', 'completed Journal']) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('review draft')

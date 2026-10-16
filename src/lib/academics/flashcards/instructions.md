@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-16g — two to four parallel meanings per card, revealed one by one; cold-read clarity, definition recall, exact Journal breadcrumbs and export-based updates retained.
+Prompt revision: 2026-10-16h — inline breadcrumb chips; meanings-first pairs, uncued name recall and sequential reveal; clarity and export-based updates retained.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -49,13 +49,13 @@ Small cards over heavy ones. Total review time is the number of cards times the 
 
 One fact per card. Each review card asks for one fact; its visible sentence and Required answer must stay focused on that fact too. Cut a trailing second fact such as “…; telomeres protect linear chromosome ends.” Do not attach an unrelated definition, caution or review fact after a semicolon, dash or second sentence. A short causal explanation needed to understand the same fact stays. Put necessary background in that sentence or optional Extra; an unrelated background fact is not a reason for another card. The combined contrast, parallel meaning, sequence and umbrella-list formats remain deliberate grouped retrieval tasks, not permission to append extra facts.
 
-Limit per idea: two review cards, or three when the instructor gave an example of it or stressed it (said it will be tested or returned to it repeatedly). Never more than three. Count review cards, not notes: a cloze note with c1 and c2 creates two review cards and spends both of the idea's cards. Repeated regions using c1 together create one review card. For every additional card, reinforcementReason records the distinct retrieval demand it adds; for a third review card, it also names what earns it: the instructor's own example from the lecture, or the specific instructor emphasis. Keep a direct card and its reinforcements under the same conceptId.
+Limit per idea: two review cards, or three when the instructor gave an example of it or stressed it (said it will be tested or returned to it repeatedly). The only four-review reinforcement allowance is the exact non-opposite headline-pair set described below, with one actual instructor example; no other reinforcement earns a fourth review. Necessary sole-coverage exceptions remain subject to the separate guard below. Count review cards, not notes: a cloze note with c1 and c2 creates two review cards and spends both of the idea's cards. Repeated regions using c1 together create one review card. For every additional card, reinforcementReason records the distinct retrieval demand it adds; for a third review card, it also names what earns it: the instructor's own example from the lecture, the specific instructor emphasis, or the necessary name-only sister in the approved non-opposite headline-pair set. Keep a direct card and its reinforcements under the same conceptId.
 
 Coverage wins when the limit conflicts with the coverage guard. Trim reinforcement before removing the only tested card on an objective, any Understand item, or a named term’s meaning. If full coverage genuinely requires an exception, retain the necessary cards, explain which otherwise uncovered targets need them, and explicitly report the exception and its review-card count. In cards.json, coverageExceptions is normally []; a necessary exception records conceptId, targetIds, and reason. Every note in an over-limit concept must create exactly one review card and be the sole tested card for a required Understand, named-term, or topic target, or the sole tested card for its topic. Include those sole-coverage target IDs, one witness per note, and explain the collision in reason. A multi-index cloze cannot earn an over-limit exception: group list items together or trim reinforcement first. An exception is not permission to keep duplicates. There is no deck-wide maximum to aim for, target to pad toward, or card-type quota.
 
 Both directions are never automatic. When both directions matter for a fact, use two blanks in one cloze sentence, with different indices; that spends two review cards. Do not add a separate mirror note. A standalone headline term or theory uses the two-blank note described under Card language below, instead of a term-on-front Q&A card; the umbrella and grouped-meaning rules avoid duplicate name recall. No card may have an answer that merely repeats another card's answer on the same idea.
 
-Lecture example cards stay, even though the reference decks rarely use them, because lecture examples are what exams reuse. When the instructor gave an example of an idea, add one card for it beyond the idea's two-blank note: the instructor's scenario as a short question whose answer is the term alone (“Which perspective on emotion does this illustrate?” → “Functionalist approach”), or the example inside a cloze. Record “instructor's example from the lecture” in reinforcementReason. Use at most one scenario or example card per idea. Never invent a scenario for its own card: an example that did not come from the lecture goes inside the two-blank note's sentence or in Extra. Do not create an example pair or both directions of an example.
+Lecture example cards stay, even though the reference decks rarely use them, because lecture examples are what exams reuse. When the instructor gave an example of an idea, add one card for it beyond the idea's definition note or approved headline-pair set: the instructor's scenario as a short question whose answer is the term alone (“Which perspective on emotion does this illustrate?” → “Functionalist approach”), or the example inside a cloze. Record “instructor's example from the lecture” in reinforcementReason. Use at most one scenario or example card per idea. Never invent a scenario for its own card: an example that did not come from the lecture goes inside the two-blank note's sentence or in Extra. Do not create an example pair or both directions of an example.
 
 If the student supplies missed practice or exam questions, add one or two cards, within the limit per idea, on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question. Reuse a card that already tests that demand before adding another.
 
@@ -67,19 +67,28 @@ Compare the final combined set, especially when using older decks for reference.
 
 No question asked twice. Before building, list what each review card asks; if two cards ask the same thing (the same name from the same meaning, or the same meaning from the same name), keep one. Redundancy, not card size, is what makes a deck long.
 
-A headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note, the way AnKing and Pankow write definitions: one sentence with the term blanked as c1 (with a hint naming the kind of answer) and the meaning blanked as c2. For a term: “{{c1::Retroactive interference::type of interference}} is when {{c2::new learning makes it harder to remember older information}}.” For a theory: “The {{c1::evolutionary approach::theory of motivation}} states that {{c2::people are motivated to do things that helped their ancestors survive and reproduce}}.” The note creates two review cards: name the term from its meaning, and give the meaning from the term. Use type cloze with clozePattern independent. This replaces the term-on-front Q&A card; do not add both.
+A standalone headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note, the way AnKing and Pankow write definitions: one sentence with the term blanked as c1 (with a hint naming the kind of answer) and the meaning blanked as c2. For a term: “{{c1::Retroactive interference::type of interference}} is when {{c2::new learning makes it harder to remember older information}}.” For a theory: “The {{c1::evolutionary approach::theory of motivation}} states that {{c2::people are motivated to do things that helped their ancestors survive and reproduce}}.” The note creates two review cards: name the term from its meaning, and give the meaning from the term. Use type cloze with clozePattern independent. This replaces the term-on-front Q&A card; do not add both.
 
 Every other defined term gets one blank, on its meaning, with the term visible: “Homeostasis is {{c1::a stable balance in the body's internal conditions}}.” An eligible parallel group below can share the card while retaining a meaning blank for every term. Use type cloze with clozePattern single. That is one review card.
 
-A member of an umbrella group never gets a name blank, because the umbrella card already asks for the names: its note blanks only the meaning (“Activation is {{c1::deciding to start a behavior}}.”), even when the member is a headline theory. Eligible short meanings can share one parallel meaning card. For a headline name-blank contrast, each term likewise keeps only a meaning-blank note, without another name blank. Simple contrast pairs and eligible parallel meaning groups instead use the single shared-index card below and get no duplicate separate meaning notes.
+A member of an umbrella group never gets a name blank, because the umbrella card already asks for the names: its note blanks only the meaning (“Activation is {{c1::deciding to start a behavior}}.”), even when the member is a headline theory. Eligible short meanings can share one parallel meaning card. Headline pairs use the pair protocol below instead of separate two-blank notes. Simple contrast pairs and eligible parallel meaning groups use the single shared-index card below and get no duplicate separate meaning notes.
 
 A sub-term merely used in a parent's explanation stays inside the parent's sentence or Extra. If the lecture defines that sub-term, give it a target and a meaning blank in its own note or an eligible parallel meaning group, even when a parent sentence also contains a visible gloss. The definition-recall guard takes precedence over the background and no-repeat cuts. A term mentioned only in passing gets no card; a Journal-added explanatory gloss is not evidence that the instructor defined it.
 
-Related terms can share one card when a real contrast, a parallel set of short meanings, an order or a list is itself what is tested. Do not group terms merely because they concern the same topic: drive with homeostasis, or incentive theory with evolutionary theory, do not become a parallel set for that reason. Standalone headline terms retain the two-blank definition shape, and headline contrasts retain the name-contrast plus meaning notes below.
+Related terms can share one card when a real contrast, a parallel set of short meanings, an order or a list is itself what is tested. Do not group terms merely because they concern the same topic: drive with homeostasis, or incentive theory with evolutionary theory, do not become a parallel set for that reason. Standalone headline terms retain the two-blank definition shape, and headline pairs use the shared meanings and name-recall shapes below.
 
-Parallel meaning groups may contain 2–4 terms, not just an opposite pair. Keep each name visible and put every full meaning under the same cloze index: “Activation is {{c1::starting a behavior}}; persistence is {{c1::continuing despite difficulty}}; intensity is {{c1::the effort put into the behavior}}.” A simple contrast uses the same shape: “Positive regulators {{c1::promote cell-cycle progression}}; negative regulators {{c1::restrain cell-cycle progression}}.” Use type cloze with clozePattern single and an empty axis field; explain the actual contrast or parallel relationship in the build report. This creates one review card. All meanings disappear together, so a visible opposite meaning cannot give away another answer. Every term keeps its complete definition inside a blank, satisfying definition recall; do not add separate notes that ask for these same meanings again. Do not blank the term names in this format. Split groups larger than four into smaller related groups or individual cards; never shorten definitions until they stop making sense. The builder enforces the four-term cap against the declared visible-name/hidden-meaning targets. Ordinary umbrella lists and ordered name lists are different formats and may have more than four items. Positive/negative regulators, benign/malignant and mitosis/cytokinesis use this shared-meaning shape unless the headline criterion applies.
+Parallel meaning groups may contain 2–4 terms, not just an opposite pair. Keep each name visible and put every full meaning under the same cloze index: “Activation is {{c1::starting a behavior}}; persistence is {{c1::continuing despite difficulty}}; intensity is {{c1::the effort put into the behavior}}.” A simple contrast uses the same shape: “Positive regulators {{c1::promote cell-cycle progression}}; negative regulators {{c1::restrain cell-cycle progression}}.” Use type cloze with clozePattern single. Leave axis empty for ordinary parallel groups; declare a genuine opposite pair with the reserved axis format below. Explain the actual contrast or parallel relationship in the build report. This creates one review card. All meanings disappear together, so a visible opposite meaning cannot give away another answer. Every term keeps its complete definition inside a blank, satisfying definition recall; do not add separate notes that ask for these same meanings again. Do not blank the term names in this format. Split groups larger than four into smaller related groups or individual cards; never shorten definitions until they stop making sense. The builder enforces the four-term cap against the declared visible-name/hidden-meaning targets. Ordinary umbrella lists and ordered name lists are different formats and may have more than four items. Positive/negative regulators, benign/malignant and mitosis/cytokinesis use this shared-meaning shape unless the headline criterion applies.
 
-A pair counts as headline when an objective asks the student to define or explain the terms, or the instructor builds on them. Record that evidence in the build report; merely mentioning the terms does not establish headline status. Headline pairs, such as homologs versus sister chromatids or retroactive versus proactive interference, keep the existing four cards: one contrast sentence with parallel halves, each name blanked with the pair as its hint, plus one meaning-blank note per term. For example: “{{c1::Homologs::homologs/sister chromatids}} are the maternal and paternal versions of a chromosome; {{c2::sister chromatids::homologs/sister chromatids}} are the duplicated copies of one chromosome.” Use type comparison with clozePattern independent. Each term then keeps its own note with only its meaning blanked, so the pair makes four review cards and each asks one thing. Do not add individual two-blank definition notes on top of that set. Look-alike groups of three or four, such as centromere, kinetochore and centrosome, work the same way: one contrast sentence with every name blanked and the whole group as the hint, plus a meaning-blank note for each term. A parent plus its types uses the umbrella list cloze. A sequence or ordered levels becomes an enumerated-list cloze with every item under c1 and a short meaning visible beside each: “The 3 levels, shallowest to deepest: {{c1::structural}} (how it looks), {{c1::phonemic}} (how it sounds), {{c1::semantic}} (what it means).” It creates one review card, not three. Separate c1/c2/c3 would not condense the review load.
+A pair counts as headline when an objective asks the student to define or explain the terms, or the instructor builds on them. Record that evidence in the build report; merely mentioning the terms does not establish headline status. Every headline pair starts with one shared meaning card: names visible, both complete meanings hidden under c1, with Reveal next. Do not add separate meaning notes that repeat it. Then choose the name-recall shape by the relationship:
+- Opposite headline pair: add one name card with both names hidden under the same c1 and both meanings visible. Never hide one half while the opposite half remains visible. This is two review cards altogether, plus at most one actual instructor-example card.
+- Non-opposite headline pair: add one separate name-only sister card per term, each showing only that term's meaning, with no other pair member visible as a cue. This is three review cards altogether. If an actual instructor example exists, keep it as the sole fourth review under the same conceptId. This narrow four-review allowance requires exactly the shared meaning note, the two separate name-only sisters and one evidenced instructor-example note; it is not a general increase in the limit.
+- Simple pairs that are not headline keep only their shared meaning card. Do not add name cards automatically. Umbrella members still avoid duplicate name recall. Parallel meaning groups of 2–4 terms remain allowed; this pair protocol does not impose a four-item cap on umbrella lists or pathways. A look-alike group of three or four can use one short shared-meaning card. If its names are separately tested, retain only the necessary individual name cards within the coverage and count rules; do not extend the pair allowance, list candidate names in hints or split concept IDs to hide the count.
+
+For example, replace the old intrinsic/extrinsic shape “{{c1::Intrinsic::intrinsic/extrinsic}} motivation means doing an activity because it is enjoyable; {{c2::extrinsic::intrinsic/extrinsic}} motivation means doing an activity for outside rewards or to avoid punishment.” That shape lists the answers in its hints and shows half of the contrast during each review. Instead write the shared meanings card: “Intrinsic motivation means {{c1::doing an activity because it is enjoyable}}; extrinsic motivation means {{c1::doing an activity for outside rewards or to avoid punishment}}.” If the pair is headline, add its shared names card: “{{c1::Intrinsic}} motivation means doing an activity because it is enjoyable; {{c1::extrinsic}} motivation means doing an activity for outside rewards or to avoid punishment.” Both notes use type cloze and clozePattern single. A category hint such as “type of motivation” is allowed when needed; hints must never list the candidate answers.
+
+Declare each opposite pair note with axis exactly `opposite: <canonical term A> | <canonical term B>`, using the canonical names from its named-term targets; link both targets to the shared meaning card and name card where present. For example: `opposite: Intrinsic motivation | Extrinsic motivation`. This declaration also applies to a simple opposite pair's shared meaning card. For a non-opposite headline set, put `non-opposite: <canonical term A> | <canonical term B>` on its shared meaning card and both name-only sisters; link each sister to its own term target. These reserved markers describe an author-verified relationship, not a relationship guessed from vocabulary. Leave ordinary parallel-group axis empty. Keep all notes in the pair and its instructor example under one conceptId. Do not split concept IDs to hide the review count. The builder checks declared pair shapes; the cold-read review must still catch undeclared opposites and semantic cues.
+
+A parent plus its types uses the umbrella list cloze. A sequence or ordered levels becomes an enumerated-list cloze with every item under c1 and a short meaning visible beside each: “The 3 levels, shallowest to deepest: {{c1::structural}} (how it looks), {{c1::phonemic}} (how it sounds), {{c1::semantic}} (what it means).” It creates one review card, not three. Separate c1/c2/c3 would not condense the review load.
 
 Every term's meaning must remain on the combined card, not merely its name or only an Extra example. Never combine unrelated items just to save cards. A term that needs more explanation to stay understandable keeps its own note; a standalone headline term or theory keeps its two-blank note. A valid combined comparison, parallel meaning group or ordered-list card is the group's direct card; apply the existing review-card limit to that group and its reinforcements. If an ordered list recalls only names with their meanings visible, it still needs meaning-recall notes for its lecture-defined members.
 
@@ -89,13 +98,14 @@ Use one fixed shape per card type:
 
 | Card | Front or cloze text | Required answer (Back) |
 |---|---|---|
-| Headline term or theory | One sentence: “{{c1::term::hint}} is {{c2::meaning}}” or “The {{c1::theory::hint}} states that {{c2::claim}}” | No separate Back; two review cards |
+| Standalone headline term or theory | One sentence: “{{c1::term::hint}} is {{c2::meaning}}” or “The {{c1::theory::hint}} states that {{c2::claim}}” | No separate Back; two review cards |
 | Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |
 | Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |
 | Scenario (instructor's example) | One or two sentences of situation, then one short plain question about one term | The term alone; the explanation, if any, goes in Extra |
 | Example | `Example of <term>` | The instructor's example |
 | Simple contrast or parallel meaning group | Names of 2–4 terms visible; all meanings blanked together under c1 | One review card; no duplicate meaning notes or name blanks |
-| Headline contrast | Parallel halves with names blanked under separate indices, using the pair as hint | Two contrast reviews plus one meaning-blank note per term: four review cards |
+| Opposite headline pair | Shared meanings under c1; a second note hides both names together under c1 | Two review cards; at most one instructor-example card |
+| Non-opposite headline pair | Shared meanings under c1; a separate name-only sister for each term | Three review cards; only an actual instructor example may make four |
 | Umbrella | “The N parts of X are {{c1::a}}, {{c1::b}} …”, placed before its members | No separate Back; one review card |
 | Why / how | One direct question | One sentence |
 
@@ -118,8 +128,8 @@ Required answer: a short, complete response the student can grade against the qu
 Biology and other figure-heavy lectures (the way AnKing and MileDown write biology):
 - Figures: put the lecture's slide or figure of that structure, phase or pathway in Extra on most cards. When the lecture asks the student to read an image (identify a phase, read a gel, blot or histogram), make a picture card: the image on the front and one short question, such as “Which phase of mitosis is this cell in?” → “Telophase”.
 - Stages: a process is one stage-and-event cloze per stage, “In {{c1::anaphase::mitosis phase}}, {{c2::sister chromatids separate to opposite poles}}.”, after the ordered umbrella list of stages. The list card's Extra key gives each stage its main event in a few words, plus a standard acronym when one exists (“Prophase: chromosomes condense / Prometaphase: envelope breaks down, fibers attach to kinetochores / Metaphase: line up at the middle / Anaphase: sisters pull apart / Telophase: nuclei re-form”), with the lecture's figure of the stages when it has one.
-- Directions: regulation blanks the direction with the either/or hint, “Cyclin–Cdk phosphorylates {{c1::Rb::protein}}, which {{c2::inactivates::activates/inactivates}} it.”
-- Pathways: a signaling or checkpoint chain is an arrow cloze with the proteins blanked, “DNA damage → {{c1::p53}} → {{c1::p21}} → cyclin–Cdk {{c2::inhibited::activated/inhibited}} → arrest.”
+- Directions: regulation blanks the direction without listing answer choices, “Cyclin–Cdk phosphorylates {{c1::Rb::protein}}, which {{c2::inactivates}} it.”
+- Pathways: a signaling or checkpoint chain is an arrow cloze with the proteins blanked, “DNA damage → {{c1::p53}} → {{c1::p21}} → cyclin–Cdk {{c2::inhibited}} → arrest.”
 - Numbers: counts, amounts and units are blanks with a hint naming the quantity, “After S phase, a diploid cell has {{c1::4C::DNA content}} of DNA but is still {{c2::2n::ploidy}}.”
 - Wording: biology lectures default to the Technical emphasis; suggest it as described below unless the student's Guide says otherwise. Under Technical, the Back retains the course's exact terms. Numbers and units stay exact.
 - A reason is written into the sentence (“…so that **each daughter cell gets one copy**”) rather than asked as a why question.
@@ -189,22 +199,22 @@ In every case: keep the instructor's examples, what the instructor stressed, phr
 
 ## Card types and cloze mechanics
 
-- basic: short factual recall as a question, or a direct question whose answer is one fact. Term definitions use the two-blank cloze note instead.
+- basic: short factual recall as a question, or a direct question whose answer is one fact. Term definitions use the applicable standalone, grouped or headline-pair cloze shape instead.
 - conceptual: the why/how shape.
-- comparison: for a headline pair, use clozePattern independent with each name blanked and separate meaning notes; record its axis in axis. Simple contrasts and parallel meaning groups use type cloze with clozePattern single, every meaning under c1 and the 2–4 names visible; leave axis empty.
+- comparison: a source-grounded comparison uses a meaningful axis. Headline pairs use the dedicated cloze protocol above, not separate-index comparison halves. Simple contrasts and parallel meaning groups use type cloze with clozePattern single, every meaning under c1 and the 2–4 names visible. Reserved opposite/non-opposite axis markers are allowed on those pair cloze notes; ordinary parallel groups leave axis empty.
 - process: the cloze list/steps shape for a pathway, sequence, or meaningful list.
 - application: the scenario shape, with necessary conditions and one question; do not invent factual evidence.
 - exemplar: the example shape, or a source-based recognition scenario. Set the appropriate exampleDirection; a partner is never required.
 - free-recall: not used; a group is an umbrella list cloze.
 - cloze: the two-blank term or theory note, the fact shape, or the list/steps shape. For a fact, blank the term, name or number and keep the rest visible.
 
-When clozePattern is set, front/back/recallItems are empty and cloze carries the sentence or short list. Use {{c1::answer}}, with an optional short hint as {{c1::answer::hint}} only when the blank would otherwise be ambiguous, for example {{c1::hippocampus::brain structure}}. Hints must narrow the cue without giving away the answer. No nested cloze. Keep one fact per sentence; do not hide unrelated facts together.
+When clozePattern is set, front/back/recallItems are empty and cloze carries the sentence or short list. Use {{c1::answer}}, with an optional short hint as {{c1::answer::hint}} only when the blank would otherwise be ambiguous, for example {{c1::hippocampus::brain structure}}. Hints must name a kind or category without giving away the answer. Never list candidate answers as either/or options, including slash-, pipe-, comma- or semicolon-separated alternatives or “A or B”. Use a plain category such as “type of motivation” instead. No nested cloze. Keep one fact per sentence; do not hide unrelated facts together.
 
 Use consecutive indices beginning at c1. Distinct indices create distinct review cards: c1 and c2 are two, even in one note. Use two blanks in one sentence only when both retrieval directions matter, without a separate mirror note. Example of the shape only: {{c1::hippocampus::brain structure}} supports forming new {{c2::explicit memories::memory type}}. Do not insert that fact into an unrelated lecture.
 
 A list is one note with its items blanked together under the same index. Use enumerated-list, keep its count visible, and set listOrdered. For ordered steps, preserve the real order; for unordered lists, say “in any order”. For example, “The 3 stages, in order, are {{c1::stage A}}, {{c1::stage B}}, and {{c1::stage C}}.” is one review card. Never blank the count or use separate indices for every list item by default.
 
-Patterns: single uses one index for one factual answer or the meanings of a 2–4-term simple contrast or parallel group; independent uses two or more related blanks retrieved separately, including the two-blank term or theory note; enumerated-list groups list items under one index. Do not use the legacy definition pattern; write headline terms and theories as two-blank independent notes, and ordered related-term lists as enumerated-list with short meanings visible.
+Patterns: single uses one index for one factual answer, the meanings of a 2–4-term simple contrast or parallel group, or both names of an opposite headline pair; independent uses two or more related blanks retrieved separately, including the two-blank term or theory note; enumerated-list groups list items under one index. Do not use the legacy definition pattern; write standalone headline terms and theories as two-blank independent notes, headline pairs as the shared-index set above, and ordered related-term lists as enumerated-list with short meanings visible.
 
 The builder flags potentially burdensome answers, lists, deletions, and Extra beyond one line or about 20 words for human inspection. These warnings are advisory, not quotas: do not pad or remove necessary meaning to satisfy them. The schema's 500-note maximum is only a technical guardrail, never a suggested deck size.
 
@@ -226,7 +236,7 @@ Keep the supplied serif question/answer design, a one-word card label (recall, l
 
 Final Basic fields, in order: Front, Back, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec, Topic, Source, My notes. Final Cloze fields: Text, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec, Topic, Source, My notes. Native Image Occlusion fields: Occlusion, Image, Header, Back Extra, Comments, Topic, Source, My notes, premedos_concept_id, premedos_source, premedos_spec. Metadata travels with the note but stays off the recall face. The embedded templates and builder, not prose interpretation, determine the final layout and field order. The supplied final note-type IDs are fixed, independent of CSS or template text. Topic, Source and My notes append to the already-released Basic/Cloze fields; the documented merge import upgrades those notes in place. Never change field order or identities for a design edit.
 
-Breadcrumbs come from the notebook, word for word. Use `<Journal objective title> › <Journal section title>`, copying both titles exactly, including punctuation and case. If the section title would reveal the hidden answer, use the objective title alone. If the objective itself gives away the answer, use another genuinely applicable existing Journal objective when available; never misclassify a card just to avoid a cue. If no such objective applies, report the conflict rather than inventing a title or claiming the cold-read pass succeeded. Never write a new label, shorten a title or paraphrase it. Set target.topic to the same exact objective title. Long copied titles are supported up to 2,000 characters; do not truncate to the old 80-character cap. Empty or omitted breadcrumb uses the linked target's topic. The builder warns “breadcrumb is not a notebook title” unless the first segment matches a target topic exactly; this does not verify the actual section title, so check that against the Journal yourself. Topic remains a small gray line on front and back. The builder derives the collapsed Source control from sourceRefs location strings; keep those short locators, not source commentary. premedos_source remains hidden evidence JSON. My notes starts empty and is rendered on the back only when the student fills it; never author or overwrite the student's own notes.
+Breadcrumbs come from the notebook, word for word. Use `<Journal objective title> › <Journal section title>`, copying both titles exactly, including punctuation and case. If the section title would reveal the hidden answer, use the objective title alone. If the objective itself gives away the answer, use another genuinely applicable existing Journal objective when available; never misclassify a card just to avoid a cue. If no such objective applies, retain the exact title: the supplied literal-answer guard hides an answer-giving Topic chip on the question only and retains its exact title on the answer. Do not invent titles or misclassify the card to avoid a cue. The literal guard cannot detect synonymous or indirect clues; inspect those in the cold-read pass and report unresolved cues. Never write a new label, shorten a title or paraphrase it. Set target.topic to the same exact objective title. Long copied titles are supported up to 2,000 characters; do not truncate to the old 80-character cap. Empty or omitted breadcrumb uses the linked target's topic. The builder warns “breadcrumb is not a notebook title” unless the first segment matches a target topic exactly; this does not verify the actual section title, so check that against the Journal yourself. Topic uses the F2 chip on the label row: the square and one-word label first, then the exact breadcrumb in a rounded chip. Use the label's ui-monospace, "SF Mono", Menlo, Consolas font at 11.5px, padding 4px 9px, light background #efe9de with text #6f675a, and night background #3a342b with text #cfc6b6. Remove the separate topic line above the label. At 390px the chip may wrap under the label; its text wraps without horizontal overflow. The question-only answer-leak guard hides an answer-giving chip on the question and retains it on the answer. The builder derives the collapsed Source control from sourceRefs location strings; keep those short locators, not source commentary. premedos_source remains hidden evidence JSON. My notes starts empty and is rendered on the back only when the student fills it; never author or overwrite the student's own notes.
 
 Enumerated-list cards keep their one c1 review card, list count, order rule and Extra key. One-by-one reveal runs on any question with two or more active blanks of the same index, regardless of the card label or type: lists, 2–4-term parallel meanings, steps, pathways and other grouped clozes. Single-active-blank questions stay untouched. The front's local template script reveals the next blank on tap/click or Space, Enter, ArrowRight or N; the answer shows all items. No remote scripts or extra notes are added. Without script support or complete cloze answer/index attributes, the ordinary all-blanks question remains usable. Desktop DOM event tests do not establish physical AnkiMobile/AnkiDroid behavior; report any client limitation honestly.
 
@@ -271,7 +281,7 @@ Use the environment's equivalent Python path on other operating systems. The Ank
 
 Never invent terms. Use the course's exact named terms. Descriptive wording stays descriptive: “the efficiency of our thought processes” is not a named “thought process efficiency” term. Do not manufacture jargon or compress an explanation into an invented noun phrase.
 
-Required cold-read review before building. Re-read every card as a student who missed the lecture, card by card, and rewrite any that fails these six checks: (1) the non-blank text names what the card is about; (2) the answer is understood on first read; (3) no phrase is awkward, compressed or invented; (4) every available lecture/Journal example that belongs in Extra is there; (5) one fact per card, with the approved grouped formats retained; (6) a grouped card is a real contrast or parallel set, not merely related facts. Report how many cards were rewritten in this pass, using actual card IDs. Report every background term moved into a lecture card. Builder warnings for context-poor clozes and definitions missing an available example are review cues, not semantic proof; investigate and record their dispositions.
+Required cold-read review before building. Re-read every card as a student who missed the lecture, card by card, and rewrite any that fails these six checks: (1) the non-blank text names what the card is about; (2) the answer is understood on first read; (3) no phrase is awkward, compressed or invented; (4) every available lecture/Journal example that belongs in Extra is there; (5) one fact per card, with the approved grouped formats retained; (6) a grouped card is a real contrast or parallel set, not merely related facts; opposite pairs hide both names or both meanings together, and no hint lists answer options. Check the new headline-pair shapes without cutting any term's last meaning recall. Report how many cards were rewritten in this pass, using actual card IDs. Report every background term moved into a lecture card. Builder warnings for context-poor clozes and definitions missing an available example are review cues, not semantic proof; investigate and record their dispositions.
 
 Style examples from flagged cards, not material to insert into unrelated decks: name “short-term memory” rather than “the short-term estimate”; explain rehearsing as repeating items; show the two long-term-memory views in full, using grouped reveal; keep multitasking (rapid attention switching) separate from automaticity (little conscious attention for a practiced task). In a case/finding card, retain its supplied evidence in Extra, such as the “smashed” versus “hit” broken-glass result when those materials are provided.
 
@@ -867,8 +877,9 @@ Save each following fenced block under the exact filename shown. The block conte
 .type {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 12px; letter-spacing: .08em; margin-bottom: 18px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
 }
-.verb { color: var(--ac); font-weight: 700; }
+.verb { color: var(--ac); font-weight: 700; flex: 0 0 auto; white-space: nowrap; }
 .verb::before { content: "■ "; font-size: 9px; vertical-align: 2px; margin-right: 2px; }
 .tname { color: #8a8172; margin-left: 8px; }
 .tname::before { content: "/  "; }
@@ -918,13 +929,25 @@ ol.blurt li::before {
 .pm img { max-width: 100%; height: auto; }
 
 /* Supporting information follows the existing muted sans-serif Extra treatment. */
-.topic { font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #6f675a; margin-bottom: 10px; }
+.topic-chip {
+  display: inline-block; flex: 1 1 0; min-width: 0; max-width: max-content; box-sizing: border-box;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11.5px; line-height: 1.45; letter-spacing: .02em;
+  border-radius: 999px; padding: 4px 9px; overflow-wrap: anywhere;
+  background: #efe9de; color: #6f675a;
+}
+.nightMode .topic-chip, .night_mode .topic-chip { background: #3a342b; color: #cfc6b6; }
 .source, .my-notes { margin-top: 16px; font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #6f675a; }
 .source summary { cursor: pointer; }
 .pm-list-reveal-controls { margin-top: 16px; display: flex; align-items: center; gap: 8px; }
 .pm-list-reveal-status { font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #6f675a; }
 .pm-list-reveal { margin-top: 0; color: var(--ac); background: transparent; border: 1px solid currentColor; border-radius: 6px; padding: 7px 12px; font: 14px system-ui; cursor: pointer; }
-.nightMode .pm-list-reveal-status, .night_mode .pm-list-reveal-status, .nightMode .topic, .night_mode .topic, .nightMode .source, .night_mode .source, .nightMode .my-notes, .night_mode .my-notes { color: #a39a89; }
+.nightMode .pm-list-reveal-status, .night_mode .pm-list-reveal-status, .nightMode .source, .night_mode .source, .nightMode .my-notes, .night_mode .my-notes { color: #a39a89; }
+
+/* Preserve exact answer-giving titles on the answer, without cueing the question. */
+.pm-question .topic-answer-cue + .topic-chip { display: none; }
+
+@media (max-width: 480px) { .topic-chip { flex-basis: 100%; } }
 ```
 
 ### File: requirements.txt
@@ -1035,7 +1058,7 @@ IO_FIELDS = ['Occlusion', 'Image', 'Header', 'Back Extra', 'Comments',
 IO_MODEL_ID = 895232792405
 IO_MODEL_NAME = 'premedOS Image Occlusion (prompt v1)'
 
-TOPIC = '{{#Topic}}<div class="topic">{{Topic}}</div>{{/Topic}}'
+TOPIC = '{{#Topic}}<span class="topic-chip">{{Topic}}</span>{{/Topic}}'
 SOURCE = '{{#Source}}<details class="source"><summary>Source</summary><div>{{Source}}</div></details>{{/Source}}'
 MY_NOTES = '{{#My notes}}<div class="my-notes">{{My notes}}</div>{{/My notes}}'
 IO_BODY = '''{{#Header}}<div class="io-header">{{Header}}</div>{{/Header}}
@@ -1052,9 +1075,9 @@ try {
   document.getElementById("err").textContent = "Image occlusion needs a current Anki version. Please update Anki before studying this card.";
 }
 </script>'''
-IO_LABEL = '<div class="type"><span class="verb">recall</span></div>'
-IO_Q = '<div class="pm m-say">' + TOPIC + IO_LABEL + IO_BODY + '</div>'
-IO_A = ('<div class="pm m-say">' + TOPIC + IO_LABEL + IO_BODY
+IO_LABEL = '<div class="type card-meta"><span class="verb">recall</span>' + TOPIC + '</div>'
+IO_Q = '<div class="pm m-say">' + IO_LABEL + IO_BODY + '</div>'
+IO_A = ('<div class="pm m-say">' + IO_LABEL + IO_BODY
         + '<div><button id="toggle">Toggle Masks</button></div>'
         + '{{#Back Extra}}<div class="extra">{{Back Extra}}</div>{{/Back Extra}}'
         + MY_NOTES + SOURCE + '</div>')
@@ -1346,6 +1369,154 @@ if __name__ == '__main__':
         print(text, end='')
 ```
 
+### File: pair_rules.py
+
+```python
+"""Structural checks for author-declared term pairs; no inferred opposite lexicon."""
+import re
+
+CLOZE = re.compile(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}')
+PAIR = re.compile(r'^(opposite|non-opposite)\s*:\s*(.*?)\s*\|\s*(.*?)\s*$', re.I)
+
+
+def normalized(text):
+    return ' '.join(re.findall(r'\w+', str(text).casefold()))
+
+
+def contains(text, phrase):
+    return bool(phrase) and (' ' + phrase + ' ') in (' ' + text + ' ')
+
+
+def declared_pair(card):
+    """Return (relationship, (canonical A, canonical B)), or None for ordinary axes."""
+    axis = card.get('axis', '').strip()
+    if not re.match(r'^(?:non-opposite|opposite)\s*:', axis, re.I):
+        return None
+    match = PAIR.fullmatch(axis)
+    if not match or not all(match.group(i).strip() for i in (2, 3)):
+        raise ValueError('pair axis must declare two canonical terms separated by |')
+    names = tuple(match.group(i).strip() for i in (2, 3))
+    if '|' in ''.join(names) or normalized(names[0]) == normalized(names[1]):
+        raise ValueError('pair axis must declare two distinct canonical terms')
+    return match.group(1).lower(), names
+
+
+def target_definitions(targets):
+    values = targets.values() if isinstance(targets, dict) else targets
+    result = {}
+    for target in values:
+        statement, reason = target.get('statement', ''), target.get('reason', '')
+        if statement.startswith('Term: ') and reason.startswith('Meaning: '):
+            result[normalized(statement[6:])] = normalized(reason[9:])
+    return result
+
+
+def expanded(text, hidden=None):
+    return normalized(CLOZE.sub(lambda m: '' if int(m.group(1)) == hidden
+                              else m.group(2).split('::', 1)[0], text))
+
+
+def pair_role(card, targets):
+    """Classify one declared single-index review as meanings, names, or name:<0/1>."""
+    declaration = declared_pair(card)
+    if declaration is None:
+        return None
+    relation, raw_names = declaration
+    names = tuple(map(normalized, raw_names))
+    definitions = target_definitions(targets)
+    if any(name not in definitions for name in names):
+        raise ValueError('pair axis requires named-term targets with recorded meanings')
+    meanings = tuple(definitions[name] for name in names)
+    text = card.get('cloze', '')
+    spans = list(CLOZE.finditer(text))
+    active = {int(m.group(1)) for m in spans}
+    if len(active) != 1:
+        raise ValueError('declared pair must use one shared cloze index per note')
+    index = next(iter(active))
+    full, visible = expanded(text), expanded(text, index)
+    answers = [normalized(m.group(2).split('::', 1)[0]) for m in spans]
+    name_visible = [contains(visible, n) for n in names]
+    meaning_hidden = [any(contains(a, meaning) for a in answers) for meaning in meanings]
+    if all(name_visible) and all(meaning_hidden):
+        return 'meanings'
+    if (all(contains(full, n) for n in names) and not any(name_visible)
+            and all(contains(visible, m) for m in meanings)):
+        return 'names'
+    if relation == 'non-opposite':
+        for i in range(2):
+            other = 1 - i
+            if (contains(full, names[i]) and not name_visible[i]
+                    and contains(visible, meanings[i])
+                    and not contains(full, names[other])
+                    and not contains(full, meanings[other])):
+                return 'name:' + str(i)
+        raise ValueError('non-opposite pair needs shared meanings or a separate name-only sister')
+    raise ValueError('opposite pair must hide both names or both meanings under the same cloze index')
+
+
+def validate_pair_rules(card, targets):
+    """Reject explicit option hints and invalid declared pair shapes; raises ValueError."""
+    for match in CLOZE.finditer(card.get('cloze', '')):
+        parts = match.group(2).split('::', 1)
+        if len(parts) == 2 and re.search(r'[/|,;]|\b(?:or|either|versus|vs)\b', parts[1], re.I):
+            raise ValueError('cloze hint must name a category, not list answer options')
+    declaration = declared_pair(card)
+    if declaration:
+        role = pair_role(card, targets)
+        if declaration[0] == 'non-opposite' and role == 'names':
+            raise ValueError('non-opposite names require separate name-only sister cards')
+    return None
+
+
+def valid_headline_pair_core(group, targets):
+    """The approved three-review non-opposite core earns its third name sister."""
+    if len(group) != 3 or len({c.get('conceptId') for c in group}) != 1 or not group[0].get('conceptId'):
+        return False
+    try:
+        declarations = []
+        for card in group:
+            validate_pair_rules(card, targets)
+            declaration = declared_pair(card)
+            if not declaration or declaration[0] != 'non-opposite': return False
+            declarations.append(declaration)
+        return (len({tuple(map(normalized, d[1])) for d in declarations}) == 1
+                and sorted(pair_role(c, targets) for c in group) == ['meanings', 'name:0', 'name:1'])
+    except (ValueError, TypeError):
+        return False
+
+
+def valid_headline_pair_allowance(group, targets):
+    """Only the three-note non-opposite headline set plus one actual example earns four."""
+    if len(group) != 4 or len({c.get('conceptId') for c in group}) != 1 or not group[0].get('conceptId'):
+        return False
+    pair_cards, examples = [], []
+    try:
+        for card in group:
+            validate_pair_rules(card, targets)
+            declaration = declared_pair(card)
+            if declaration:
+                if declaration[0] != 'non-opposite':
+                    return False
+                pair_cards.append((card, declaration))
+            else:
+                examples.append(card)
+        if len(pair_cards) != 3 or len(examples) != 1:
+            return False
+        if not valid_headline_pair_core([c for c, _ in pair_cards], targets):
+            return False
+        example = examples[0]
+        reason = example.get('reinforcementReason', '').casefold()
+        is_example = example.get('type') in ('application', 'exemplar', 'cloze')
+        example_indices = {int(m.group(1)) for m in CLOZE.finditer(example.get('cloze', ''))}
+        one_review = (len(example_indices) == 1 if example.get('clozePattern')
+                      else not example_indices)
+        evidence = re.search(r"instructor(?:'s|’s)?\s+(?:own\s+)?example|example from the lecture", reason)
+        return bool(is_example and evidence and example.get('sourceRefs')
+                    and one_review)
+    except (ValueError, TypeError):
+        return False
+```
+
 ### File: build_deck.py
 
 ```python
@@ -1359,6 +1530,7 @@ from collections import Counter, defaultdict
 import genanki
 from jsonschema import Draft202012Validator
 from image_occlusion import native_model, native_occlusion
+from pair_rules import declared_pair, validate_pair_rules, valid_headline_pair_allowance, valid_headline_pair_core
 
 HERE = Path(__file__).resolve().parent
 SCHEMA = json.loads((HERE / 'cards.schema.json').read_text())
@@ -1370,14 +1542,14 @@ LEGACY_CLOZE_FIELDS = ['Text', 'Extra', 'Type', 'Mindset', 'premedos_concept_id'
 NOTE_TYPE_IDS = {'Basic':646888316168, 'Cloze':623388404634}
 BASIC_FIELDS = LEGACY_BASIC_FIELDS + ['Topic', 'Source', 'My notes']
 CLOZE_FIELDS = LEGACY_CLOZE_FIELDS + ['Topic', 'Source', 'My notes']
-TYPE = '<div class="type">{{Type}}</div>'
-TOPIC = '{{#Topic}}<div class="topic">{{Topic}}</div>{{/Topic}}'
+TOPIC = '{{#Topic}}<span class="topic-chip">{{Topic}}</span>{{/Topic}}'
+TYPE = '<div class="type card-meta">{{Type}}' + TOPIC + '</div>'
 FOOTER = '{{#My notes}}<div class="my-notes">{{My notes}}</div>{{/My notes}}{{#Source}}<details class="source"><summary>Source</summary>{{Source}}</details>{{/Source}}'
 EXTRA = '{{#Extra}}<div class="extra">{{Extra}}</div>{{/Extra}}'
-BASIC_Q = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{Front}}</div>'
-BASIC_A = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + FOOTER + '</div>'
-CLOZE_Q = '<div id="pm-list-question" class="pm {{Mindset}}">' + TOPIC + TYPE + '{{cloze:Text}}</div><script>' + (HERE / 'list-reveal.js').read_text() + '</script>'
-CLOZE_A = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{cloze:Text}}' + EXTRA + FOOTER + '</div>'
+BASIC_Q = '<div class="pm pm-question {{Mindset}}">' + TYPE + '{{Front}}</div>'
+BASIC_A = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + FOOTER + '</div>'
+CLOZE_Q = '<div id="pm-list-question" class="pm pm-question {{Mindset}}">' + TYPE + '{{cloze:Text}}</div><script>' + (HERE / 'list-reveal.js').read_text() + '</script>'
+CLOZE_A = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}' + EXTRA + FOOTER + '</div>'
 LABELS = {'basic': 'recall', 'cloze': 'recall', 'process': 'list', 'conceptual': 'why', 'comparison': 'compare', 'exemplar': 'example', 'application': 'application', 'free-recall': 'list', 'image-occlusion':'recall'}
 MINDSETS = {'basic': ('say', 'say it'), 'cloze': ('say', 'say it'), 'process': ('say', 'say it'), 'conceptual': ('explain', 'explain it'), 'comparison': ('connect', 'connect it'), 'exemplar': ('connect', 'connect it'), 'application': ('use', 'use it'), 'free-recall': ('blurt', 'blurt it'), 'image-occlusion':('say','say it')}
 
@@ -1385,6 +1557,18 @@ def escape(value):
     # **word** marks a bold cue word; everything else stays plain text.
     escaped = html.escape(value, quote=True).replace('\n', '<br>')
     return re.sub(r'\*\*([^*<>]+?)\*\*', r'<b>\1</b>', escaped)
+
+def topic_reveals_answer(topic, card):
+    """Keep exact titles on the answer without using them as an answer cue.
+
+    Only literal answer phrases are detected. The required cold-read pass still
+    handles synonyms or an indirect clue. A per-note marker needs no new fields.
+    """
+    title = coverage_text(topic)
+    answers = ([m[2].split('::')[0] for m in re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', card['cloze'])]
+               if card['clozePattern'] else [card['back']])
+    return any(len(coverage_text(answer)) >= 3 and
+               f' {coverage_text(answer)} ' in f' {title} ' for answer in answers)
 
 def stable_id(value):
     return 1_000_000_000 + int(hashlib.sha256(value.encode()).hexdigest()[:10], 16)
@@ -1562,8 +1746,10 @@ def validate(data, updating=False):
                 require(c['back'].strip() and not c['recallItems'], f'{cid}: missing answer or stray blurt items.')
             require('{{c' not in c['front'] + c['back'], f'{cid}: cloze syntax without cloze mechanism.')
         if cp != 'enumerated-list': require(c['listOrdered'] is None, f'{cid}: listOrdered is for enumerated lists only.')
+        validate_pair_rules(c, targets)
+        pair = declared_pair(c)
         if c['type'] == 'comparison': require(c['axis'].strip(), f'{cid}: name the comparison axis.')
-        else: require(not c['axis'], f'{cid}: axis belongs on comparison cards.')
+        else: require(not c['axis'] or (pair and cp), f'{cid}: axis belongs on comparison cards or declared cloze pairs.')
         if c['type'] == 'exemplar':
             require(c['exampleDirection'], f'{cid}: declare example direction; a partner is optional.')
             if c['examplePairId']: pairs[c['examplePairId']].append(c)
@@ -1660,6 +1846,7 @@ def validate(data, updating=False):
     for concept, group in groups.items():
         reviews = sum(len(indices(c)) for c in group)
         exception = exceptions.get(concept)
+        pair_allowance = reviews == 4 and valid_headline_pair_allowance(group, targets)
         if exception:
             require(reviews > 3, f'{concept}: no over-limit coverage exception is needed.')
             require(exception['reason'].strip(), f'{concept}: explain the coverage exception.')
@@ -1676,12 +1863,12 @@ def validate(data, updating=False):
             require(witnessed_cards == {c['id'] for c in group} and all(len(indices(c)) == 1 for c in group), f'{concept}: coverage exception only permits indispensable single-review notes, not surplus cloze indices.')
             warnings.append(f'{concept}: coverage exception keeps {reviews} review cards. {exception["reason"]}')
         else:
-            require(reviews <= 3, f'{concept}: more than three review cards for one idea.')
+            require(reviews <= 3 or pair_allowance, f'{concept}: more than three review cards for one idea; only the exact non-opposite headline set plus instructor example earns four.')
         if not any(direct_card_candidate(c) or len(term_witnesses[c['id']]) >= 2 for c in group):
             warnings.append(f'{concept}: no direct term card detected; inspect this concept.')
         if len(group) >= 2:
             require(group[1]['reinforcementReason'].strip() or exception, f'{group[1]["id"]}: explain the additional retrieval purpose; no automatic mirrors.')
-        if reviews == 3 and not any(names_instructor_emphasis(c['reinforcementReason']) for c in group):
+        if reviews == 3 and not valid_headline_pair_core(group, targets) and not any(names_instructor_emphasis(c['reinforcementReason']) for c in group):
             warnings.append(f'{concept}: third review card needs a reinforcementReason naming instructor emphasis.')
         require(sum(c['type'] in ['application', 'exemplar'] for c in group) <= 1, f'{concept}: keep at most one scenario or example card per idea.')
         answers = []
@@ -1689,6 +1876,7 @@ def validate(data, updating=False):
             # A scenario or example card legitimately answers with the term itself;
             # its retrieval cue (the instructor's situation) is what makes it distinct.
             if c['type'] in ['application', 'exemplar'] and not c['clozePattern']: continue
+            if pair_allowance and not declared_pair(c): continue  # The evidenced instructor example has its own cue.
             if c['clozePattern']:
                 for index in indices(c):
                     answers.append(' '.join(m[2].split('::')[0] for m in re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', c['cloze']) if int(m[1]) == index))
@@ -1757,6 +1945,9 @@ def build(data, out, input_dir, previous=None):
             label = LABELS[card['type']]
             if card['clozePattern'] == 'enumerated-list': label = 'list'
             typ = '<span class="verb">' + label + '</span>'
+            topic = card.get('breadcrumb') or next(t['topic'] for t in data['targets'] if t['id'] in card['targetIds'])
+            if topic_reveals_answer(topic, card):
+                typ += '<span class="topic-answer-cue" hidden></span>'
             extra = escape(extra_text(card))
             extra += render_images(card['extraImages'])
             evidence = card['sourceRefs'] + [im['source'] for im in card['frontImages'] + card['extraImages']]
