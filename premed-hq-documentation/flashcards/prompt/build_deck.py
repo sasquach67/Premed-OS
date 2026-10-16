@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 import genanki
 from jsonschema import Draft202012Validator
 from image_occlusion import native_model, native_occlusion
+from pair_rules import declared_pair, validate_pair_rules, valid_headline_pair_allowance, valid_headline_pair_core, validate_pair_group
 
 HERE = Path(__file__).resolve().parent
 SCHEMA = json.loads((HERE / 'cards.schema.json').read_text())
@@ -19,14 +20,14 @@ LEGACY_CLOZE_FIELDS = ['Text', 'Extra', 'Type', 'Mindset', 'premedos_concept_id'
 NOTE_TYPE_IDS = {'Basic':646888316168, 'Cloze':623388404634}
 BASIC_FIELDS = LEGACY_BASIC_FIELDS + ['Topic', 'Source', 'My notes']
 CLOZE_FIELDS = LEGACY_CLOZE_FIELDS + ['Topic', 'Source', 'My notes']
-TYPE = '<div class="type">{{Type}}</div>'
-TOPIC = '{{#Topic}}<div class="topic">{{Topic}}</div>{{/Topic}}'
+TOPIC = '{{#Topic}}<span class="topic-chip">{{Topic}}</span>{{/Topic}}'
+TYPE = '<div class="type card-meta">{{Type}}' + TOPIC + '</div>'
 FOOTER = '{{#My notes}}<div class="my-notes">{{My notes}}</div>{{/My notes}}{{#Source}}<details class="source"><summary>Source</summary>{{Source}}</details>{{/Source}}'
 EXTRA = '{{#Extra}}<div class="extra">{{Extra}}</div>{{/Extra}}'
-BASIC_Q = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{Front}}</div>'
-BASIC_A = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + FOOTER + '</div>'
-CLOZE_Q = '<div id="pm-list-question" class="pm {{Mindset}}">' + TOPIC + TYPE + '{{cloze:Text}}</div><script>' + (HERE / 'list-reveal.js').read_text() + '</script>'
-CLOZE_A = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{cloze:Text}}' + EXTRA + FOOTER + '</div>'
+BASIC_Q = '<div class="pm pm-question {{Mindset}}">' + TYPE + '{{Front}}</div>'
+BASIC_A = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + FOOTER + '</div>'
+CLOZE_Q = '<div id="pm-list-question" class="pm pm-question {{Mindset}}">' + TYPE + '{{cloze:Text}}</div><script>' + (HERE / 'list-reveal.js').read_text() + '</script>'
+CLOZE_A = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}' + EXTRA + FOOTER + '</div>'
 LABELS = {'basic': 'recall', 'cloze': 'recall', 'process': 'list', 'conceptual': 'why', 'comparison': 'compare', 'exemplar': 'example', 'application': 'application', 'free-recall': 'list', 'image-occlusion':'recall'}
 MINDSETS = {'basic': ('say', 'say it'), 'cloze': ('say', 'say it'), 'process': ('say', 'say it'), 'conceptual': ('explain', 'explain it'), 'comparison': ('connect', 'connect it'), 'exemplar': ('connect', 'connect it'), 'application': ('use', 'use it'), 'free-recall': ('blurt', 'blurt it'), 'image-occlusion':('say','say it')}
 
@@ -34,6 +35,28 @@ def escape(value):
     # **word** marks a bold cue word; everything else stays plain text.
     escaped = html.escape(value, quote=True).replace('\n', '<br>')
     return re.sub(r'\*\*([^*<>]+?)\*\*', r'<b>\1</b>', escaped)
+
+def breadcrumb_label(card, targets):
+    """Resolve a compact label; never silently clip or copy a long objective."""
+    raw = card.get('breadcrumb') or next(t['topic'] for t in targets.values() if t['id'] in card['targetIds'])
+    require(len(raw) <= 40, f'{card["id"]}: breadcrumb exceeds 40 characters; choose a short notebook topic label.')
+    parts = [part.strip() for part in raw.split('›')]
+    require(1 <= len(parts) <= 2 and all(parts), f'{card["id"]}: breadcrumb needs one or two nonempty segments.')
+    words = re.findall(r"[^\W_]+(?:[-’'][^\W_]+)*", raw, re.UNICODE)
+    require(1 <= len(words) <= 4, f'{card["id"]}: breadcrumb needs 1 to 4 words, not an objective sentence.')
+    return raw.strip()
+
+def topic_reveals_answer(topic, card):
+    """Keep exact titles on the answer without using them as an answer cue.
+
+    Only literal answer phrases are detected. The required cold-read pass still
+    handles synonyms or an indirect clue. A per-note marker needs no new fields.
+    """
+    title = coverage_text(topic)
+    answers = ([m[2].split('::')[0] for m in re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', card['cloze'])]
+               if card['clozePattern'] else [card['back']])
+    return any(len(coverage_text(answer)) >= 3 and
+               f' {coverage_text(answer)} ' in f' {title} ' for answer in answers)
 
 def stable_id(value):
     return 1_000_000_000 + int(hashlib.sha256(value.encode()).hexdigest()[:10], 16)
@@ -50,7 +73,7 @@ def word_count(value):
 
 def extra_text(card):
     # Preserve authored content without mandatory prose or decorative labels.
-    return ' '.join(part for part in [card['explanation'].strip(), card['example']['text'].strip() if card['example'] else ''] if part)
+    return '\n'.join(part for part in [card['example']['text'].strip() if card['example'] else '', card['explanation'].strip()] if part)
 
 def topic_key(target):
     return ' '.join(target['topic'].casefold().split())
@@ -69,6 +92,24 @@ def term_spec(target):
     meaning = target['reason'].split(':', 1)[1].strip()
     require(meaning, f'{target["id"]}: the term needs its meaning, not just its name.')
     return term, meaning
+
+def parallel_meaning_terms(card, targets, term_ids):
+    """Count distinct defined terms whose meanings are recalled on this note.
+
+    Inspect every defined target, not only author-linked targets. Lists of names
+    and contrast names remain allowed because their meanings are visible, not answers.
+    Independent cloze indices and Q&A formatting cannot bypass standalone recall.
+    """
+    pattern = r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}'
+    full = coverage_text(card['front'] + ' ' + (card['cloze'] or card['back']))
+    answers = ([coverage_text(m[2].split('::')[0]) for m in re.finditer(pattern, card['cloze'])]
+               if card['clozePattern'] else [coverage_text(card['back'])])
+    names = set()
+    for tid in term_ids:
+        name, meaning = map(coverage_text, term_spec(targets[tid]))
+        if f' {name} ' in f' {full} ' and any(f' {meaning} ' in f' {answer} ' for answer in answers):
+            names.add(name)
+    return names
 
 def card_language_warnings(card):
     warnings = []
@@ -92,6 +133,38 @@ def direct_card_candidate(card):
             and not re.search(r'[?!;:\n]', front)
             and (not front.endswith('.') or bool(re.search(r'\b(?:[A-Za-z]\.){2,}$', front)))
             and not re.match(r'^(?:what|why|how|which|when|where|who|whose|is|are|does|do|can|could|should|would|define|describe|explain|compare|give|name|list|recall)\b', front, re.IGNORECASE))
+
+def clarity_warnings(card, targets, notebook_titles=None):
+    warnings = []
+    linked = [targets[tid] for tid in card['targetIds']]
+    if card['clozePattern']:
+        pattern = r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}'
+        thin = []
+        for index in indices(card):
+            visible = re.sub(pattern, lambda m: ' ' if int(m[1]) == index else m[2].split('::')[0], card['cloze'])
+            words = coverage_text(visible).split()
+            if len(words) < 4:
+                thin.append(str(index))
+        # This is only a cue for human cold-reading, not a semantic concept detector.
+        visible_all = coverage_text(re.sub(pattern, ' ', card['cloze']))
+        names = [coverage_text(t['statement'].split(':', 1)[1]) for t in linked if t['statement'].casefold().startswith('term:')]
+        vague = bool(re.match(r'^(?:it|this|that|these|those|the estimate|with strategies controlled)\b', visible_all))
+        if vague and any(f' {name} ' in f' {visible_all} ' for name in names): vague = False
+        if thin or vague:
+            detail = 'fewer than about 4 visible words for c' + ', c'.join(thin) if thin else 'no explicit concept cue detected'
+            warnings.append(f'{card["id"]}: context-poor cloze ({detail}); cold-read the question in isolation.')
+    definition = direct_card_candidate(card) or any(t['statement'].casefold().startswith('term:') for t in linked)
+    excerpt = ' '.join([ref['excerpt'] for ref in card['sourceRefs']] + [t['statement'] + ' ' + t['reason'] for t in linked])
+    if definition and not extra_text(card) and not card['extraImages'] and re.search(r'\bexample\b|\be\.g\.|\bfor instance\b', excerpt, re.IGNORECASE):
+        warnings.append(f'{card["id"]}: definition is missing an available example; inspect the linked source/target and add its relevant example to Extra.')
+    breadcrumb = breadcrumb_label(card, targets)
+    titles = [coverage_text(t['topic']).split() for t in targets.values()]
+    titles += [coverage_text(title).split() for title in (notebook_titles or [])]
+    if any(not any(set(coverage_text(part).split()) <= set(title) for title in titles) for part in breadcrumb.split('›')):
+        warnings.append(f'{card["id"]}: breadcrumb words are not in a notebook title; use a short section/topic name or noun phrase from an actual title.')
+    if re.match(r'^(?:study\s+objective|objective\b|(?:recognize|draw|explain|define|describe|list|identify|compare|distinguish|understand|analyze|predict|interpret|demonstrate|outline|evaluate)\b)', breadcrumb, re.IGNORECASE):
+        warnings.append(f'{card["id"]}: breadcrumb reads like an objective verb phrase; choose a short topic noun label.')
+    return warnings
 
 def names_instructor_emphasis(reason):
     # Detect a named emphasis cue, not whether the course evidence is true.
@@ -125,6 +198,7 @@ def validate(data, updating=False):
         cid = c['id']
         require(all(t in targets for t in c['targetIds']), f'{cid}: unknown learning target.')
         require(len(c['targetIds']) == len(set(c['targetIds'])), f'{cid}: repeated target reference.')
+        breadcrumb_label(c, targets)
         for ref in c['sourceRefs']:
             evidence(ref)
         cp = c['clozePattern']
@@ -164,8 +238,10 @@ def validate(data, updating=False):
                 require(c['back'].strip() and not c['recallItems'], f'{cid}: missing answer or stray blurt items.')
             require('{{c' not in c['front'] + c['back'], f'{cid}: cloze syntax without cloze mechanism.')
         if cp != 'enumerated-list': require(c['listOrdered'] is None, f'{cid}: listOrdered is for enumerated lists only.')
+        validate_pair_rules(c, targets)
+        pair = declared_pair(c)
         if c['type'] == 'comparison': require(c['axis'].strip(), f'{cid}: name the comparison axis.')
-        else: require(not c['axis'], f'{cid}: axis belongs on comparison cards.')
+        else: require(not c['axis'] or (pair and cp), f'{cid}: axis belongs on comparison cards or declared cloze pairs.')
         if c['type'] == 'exemplar':
             require(c['exampleDirection'], f'{cid}: declare example direction; a partner is optional.')
             if c['examplePairId']: pairs[c['examplePairId']].append(c)
@@ -183,10 +259,13 @@ def validate(data, updating=False):
             key = [l for l in c['explanation'].split('\n') if l.strip()]
             if len(key) > len(spans) + 1 or any(word_count(l) > 18 for l in key):
                 warnings.append(f'{cid}: list key should be one short line per item.')
-        elif word_count(extra) > 20 or '\n' in c['explanation'] or (ex is not None and '\n' in ex['text']) or (c['explanation'].strip() and ex is not None):
-            warnings.append(f'{cid}: Extra exceeds one short line (about 20 words); choose the single most useful detail.')
+        else:
+            lines = extra.splitlines()
+            if len(lines) > 3 or any(word_count(line) > 20 for line in lines):
+                warnings.append(f'{cid}: Extra exceeds three short lines (about 20 words each); retain useful example, plain restatement and evidence only.')
         if word_count(c['back']) > 45 or any(word_count(i) > 35 for i in c['recallItems']): warnings.append(f'{cid}: long required answer; inspect grading burden.')
         warnings.extend(card_language_warnings(c))
+        warnings.extend(clarity_warnings(c, targets, data.get('notebookTitles', [])))
         occlusion = c.get('imageOcclusion')
         require(bool(occlusion) == (c['type'] == 'image-occlusion'), f'{cid}: image-occlusion cards require exactly one mask definition.')
         if occlusion:
@@ -232,13 +311,22 @@ def validate(data, updating=False):
                 direct = direct_card_candidate(card) or (card['type'] == 'comparison' and not card['clozePattern']) or (card['clozePattern'] == 'enumerated-list' and card['listOrdered'] is True)
                 required = coverage_text(card['back'] or card['cloze'])
                 visible = coverage_text(card['front'] + ' ' + (card['back'] or card['cloze']))
-                if direct and f' {name} ' in f' {visible} ' and f' {meaning} ' in f' {required} ':
+                if (direct or (not card['clozePattern'] and card['back'].strip())) and f' {name} ' in f' {visible} ' and f' {meaning} ' in f' {required} ':
                     witnesses.append(cid)
-            require(witnesses, f'{t["id"]}: named term {term[0]} loses its required meaning; Extra or a name alone is not direct coverage.')
+            require(witnesses, f'{t["id"]}: named term {term[0]} loses its required meaning; term has no definition-recall card. Extra or a name alone is not direct coverage.')
+            recall = []
+            for cid in witnesses:
+                card = cards[cid]
+                answers = [m[2].split('::')[0] for m in re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', card['cloze'])] if card['clozePattern'] else [card['back']]
+                if any(f' {meaning} ' in f' {coverage_text(answer)} ' for answer in answers):
+                    recall.append(cid)
+            require(recall, f'{t["id"]}: term has no definition-recall card ({term[0]}); put its recorded meaning inside a cloze answer or the Back, not only in visible text, a hint or Extra.')
             for cid in witnesses: term_witnesses[cid].add(t['id'])
-    for cid, terms in term_witnesses.items():
-        if len(terms) > 4:
-            warnings.append(f'{cid}: combined group has {len(terms)} terms; keep related groups to 2 to 4 without losing meanings.')
+    defined_terms = [tid for tid, target in targets.items() if term_spec(target)]
+    for cid, card in cards.items():
+        parallel = parallel_meaning_terms(card, targets, defined_terms)
+        require(len(parallel) <= 1,
+                f'{cid}: parallel meaning group has {len(parallel)} terms; recall each term meaning alone on separate cards.')
     for topic in {topic_key(t) for t in data['targets']}:
         require(tested_by_topic[topic], f'{topic}: topic needs at least one tested card; do not trim its only card.')
     groups = defaultdict(list)
@@ -247,8 +335,10 @@ def validate(data, updating=False):
     require(len(exceptions) == len(data['coverageExceptions']), 'Duplicate coverage exception for an idea.')
     require(all(concept in groups for concept in exceptions), 'Coverage exception names an unknown idea.')
     for concept, group in groups.items():
+        validate_pair_group(group, targets)
         reviews = sum(len(indices(c)) for c in group)
         exception = exceptions.get(concept)
+        pair_allowance = reviews == 4 and valid_headline_pair_allowance(group, targets)
         if exception:
             require(reviews > 3, f'{concept}: no over-limit coverage exception is needed.')
             require(exception['reason'].strip(), f'{concept}: explain the coverage exception.')
@@ -265,12 +355,12 @@ def validate(data, updating=False):
             require(witnessed_cards == {c['id'] for c in group} and all(len(indices(c)) == 1 for c in group), f'{concept}: coverage exception only permits indispensable single-review notes, not surplus cloze indices.')
             warnings.append(f'{concept}: coverage exception keeps {reviews} review cards. {exception["reason"]}')
         else:
-            require(reviews <= 3, f'{concept}: more than three review cards for one idea.')
+            require(reviews <= 3 or pair_allowance, f'{concept}: more than three review cards for one idea; only the exact headline pair set plus instructor example earns four.')
         if not any(direct_card_candidate(c) or len(term_witnesses[c['id']]) >= 2 for c in group):
             warnings.append(f'{concept}: no direct term card detected; inspect this concept.')
         if len(group) >= 2:
             require(group[1]['reinforcementReason'].strip() or exception, f'{group[1]["id"]}: explain the additional retrieval purpose; no automatic mirrors.')
-        if reviews == 3 and not any(names_instructor_emphasis(c['reinforcementReason']) for c in group):
+        if reviews == 3 and not valid_headline_pair_core(group, targets) and not any(names_instructor_emphasis(c['reinforcementReason']) for c in group):
             warnings.append(f'{concept}: third review card needs a reinforcementReason naming instructor emphasis.')
         require(sum(c['type'] in ['application', 'exemplar'] for c in group) <= 1, f'{concept}: keep at most one scenario or example card per idea.')
         answers = []
@@ -278,6 +368,7 @@ def validate(data, updating=False):
             # A scenario or example card legitimately answers with the term itself;
             # its retrieval cue (the instructor's situation) is what makes it distinct.
             if c['type'] in ['application', 'exemplar'] and not c['clozePattern']: continue
+            if pair_allowance and not declared_pair(c): continue  # The evidenced instructor example has its own cue.
             if c['clozePattern']:
                 for index in indices(c):
                     answers.append(' '.join(m[2].split('::')[0] for m in re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', c['cloze']) if int(m[1]) == index))
@@ -346,6 +437,9 @@ def build(data, out, input_dir, previous=None):
             label = LABELS[card['type']]
             if card['clozePattern'] == 'enumerated-list': label = 'list'
             typ = '<span class="verb">' + label + '</span>'
+            topic = breadcrumb_label(card, {t['id']: t for t in data['targets']})
+            if topic_reveals_answer(topic, card):
+                typ += '<span class="topic-answer-cue" hidden></span>'
             extra = escape(extra_text(card))
             extra += render_images(card['extraImages'])
             evidence = card['sourceRefs'] + [im['source'] for im in card['frontImages'] + card['extraImages']]
@@ -360,7 +454,7 @@ def build(data, out, input_dir, previous=None):
                 back = '<ol class="blurt">' + ''.join('<li>' + escape(i) + '</li>' for i in card['recallItems']) + '</ol>' if card['type'] == 'free-recall' else escape(card['back'])
                 fields = [escape(card['front']) + front_images, back, extra] + details
                 model = basic
-            topic = card.get('breadcrumb') or next(t['topic'] for t in data['targets'] if t['id'] in card['targetIds'])
+            topic = breadcrumb_label(card, {t['id']: t for t in data['targets']})
             source = ' · '.join(dict.fromkeys(ref['location'] for ref in card['sourceRefs']))
             fields += [escape(topic), escape(source), '']
             if card['type'] == 'image-occlusion':

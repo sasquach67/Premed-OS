@@ -12,7 +12,7 @@ IO_FIELDS = ['Occlusion', 'Image', 'Header', 'Back Extra', 'Comments',
 IO_MODEL_ID = 895232792405
 IO_MODEL_NAME = 'premedOS Image Occlusion (prompt v1)'
 
-TOPIC = '{{#Topic}}<div class="topic">{{Topic}}</div>{{/Topic}}'
+TOPIC = '{{#Topic}}<span class="topic-chip">{{Topic}}</span>{{/Topic}}'
 SOURCE = '{{#Source}}<details class="source"><summary>Source</summary><div>{{Source}}</div></details>{{/Source}}'
 MY_NOTES = '{{#My notes}}<div class="my-notes">{{My notes}}</div>{{/My notes}}'
 IO_BODY = '''{{#Header}}<div class="io-header">{{Header}}</div>{{/Header}}
@@ -29,9 +29,9 @@ try {
   document.getElementById("err").textContent = "Image occlusion needs a current Anki version. Please update Anki before studying this card.";
 }
 </script>'''
-IO_LABEL = '<div class="type"><span class="verb">recall</span></div>'
-IO_Q = '<div class="pm m-say">' + TOPIC + IO_LABEL + IO_BODY + '</div>'
-IO_A = ('<div class="pm m-say">' + TOPIC + IO_LABEL + IO_BODY
+IO_LABEL = '<div class="type card-meta"><span class="verb">recall</span>' + TOPIC + '</div>'
+IO_Q = '<div class="pm m-say">' + IO_LABEL + IO_BODY + '</div>'
+IO_A = ('<div class="pm m-say">' + IO_LABEL + IO_BODY
         + '<div><button id="toggle">Toggle Masks</button></div>'
         + '{{#Back Extra}}<div class="extra">{{Back Extra}}</div>{{/Back Extra}}'
         + MY_NOTES + SOURCE + '</div>')

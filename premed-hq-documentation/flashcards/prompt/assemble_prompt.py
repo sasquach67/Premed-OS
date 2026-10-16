@@ -2,13 +2,13 @@
 from pathlib import Path
 import hashlib,json
 BASE=Path(__file__).resolve().parent
-FILES=[('cards.schema.json','json'),('card-styles.css','css'),('requirements.txt','text'),('list-reveal.js','javascript'),('image_occlusion.py','python'),('prepare_occlusion.py','python'),('read_previous.py','python'),('build_deck.py','python'),('verify_deck.py','python')]
+FILES=[('cards.schema.json','json'),('card-styles.css','css'),('requirements.txt','text'),('list-reveal.js','javascript'),('image_occlusion.py','python'),('prepare_occlusion.py','python'),('read_previous.py','python'),('pair_rules.py','python'),('build_deck.py','python'),('verify_deck.py','python')]
 parts=[(BASE/'authoring.md').read_text()]
 manifest={}
 for name,language in FILES:
     content=(BASE/name).read_text()
     if '```' in content:raise ValueError('Embedded fence in '+name)
-    parts.append('\n### File: '+name+'\n\n```'+language+'\n'+content.rstrip('\n')+'\n```\n')
+    parts.append('\n### File: '+name+'\n\n```'+language+'\n'+content.removesuffix('\n')+'\n```\n')
     manifest[name]=hashlib.sha256(content.encode()).hexdigest()
 text=''.join(parts)
 OUTPUT=BASE.parents[2]/'src/lib/academics/flashcards/instructions.md'

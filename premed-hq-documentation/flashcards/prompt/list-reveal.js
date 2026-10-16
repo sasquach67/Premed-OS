@@ -5,17 +5,20 @@
   if (typeof window[cleanupKey] === 'function') window[cleanupKey]();
   var root = document.getElementById('pm-list-question');
   if (!root) return;
-  var label = root.querySelector('.verb');
-  if (!label || label.textContent.trim().toLowerCase() !== 'list') return;
-  var blanks = Array.prototype.slice.call(root.querySelectorAll('.cloze[data-cloze]'));
-  // Older clients omit data-cloze. Leave their ordinary cloze question untouched.
-  if (!blanks.length || blanks.some(function (blank) { return !blank.getAttribute('data-cloze'); })) return;
+  var blanks = Array.prototype.slice.call(root.querySelectorAll('.cloze'));
+  // Only active blanks from one cloze index form a reveal group, regardless of label.
+  // Older clients may omit answer/index data; leave the ordinary question untouched.
+  if (blanks.length < 2) return;
+  var ordinal = blanks[0].getAttribute('data-ordinal');
+  if (!ordinal || blanks.some(function (blank) {
+    return !blank.getAttribute('data-cloze') || blank.getAttribute('data-ordinal') !== ordinal;
+  })) return;
   var next = 0;
   var button = document.createElement('button');
   button.type = 'button';
   button.className = 'pm-list-reveal';
   button.textContent = 'Reveal next';
-  button.setAttribute('aria-label', 'Reveal next list item');
+  button.setAttribute('aria-label', 'Reveal next blank');
   var status = document.createElement('span');
   status.className = 'pm-list-reveal-status';
   status.setAttribute('role', 'status');

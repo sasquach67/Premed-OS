@@ -8,6 +8,10 @@ from verify_deck import source_chatter_warnings
 from test_updates import UpdateChecks
 from test_card_features import CardFeatureChecks
 from test_occlusion_pdf import PdfOcclusionChecks
+from test_clarity import ClarityChecks
+from test_grouping import GroupingChecks
+from test_topic_chips import TopicChipChecks
+from test_pair_rules import PairRuleChecks
 
 class PromptChecks(unittest.TestCase):
     def setUp(self):self.data=json.loads((BASE/'checks/cards.json').read_text())
@@ -126,7 +130,8 @@ class PromptChecks(unittest.TestCase):
         data=self.concept_fixture()
         data['cards'][0].update(type='cloze',front='',back='',clozePattern='independent',
             cloze='{{c1::Sample shape::geometry term}} is {{c2::the outline of an object}}.')
-        self.assertEqual(validate(data),[])
+        warnings=validate(data)
+        self.assertTrue(all('context-poor cloze' in warning for warning in warnings))
 
     def test_instructor_example_earns_third_review_card(self):
         data=self.concept_fixture()
@@ -303,7 +308,7 @@ class PromptChecks(unittest.TestCase):
         self.assertTrue(verified['passed'])
         card['explanation']='A useful caution.'*1+'\n'+' '.join(['word']*21)
         warnings=validate(data)
-        self.assertTrue(any('Extra exceeds one short line' in w for w in warnings))
+        self.assertTrue(any('Extra exceeds three short lines' in w for w in warnings))
 
     def test_watch_for_extra_only_passes_and_requires_actual_extra(self):
         data=self.concept_fixture()
@@ -395,51 +400,96 @@ class PromptChecks(unittest.TestCase):
         data['cards'][0]['back']='A factor that may contribute to learning.'
         self.assertEqual(validate(data),[])
 
-    def test_combined_meanings_build_and_missing_meaning_fails(self):
+    def test_combined_meanings_fail_and_extra_cannot_rescue_missing_meaning(self):
         data=self.combined_fixture()
-        self.assertEqual(validate(data),[])
-        built,verified=self.pipeline_fixture(data)
-        self.assertEqual(built['reviewCards'],1)
-        self.assertEqual(verified['warnings'],[])
+        with self.assertRaisesRegex(ValueError,'recall each term meaning alone'):validate(data)
         data['cards'][0]['back']='Alpha: learn the input. Beta.'
         data['cards'][0]['explanation']='Beta: keep the input.'
         with self.assertRaisesRegex(ValueError,'term-1: named term Beta loses its required meaning'):validate(data)
 
-    def test_single_blank_named_term_formats_build_and_verify(self):
-        for text in ['{{c1::Alpha::term}} means learn the input.', 'Alpha means {{c1::learn the input}}.']:
-            with self.subTest(text=text):
-                data=self.combined_fixture(1)
-                data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',cloze=text)
-                self.assertEqual(validate(data),[])
-                built,verified=self.pipeline_fixture(data)
-                self.assertEqual(built['reviewCards'],1)
-                self.assertEqual(verified['warnings'],[])
-
-    def test_parallel_contrast_named_meanings_build_and_verify(self):
-        data=self.combined_fixture(2)
-        data['cards'][0].update(type='comparison',front='',back='',clozePattern='independent',
-            cloze='{{c1::Alpha::Alpha/Beta}} means learn the input; {{c2::Beta::Alpha/Beta}} means keep the input.')
+    def test_single_meaning_blank_builds_but_name_only_does_not_cover_a_definition(self):
+        data=self.combined_fixture(1)
+        data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',
+            cloze='For this synthetic concept, Alpha means {{c1::learn the input}}.')
         self.assertEqual(validate(data),[])
         built,verified=self.pipeline_fixture(data)
-        self.assertEqual(built['reviewCards'],2)
+        self.assertEqual(built['reviewCards'],1)
         self.assertEqual(verified['warnings'],[])
+        data['cards'][0]['cloze']='{{c1::Alpha::term}} means learn the input.'
+        with self.assertRaisesRegex(ValueError,'term has no definition-recall card'):validate(data)
+
+    def add_member_meaning_notes(self, data):
+        for target in [t for t in data['targets'] if t['statement'].startswith('Term: ')]:
+            name=target['statement'].split(': ',1)[1];meaning=target['reason'].split(': ',1)[1]
+            card=copy.deepcopy(data['cards'][0]);cid='meaning-'+target['id']
+            card.update(id=cid,conceptId=cid,targetIds=[target['id']],type='cloze',front='',back='',axis='',
+                clozePattern='single',listOrdered=None,cloze=f'For this synthetic concept, {name} means {{{{c1::{meaning}}}}}.')
+            data['cards'].append(card);target['cardIds'].append(cid)
+
+    def standalone_pair_fixture(self, relation='opposite'):
+        data=self.combined_fixture(2)
+        first=data['cards'][0]
+        first.update(type='cloze',front='',back='',axis=relation+': Alpha | Beta',
+                     clozePattern='single',cloze='For this memory task, Alpha means {{c1::learn the input}}.',
+                     targetIds=[data['targets'][0]['id'],data['targets'][1]['id']])
+        second=copy.deepcopy(first)
+        second.update(id='meaning-beta',targetIds=[data['targets'][2]['id']],
+                      cloze='For this memory task, Beta means {{c1::keep the input}}.',
+                      reinforcementReason='Recalls the second term meaning independently.')
+        data['cards'].append(second);data['targets'][2]['cardIds']=[second['id']]
+        return data
+
+    def test_simple_pair_has_two_own_meaning_cards(self):
+        for relation in ('opposite','non-opposite'):
+            data=self.standalone_pair_fixture(relation)
+            self.assertEqual(validate(data),[])
+            built,verified=self.pipeline_fixture(data)
+            self.assertEqual(built['notes'],2)
+            self.assertEqual(built['reviewCards'],2)
+            self.assertEqual(verified['warnings'],[])
+
+    def test_headline_pairs_use_individual_meanings_and_shared_names_contrast(self):
+        for relation in ('opposite','non-opposite'):
+            data=self.standalone_pair_fixture(relation)
+            first=data['cards'][0]
+            contrast=copy.deepcopy(first)
+            contrast.update(id='names-contrast',targetIds=['term-0','term-1'],
+                cloze='{{c1::Alpha}} means learn the input; {{c1::Beta}} means keep the input.',
+                reinforcementReason='Tests the distinction with both names hidden together.')
+            data['cards'].append(contrast)
+            for target in data['targets'][1:]:target['cardIds'].append(contrast['id'])
+            self.assertEqual(validate(data),[])
+            built,verified=self.pipeline_fixture(data)
+            self.assertEqual(built['reviewCards'],3)
+            self.assertEqual(verified['warnings'],[])
+            example=copy.deepcopy(first)
+            example.update(id='source-example',type='application',axis='',clozePattern=None,cloze='',
+                front='A source task introduces a new input. Which memory task is demonstrated?',back='Alpha',
+                targetIds=['term-0'],reinforcementReason="Instructor's own example from the lecture.")
+            data['cards'].append(example);data['targets'][1]['cardIds'].append(example['id'])
+            validate(data)
+            built,verified=self.pipeline_fixture(data)
+            self.assertEqual(built['reviewCards'],4)
+            example['reinforcementReason']='An invented scenario for practice.'
+            with self.assertRaisesRegex(ValueError,'pair group requires'):validate(data)
 
     def test_new_direct_shapes_still_require_the_recorded_meaning(self):
         data=self.combined_fixture(1)
         data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',cloze='{{c1::Alpha::term}}.')
         with self.assertRaisesRegex(ValueError,'loses its required meaning'):validate(data)
 
-    def test_combined_group_larger_than_four_warns(self):
-        data=self.combined_fixture(5)
-        self.assertTrue(any('combined group has 5 terms' in w for w in validate(data)))
+    def test_combined_group_larger_than_four_fails(self):
+        with self.assertRaisesRegex(ValueError,'recall each term meaning alone'):validate(self.combined_fixture(5))
 
-    def test_ordered_related_terms_with_meanings_share_one_review_card(self):
+    def test_ordered_list_needs_member_definition_recall_notes(self):
         data=self.combined_fixture(3);card=data['cards'][0]
         card.update(type='process',front='',back='',axis='',clozePattern='enumerated-list',listOrdered=True,
                     cloze='The 3 steps are {{c1::Alpha}} (learn the input), {{c1::Beta}} (keep the input), {{c1::Gamma}} (use the input).')
+        with self.assertRaisesRegex(ValueError,'term has no definition-recall card'):validate(data)
+        self.add_member_meaning_notes(data)
         self.assertEqual(validate(data),[])
         built,verified=self.pipeline_fixture(data)
-        self.assertEqual(built['reviewCards'],1)
+        self.assertEqual(built['reviewCards'],4)
         self.assertEqual(verified['warnings'],[])
 
     def test_hedge_only_skill_can_be_omitted_without_losing_understand_or_topic(self):
@@ -451,10 +501,34 @@ class PromptChecks(unittest.TestCase):
         data['targets'][-1]['reason']='We removed a genuine skill to lower the count.'
         with self.assertRaisesRegex(ValueError,'only an explicitly recorded hedge-only skill'):validate(data)
 
+    def test_all_concrete_prompt_hints_are_categories_without_answer_options(self):
+        from pair_rules import validate_pair_rules
+        prompt=(BASE.parents[2]/'src/lib/academics/flashcards/instructions.md').read_text()
+        hints=0
+        for match in re.finditer(r'\{\{c[1-9][0-9]*::([^{}]+)\}\}',prompt):
+            if '::' not in match[1]:continue
+            hints+=1
+            validate_pair_rules({'cloze':match[0],'axis':''},{})
+        self.assertGreater(hints,0)
+        self.assertIn('{{c2::inactivates::effect on Rb}}',prompt)
+
+    def test_assembly_preserves_trailing_newlines_for_exact_portable_files(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);base=root/'premed-hq-documentation/flashcards/prompt'
+            base.mkdir(parents=True);(root/'src/lib/academics/flashcards').mkdir(parents=True)
+            for source in BASE.iterdir():
+                if source.is_file():shutil.copy2(source,base/source.name)
+            css=base/'card-styles.css';css.write_text(css.read_text()+'\n')
+            result=subprocess.run([sys.executable,str(base/'assemble_prompt.py')],capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            prompt=(root/'src/lib/academics/flashcards/instructions.md').read_text()
+            blocks=dict(re.findall(r'### File: ([^\n]+)\n\n```[^\n]+\n(.*?)\n```',prompt,re.S))
+            self.assertEqual(blocks['card-styles.css']+'\n',css.read_text())
+
     def test_embedded_files_and_actual_package_roundtrip(self):
         prompt=(BASE.parents[2]/'src/lib/academics/flashcards/instructions.md').read_text()
         blocks=dict(re.findall(r'### File: ([^\n]+)\n\n```[^\n]+\n(.*?)\n```',prompt,re.S))
-        names=['cards.schema.json','card-styles.css','requirements.txt','list-reveal.js','image_occlusion.py','prepare_occlusion.py','read_previous.py','build_deck.py','verify_deck.py']
+        names=['cards.schema.json','card-styles.css','requirements.txt','list-reveal.js','image_occlusion.py','prepare_occlusion.py','read_previous.py','pair_rules.py','build_deck.py','verify_deck.py']
         self.assertEqual(set(blocks),set(names))
         with tempfile.TemporaryDirectory() as temp:
             work=Path(temp)
