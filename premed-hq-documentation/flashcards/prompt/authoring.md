@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-15e — explain plainly in the neutral register of established review decks; one checkable answer per card; related terms combined.
+Prompt revision: 2026-10-15f — definitions as two-blank notes like the reference decks, plus the instructor's example; reference-deck sentence frames and short fronts.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -29,7 +29,7 @@ Understanding first, then the fewest review cards within reason. There is no tar
 
 Build the target map first. Keep a target for every Journal objective (topic), every Understand item and every named term; also record Be-able-to-do and Watch-for items so omissions are visible. Set each target's kind to understand, be-able-to-do, watch-for, or topic, matching the Journal; use understand for a named-term meaning. Set topic to the stable Journal topic name. Assign stable target IDs and meaningful concept IDs for related groups. IDs are organizational metadata, not proof of redundancy. Check overlap across IDs too. Do not create a new ID for every paraphrase to disguise duplication.
 
-Coverage guard: every objective (topic) keeps at least one tested card; every Understand item is tested; every named term keeps its meaning recallable on a standalone or combined direct card. Extra is supporting help, not active recall. Never drop a topic, an Understand item or a term's meaning to lower the count. Explain source gaps before agreeing a partial scope; do not claim complete coverage while an essential target is missing.
+Coverage guard: every objective (topic) keeps at least one tested card; every Understand item is tested; every named term keeps its meaning recallable on its two-blank note or a combined direct card. Extra is supporting help, not active recall. Never drop a topic, an Understand item or a term's meaning to lower the count. Explain source gaps before agreeing a partial scope; do not claim complete coverage while an essential target is missing.
 
 Use the existing target fields for each named term: kind="understand", statement="Term: <canonical name>", reason="Meaning: <short exact meaning phrase in a linked card's Back or cloze>". Set coverage="tested" and link its real cardIds. The name must appear on that card's Front, Back or cloze, and the complete recorded meaning phrase must appear in its required Back or cloze text, never only Extra. Quote an adequate meaning, not a token chosen merely to satisfy the check. This is a visible-text coverage witness, not automatic proof of semantic completeness; reconcile the term inventory against the Journal yourself.
 
@@ -37,13 +37,13 @@ For every Be-able-to-do or Watch-for item, record tested, extra-only or missing 
 
 ## Useful reinforcement versus unnecessary repetition
 
-Limit per idea: two review cards, or three only when the instructor stressed it (said it will be tested or returned to it repeatedly). Count review cards, not notes: a cloze note with c1 and c2 creates two review cards and spends both of the idea's cards. Repeated regions using c1 together create one review card. For every additional card, reinforcementReason records the distinct retrieval demand it adds; for a third review card, it also names the specific instructor emphasis that earns it. Keep a direct card and its reinforcements under the same conceptId.
+Limit per idea: two review cards, or three when the instructor gave an example of it or stressed it (said it will be tested or returned to it repeatedly). Never more than three. Count review cards, not notes: a cloze note with c1 and c2 creates two review cards and spends both of the idea's cards. Repeated regions using c1 together create one review card. For every additional card, reinforcementReason records the distinct retrieval demand it adds; for a third review card, it also names what earns it: the instructor's own example from the lecture, or the specific instructor emphasis. Keep a direct card and its reinforcements under the same conceptId.
 
 Coverage wins when the limit conflicts with the coverage guard. Trim reinforcement before removing the only tested card on an objective, any Understand item, or a named term’s meaning. If full coverage genuinely requires an exception, retain the necessary cards, explain which otherwise uncovered targets need them, and explicitly report the exception and its review-card count. In cards.json, coverageExceptions is normally []; a necessary exception records conceptId, targetIds, and reason. Every note in an over-limit concept must create exactly one review card and be the sole tested card for a required Understand, named-term, or topic target, or the sole tested card for its topic. Include those sole-coverage target IDs, one witness per note, and explain the collision in reason. A multi-index cloze cannot earn an over-limit exception: group list items together or trim reinforcement first. An exception is not permission to keep duplicates. There is no deck-wide maximum to aim for, target to pad toward, or card-type quota.
 
-Both directions are never automatic. When both directions matter for a fact, use two blanks in one cloze sentence, with different indices; that spends two review cards. Do not add a separate mirror note. Standalone definitions stay term-on-front Q&A; combined related-term groups follow the direct-card rule below. No card may have an answer that merely repeats another card's answer on the same idea.
+Both directions are never automatic. When both directions matter for a fact, use two blanks in one cloze sentence, with different indices; that spends two review cards. Do not add a separate mirror note. A term or theory is the case where both directions always matter: write it as one two-blank note, described under Card language below, instead of a term-on-front Q&A card. No card may have an answer that merely repeats another card's answer on the same idea.
 
-Scenario and example cards stay. Use at most one scenario or example card per idea, only when the instructor gave the example or the idea is applied on exams. Use the instructor's own example when one exists. Choose the useful retrieval direction: recognize the concept from a scenario, or produce the instructor's example. Do not automatically create both directions, an example pair, or an invented extra situation.
+Lecture example cards stay, even though the reference decks rarely use them, because lecture examples are what exams reuse. When the instructor gave an example of an idea, add one card for it beyond the idea's two-blank note: the instructor's scenario as a short question whose answer is the term alone (“Which perspective on emotion does this illustrate?” → “Functionalist approach”), or the example inside a cloze. Record “instructor's example from the lecture” in reinforcementReason. Use at most one scenario or example card per idea. Never invent a scenario for its own card: an example that did not come from the lecture goes inside the two-blank note's sentence or in Extra. Do not create an example pair or both directions of an example.
 
 If the student supplies missed practice or exam questions, add one or two cards, within the limit per idea, on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question. Reuse a card that already tests that demand before adding another.
 
@@ -53,9 +53,11 @@ Compare the final combined set, especially when using older decks for reference.
 
 ## Card language and information order
 
-Every named term's meaning gets direct recall, but related terms can share that direct card. Combine as a rule of thumb when terms are related, form a sequence, or depend on one another. Use 2 to 4 terms per group, each with a few words that preserve its meaning. A contrasting pair or a parent plus its types becomes a comparison Q&A card: Front “Retroactive vs. proactive interference”; Back “Retroactive: new learning blocks old. Proactive: old learning blocks new.” Include a parent term's meaning too when it is in the group. A sequence or ordered levels becomes an enumerated-list cloze with every item under c1 and a short meaning visible beside each: “The 3 levels, shallowest to deepest: {{c1::structural}} (how it looks), {{c1::phonemic}} (how it sounds), {{c1::semantic}} (what it means).” It creates one review card, not three. Separate c1/c2/c3 would not condense the review load.
+Every named term or theory gets a two-blank note, the way AnKing and Pankow write definitions: one sentence with the term blanked as c1 (with a hint naming the kind of answer) and the meaning blanked as c2. For a term: “{{c1::Retroactive interference::type of interference}} is when {{c2::new learning makes it harder to remember older information}}.” For a theory: “The {{c1::evolutionary approach::theory of motivation}} states that {{c2::people are motivated to do things that helped their ancestors survive and reproduce}}.” The note creates two review cards: name the term from its meaning, and give the meaning from the term. Use type cloze with clozePattern independent. This replaces the term-on-front Q&A card; do not add both.
 
-Every term's meaning must remain on the combined card, not merely its name or only an Extra example. Never combine unrelated items just to save cards. A term that needs a full sentence to stay understandable, or that the instructor stressed on its own, keeps a term-alone Front; use context in parentheses only when needed for ambiguity. Use basic without a clozePattern for that standalone definition. A valid combined comparison or ordered-list card is the group's direct card; apply the existing review-card limit to that group and its reinforcements. Related process lists are the exception to standalone definitions staying Q&A, not permission to cloze isolated definitions.
+Related terms can share one card when the contrast, the order or the list is itself what is tested. Never pair terms that are merely related: drive with homeostasis, or incentive theory with evolutionary theory, each get their own two-blank note. Use 2 to 4 terms per group, each with a few words that preserve its meaning. A contrasting pair or a parent plus its types becomes a comparison Q&A card: Front “Retroactive vs. proactive interference”; Back “Retroactive: new learning blocks old. Proactive: old learning blocks new.” Include a parent term's meaning too when it is in the group. A sequence or ordered levels becomes an enumerated-list cloze with every item under c1 and a short meaning visible beside each: “The 3 levels, shallowest to deepest: {{c1::structural}} (how it looks), {{c1::phonemic}} (how it sounds), {{c1::semantic}} (what it means).” It creates one review card, not three. Separate c1/c2/c3 would not condense the review load.
+
+Every term's meaning must remain on the combined card, not merely its name or only an Extra example. Never combine unrelated items just to save cards. A term that needs a full sentence to stay understandable, or that the instructor stressed on its own, keeps its own two-blank note. A valid combined comparison or ordered-list card is the group's direct card; apply the existing review-card limit to that group and its reinforcements.
 
 For example, consider encoding / storage / retrieval; structural / phonemic / semantic encoding; interference with retroactive / proactive; motivated forgetting with repression / suppression; source monitoring / source-monitoring error; elaboration / visual imagery / dual coding; sensory / short-term / long-term memory. Combine their short meanings when it helps understanding; retain distinct capacity or duration facts on their own cloze cards. The phone-number scenario can remain a useful second card for interference. These examples guide grouping, not content to insert into unrelated decks.
 
@@ -63,12 +65,12 @@ Use one fixed shape per card type:
 
 | Card | Front or cloze text | Required answer (Back) |
 |---|---|---|
-| Standalone definition | The term alone | Its meaning, without hedge tails |
+| Term or theory | One sentence: “{{c1::term::hint}} is {{c2::meaning}}” or “The {{c1::theory::hint}} states that {{c2::claim}}” | No separate Back; two review cards |
 | Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |
 | Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |
-| Scenario | One or two sentences of situation, then one question about one term | The term, plus a short “because” only if needed |
+| Scenario (instructor's example) | One or two sentences of situation, then one short plain question about one term | The term alone; the explanation, if any, goes in Extra |
 | Example | `Example of <term>` | The instructor's example |
-| Comparison / related terms | `<A> vs. <B>` or the named group | One short meaning per term, preserving the distinction |
+| Comparison / related terms | `<A> vs. <B>` or the named group | One short meaning per term, preserving the distinction; an order of events uses arrows (event → bodily arousal → emotion) |
 | Why / how | One direct question | One sentence |
 
 One question per card. Never join two questions with “and” or use a two-part front.
@@ -81,7 +83,7 @@ No essay or policy questions. A why/how card has a one-sentence answer the stude
 
 Scenario answers are concrete: a term, a choice between named options, or one short cause. Never make the answer “nothing can be concluded”, “it is unresolved”, “X is not established”, or another non-conclusion. Rewrite the situation to test the concept, or let the related term card cover the hedge-only bullet and record that decision. Do not invent certainty where the source leaves an event unresolved.
 
-Definition Backs carry the meaning only. Remove hedge tails such as “without establishing…”, “which cannot be…”, and unrelated cautions. Keep a cautious word when the instructor’s claim itself is cautious, such as “may contribute”; that is part of the content.
+Definitions, in a Back or in the meaning blank of a two-blank note, carry the meaning only. Remove hedge tails such as “without establishing…”, “which cannot be…”, and unrelated cautions. Keep a cautious word when the instructor’s claim itself is cautious, such as “may contribute”; that is part of the content.
 
 Required answer: a short, complete response the student can grade against the question, clear before it is brief, in the fixed shape above. Keep essential qualifiers and causal links. Do not add “The answer is…” merely to satisfy a verb check. Preserve necessary course terms, numbers, units, and cautious claims such as “may contribute”. Apply the friend test to the Required answer (Back) itself, not just Extra, under the default wording: could a first-year student who skipped the lecture understand every word except the course's own named terms? If not, rewrite in plainer words and briefly explain unfamiliar terms where needed. Difficulty comes from knowledge, not ornate wording; “short” must not mean compressed jargon. Apply the same plain-language test to cloze sentences and bounded checklist answers unless the Technical emphasis requires exact terms.
 
@@ -97,13 +99,18 @@ For the build fields, explanation and example are alternative ways to supply the
 
 Accepted style examples, not content to insert into unrelated decks:
 
-- Front: Negative reinforcement
-- Required answer: Negative reinforcement increases a behavior by removing an unpleasant stimulus.
+- Cloze: {{c1::Negative reinforcement::type of reinforcement}} increases a behavior by {{c2::removing an unpleasant stimulus}}.
 - Extra: “Negative” means something is removed.
 
-- Front: Scientific management (Taylorism)
-- Required answer: Instead of a worker deciding how to do the job, management breaks it into small tasks and sets the method it thinks is most efficient.
+- Cloze: {{c1::Scientific management::management approach}} (Taylorism) is when {{c2::management breaks a job into small tasks and sets the method it thinks is most efficient, instead of the worker deciding}}.
 - Extra: empty
+
+- Cloze: The {{c1::James–Lange theory::theory of emotion}} states that {{c2::an event causes bodily arousal, and the emotion follows (event → arousal → emotion)}}.
+- Extra: J and L have a letter between them: one step after the other.
+
+Question fronts follow the reference decks too: short, direct and concrete. A scenario front is one concrete situation followed by one plain question, such as “A child falls and feels afraid, and the fear pushes the child to get to safety. Which perspective on emotion does this illustrate?” No meta framing such as “An explanation says…” or “Which perspective explains fear as helping…”, which describes the answer inside the question.
+
+Sentence frames from the reference decks: “X is Y” or “X is when Y” for a term; “The X theory states that Y” for a theory; arrows for any order of events; a contrast as one sentence with parallel halves (“Incentive theory focuses on {{c1::positive::positive/negative}} reinforcement; drive-reduction theory focuses on {{c1::negative::positive/negative}} reinforcement.”); a named set of parts as one list cloze with each meaning in parentheses or in Extra. Keep the course's real vocabulary (“physiological”, “internal state of tension”) and explain it where needed. Extra comes first from an everyday example or a mnemonic tied to the name (“C and B sit side by side in the alphabet: Cannon–Bard arousal and emotion happen together”).
 
 House style for every Back, cloze sentence and Extra: simplify by explaining, not by cutting words. Fewer words is not the same as simpler. Use the neutral register of established review decks such as AnKing and MileDown: plain, clear and complete, neither casual nor textbook-dense. Each answer is a complete thought in everyday words, with a short explanation when it helps the idea make sense, but never a paragraph.
 - Explain-it test: a classmate who missed the lecture should understand the sentence on first read. If the sentence contains a phrase nobody would use when explaining the idea, rewrite it.
@@ -121,8 +128,8 @@ House style for every Back, cloze sentence and Extra: simplify by explaining, no
 - Front: Colonialism. Before: “It establishes enduring domination and dispossession: colonizers take control of land, labor, resources, and political life.” After: “Colonialism means lasting control over another society: colonizers take land and resources, control people's work, and shape political life.”
 - Front: Why does a commodity chain depend on more than a route? Before: “It also depends on labor, money, nature, infrastructure and governing rules that organize production, distribution and consumption.” After: “Workers, money, land, transport, and rules shape how goods are made, moved, and used.”
 
-- Scenario answer: evolutionary theory of motivation. Before: “Evolutionary theory, because it explains motivation through adaptive value.” After: “Evolutionary theory: people are motivated to do things that helped their ancestors survive and reproduce.”
-- Scenario answer: functionalist approach to emotion. Before: “Functionalist approach, because the emotion promotes action toward a goal.” After: “Functionalist approach: emotions prepare a person to act in useful ways; here, fear moves the child toward safety.”
+- Scenario answer: evolutionary theory of motivation. Before: “Evolutionary theory, because it explains motivation through adaptive value.” After: answer “Evolutionary approach”; Extra “People are motivated to do things that helped their ancestors survive and reproduce.”
+- Scenario answer: functionalist approach to emotion. Before: “Functionalist approach, because the emotion promotes action toward a goal.” After: answer “Functionalist approach”; Extra “Emotions prepare a person to act toward goals.”
 - Front: Rehearsal. Before: “Repeatedly thinking about or verbalizing information to keep it active, while competing material can still interfere with retention.” After: “Repeating information to keep it active in short-term memory.”
 - Front: Long-term memory. Before: “Retaining information over extended periods with very large capacity, without establishing that every memory is stored permanently.” After: “Memory that holds information for a long time, with nearly unlimited room.”
 - Front: Misinformation effect. Before: “An event is reconstructed rather than replayed exactly, so misleading post-event information can alter later recall.” After: “Misleading information after an event changes how you remember it.”
@@ -142,14 +149,14 @@ In every case: keep the instructor's examples, what the instructor stressed, phr
 
 ## Card types and cloze mechanics
 
-- basic: a standalone term-on-front definition or short factual recall.
+- basic: short factual recall as a question, or a direct question whose answer is one fact. Term definitions use the two-blank cloze note instead.
 - conceptual: the why/how shape.
 - comparison: contrasting or related terms with each meaning retained; record their shared comparison axis in axis.
 - process: the cloze list/steps shape for a pathway, sequence, or meaningful list.
 - application: the scenario shape, with necessary conditions and one question; do not invent factual evidence.
 - exemplar: the example shape, or a source-based recognition scenario. Set the appropriate exampleDirection; a partner is never required.
 - free-recall: optional bounded synthesis only when the family is itself a learning target. Supply front and distinct recallItems; leave back empty. State the checklist count as a numeral on the front.
-- cloze: the fact or list/steps shape. Blank the term, name or number; keep the meaning visible. Standalone definitions stay direct Q&A; ordered related-term groups use the grouped cloze shape.
+- cloze: the two-blank term or theory note, the fact shape, or the list/steps shape. For a fact, blank the term, name or number and keep the rest visible.
 
 When clozePattern is set, front/back/recallItems are empty and cloze carries the sentence or short list. Use {{c1::answer}}, with an optional short hint as {{c1::answer::hint}} only when the blank would otherwise be ambiguous, for example {{c1::hippocampus::brain structure}}. Hints must narrow the cue without giving away the answer. No nested cloze. Keep one fact per sentence; do not hide unrelated facts together.
 
@@ -157,7 +164,7 @@ Use consecutive indices beginning at c1. Distinct indices create distinct review
 
 A list is one note with its items blanked together under the same index. Use enumerated-list, keep its count visible, and set listOrdered. For ordered steps, preserve the real order; for unordered lists, say “in any order”. For example, “The 3 stages, in order, are {{c1::stage A}}, {{c1::stage B}}, and {{c1::stage C}}.” is one review card. Never blank the count or use separate indices for every list item by default.
 
-Patterns: single uses one index for one factual answer; independent uses two or more related blanks retrieved separately; enumerated-list groups list items under one index. The legacy definition pattern does not authorize clozing a standalone definition; ordered related-term lists use enumerated-list with short meanings visible.
+Patterns: single uses one index for one factual answer; independent uses two or more related blanks retrieved separately, including the two-blank term or theory note; enumerated-list groups list items under one index. Do not use the legacy definition pattern; write terms and theories as two-blank independent notes, and ordered related-term lists as enumerated-list with short meanings visible.
 
 The builder flags potentially burdensome answers, lists, deletions, and Extra beyond one line or about 20 words for human inspection. These warnings are advisory, not quotas: do not pad or remove necessary meaning to satisfy them. The schema's 500-note maximum is only a technical guardrail, never a suggested deck size.
 

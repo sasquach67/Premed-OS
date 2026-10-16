@@ -119,6 +119,24 @@ class PromptChecks(unittest.TestCase):
                 data=self.concept_fixture();data['cards'][0]['front']=front
                 self.assertEqual(validate(data),[])
 
+    def test_two_blank_definition_note_is_a_direct_card(self):
+        data=self.concept_fixture()
+        data['cards'][0].update(type='cloze',front='',back='',clozePattern='independent',
+            cloze='{{c1::Sample shape::geometry term}} is {{c2::the outline of an object}}.')
+        self.assertEqual(validate(data),[])
+
+    def test_instructor_example_earns_third_review_card(self):
+        data=self.concept_fixture()
+        data['cards'][0].update(type='cloze',front='',back='',clozePattern='independent',
+            cloze='{{c1::Sample shape::geometry term}} is {{c2::the outline of an object}}.')
+        example=copy.deepcopy(self.data['cards'][0])
+        example.update(id='idea-example',conceptId='sample-shape',targetIds=['sample-shape'],type='application',
+            front='A coin is traced on paper. Which property does the tracing show?',back='Sample shape',
+            clozePattern=None,cloze='',reinforcementReason="Instructor's own example from the lecture.")
+        data['cards'].append(example)
+        data['targets'][0]['cardIds']=[c['id'] for c in data['cards']]
+        self.assertFalse(any('third review card' in w for w in validate(data)))
+
     def test_unpaired_exemplar_builds_and_verifies_without_warnings(self):
         for direction in ['instance-to-concept','concept-to-instance']:
             with self.subTest(direction=direction):
