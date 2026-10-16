@@ -15,7 +15,7 @@ function lecture(): LectureRecord {
 describe('flashcard prompt handoff', () => {
   it('copies the pending October 16f prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-16f — cold-read clarity, three useful Extra lines, definition-recall guard and exact Journal breadcrumbs; scoped retention, grouped reveal and export-based updates retained.')
+    expect(prompt).toContain('Prompt revision: 2026-10-16g — two to four parallel meanings per card, revealed one by one; cold-read clarity, definition recall, exact Journal breadcrumbs and export-based updates retained.')
     expect(prompt).toContain('A headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -59,14 +59,17 @@ describe('flashcard prompt handoff', () => {
     ]) expect(prompt).toContain(phrase)
   })
 
-  it('uses one shared meaning blank for simple pairs and four reviews for evidenced headline pairs', () => {
+  it('groups two to four parallel meanings and keeps four reviews for evidenced headline pairs', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'Simple or opposite contrast pairs become ONE card',
+      'Parallel meaning groups may contain 2–4 terms, not just an opposite pair.',
+      'Activation is {{c1::starting a behavior}}; persistence is {{c1::continuing despite difficulty}}; intensity is {{c1::the effort put into the behavior}}.',
+      'Split groups larger than four into smaller related groups or individual cards',
       'Positive regulators {{c1::promote cell-cycle progression}}; negative regulators {{c1::restrain cell-cycle progression}}.',
       'type cloze with clozePattern single and an empty axis field',
-      'No separate meaning notes and no name blanks.',
-      'Both meanings disappear together',
+      'do not add separate notes that ask for these same meanings again.',
+      'Do not blank the term names in this format.',
+      'All meanings disappear together',
       'an objective asks the student to define or explain the terms, or the instructor builds on them',
       'Headline pairs, such as homologs versus sister chromatids or retroactive versus proactive interference',
       'keep the existing four cards',
@@ -99,13 +102,13 @@ describe('flashcard prompt handoff', () => {
   it('uses fixed card shapes, two-blank definition notes, and reference-deck cloze', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'keeps its own two-blank note',
-      '| Term or theory | One sentence: “{{c1::term::hint}} is {{c2::meaning}}” or “The {{c1::theory::hint}} states that {{c2::claim}}” | No separate Back; two review cards |',
+      'a standalone headline term or theory keeps its two-blank note',
+      '| Headline term or theory | One sentence: “{{c1::term::hint}} is {{c2::meaning}}” or “The {{c1::theory::hint}} states that {{c2::claim}}” | No separate Back; two review cards |',
       '| Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |',
       '| Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |',
       '| Scenario (instructor\'s example) | One or two sentences of situation, then one short plain question about one term | The term alone; the explanation, if any, goes in Extra |',
       '| Example | `Example of <term>` | The instructor\'s example |',
-      '| Simple contrast | Names visible; both meanings blanked together under c1',
+      '| Simple contrast or parallel meaning group | Names of 2–4 terms visible; all meanings blanked together under c1',
       '| Headline contrast | Parallel halves with names blanked under separate indices',
       '| Umbrella | “The N parts of X are {{c1::a}}, {{c1::b}} …”, placed before its members | No separate Back; one review card |',
       'Bold the cue.',
@@ -120,7 +123,7 @@ describe('flashcard prompt handoff', () => {
       'One-time migration:',
       'with --previous on both commands',
       'A member of an umbrella group never gets a name blank',
-      'If the lecture defines that sub-term, give it its own meaning-blank card and target',
+      'If the lecture defines that sub-term, give it a target and a meaning blank in its own note or an eligible parallel meaning group',
       'Biology and other figure-heavy lectures',
       'Look-alike groups of three or four',
       'Umbrella first.',
@@ -158,7 +161,7 @@ describe('flashcard prompt handoff', () => {
       'one witness per note',
       'A multi-index cloze cannot earn an over-limit exception',
       'A bullet that merely restates a limit or hedge does not need a separate card',
-      'Never pair terms that are merely related',
+      'Do not group terms merely because they concern the same topic',
       'Lecture example cards stay',
       'Question fronts follow the reference decks too',
       'Every term\'s meaning must remain on the combined card',

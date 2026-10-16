@@ -35,7 +35,7 @@ Current Anki 26.9.3 native IO runtime was exercised in an isolated Chrome profil
 A current export may carry an existing parent-deck path (for example UNC::Fall26::Memory). Update mode preserves that exact name and deckKey; new builds still require standalone titles. Verification permits only its exact ancestors, never unrelated decks.
 
 
-## Pending authoring follow-up — 2026-10-16f
+## Pending authoring follow-up — 2026-10-16g
 
 Hold this follow-up for Andy’s go-ahead; do not merge or deploy automatically. Rule B is approved: simple/opposite pairs use one card with both meanings under c1 and visible names, without separate meaning notes. Headline pairs retain the existing four cards when an objective asks to define/explain them or the instructor builds on them.
 
@@ -53,3 +53,14 @@ Every lecture-defined term, including familiar or subsidiary terms, keeps meanin
 Target topics copy exact Journal objective titles. Breadcrumbs copy objective and section titles without shortening; use the objective alone when a section reveals the answer. The advisory check verifies a matching target-topic prefix, not the authenticity of a section or objective assignment. The preview review must resolve or report answer-revealing objective titles without inventing replacement labels.
 
 The external feature preview is re-authored to demonstrate all three Extra kinds, defined sub-term/member recall and exact titles. Counts and cold-read rewrite totals are in its README and receipts. The larger sample repairs missing definition recall; it does not establish a lower count for a full lecture. Hold the combined release for Andy’s explicit go-ahead after testing.
+
+
+### Native desktop reveal and parallel-meaning follow-up
+
+The held 16g prompt permits 2–4 parallel terms with visible names and all complete meanings under one index. The four-term builder cap uses declared visible-name/hidden-meaning targets, so larger ordinary name lists and pathways remain valid. Headline definitions and evidenced headline contrasts retain their existing rules; grouping never removes the last meaning-recall witness. Breadcrumb styling is unchanged.
+
+The current reveal script already has no label/type gate. An isolated native Anki 26.09.3 reviewer probe reproduced the missing control by retaining the legacy list-only template. A real package import with **Update note types: Always** restored the exact positive/negative-regulator card's control. This demonstrates a stale-template failure and its repair; it does not establish which template Andy's main profile currently has. Do not replace an existing note with a duplicate to repair its template.
+
+Run `python3 premed-hq-documentation/flashcards/prompt/checks/desktop_reveal_probe.py --package <preview-v1.apkg> --report <preview-v1.build-report.json> --work-dir <new-empty-directory> --group component-meanings-group:3 --group emotion-meanings-group:4` on a Mac with Anki installed. It starts the installed application with a unique single-instance key and a newly seeded unsynced test profile, imports the actual package, and uses the native reviewer. It never reads the user's profile. Receipts include Anki version, original two blanks, one reveal per click, no answer-side control, single-blank behavior and transition back to the pair. The optional group arguments must identify actual sample notes. Test artifacts and screenshots stay outside the repository.
+
+The 16g sample passed 19 native reviewer observations on Anki 26.09.3, including its 3-term and 4-term groups. The preview now has 18 active notes / 20 review cards (previous clarity sample: 19 / 21); v2 adds exactly one retained retired note/card. This fixture is not a complete lecture deck or a full-lecture reduction measurement. The unchanged JS remains covered by expanded label/type/index DOM tests plus this native probe. Physical mobile behavior is still untested. **Remain on hold for Andy's explicit go-ahead.**

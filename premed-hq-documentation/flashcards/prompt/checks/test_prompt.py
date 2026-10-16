@@ -9,6 +9,7 @@ from test_updates import UpdateChecks
 from test_card_features import CardFeatureChecks
 from test_occlusion_pdf import PdfOcclusionChecks
 from test_clarity import ClarityChecks
+from test_grouping import GroupingChecks
 
 class PromptChecks(unittest.TestCase):
     def setUp(self):self.data=json.loads((BASE/'checks/cards.json').read_text())

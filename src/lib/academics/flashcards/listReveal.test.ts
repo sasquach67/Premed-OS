@@ -92,6 +92,22 @@ describe('portable list reveal question script', () => {
     expect(answers()).toEqual(['first', '[…]', '[…]'])
   })
 
+  it.each([
+    ['compare', ['activation', 'persistence', 'intensity']],
+    ['recall', ['first meaning', 'second meaning', 'third meaning', 'fourth meaning']],
+    ['application', ['receptor activates', 'relay activates', 'response begins']],
+    ['why', ['stage one', 'stage two', 'stage three']],
+  ])('reveals every active grouped blank for %s without a list-type gate', (label, meanings) => {
+    document.body.innerHTML = `<div id="pm-list-question"><span class="verb">${label}</span>${meanings.map((meaning, index) => `Term ${index + 1} <span class="cloze" data-ordinal="2" data-cloze="${meaning}">[…]</span>`).join('; ')}</div>`
+    run()
+    expect(answers()).toEqual(meanings.map(() => '[…]'))
+    meanings.forEach((_, index) => {
+      document.querySelector<HTMLButtonElement>('button')!.click()
+      expect(answers()).toEqual(meanings.map((meaning, position) => position <= index ? meaning : '[…]'))
+    })
+    expect(document.querySelector<HTMLButtonElement>('button')!.disabled).toBe(true)
+  })
+
   it('leaves a single active blank untouched even when other indices are visible', () => {
     question('compare')
     document.querySelectorAll('.cloze').forEach((node, index) => {

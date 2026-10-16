@@ -70,6 +70,25 @@ def term_spec(target):
     require(meaning, f'{target["id"]}: the term needs its meaning, not just its name.')
     return term, meaning
 
+def parallel_meaning_terms(card, targets, term_ids):
+    """Declared names visible outside one shared answer index, with meanings recalled.
+
+    Counting these witnesses rather than blank spans keeps ordinary name lists,
+    pathways, duplicate declarations and supporting glosses from inflating the cap.
+    The source inventory and the relationship between terms still need human review.
+    """
+    if not card['clozePattern'] or len(indices(card)) != 1:
+        return set()
+    pattern = r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}'
+    visible = coverage_text(re.sub(pattern, ' ', card['cloze']))
+    answers = [coverage_text(m[2].split('::')[0]) for m in re.finditer(pattern, card['cloze'])]
+    names = set()
+    for tid in term_ids:
+        name, meaning = map(coverage_text, term_spec(targets[tid]))
+        if f' {name} ' in f' {visible} ' and any(f' {meaning} ' in f' {answer} ' for answer in answers):
+            names.add(name)
+    return names
+
 def card_language_warnings(card):
     warnings = []
     back = card['back'] or card['cloze']
@@ -275,6 +294,9 @@ def validate(data, updating=False):
             require(recall, f'{t["id"]}: term has no definition-recall card ({term[0]}); put its recorded meaning inside a cloze answer or the Back, not only in visible text, a hint or Extra.')
             for cid in witnesses: term_witnesses[cid].add(t['id'])
     for cid, terms in term_witnesses.items():
+        parallel = parallel_meaning_terms(cards[cid], targets, terms)
+        require(len(parallel) <= 4,
+                f'{cid}: parallel meaning group has {len(parallel)} terms; use 2–4 terms and split groups larger than 4.')
         if len(terms) > 4:
             warnings.append(f'{cid}: combined group has {len(terms)} terms; keep related groups to 2 to 4 without losing meanings.')
     for topic in {topic_key(t) for t in data['targets']}:
