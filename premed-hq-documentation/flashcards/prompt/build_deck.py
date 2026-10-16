@@ -170,7 +170,12 @@ def validate(data):
                 evidence(ex['source'])
             else: require(ex['source'] is None, f'{cid}: illustrative scenario must not claim a source citation.')
         extra = extra_text(c)
-        if word_count(extra) > 20 or '\n' in c['explanation'] or (ex is not None and '\n' in ex['text']) or (c['explanation'].strip() and ex is not None):
+        if cp == 'enumerated-list' and not ex:
+            # A list card's Extra is a key: one short line per item.
+            key = [l for l in c['explanation'].split('\n') if l.strip()]
+            if len(key) > len(spans) + 1 or any(word_count(l) > 18 for l in key):
+                warnings.append(f'{cid}: list key should be one short line per item.')
+        elif word_count(extra) > 20 or '\n' in c['explanation'] or (ex is not None and '\n' in ex['text']) or (c['explanation'].strip() and ex is not None):
             warnings.append(f'{cid}: Extra exceeds one short line (about 20 words); choose the single most useful detail.')
         if word_count(c['back']) > 45 or any(word_count(i) > 35 for i in c['recallItems']): warnings.append(f'{cid}: long required answer; inspect grading burden.')
         warnings.extend(card_language_warnings(c))
