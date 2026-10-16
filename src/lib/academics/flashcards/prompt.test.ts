@@ -13,10 +13,10 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the October 15c prompt revision and preserves source access rules', () => {
+  it('copies the October 15f prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-15e — explain plainly in the neutral register of established review decks; one checkable answer per card; related terms combined.')
-    expect(prompt).toContain("Every named term's meaning gets direct recall")
+    expect(prompt).toContain('Prompt revision: 2026-10-15f — definitions as two-blank notes like the reference decks, plus the instructor\'s example; reference-deck sentence frames and short fronts.')
+    expect(prompt).toContain('Every named term or theory gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
     expect(prompt).toContain('The completed Journal is the required input.')
@@ -32,26 +32,25 @@ describe('flashcard prompt handoff', () => {
     expect(prompt).not.toContain('and its original materials before creating cards')
     expect(prompt).toContain('do not search for another chat or ask for original materials')
     expect(prompt).toContain('Apply the friend test to the Required answer (Back) itself, not just Extra')
-    expect(prompt).toContain('Instead of a worker deciding how to do the job, management breaks it into small tasks and sets the method it thinks is most efficient.')
+    expect(prompt).toContain('{{c1::Scientific management::management approach}} (Taylorism) is when')
     expect(prompt).toContain('No source chatter in any student-facing card field')
     expect(prompt).toContain('Run the friend test on every card')
   })
 
-  it('uses fixed card shapes, term-only definitions, and reference-deck cloze', () => {
+  it('uses fixed card shapes, two-blank definition notes, and reference-deck cloze', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'keeps a term-alone Front',
-      'not permission to cloze isolated definitions',
-      '| Standalone definition | The term alone | Its meaning, without hedge tails |',
+      'keeps its own two-blank note',
+      '| Term or theory | One sentence: “{{c1::term::hint}} is {{c2::meaning}}” or “The {{c1::theory::hint}} states that {{c2::claim}}” | No separate Back; two review cards |',
       '| Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |',
       '| Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |',
-      '| Scenario | One or two sentences of situation, then one question about one term | The term, plus a short “because” only if needed |',
+      '| Scenario (instructor\'s example) | One or two sentences of situation, then one short plain question about one term | The term alone; the explanation, if any, goes in Extra |',
       '| Example | `Example of <term>` | The instructor\'s example |',
-      '| Comparison / related terms | `<A> vs. <B>` or the named group | One short meaning per term, preserving the distinction |',
+      '| Comparison / related terms | `<A> vs. <B>` or the named group | One short meaning per term, preserving the distinction; an order of events uses arrows (event → bodily arousal → emotion) |',
       '| Why / how | One direct question | One sentence |',
       'One question per card.',
-      'Front: Scientific management (Taylorism)',
-      'Blank the term, name or number; keep the meaning visible.',
+      'Cloze: {{c1::Scientific management::management approach}} (Taylorism)',
+      'For a fact, blank the term, name or number and keep the rest visible.',
       '{{c1::answer::hint}}',
       '{{c1::hippocampus::brain structure}}',
       'No nested cloze.',
@@ -69,7 +68,7 @@ describe('flashcard prompt handoff', () => {
   it('counts review cards and preserves tested coverage while trimming reinforcement', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'Limit per idea: two review cards, or three only when the instructor stressed it',
+      'Limit per idea: two review cards, or three when the instructor gave an example of it or stressed it',
       'a cloze note with c1 and c2 creates two review cards',
       'Coverage guard: every objective (topic) keeps at least one tested card; every Understand item is tested;',
       'Coverage wins when the limit conflicts with the coverage guard.',
@@ -79,10 +78,12 @@ describe('flashcard prompt handoff', () => {
       'one witness per note',
       'A multi-index cloze cannot earn an over-limit exception',
       'A bullet that merely restates a limit or hedge does not need a separate card',
-      'Combine as a rule of thumb',
+      'Never pair terms that are merely related',
+      'Lecture example cards stay',
+      'Question fronts follow the reference decks too',
       'Every term\'s meaning must remain on the combined card',
       'Scenario answers are concrete',
-      'Definition Backs carry the meaning only',
+      'carry the meaning only',
       'Keep a caution only when the instructor tests it',
       'One answer per card.',
       'Never let the question give away its answer.',
@@ -93,8 +94,8 @@ describe('flashcard prompt handoff', () => {
       'Both directions are never automatic.',
       'Do not add a separate mirror note.',
       'No card may have an answer that merely repeats another card\'s answer on the same idea.',
-      'Use at most one scenario or example card per idea',
-      'Do not automatically create both directions, an example pair, or an invented extra situation.',
+      'Use at most one scenario or example card per idea.',
+      'Never invent a scenario for its own card',
     ]) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('Both example directions remain available')
     expect(prompt).not.toContain('Never more than three cards for one idea')

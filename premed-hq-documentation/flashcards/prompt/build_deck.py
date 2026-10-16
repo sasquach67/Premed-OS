@@ -63,7 +63,7 @@ def term_spec(target):
 
 def card_language_warnings(card):
     warnings = []
-    back = card['back']
+    back = card['back'] or card['cloze']
     if card['type'] in ['application', 'exemplar'] and re.search(r'\b(?:nothing (?:can be|is) concluded|(?:it is |origin[ :]+)?unresolved|not established|cannot be concluded|does not (?:establish|identify)|neither .{0,100} established)\b', back, re.IGNORECASE):
         warnings.append(f'{card["id"]}: scenario answer is a non-conclusion; test a concrete term, named choice or short cause.')
     if direct_card_candidate(card) and re.search(r'\b(?:without establishing|which cannot be|without necessarily|while competing material|so .{0,80}(?:cannot establish|inaccurate memory))\b', back, re.IGNORECASE):
@@ -74,6 +74,8 @@ def card_language_warnings(card):
 
 def direct_card_candidate(card):
     # No direct-card flag or canonical term exists in v1; this is advisory only.
+    if card['clozePattern'] == 'independent' and card['type'] == 'cloze' and len(indices(card)) == 2:
+        return True  # two-blank term or theory note: c1 term, c2 meaning
     front = card['front'].strip()
     return (card['type'] == 'basic' and not card['clozePattern'] and bool(front)
             and not re.search(r'[?!;:\n]', front)
@@ -85,7 +87,8 @@ def names_instructor_emphasis(reason):
     return bool(re.search(r'\b(?:objective|review[- ]sheet|guide)\b\s*\S', reason, re.IGNORECASE)
                 or re.search(r'\b(?:instructor|professor|teacher|lecturer)\b.{0,120}\b(?:stress\w*|emphasi\w*|repeat\w*|test\w*|exam\w*)\b', reason, re.IGNORECASE)
                 or re.search(r'\bsaid\b.{0,120}\b(?:will|would)\s+be\s+tested\b', reason, re.IGNORECASE)
-                or re.search(r'\breturned\s+to\b.{1,120}\brepeatedly\b', reason, re.IGNORECASE))
+                or re.search(r'\breturned\s+to\b.{1,120}\brepeatedly\b', reason, re.IGNORECASE)
+                or re.search(r"\b(?:instructor|professor|teacher|lecturer)(?:['’]s)?\s+(?:own\s+)?example\b|\bexample\s+from\s+the\s+lecture\b", reason, re.IGNORECASE))
 
 def validate(data):
     errors = sorted(Draft202012Validator(SCHEMA).iter_errors(data), key=lambda e: str(list(e.path)))
@@ -246,6 +249,9 @@ def validate(data):
         require(sum(c['type'] in ['application', 'exemplar'] for c in group) <= 1, f'{concept}: keep at most one scenario or example card per idea.')
         answers = []
         for c in group:
+            # A scenario or example card legitimately answers with the term itself;
+            # its retrieval cue (the instructor's situation) is what makes it distinct.
+            if c['type'] in ['application', 'exemplar'] and not c['clozePattern']: continue
             if c['clozePattern']:
                 for index in indices(c):
                     answers.append(' '.join(m[2].split('::')[0] for m in re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', c['cloze']) if int(m[1]) == index))
