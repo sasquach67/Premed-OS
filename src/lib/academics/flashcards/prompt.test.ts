@@ -13,9 +13,9 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the pending October 16h prompt revision and preserves source access rules', () => {
+  it('copies the pending October 16i prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-16h — inline breadcrumb chips; meanings-first pairs, uncued name recall and sequential reveal; clarity and export-based updates retained.')
+    expect(prompt).toContain('Prompt revision: 2026-10-16i — category hints only, with answer-option warnings; inline breadcrumb chips, meanings-first pairs and export-based updates retained.')
     expect(prompt).toContain('A standalone headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -76,6 +76,8 @@ describe('flashcard prompt handoff', () => {
       'Simple pairs that are not headline keep only their shared meaning card',
       'A category hint such as “type of motivation” is allowed',
       'hints must never list the candidate answers',
+      '{{c2::inactivates::effect on Rb}}',
+      'The builder emits a warning when a slash-separated word-choice hint contains the answer',
       'The only four-review reinforcement allowance is the exact non-opposite headline-pair set',
     ]) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('A contrasting pair becomes one contrast sentence')

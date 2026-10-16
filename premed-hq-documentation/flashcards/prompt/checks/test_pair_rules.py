@@ -1,10 +1,14 @@
 """Pair shapes use explicit metadata, never a guessed semantic opposite dictionary."""
 import copy
+import json
+import subprocess
+import tempfile
+import warnings
 from pathlib import Path
 import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from pair_rules import declared_pair, pair_role, validate_pair_rules, valid_headline_pair_allowance
+from pair_rules import declared_pair, pair_role, validate_pair_rules, valid_headline_pair_allowance, slash_option_hint_warnings
 
 
 class PairRuleChecks(unittest.TestCase):
@@ -170,6 +174,43 @@ class PairRuleChecks(unittest.TestCase):
         card['explanation'] = '; '.join(self.meanings)
         with self.assertRaisesRegex(ValueError, 'hide both names or both meanings'):
             validate_pair_rules(card, self.targets)
+
+
+    def test_slash_choice_containing_answer_warns_before_rejection(self):
+        for answer, hint in [('inactivates','activates/inactivates'),
+                             ('Positive','positive / negative'),
+                             ('intrinsic','intrinsic/extrinsic'),
+                             ('second','first/second/third')]:
+            card={'id':'choice-hint','axis':'','cloze':'The result is {{c1::'+answer+'::'+hint+'}}.'}
+            with self.subTest(hint=hint), warnings.catch_warnings(record=True) as captured:
+                warnings.simplefilter('always')
+                with self.assertRaisesRegex(ValueError,'not list answer options'):
+                    validate_pair_rules(card,{})
+                self.assertEqual(len(captured),1)
+                self.assertIn('slash-separated answer options including the answer',str(captured[0].message))
+
+    def test_category_hint_and_unmatched_slash_do_not_get_answer_option_warning(self):
+        for answer, hint in [('inactivates','effect on Rb'),('intrinsic','type of motivation'),
+                             ('neither','positive/negative')]:
+            card={'id':'category','axis':'','cloze':'The result is {{c1::'+answer+'::'+hint+'}}.'}
+            self.assertEqual(slash_option_hint_warnings(card),[])
+        # An unmatched option list is still banned, even though this specific warning does not apply.
+        with self.assertRaisesRegex(ValueError,'not list answer options'):
+            validate_pair_rules(card,{})
+
+    def test_builder_cli_emits_choice_warning_and_does_not_write_a_package(self):
+        from test_updates import fixture, BASE
+        data=fixture(1)
+        data['cards'][0].update(type='cloze',front='',back='',clozePattern='single',
+                               cloze='The protein {{c1::inactivates::activates/inactivates}} its target.')
+        with tempfile.TemporaryDirectory() as temp:
+            work=Path(temp);source=work/'cards.json';out=work/'bad.apkg'
+            source.write_text(json.dumps(data))
+            result=subprocess.run([sys.executable,str(BASE/'build_deck.py'),str(source),str(out)],capture_output=True,text=True)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('UserWarning:',result.stderr)
+            self.assertIn('slash-separated answer options including the answer',result.stderr)
+            self.assertFalse(out.exists())
 
 
 if __name__ == '__main__':

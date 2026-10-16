@@ -1,5 +1,6 @@
 """Structural checks for author-declared term pairs; no inferred opposite lexicon."""
 import re
+import warnings
 
 CLOZE = re.compile(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}')
 PAIR = re.compile(r'^(opposite|non-opposite)\s*:\s*(.*?)\s*\|\s*(.*?)\s*$', re.I)
@@ -80,8 +81,24 @@ def pair_role(card, targets):
     raise ValueError('opposite pair must hide both names or both meanings under the same cloze index')
 
 
+def slash_option_hint_warnings(card):
+    """Identify word-choice hints containing the answer, without guessing semantics."""
+    notices = []
+    for match in CLOZE.finditer(card.get('cloze', '')):
+        parts = match.group(2).split('::', 1)
+        if len(parts) != 2:
+            continue
+        answer, hint = parts
+        if (re.fullmatch(r"\s*[\w’'-]+(?:\s*/\s*[\w’'-]+)+\s*", hint)
+                and normalized(answer) in [normalized(option) for option in hint.split('/')]):
+            notices.append(f'{card.get("id", "card")}: cloze hint lists slash-separated answer options including the answer; replace it with a category hint, not a coin flip.')
+    return notices
+
+
 def validate_pair_rules(card, targets):
-    """Reject explicit option hints and invalid declared pair shapes; raises ValueError."""
+    """Warn on answer-choice leakage, then reject invalid hints or pair shapes."""
+    for notice in slash_option_hint_warnings(card):
+        warnings.warn(notice, UserWarning, stacklevel=2)
     for match in CLOZE.finditer(card.get('cloze', '')):
         parts = match.group(2).split('::', 1)
         if len(parts) == 2 and re.search(r'[/|,;]|\b(?:or|either|versus|vs)\b', parts[1], re.I):

@@ -6,9 +6,9 @@
   "image_occlusion.py": "2d39b1cfbb4a541891516581c044c3656b050a7ce5c98e65b28ddcd4e1f20298",
   "prepare_occlusion.py": "bacdd1e99210377f89cf2ddcc1360981c63681e984c630a1eb885402c74dd747",
   "read_previous.py": "dc87a8be076d9a40fc5c54b7460062ebee94c48e5d6a0ce9610dd22a823ac644",
-  "pair_rules.py": "c864ee25878cd8b377aa19a09da4fce9d32f98ae66317df3a5e30fd8f5cb7425",
+  "pair_rules.py": "e99bf080cb712dee60ee65d64429e9554fa722b90c07f873d3acd83124cd9c0b",
   "build_deck.py": "9022659d319e55802b1001b2516e616cdd6b956c2ffd2a0e62e078990ddbadc2",
   "verify_deck.py": "9019cdbdf50397763139b8590dc8941ace783afe76019c12bb44ac594f1e47df",
-  "authoring.md": "96151a1617927d1bb37bf13864d99cb2c8bc9a55dc81985047959bfad4597fa5",
-  "instructions.md": "64f3b1f67c725c0a0bac130f06b63f6bb519040211354da3320748ebd2ed646d"
+  "authoring.md": "24866262919ba6f584e3f50afa7a3284b0540f4a4bf76d496656904cdb6a3d46",
+  "instructions.md": "4df85c7ff69cab6811e6ccbfd344f751eea26609ea626a5170cef35ed8bb79f8"
 }

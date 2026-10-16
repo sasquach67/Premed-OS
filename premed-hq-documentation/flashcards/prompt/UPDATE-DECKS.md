@@ -35,7 +35,7 @@ Current Anki 26.9.3 native IO runtime was exercised in an isolated Chrome profil
 A current export may carry an existing parent-deck path (for example UNC::Fall26::Memory). Update mode preserves that exact name and deckKey; new builds still require standalone titles. Verification permits only its exact ancestors, never unrelated decks.
 
 
-## Pending authoring follow-up — 2026-10-16h
+## Pending authoring follow-up — 2026-10-16i
 
 Hold this follow-up for Andy’s go-ahead; do not merge or deploy automatically. Rule B is approved: simple/opposite pairs use one card with both meanings under c1 and visible names, without separate meaning notes. Headline pairs now use shared meaning recall first, then uncued name recall: one shared name card for opposites or one name-only sister per term for non-opposites, plus one supplied instructor example when available.
 
@@ -75,3 +75,10 @@ Headline opposite pairs use two one-index notes: meanings with both names visibl
 The portable pair_rules.py validates author-declared `opposite:` and `non-opposite:` axis markers against recorded named-term meanings, including partial name deletions. It cannot infer that an undeclared relationship is opposite or establish source accuracy. The definition-recall guard remains independent and mandatory. Portable assembly includes this helper and tests execute the embedded files in a fresh directory.
 
 The refreshed selected preview has 21 notes / 22 active review cards (16g: 18 / 20); v2 has those active totals plus one retired note/card, 22 / 23 total. The increase includes a clearly marked three-note non-opposite biology demonstration, not additional PSYC lecture scope. All replaced retrieval demands receive new GUIDs; unchanged demands keep their GUIDs. Earlier preview sets are archived. Continue to use a new unsynced profile for the feature sample, and rebuild v2 from a fresh export to preserve typed My notes. The held release remains draft PR #36 until Andy explicitly authorizes merging.
+
+
+### 16i — category hints everywhere
+
+The biology direction example uses `effect on Rb`, and the old intrinsic/extrinsic option-hint recipe is described in prose rather than shown as cloze syntax. A regression check scans every concrete cloze hint in the entire generated portable prompt, including its examples and embedded files. `slash_option_hint_warnings` identifies a slash-separated word-choice hint only when its answer matches one of the options (case-insensitive, normalized); the builder emits a UserWarning before the existing hard rejection. Category hints remain valid. CLI coverage verifies the warning is visible and no invalid package is written.
+
+No card fields, templates, CSS, note IDs or preview package bytes changed from 16h. Both preview authoring inputs still pass the current validator. The same 22-card preview and its native/visual evidence remain applicable; the portable helper and complete prompt copy are refreshed to 16i. Continue holding draft PR #36 for Andy's go-ahead.

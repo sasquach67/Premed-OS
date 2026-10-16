@@ -505,6 +505,17 @@ class PromptChecks(unittest.TestCase):
         data['targets'][-1]['reason']='We removed a genuine skill to lower the count.'
         with self.assertRaisesRegex(ValueError,'only an explicitly recorded hedge-only skill'):validate(data)
 
+    def test_all_concrete_prompt_hints_are_categories_without_answer_options(self):
+        from pair_rules import validate_pair_rules
+        prompt=(BASE.parents[2]/'src/lib/academics/flashcards/instructions.md').read_text()
+        hints=0
+        for match in re.finditer(r'\{\{c[1-9][0-9]*::([^{}]+)\}\}',prompt):
+            if '::' not in match[1]:continue
+            hints+=1
+            validate_pair_rules({'cloze':match[0],'axis':''},{})
+        self.assertGreater(hints,0)
+        self.assertIn('{{c2::inactivates::effect on Rb}}',prompt)
+
     def test_embedded_files_and_actual_package_roundtrip(self):
         prompt=(BASE.parents[2]/'src/lib/academics/flashcards/instructions.md').read_text()
         blocks=dict(re.findall(r'### File: ([^\n]+)\n\n```[^\n]+\n(.*?)\n```',prompt,re.S))
