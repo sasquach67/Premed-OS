@@ -2,7 +2,7 @@
 from pathlib import Path
 import hashlib,json
 BASE=Path(__file__).resolve().parent
-FILES=[('cards.schema.json','json'),('card-styles.css','css'),('requirements.txt','text'),('build_deck.py','python'),('verify_deck.py','python')]
+FILES=[('cards.schema.json','json'),('card-styles.css','css'),('requirements.txt','text'),('read_previous.py','python'),('build_deck.py','python'),('verify_deck.py','python')]
 parts=[(BASE/'authoring.md').read_text()]
 manifest={}
 for name,language in FILES:
