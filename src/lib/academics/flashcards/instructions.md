@@ -216,7 +216,7 @@ Use Anki's built-in MathJax only for real formulas, units and equations: \( ... 
 
 Tag every note with its Journal objective so the student can study one objective at a time in Anki: put one tag in the card's tags array, written objective::<short-slug> from the objective title, such as objective::cell-cycle-checkpoints or objective::theories-of-emotion. Use the same tag for every note under that objective, and no other content tags except exam::<slug> when the Journal or student already names the exam (for example exam::midterm-2). Never ask for the exam; omit that tag when unknown.
 
-Create cards.json using the exact included schema. Every required field must be present; use its specified empty string, empty array, or null when inapplicable. reuseGuid is optional and defaults to null for a new note. Choose a stable deckKey for a new deck and stable card IDs; in update mode keep the previous deckKey and deckName. Use a simple, descriptive lecture or topic title for deckName, such as "Cell Membranes and Transport". Create exactly one standalone deck. Do not add a university, semester, class hierarchy, or Anki :: nesting. Students can rename the deck or move it under their own parent decks after importing. Do not carry over synthetic examples or stale course titles.
+Create cards.json using the exact included schema. Every required field must be present; use its specified empty string, empty array, or null when inapplicable. reuseGuid is optional and defaults to null for a new note. Choose a stable deckKey for a new deck and stable card IDs; in update mode keep the previous deckKey and exact exported deckName, including any parent-deck path the student chose. Use a simple, descriptive lecture or topic title for deckName, such as "Cell Membranes and Transport". Create exactly one standalone deck. For new decks, do not add a university, semester, class hierarchy, or Anki :: nesting. In update mode preserve an existing parent-deck path exactly; never invent or change it. Students can rename the deck or move it under their own parent decks after importing. Do not carry over synthetic examples or stale course titles.
 
 The target ledger and detailed build report are internal verification artifacts. The user-facing deliverable is the .apkg plus a short count/coverage/limitations summary. Do not require an upload back to Premed OS.
 
@@ -1425,7 +1425,7 @@ def names_instructor_emphasis(reason):
                 or re.search(r'\breturned\s+to\b.{1,120}\brepeatedly\b', reason, re.IGNORECASE)
                 or re.search(r"\b(?:instructor|professor|teacher|lecturer)(?:['’]s)?\s+(?:own\s+)?example\b|\bexample\s+from\s+the\s+lecture\b", reason, re.IGNORECASE))
 
-def validate(data):
+def validate(data, updating=False):
     errors = sorted(Draft202012Validator(SCHEMA).iter_errors(data), key=lambda e: str(list(e.path)))
     require(not errors, '\n'.join(f'{list(e.path)}: {e.message}' for e in errors[:10]))
     warnings = []
@@ -1434,7 +1434,7 @@ def validate(data):
     for key in ['sources', 'targets', 'cards']:
         ids = [r['id'] for r in data[key]]
         require(len(ids) == len(set(ids)), f'Duplicate {key} IDs.')
-    require(data['deckName'].strip() and '::' not in data['deckName'], 'Use one standalone deck title without :: nesting.')
+    require(data['deckName'].strip() and (updating or '::' not in data['deckName']), 'Use one standalone deck title without :: nesting.')
     sources = {s['id']: s for s in data['sources']}
     targets = {t['id']: t for t in data['targets']}
     cards = {c['id']: c for c in data['cards']}
@@ -1620,7 +1620,7 @@ def create_models():
     return [genanki.Model(NOTE_TYPE_IDS[name], 'premedOS ' + name + ' (prompt v1)', fields=[{'name': f} for f in fields], templates=[{'name': name, 'qfmt': q, 'afmt': a}], css=CSS, model_type=kind) for name, fields, q, a, kind in [('Basic', BASIC_FIELDS, BASIC_Q, BASIC_A, genanki.Model.FRONT_BACK), ('Cloze', CLOZE_FIELDS, CLOZE_Q, CLOZE_A, genanki.Model.CLOZE)]]
 
 def build(data, out, input_dir, previous=None):
-    warnings = validate(data)
+    warnings = validate(data, updating=previous is not None)
     require(out.suffix == '.apkg' and not out.exists(), 'Choose a new .apkg output filename; existing files are never overwritten.')
     require(not out.with_suffix('.build-report.json').exists(), 'Build report already exists; choose a fresh output name.')
     basic, cloze, io_model = all_models()
@@ -1784,7 +1784,7 @@ def source_chatter_warnings(card_id, fields):
     return warnings
 
 def verify(apkg, report_path, input_path, previous=None):
-    data = json.loads(input_path.read_text()); structural_warnings = validate(data)
+    data = json.loads(input_path.read_text()); structural_warnings = validate(data, updating=previous is not None)
     report = json.loads(report_path.read_text())
     if hashlib.sha256(apkg.read_bytes()).hexdigest() != report['apkgSha256']: raise ValueError('Package hash differs from its build report.')
     if report['targets'] != data['targets'] or report.get('coverageExceptions') != data['coverageExceptions']: raise ValueError('Coverage ledger differs from the validated input.')
@@ -1822,7 +1822,11 @@ def verify(apkg, report_path, input_path, previous=None):
             if len(cids) != report['reviewCards']: failures.append('Review-card count differs, including cloze indices.')
             names = {d.name for d in col.decks.all_names_and_ids()}
             if report['deckName'] not in names: failures.append('Destination deck is missing.')
-            if names - {'Default', report['deckName']}: failures.append('Unexpected extra or parent decks.')
+            allowed_names = {'Default', report['deckName']}
+            if previous is not None:
+                parts = report['deckName'].split('::')
+                allowed_names.update('::'.join(parts[:i]) for i in range(1,len(parts)))
+            if names - allowed_names: failures.append('Unexpected extra or parent decks.')
             model_ids = set()
             for nid in nids:
                 note = col.get_note(nid); model_ids.add(note.mid)

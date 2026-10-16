@@ -33,7 +33,7 @@ def source_chatter_warnings(card_id, fields):
     return warnings
 
 def verify(apkg, report_path, input_path, previous=None):
-    data = json.loads(input_path.read_text()); structural_warnings = validate(data)
+    data = json.loads(input_path.read_text()); structural_warnings = validate(data, updating=previous is not None)
     report = json.loads(report_path.read_text())
     if hashlib.sha256(apkg.read_bytes()).hexdigest() != report['apkgSha256']: raise ValueError('Package hash differs from its build report.')
     if report['targets'] != data['targets'] or report.get('coverageExceptions') != data['coverageExceptions']: raise ValueError('Coverage ledger differs from the validated input.')
@@ -71,7 +71,11 @@ def verify(apkg, report_path, input_path, previous=None):
             if len(cids) != report['reviewCards']: failures.append('Review-card count differs, including cloze indices.')
             names = {d.name for d in col.decks.all_names_and_ids()}
             if report['deckName'] not in names: failures.append('Destination deck is missing.')
-            if names - {'Default', report['deckName']}: failures.append('Unexpected extra or parent decks.')
+            allowed_names = {'Default', report['deckName']}
+            if previous is not None:
+                parts = report['deckName'].split('::')
+                allowed_names.update('::'.join(parts[:i]) for i in range(1,len(parts)))
+            if names - allowed_names: failures.append('Unexpected extra or parent decks.')
             model_ids = set()
             for nid in nids:
                 note = col.get_note(nid); model_ids.add(note.mid)
