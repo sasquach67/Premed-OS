@@ -8,6 +8,7 @@ from verify_deck import source_chatter_warnings
 from test_updates import UpdateChecks
 from test_card_features import CardFeatureChecks
 from test_occlusion_pdf import PdfOcclusionChecks
+from test_clarity import ClarityChecks
 
 class PromptChecks(unittest.TestCase):
     def setUp(self):self.data=json.loads((BASE/'checks/cards.json').read_text())
@@ -126,7 +127,8 @@ class PromptChecks(unittest.TestCase):
         data=self.concept_fixture()
         data['cards'][0].update(type='cloze',front='',back='',clozePattern='independent',
             cloze='{{c1::Sample shape::geometry term}} is {{c2::the outline of an object}}.')
-        self.assertEqual(validate(data),[])
+        warnings=validate(data)
+        self.assertTrue(all('context-poor cloze' in warning for warning in warnings))
 
     def test_instructor_example_earns_third_review_card(self):
         data=self.concept_fixture()
@@ -303,7 +305,7 @@ class PromptChecks(unittest.TestCase):
         self.assertTrue(verified['passed'])
         card['explanation']='A useful caution.'*1+'\n'+' '.join(['word']*21)
         warnings=validate(data)
-        self.assertTrue(any('Extra exceeds one short line' in w for w in warnings))
+        self.assertTrue(any('Extra exceeds three short lines' in w for w in warnings))
 
     def test_watch_for_extra_only_passes_and_requires_actual_extra(self):
         data=self.concept_fixture()
@@ -405,23 +407,50 @@ class PromptChecks(unittest.TestCase):
         data['cards'][0]['explanation']='Beta: keep the input.'
         with self.assertRaisesRegex(ValueError,'term-1: named term Beta loses its required meaning'):validate(data)
 
-    def test_single_blank_named_term_formats_build_and_verify(self):
-        for text in ['{{c1::Alpha::term}} means learn the input.', 'Alpha means {{c1::learn the input}}.']:
-            with self.subTest(text=text):
-                data=self.combined_fixture(1)
-                data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',cloze=text)
-                self.assertEqual(validate(data),[])
-                built,verified=self.pipeline_fixture(data)
-                self.assertEqual(built['reviewCards'],1)
-                self.assertEqual(verified['warnings'],[])
+    def test_single_meaning_blank_builds_but_name_only_does_not_cover_a_definition(self):
+        data=self.combined_fixture(1)
+        data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',
+            cloze='For this synthetic concept, Alpha means {{c1::learn the input}}.')
+        self.assertEqual(validate(data),[])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['reviewCards'],1)
+        self.assertEqual(verified['warnings'],[])
+        data['cards'][0]['cloze']='{{c1::Alpha::term}} means learn the input.'
+        with self.assertRaisesRegex(ValueError,'term has no definition-recall card'):validate(data)
+
+    def add_member_meaning_notes(self, data):
+        for target in [t for t in data['targets'] if t['statement'].startswith('Term: ')]:
+            name=target['statement'].split(': ',1)[1];meaning=target['reason'].split(': ',1)[1]
+            card=copy.deepcopy(data['cards'][0]);cid='meaning-'+target['id']
+            card.update(id=cid,conceptId=cid,targetIds=[target['id']],type='cloze',front='',back='',axis='',
+                clozePattern='single',listOrdered=None,cloze=f'For this synthetic concept, {name} means {{{{c1::{meaning}}}}}.')
+            data['cards'].append(card);target['cardIds'].append(cid)
+
+    def test_simple_opposite_meanings_share_one_card_and_keep_both_term_witnesses(self):
+        data=self.combined_fixture(2)
+        data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',
+            cloze='Positive regulators {{c1::promote cell-cycle progression}}; negative regulators {{c1::restrain cell-cycle progression}}.')
+        for target,name,meaning in zip([t for t in data['targets'] if t['statement'].startswith('Term: ')],
+                ['Positive regulators','negative regulators'],
+                ['promote cell-cycle progression','restrain cell-cycle progression']):
+            target.update(statement='Term: '+name,reason='Meaning: '+meaning)
+        self.assertEqual(validate(data),[])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['notes'],1)
+        self.assertEqual(built['reviewCards'],1)
+        self.assertEqual(verified['warnings'],[])
+        data['cards'][0]['cloze']='Positive regulators {{c1::promote cell-cycle progression}}; negative regulators.'
+        with self.assertRaisesRegex(ValueError,'loses its required meaning'):validate(data)
 
     def test_parallel_contrast_named_meanings_build_and_verify(self):
         data=self.combined_fixture(2)
         data['cards'][0].update(type='comparison',front='',back='',clozePattern='independent',
             cloze='{{c1::Alpha::Alpha/Beta}} means learn the input; {{c2::Beta::Alpha/Beta}} means keep the input.')
+        with self.assertRaisesRegex(ValueError,'term has no definition-recall card'):validate(data)
+        self.add_member_meaning_notes(data)
         self.assertEqual(validate(data),[])
         built,verified=self.pipeline_fixture(data)
-        self.assertEqual(built['reviewCards'],2)
+        self.assertEqual(built['reviewCards'],4)
         self.assertEqual(verified['warnings'],[])
 
     def test_new_direct_shapes_still_require_the_recorded_meaning(self):
@@ -433,13 +462,15 @@ class PromptChecks(unittest.TestCase):
         data=self.combined_fixture(5)
         self.assertTrue(any('combined group has 5 terms' in w for w in validate(data)))
 
-    def test_ordered_related_terms_with_meanings_share_one_review_card(self):
+    def test_ordered_list_needs_member_definition_recall_notes(self):
         data=self.combined_fixture(3);card=data['cards'][0]
         card.update(type='process',front='',back='',axis='',clozePattern='enumerated-list',listOrdered=True,
                     cloze='The 3 steps are {{c1::Alpha}} (learn the input), {{c1::Beta}} (keep the input), {{c1::Gamma}} (use the input).')
+        with self.assertRaisesRegex(ValueError,'term has no definition-recall card'):validate(data)
+        self.add_member_meaning_notes(data)
         self.assertEqual(validate(data),[])
         built,verified=self.pipeline_fixture(data)
-        self.assertEqual(built['reviewCards'],1)
+        self.assertEqual(built['reviewCards'],4)
         self.assertEqual(verified['warnings'],[])
 
     def test_hedge_only_skill_can_be_omitted_without_losing_understand_or_topic(self):

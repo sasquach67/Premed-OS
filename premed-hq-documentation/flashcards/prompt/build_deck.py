@@ -50,7 +50,7 @@ def word_count(value):
 
 def extra_text(card):
     # Preserve authored content without mandatory prose or decorative labels.
-    return ' '.join(part for part in [card['explanation'].strip(), card['example']['text'].strip() if card['example'] else ''] if part)
+    return '\n'.join(part for part in [card['example']['text'].strip() if card['example'] else '', card['explanation'].strip()] if part)
 
 def topic_key(target):
     return ' '.join(target['topic'].casefold().split())
@@ -92,6 +92,34 @@ def direct_card_candidate(card):
             and not re.search(r'[?!;:\n]', front)
             and (not front.endswith('.') or bool(re.search(r'\b(?:[A-Za-z]\.){2,}$', front)))
             and not re.match(r'^(?:what|why|how|which|when|where|who|whose|is|are|does|do|can|could|should|would|define|describe|explain|compare|give|name|list|recall)\b', front, re.IGNORECASE))
+
+def clarity_warnings(card, targets):
+    warnings = []
+    linked = [targets[tid] for tid in card['targetIds']]
+    if card['clozePattern']:
+        pattern = r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}'
+        thin = []
+        for index in indices(card):
+            visible = re.sub(pattern, lambda m: ' ' if int(m[1]) == index else m[2].split('::')[0], card['cloze'])
+            words = coverage_text(visible).split()
+            if len(words) < 4:
+                thin.append(str(index))
+        # This is only a cue for human cold-reading, not a semantic concept detector.
+        visible_all = coverage_text(re.sub(pattern, ' ', card['cloze']))
+        names = [coverage_text(t['statement'].split(':', 1)[1]) for t in linked if t['statement'].casefold().startswith('term:')]
+        vague = bool(re.match(r'^(?:it|this|that|these|those|the estimate|with strategies controlled)\b', visible_all))
+        if vague and any(f' {name} ' in f' {visible_all} ' for name in names): vague = False
+        if thin or vague:
+            detail = 'fewer than about 4 visible words for c' + ', c'.join(thin) if thin else 'no explicit concept cue detected'
+            warnings.append(f'{card["id"]}: context-poor cloze ({detail}); cold-read the question in isolation.')
+    definition = direct_card_candidate(card) or any(t['statement'].casefold().startswith('term:') for t in linked)
+    excerpt = ' '.join([ref['excerpt'] for ref in card['sourceRefs']] + [t['statement'] + ' ' + t['reason'] for t in linked])
+    if definition and not extra_text(card) and not card['extraImages'] and re.search(r'\bexample\b|\be\.g\.|\bfor instance\b', excerpt, re.IGNORECASE):
+        warnings.append(f'{card["id"]}: definition is missing an available example; inspect the linked source/target and add its relevant example to Extra.')
+    breadcrumb = card.get('breadcrumb') or next(t['topic'] for t in linked)
+    if not any(breadcrumb == t['topic'] or breadcrumb.startswith(t['topic'] + ' › ') for t in targets.values()):
+        warnings.append(f'{card["id"]}: breadcrumb is not a notebook title; copy the exact Journal objective title, optionally followed by its section title.')
+    return warnings
 
 def names_instructor_emphasis(reason):
     # Detect a named emphasis cue, not whether the course evidence is true.
@@ -183,10 +211,13 @@ def validate(data, updating=False):
             key = [l for l in c['explanation'].split('\n') if l.strip()]
             if len(key) > len(spans) + 1 or any(word_count(l) > 18 for l in key):
                 warnings.append(f'{cid}: list key should be one short line per item.')
-        elif word_count(extra) > 20 or '\n' in c['explanation'] or (ex is not None and '\n' in ex['text']) or (c['explanation'].strip() and ex is not None):
-            warnings.append(f'{cid}: Extra exceeds one short line (about 20 words); choose the single most useful detail.')
+        else:
+            lines = extra.splitlines()
+            if len(lines) > 3 or any(word_count(line) > 20 for line in lines):
+                warnings.append(f'{cid}: Extra exceeds three short lines (about 20 words each); retain useful example, plain restatement and evidence only.')
         if word_count(c['back']) > 45 or any(word_count(i) > 35 for i in c['recallItems']): warnings.append(f'{cid}: long required answer; inspect grading burden.')
         warnings.extend(card_language_warnings(c))
+        warnings.extend(clarity_warnings(c, targets))
         occlusion = c.get('imageOcclusion')
         require(bool(occlusion) == (c['type'] == 'image-occlusion'), f'{cid}: image-occlusion cards require exactly one mask definition.')
         if occlusion:
@@ -232,9 +263,16 @@ def validate(data, updating=False):
                 direct = direct_card_candidate(card) or (card['type'] == 'comparison' and not card['clozePattern']) or (card['clozePattern'] == 'enumerated-list' and card['listOrdered'] is True)
                 required = coverage_text(card['back'] or card['cloze'])
                 visible = coverage_text(card['front'] + ' ' + (card['back'] or card['cloze']))
-                if direct and f' {name} ' in f' {visible} ' and f' {meaning} ' in f' {required} ':
+                if (direct or (not card['clozePattern'] and card['back'].strip())) and f' {name} ' in f' {visible} ' and f' {meaning} ' in f' {required} ':
                     witnesses.append(cid)
-            require(witnesses, f'{t["id"]}: named term {term[0]} loses its required meaning; Extra or a name alone is not direct coverage.')
+            require(witnesses, f'{t["id"]}: named term {term[0]} loses its required meaning; term has no definition-recall card. Extra or a name alone is not direct coverage.')
+            recall = []
+            for cid in witnesses:
+                card = cards[cid]
+                answers = [m[2].split('::')[0] for m in re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', card['cloze'])] if card['clozePattern'] else [card['back']]
+                if any(f' {meaning} ' in f' {coverage_text(answer)} ' for answer in answers):
+                    recall.append(cid)
+            require(recall, f'{t["id"]}: term has no definition-recall card ({term[0]}); put its recorded meaning inside a cloze answer or the Back, not only in visible text, a hint or Extra.')
             for cid in witnesses: term_witnesses[cid].add(t['id'])
     for cid, terms in term_witnesses.items():
         if len(terms) > 4:

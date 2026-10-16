@@ -24,7 +24,7 @@ describe('portable list reveal question script', () => {
     expect(document.querySelector('button')).toBeNull()
     run()
     expect(answers()).toEqual(['[…]', '[…]', '[…]'])
-    expect(document.querySelector('button')?.getAttribute('aria-label')).toBe('Reveal next list item')
+    expect(document.querySelector('button')?.getAttribute('aria-label')).toBe('Reveal next blank')
   })
 
   it('reveals items in order on question clicks and the accessible button', () => {
@@ -73,11 +73,52 @@ describe('portable list reveal question script', () => {
     expect(answers()).toEqual(['[…]', '[…]', '[…]'])
   })
 
-  it('does not activate on non-list cards or older clients without answer data', () => {
+  it('reveals the two meanings of a compare card one at a time', () => {
+    document.body.innerHTML = `<div id="pm-list-question"><span class="verb">compare</span><div class="question">Positive regulators <span class="cloze" data-ordinal="1" data-cloze="promote cell-cycle progression">[…]</span>; negative regulators <span class="cloze" data-ordinal="1" data-cloze="restrain cell-cycle progression">[…]</span>.</div></div>`
+    expect(document.querySelector('button')).toBeNull()
+    run()
+    expect(answers()).toEqual(['[…]', '[…]'])
+    document.querySelector<HTMLButtonElement>('button')!.click()
+    expect(answers()).toEqual(['promote cell-cycle progression', '[…]'])
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'n' }))
+    expect(answers()).toEqual(['promote cell-cycle progression', 'restrain cell-cycle progression'])
+    expect(document.querySelector<HTMLButtonElement>('button')!.disabled).toBe(true)
+  })
+
+  it('also activates for a grouped recall card without a list label', () => {
     question('recall')
+    run()
+    document.querySelector<HTMLButtonElement>('button')!.click()
+    expect(answers()).toEqual(['first', '[…]', '[…]'])
+  })
+
+  it('leaves a single active blank untouched even when other indices are visible', () => {
+    question('compare')
+    document.querySelectorAll('.cloze').forEach((node, index) => {
+      if (index > 0) node.className = 'cloze-inactive'
+    })
+    run()
+    expect(document.querySelector('button')).toBeNull()
+    expect(answers()).toEqual(['[…]'])
+    const event = new KeyboardEvent('keydown', { key: ' ', cancelable: true })
+    document.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(false)
+  })
+
+  it('leaves mixed indices and incomplete answer/index data untouched', () => {
+    question('compare')
+    document.querySelectorAll('.cloze')[1].setAttribute('data-ordinal', '2')
     run()
     expect(document.querySelector('button')).toBeNull()
     question('list', false)
+    run()
+    expect(document.querySelector('button')).toBeNull()
+    question('compare')
+    document.querySelectorAll('.cloze')[1].removeAttribute('data-cloze')
+    run()
+    expect(document.querySelector('button')).toBeNull()
+    question('recall')
+    document.querySelectorAll('.cloze')[0].removeAttribute('data-ordinal')
     run()
     expect(document.querySelector('button')).toBeNull()
     expect(answers()).toEqual(['[…]', '[…]', '[…]'])

@@ -13,16 +13,16 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the October 15g prompt revision and preserves source access rules', () => {
+  it('copies the pending October 16f prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-16b — topic, source and personal notes; exam tags, native image occlusion, one-by-one lists and MathJax; export-based updates.')
+    expect(prompt).toContain('Prompt revision: 2026-10-16f — cold-read clarity, three useful Extra lines, definition-recall guard and exact Journal breadcrumbs; scoped retention, grouped reveal and export-based updates retained.')
     expect(prompt).toContain('A headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
     expect(prompt).toContain('The completed Journal is the required input.')
     expect(prompt).toContain('If only learning targets are present, or the supplied Journal context says content was omitted')
     expect(prompt).toContain('do not ask for them and do not look for another chat')
-    expect(prompt).toContain('keep every named term, abbreviation, number, condition and instructor example')
+    expect(prompt).toContain('keep every in-scope new or lecture-defined term, abbreviation, number, condition and instructor example')
     expect(prompt).toContain('was not checked against the original materials')
     expect(prompt).not.toContain('still required inputs')
     expect(prompt).not.toContain('find the chat where they uploaded')
@@ -37,6 +37,65 @@ describe('flashcard prompt handoff', () => {
     expect(prompt).toContain('Run the friend test on every card')
   })
 
+  it('limits new cards to lecture retention and checks recordings only for gaps', () => {
+    const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
+    for (const phrase of [
+      "Only this lecture's new content gets cards.",
+      'gets no card of its own unless an objective explicitly tests it',
+      'Record merely used background terms as context in the build report, not as new named-term targets',
+      'Never turn worksheet, guided-reading, GRQ or practice questions into cards.',
+      'Practice already lives in Premed OS; flashcards are for retention.',
+      'Do not make one card per question',
+      'Lecture example cards and picture cards for figures the lecture teaches stay',
+      'not performance on the exercise',
+      'Read the complete Journal, the slides and the worksheet first',
+      'Use recordings and transcripts only to fill specific gaps',
+      'Do not transcribe or review whole recordings',
+      'what was skipped',
+      'One fact per card.',
+      'Cut a trailing second fact',
+      'A short causal explanation needed to understand the same fact stays.',
+      'so the pair makes four review cards and each asks one thing',
+    ]) expect(prompt).toContain(phrase)
+  })
+
+  it('uses one shared meaning blank for simple pairs and four reviews for evidenced headline pairs', () => {
+    const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
+    for (const phrase of [
+      'Simple or opposite contrast pairs become ONE card',
+      'Positive regulators {{c1::promote cell-cycle progression}}; negative regulators {{c1::restrain cell-cycle progression}}.',
+      'type cloze with clozePattern single and an empty axis field',
+      'No separate meaning notes and no name blanks.',
+      'Both meanings disappear together',
+      'an objective asks the student to define or explain the terms, or the instructor builds on them',
+      'Headline pairs, such as homologs versus sister chromatids or retroactive versus proactive interference',
+      'keep the existing four cards',
+      'Do not add individual two-blank definition notes on top of that set.',
+    ]) expect(prompt).toContain(phrase)
+    expect(prompt).not.toContain('A contrasting pair becomes one contrast sentence')
+    expect(prompt).not.toContain('Incentive theory focuses on {{c1::positive::positive/negative}} reinforcement')
+  })
+
+  it('requires clarity, available examples, definition recall and copied Journal titles', () => {
+    const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
+    for (const phrase of [
+      'Extra holds up to three short lines',
+      'This line is required on a definition or claim card whenever the Journal or lecture gives an example',
+      'This is allowed under default wording too',
+      'Required cold-read review before building.',
+      'Report how many cards were rewritten',
+      'Never invent terms.',
+      'Definition recall is never cut.',
+      'term has no definition-recall card',
+      'Breadcrumbs come from the notebook, word for word.',
+      '<Journal objective title> › <Journal section title>',
+      'breadcrumb is not a notebook title',
+      'Report every background term moved into a lecture-specific card.',
+    ]) expect(prompt).toContain(phrase)
+    expect(prompt).not.toContain('Extra: one short line, or empty.')
+    expect(prompt).not.toContain('at most 80 characters')
+  })
+
   it('uses fixed card shapes, two-blank definition notes, and reference-deck cloze', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
@@ -46,7 +105,8 @@ describe('flashcard prompt handoff', () => {
       '| Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |',
       '| Scenario (instructor\'s example) | One or two sentences of situation, then one short plain question about one term | The term alone; the explanation, if any, goes in Extra |',
       '| Example | `Example of <term>` | The instructor\'s example |',
-      '| Contrast | One sentence with parallel halves, each name blanked with the pair as hint',
+      '| Simple contrast | Names visible; both meanings blanked together under c1',
+      '| Headline contrast | Parallel halves with names blanked under separate indices',
       '| Umbrella | “The N parts of X are {{c1::a}}, {{c1::b}} …”, placed before its members | No separate Back; one review card |',
       'Bold the cue.',
       'Keep why/how cards to a minimum.',
@@ -60,12 +120,12 @@ describe('flashcard prompt handoff', () => {
       'One-time migration:',
       'with --previous on both commands',
       'A member of an umbrella group never gets a name blank',
-      'A sub-term that is part of a parent\'s definition stays inside the parent\'s sentence',
+      'If the lecture defines that sub-term, give it its own meaning-blank card and target',
       'Biology and other figure-heavy lectures',
       'Look-alike groups of three or four',
       'Umbrella first.',
       'Every other defined term gets one blank, on its meaning, with the term visible',
-      'then a famous, standard example or mnemonic',
+      'use a famous standard one only if the lecture has none',
       'a one-word card label (recall, list, application, example, compare, why)',
       '| Why / how | One direct question | One sentence |',
       'One question per card.',
@@ -124,12 +184,12 @@ describe('flashcard prompt handoff', () => {
   it('keeps Extra concise or empty, pictures source-based, and the suspension note last in delivery', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'Extra: one short line, or empty.',
-      'Empty Extra is correct when nothing helps; no omission reason is required.',
-      'The default Back is already plain, so Extra must not restate it.',
-      'Under Technical or Readings, Extra may be a short plain-words gloss',
-      'explanation and example are alternative ways to supply the one optional Extra line',
-      'The builder renders the selected optional Extra as one unlabelled line or source picture.',
+      'Extra holds up to three short lines',
+      'Empty Extra stays correct only when none of these three applies.',
+      'A clearer Back is still required',
+      'This is allowed under default wording too',
+      'Both may be filled, with at most three useful text lines in total.',
+      'The builder renders up to three useful Extra lines',
       'Use the slide or figure for a card whenever the attached materials have one',
       'With no relevant figure, build the card without one',
       'Never generate or invent an image.',
@@ -197,7 +257,7 @@ describe('flashcard prompt handoff', () => {
     const files = [...prompt.matchAll(/### File: ([^\n]+)\n\n```[^\n]+\n([\s\S]*?)\n```/g)]
     expect(files.map(match => match[1])).toEqual(['cards.schema.json', 'card-styles.css', 'requirements.txt', 'list-reveal.js', 'image_occlusion.py', 'prepare_occlusion.py', 'read_previous.py', 'build_deck.py', 'verify_deck.py'])
     for (const [, name, content] of files) expect(`${content}\n`).toBe(readFileSync(resolve('premed-hq-documentation/flashcards/prompt', name), 'utf8'))
-    for (const phrase of ['Both directions are never automatic', 'Do not use free-recall (blurt) cards', 'one unlabelled line', 'smaller sans-serif Extra', 'use native image occlusion', 'completed Journal']) expect(prompt).toContain(phrase)
+    for (const phrase of ['Both directions are never automatic', 'Do not use free-recall (blurt) cards', 'up to three useful Extra lines', 'smaller sans-serif Extra', 'use native image occlusion', 'completed Journal']) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('review draft')
   })
 
@@ -205,7 +265,7 @@ describe('flashcard prompt handoff', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'Demo', lecture: lecture() })
     for (const addition of [
       "Use the Journal's mastery objectives as the checklist of learning targets. Take the facts from the original materials: terms, numbers, conditions, cautious words such as “may”, the instructor's examples, what the instructor stressed, and any phrase the instructor said belongs in an answer, because the study guide is intentionally concise and may leave out card-worthy detail. Write each Required answer yourself in the wording this prompt sets below; do not copy a textbook or slide definition as the Required answer.",
-      'Keep a target for every Journal objective (topic), every Understand item and every named term;',
+      'Keep a target for every Journal objective (topic), every Understand item and every in-scope new or lecture-defined term;',
       'or “the lecture\'s example” and “what class identified”; name the concept or example instead.',
       'If the student supplies missed practice or exam questions, add one or two cards, within the limit per idea, on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.',
     ]) expect(prompt).toContain(addition)
