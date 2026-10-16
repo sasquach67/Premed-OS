@@ -388,6 +388,10 @@
       "minLength": 1,
       "maxLength": 300
     },
+    "subject": {
+      "enum": ["biology", "other"],
+      "description": "Explicit lecture subject; omitted legacy inputs behave as other."
+    },
     "scope": {
       "type": "string",
       "minLength": 1,

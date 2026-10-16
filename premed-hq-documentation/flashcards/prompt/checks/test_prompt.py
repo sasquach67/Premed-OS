@@ -12,6 +12,7 @@ from test_clarity import ClarityChecks
 from test_grouping import GroupingChecks
 from test_topic_chips import TopicChipChecks
 from test_pair_rules import PairRuleChecks
+from test_biology import BiologyChecks
 
 class PromptChecks(unittest.TestCase):
     def setUp(self):self.data=json.loads((BASE/'checks/cards.json').read_text())
