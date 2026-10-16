@@ -376,6 +376,11 @@ def validate(data, updating=False):
                 answers.append(c['back'] or '\n'.join(c['recallItems']))
         normalized_answers = [' '.join(answer.casefold().split()).rstrip('.') for answer in answers]
         require(len(set(normalized_answers)) == len(normalized_answers), f'{concept}: exact repeated required answer; trim redundant review cards.')
+    # Count actual active Anki cards, not authored notes or retained retired notes.
+    # Subject is explicit: psychology decks mentioning biological concepts stay unchanged.
+    active_reviews = sum(len(indices(card)) for card in data['cards'])
+    if data.get('subject', 'other') == 'biology' and active_reviews > 35:
+        warnings.append(f'Biology deck has {active_reviews} active review cards; target about 20–30 concept/mechanism cards per lecture. Report why this lecture exceeds the target; remove repetition and passage-material drills without losing conceptual understanding. This is advisory, not a build failure.')
     return warnings
 
 def all_models():

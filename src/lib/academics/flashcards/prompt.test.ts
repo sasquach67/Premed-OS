@@ -13,9 +13,9 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the pending October 16k prompt revision and preserves source access rules', () => {
+  it('copies the pending October 16l prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-16k — each defined term recalls its meaning alone; headline pairs add one names contrast; short notebook-derived chips and export-based updates retained.')
+    expect(prompt).toContain('Prompt revision: 2026-10-16l — biology concepts and mechanisms only, target 20–30 reviews and no passage drills; PSYC lecture examples retained.')
     expect(prompt).toContain('A standalone headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -46,7 +46,7 @@ describe('flashcard prompt handoff', () => {
       'Never turn worksheet, guided-reading, GRQ or practice questions into cards.',
       'Practice already lives in Premed OS; flashcards are for retention.',
       'Do not make one card per question',
-      'Lecture example cards and picture cards for figures the lecture teaches stay',
+      'lecture example cards and picture cards for figures the lecture teaches stay',
       'not performance on the exercise',
       'Read the complete Journal, the slides and the worksheet first',
       'Use recordings and transcripts only to fill specific gaps',
@@ -62,7 +62,7 @@ describe('flashcard prompt handoff', () => {
   it('recalls each meaning alone and adds only the approved headline names contrast', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'EVERY term the lecture defines keeps its OWN card',
+      'EVERY in-scope term the lecture defines keeps its OWN card',
       'Never group parallel term meanings on one review card',
       'Do not author grouped-meanings cards.',
       'Positive regulators {{c1::promote cell-cycle progression}}.',
@@ -80,6 +80,33 @@ describe('flashcard prompt handoff', () => {
     expect(prompt).not.toContain('Parallel meaning groups may contain 2–4 terms')
     expect(prompt).not.toContain('Non-opposite headline pair: add one separate name-only sister')
     expect(prompt).not.toContain('Incentive theory focuses on {{c1::positive::positive/negative}} reinforcement')
+  })
+
+  it('limits biology to concepts while preserving PSYC examples and honest scope reporting', () => {
+    const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
+    for (const phrase of [
+      'This section applies to BIOLOGY lectures only',
+      'PSYC keeps its lecture-example cards, including biological psychology',
+      'Biology cards test concepts and mechanisms only',
+      'No cards for passage material: experiments, data figures, gels and lanes, cell lines, assay controls, primer names, figure-specific direction drills',
+      'named examples used only as illustrations',
+      'at most ONE short Example or Evidence line in Extra',
+      'Picture cards are ONLY for structures or processes students are asked to draw or label',
+      'NEVER more than five per biology lecture',
+      'one checkable one-sentence answer',
+      'A connecting card REPLACES a plain cloze testing the same fact',
+      'senescence versus apoptosis, or expression versus enzyme activity',
+      'Target about 20–30 actual review cards per biology lecture',
+      'The builder warns above 35 active review cards',
+      'subject="biology"',
+      'Apply this subject scope BEFORE building targets',
+      'as explicit entries in cards.json limitations',
+      'do not classify a PSYC course as biology merely because a title mentions biology',
+      'retain the useful chosen connection and remove its same-fact cloze',
+      'a taught AZT chain-termination mechanism are conceptual content',
+    ]) expect(prompt).toContain(phrase)
+    expect(prompt).not.toContain('make a picture card: the image on the front')
+    expect(prompt).not.toContain('rather than asked as a why question')
   })
 
   it('requires clarity, available examples, definition recall and short notebook-derived chips', () => {
@@ -139,7 +166,7 @@ describe('flashcard prompt handoff', () => {
       'with --previous on both commands',
       'A member of an umbrella group never gets an extra name blank',
       'If the lecture defines that sub-term, give it a target and a meaning blank in its own note',
-      'Biology and other figure-heavy lectures',
+      'Biology concept formats',
       'Each defined member gets its OWN meaning card',
       'Umbrella first.',
       'Every other defined term gets its OWN note with one blank on its meaning and the term visible',
@@ -168,7 +195,7 @@ describe('flashcard prompt handoff', () => {
     for (const phrase of [
       'Limit per idea: two review cards, or three when the instructor gave an example or stressed it',
       'c1 and c2 create two reviews',
-      'Coverage guard: every objective (topic) keeps at least one tested card; every Understand item is tested;',
+      'Coverage guard: every in-scope objective (topic) keeps at least one tested card; every in-scope Understand item is tested;',
       'Coverage wins when the limit conflicts with the coverage guard.',
       'explicitly report the exception and its review-card count',
       'Set each target\'s kind to understand, be-able-to-do, watch-for, or topic',
@@ -177,7 +204,7 @@ describe('flashcard prompt handoff', () => {
       'A multi-index cloze cannot earn an over-limit exception',
       'A bullet that merely restates a limit or hedge does not need a separate card',
       'Do not group parallel meanings, even if the terms contrast or belong together',
-      'Lecture example cards stay',
+      'lecture example cards stay',
       'Question fronts follow the reference decks too',
       'Every defined term\'s complete meaning stays on its OWN meaning-recall card',
       'Scenario answers are concrete',
@@ -208,7 +235,7 @@ describe('flashcard prompt handoff', () => {
       'This is allowed under default wording too',
       'Both may be filled, with at most three useful text lines in total.',
       'The builder renders up to three useful Extra lines',
-      'Use the slide or figure for a card whenever the attached materials have one',
+      'Outside biology, use the slide or figure for a card whenever the attached materials have one',
       'With no relevant figure, build the card without one',
       'Never generate or invent an image.',
       'Inspect the actual source figure before using it.',
@@ -283,7 +310,7 @@ describe('flashcard prompt handoff', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'Demo', lecture: lecture() })
     for (const addition of [
       "Use the Journal's mastery objectives as the checklist of learning targets. Take the facts from the original materials: terms, numbers, conditions, cautious words such as “may”, the instructor's examples, what the instructor stressed, and any phrase the instructor said belongs in an answer, because the study guide is intentionally concise and may leave out card-worthy detail. Write each Required answer yourself in the wording this prompt sets below; do not copy a textbook or slide definition as the Required answer.",
-      'Keep a target for every Journal objective (topic), every Understand item and every in-scope new or lecture-defined term;',
+      'Keep a target for every in-scope Journal objective (topic), every in-scope Understand item and every in-scope new or lecture-defined term;',
       'or “the lecture\'s example” and “what class identified”; name the concept or example instead.',
       'If the student supplies missed practice or exam questions, add one or two cards, within the limit per idea, on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.',
     ]) expect(prompt).toContain(addition)
