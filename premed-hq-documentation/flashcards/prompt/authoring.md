@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-15k — list and umbrella cards carry a key in Extra; no question asked twice; headline terms two blanks; biology rules for figures, stages, directions, pathways and numbers.
+Prompt revision: 2026-10-15l — objective tags on every note; list and umbrella cards carry a key in Extra; no question asked twice; headline terms two blanks; biology rules for figures, stages, directions, pathways and numbers.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -102,7 +102,7 @@ Required answer: a short, complete response the student can grade against the qu
 
 Biology and other figure-heavy lectures (the way AnKing and MileDown write biology):
 - Figures: put the lecture's slide or figure of that structure, phase or pathway in Extra on most cards. When the lecture asks the student to read an image (identify a phase, read a gel, blot or histogram), make a picture card: the image on the front and one short question, such as “Which phase of mitosis is this cell in?” → “Telophase”.
-- Stages: a process is one stage-and-event cloze per stage, “In {{c1::anaphase::mitosis phase}}, {{c2::sister chromatids separate to opposite poles}}.”, after the ordered umbrella list of stages, with a standard acronym in Extra when one exists.
+- Stages: a process is one stage-and-event cloze per stage, “In {{c1::anaphase::mitosis phase}}, {{c2::sister chromatids separate to opposite poles}}.”, after the ordered umbrella list of stages. The list card's Extra key gives each stage its main event in a few words, plus a standard acronym when one exists (“Prophase: chromosomes condense / Prometaphase: envelope breaks down, fibers attach to kinetochores / Metaphase: line up at the middle / Anaphase: sisters pull apart / Telophase: nuclei re-form”), with the lecture's figure of the stages when it has one.
 - Directions: regulation blanks the direction with the either/or hint, “Cyclin–Cdk phosphorylates {{c1::Rb::protein}}, which {{c2::inactivates::activates/inactivates}} it.”
 - Pathways: a signaling or checkpoint chain is an arrow cloze with the proteins blanked, “DNA damage → {{c1::p53}} → {{c1::p21}} → cyclin–Cdk {{c2::inhibited::activated/inhibited}} → arrest.”
 - Numbers: counts, amounts and units are blanks with a hint naming the quantity, “After S phase, a diploid cell has {{c1::4C::DNA content}} of DNA but is still {{c2::2n::ploidy}}.”
@@ -205,6 +205,8 @@ Native image occlusion is not supported in v1. Do not call an ordinary picture a
 Keep the supplied serif question/answer design, a one-word card label (recall, list, application, example, compare, why), five accents by card type, answer divider, and smaller sans-serif Extra. The builder renders the selected optional Extra as one unlabelled line or source picture. Anki supplies the background; embedded CSS supports light and dark presentation. Do not replace the CSS with an approximation or add invented layouts.
 
 Basic fields: Front, Back, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec. Cloze fields: Text, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec. Metadata travels with the note but stays off the recall face. The embedded templates and builder, not prose interpretation, determine the final layout and field order. Versioned model identities keep this format distinct from older exports.
+
+Tag every note with its Journal objective so the student can study one objective at a time in Anki: put one tag in the card's tags array, written objective::<short-slug> from the objective title, such as objective::cell-cycle-checkpoints or objective::theories-of-emotion. Use the same tag for every note under that objective, and no other content tags.
 
 Create cards.json using the exact included schema. Every declared field is required; use its specified empty string, empty array, or null when inapplicable. Choose a stable deckKey for this new deck and stable card IDs. Use a simple, descriptive lecture or topic title for deckName, such as "Cell Membranes and Transport". Create exactly one standalone deck. Do not add a university, semester, class hierarchy, or Anki :: nesting. Students can rename the deck or move it under their own parent decks after importing. Do not carry over synthetic examples or stale course titles.
 

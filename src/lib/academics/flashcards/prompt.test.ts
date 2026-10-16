@@ -15,7 +15,7 @@ function lecture(): LectureRecord {
 describe('flashcard prompt handoff', () => {
   it('copies the October 15g prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-15k — list and umbrella cards carry a key in Extra; no question asked twice; headline terms two blanks; biology rules for figures, stages, directions, pathways and numbers.')
+    expect(prompt).toContain('Prompt revision: 2026-10-15l — objective tags on every note; list and umbrella cards carry a key in Extra; no question asked twice; headline terms two blanks; biology rules for figures, stages, directions, pathways and numbers.')
     expect(prompt).toContain('A headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -53,6 +53,7 @@ describe('flashcard prompt handoff', () => {
       'Small cards over heavy ones.',
       'No question asked twice.',
       'Give every umbrella or list card a key in Extra',
+      'Tag every note with its Journal objective',
       'A member of an umbrella group never gets a name blank',
       'A sub-term that is part of a parent\'s definition stays inside the parent\'s sentence',
       'Biology and other figure-heavy lectures',
