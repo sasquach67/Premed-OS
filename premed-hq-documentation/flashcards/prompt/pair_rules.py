@@ -14,6 +14,17 @@ def contains(text, phrase):
     return bool(phrase) and (' ' + phrase + ' ') in (' ' + text + ' ')
 
 
+def contains_name(text, name, declared_names):
+    """Match a normalized name without counting it inside a longer declared name."""
+    longer = sorted((other for other in declared_names
+                     if len(other) > len(name) and contains(other, name)),
+                    key=len, reverse=True)
+    for other in longer:
+        # A separator prevents removal from joining unrelated words into a name.
+        text = re.sub(r'(?<!\w)' + re.escape(other) + r'(?!\w)', ' \x00 ', text)
+    return contains(text, name)
+
+
 def declared_pair(card):
     """Return (relationship, (canonical A, canonical B)), or None for ordinary axes."""
     axis = card.get('axis', '').strip()
@@ -62,16 +73,16 @@ def pair_role(card, targets):
     index = next(iter(active))
     full, visible = expanded(text), expanded(text, index)
     answers = [normalized(m.group(2).split('::', 1)[0]) for m in spans]
-    name_visible = [contains(visible, n) for n in names]
+    name_visible = [contains_name(visible, n, names) for n in names]
     meaning_hidden = [any(contains(a, meaning) for a in answers) for meaning in meanings]
     if all(name_visible) and all(meaning_hidden):
         raise ValueError('parallel term meanings must be separate cards; recall each term meaning alone')
     for i in range(2):
         other = 1 - i
         if (name_visible[i] and meaning_hidden[i]
-                and not contains(full, names[other]) and not contains(full, meanings[other])):
+                and not contains_name(full, names[other], names) and not contains(full, meanings[other])):
             return 'meaning:' + str(i)
-    if (all(contains(full, n) for n in names) and not any(name_visible)
+    if (all(contains_name(full, n, names) for n in names) and not any(name_visible)
             and all(contains(visible, m) for m in meanings)):
         return 'names'
     raise ValueError('pair needs one standalone meaning card per term or a contrast hiding both names under one shared cloze index')

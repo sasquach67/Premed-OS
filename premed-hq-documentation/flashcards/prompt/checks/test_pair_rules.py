@@ -62,6 +62,45 @@ class PairRuleChecks(unittest.TestCase):
         validate_pair_rules(self.names_card(), self.targets)
         self.assertEqual(pair_role(self.names_card(), self.targets), 'names')
 
+    def overlapping_pair(self):
+        names = ('source monitoring', 'source-monitoring error')
+        meanings = ('identifying where a memory came from',
+                    'attributing a memory to the wrong source')
+        targets = {str(i): {'id': str(i), 'statement': 'Term: ' + name,
+                           'reason': 'Meaning: ' + meaning}
+                   for i, (name, meaning) in enumerate(zip(names, meanings))}
+        axis = 'non-opposite: ' + ' | '.join(names)
+        cards = [self.card(name + ' is {{c1::' + meaning + '}}.')
+                 for name, meaning in zip(names, meanings)]
+        cards.append(self.card(meanings[0] + ' is {{c1::' + names[0] + '}}; '
+                               + meanings[1] + ' is {{c1::' + names[1] + '}}.'))
+        for i, card in enumerate(cards):
+            card.update(id='source-pair-' + str(i), axis=axis, conceptId='source-pair')
+        return cards, targets
+
+    def test_source_monitoring_pair_has_separate_meanings_and_names_contrast(self):
+        cards, targets = self.overlapping_pair()
+        for card, role in zip(cards, ('meaning:0', 'meaning:1', 'names')):
+            self.assertEqual(pair_role(card, targets), role)
+            validate_pair_rules(card, targets)
+        validate_pair_group(cards, targets)
+        self.assertTrue(valid_headline_pair_core(cards, targets))
+
+    def test_overlapping_pair_still_rejects_either_visible_contrast_name(self):
+        cards, targets = self.overlapping_pair()
+        for name in ('source monitoring', 'source-monitoring error'):
+            with self.subTest(name=name):
+                card = copy.deepcopy(cards[2])
+                card['cloze'] = card['cloze'].replace('{{c1::' + name + '}}', name)
+                with self.assertRaisesRegex(ValueError, 'pair needs one standalone meaning'):
+                    validate_pair_rules(card, targets)
+
+    def test_longer_name_does_not_mask_a_separate_shorter_name(self):
+        cards, targets = self.overlapping_pair()
+        cards[1]['cloze'] += ' source monitoring'
+        with self.assertRaisesRegex(ValueError, 'pair needs one standalone meaning'):
+            validate_pair_rules(cards[1], targets)
+
     def test_category_hint_allowed(self):
         card = self.names_card()
         card['cloze'] = card['cloze'].replace('{{c1::Intrinsic}}', '{{c1::Intrinsic::type of motivation}}')
