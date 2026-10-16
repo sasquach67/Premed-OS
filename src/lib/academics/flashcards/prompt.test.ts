@@ -15,7 +15,7 @@ function lecture(): LectureRecord {
 describe('flashcard prompt handoff', () => {
   it('copies the October 15g prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-15h — one-word card labels, bold cue words, contrast sentences, umbrella lists first, lecture-then-famous Extra, slide pictures when they exist; why cards kept to a minimum.')
+    expect(prompt).toContain('Prompt revision: 2026-10-15i — small cards over heavy ones; one card per checkpoint or stage; look-alike groups as contrast plus meaning notes; biology rules for figures, stages, directions, pathways and numbers.')
     expect(prompt).toContain('A term or theory the instructor defines, or that recurs in the lecture, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -50,6 +50,9 @@ describe('flashcard prompt handoff', () => {
       '| Umbrella | “The N parts of X are {{c1::a}}, {{c1::b}} …”, placed before its members | No separate Back; one review card |',
       'Bold the cue.',
       'Keep why/how cards to a minimum.',
+      'Small cards over heavy ones.',
+      'Biology and other figure-heavy lectures',
+      'Look-alike groups of three or four',
       'Umbrella first.',
       'gets a single blank on the term',
       'then a famous, standard example or mnemonic',
