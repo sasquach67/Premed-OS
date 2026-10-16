@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-15g — one-word card labels, bold cue words, contrast sentences, umbrella lists first, lecture-then-famous Extra, slide pictures when they exist.
+Prompt revision: 2026-10-15h — one-word card labels, bold cue words, contrast sentences, umbrella lists first, lecture-then-famous Extra, slide pictures when they exist; why cards kept to a minimum.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -79,6 +79,8 @@ One question per card. Never join two questions with “and” or use a two-part
 One answer per card. A scenario, why/how or example card asks for one term, one step or one cause. Never write “Match the 3 behaviors to…”, “What does each of the 3 theories predict?”, or any card whose answer is a set of pairings. The combined card already tests the set; a scenario then picks the one term in the group most likely to be confused and asks only about it, within the limit per idea. For example, after the combined card “Activation vs. persistence vs. intensity”, a scenario is “A student keeps working after a hard question stops her. Which component of motivation is this?” → “Persistence.” A cloze list or a combined comparison card is the only place several items are recalled together.
 
 Never let the question give away its answer. If the answer only restates the question, as in “How is intrinsic motivation related to success?” → “Greater intrinsic motivation is associated with greater success”, test the actual finding instead, usually as a cloze that blanks it: “Children who wait longer for a reward tend to have better later {{c1::social, emotional, and academic}} outcomes.” Ask a why/how question only when its answer adds something the question does not already say.
+
+Keep why/how cards to a minimum. Write one only when the reason itself is what the instructor tests and no recall card already covers it; if a cloze such as “…because {{c1::…}}” or the idea's two-blank note already tests the same reason, drop the why card.
 
 No essay or policy questions. A why/how card has a one-sentence answer the student can check themselves. Never ask the student to design a plan, policy, program or intervention, such as “How could a school board reduce summer learning loss?” or “How can a school recognize more of Gardner's intelligences?”, unless the instructor asked that kind of question. A Be-able-to-do item phrased as “evaluate”, “interpret” or “explain why” is tested by the one finding or reason it turns on, as a short why question or a cloze, not by an open-ended prompt. A comparison contrasts two things the student could confuse; facts about two separate cases (who, when, where) are not a comparison and become a cloze only if the instructor tests them. Each card must stand alone when shuffled. Name the situation or concepts and give only the context needed to answer. Avoid vague “it,” “the study,” or “the next step” without an antecedent, or “the lecture's example” and “what class identified”; name the concept or example instead. A pronoun with clear same-card context is fine.
 
