@@ -109,7 +109,8 @@ describe('flashcard prompt handoff', () => {
       'night background #3a342b with text #cfc6b6',
       "At 390px the chip's complete text must stay on ONE line",
       'its text must not wrap, clip or use an ellipsis',
-      'supplied question-only guard hides the chip on the question and retains it on the answer',
+      'replace it with another short notebook-derived topic label',
+      'do not use hiding the chip as the authoring solution',
     ]) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('Extra: one short line, or empty.')
     expect(prompt).not.toContain('at most 80 characters')
