@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-15c — one checkable answer per card: no multi-part asks, no self-answering or essay questions; related terms combined, reference-deck wording.
+Prompt revision: 2026-10-15d — simplify by explaining, not by cutting words; one checkable answer per card; related terms combined.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -83,7 +83,7 @@ Scenario answers are concrete: a term, a choice between named options, or one sh
 
 Definition Backs carry the meaning only. Remove hedge tails such as “without establishing…”, “which cannot be…”, and unrelated cautions. Keep a cautious word when the instructor’s claim itself is cautious, such as “may contribute”; that is part of the content.
 
-Required answer: the shortest complete response the student can grade against the question, in the fixed shape above. Keep essential qualifiers and causal links. Do not add “The answer is…” merely to satisfy a verb check. Preserve necessary course terms, numbers, units, and cautious claims such as “may contribute”. Apply the friend test to the Required answer (Back) itself, not just Extra, under the default wording: could a first-year student who skipped the lecture understand every word except the course's own named terms? If not, rewrite in plainer words and briefly explain unfamiliar terms where needed. Difficulty comes from knowledge, not ornate wording; “shortest” must not mean compressed jargon. Apply the same plain-language test to cloze sentences and bounded checklist answers unless the Technical emphasis requires exact terms.
+Required answer: a short, complete response the student can grade against the question, clear before it is brief, in the fixed shape above. Keep essential qualifiers and causal links. Do not add “The answer is…” merely to satisfy a verb check. Preserve necessary course terms, numbers, units, and cautious claims such as “may contribute”. Apply the friend test to the Required answer (Back) itself, not just Extra, under the default wording: could a first-year student who skipped the lecture understand every word except the course's own named terms? If not, rewrite in plainer words and briefly explain unfamiliar terms where needed. Difficulty comes from knowledge, not ornate wording; “short” must not mean compressed jargon. Apply the same plain-language test to cloze sentences and bounded checklist answers unless the Technical emphasis requires exact terms.
 
 These shapes also apply to biology: pathways and ordered steps use the cloze list/steps shape, structures use an available source figure when it helps, and numbers and units stay exact. Under Technical, the Back retains the course's exact terms.
 
@@ -105,7 +105,13 @@ Accepted style examples, not content to insert into unrelated decks:
 - Required answer: Instead of a worker deciding how to do the job, management breaks it into small tasks and sets the method it thinks is most efficient.
 - Extra: empty
 
-House style for every Back, cloze sentence and Extra follows the concise teaching language of AnKing, MileDown, Pankow and JackSparrow: as few words as carry the meaning. A fragment is fine (“Repeating information to keep it in mind.”). No “This refers to”, “It is the process by which”, or restating the Front. Teach one fact or the short meanings in one related group; no hedge clause, stacked qualifiers, or three abstractions where one plain word works. Use everyday words by default and exact course terms under Technical or Readings. Concision must never remove a causal link or distinction the student needs to understand. Keep cautious wording only when the claim itself is cautious. Run the friend test on the Back itself: if a first-year student who skipped the lecture cannot explain it in ordinary words, rewrite before building. No phrase detector can certify understanding.
+House style for every Back, cloze sentence and Extra: simplify by explaining, not by cutting words. Fewer words is not the same as simpler. Write each answer the way a good TA would say it out loud to a classmate who missed class: everyday words, concrete, a complete thought, with a short explanation when it helps the idea make sense, but never a paragraph.
+- Say-it-aloud test: if a student would not say the sentence while explaining the idea to a friend, rewrite it.
+- Never squeeze an idea into an abstract phrase nobody says out loud, such as “adaptive value”, “promotes action toward a goal”, “goal-directed”, “processing efficiency” or “cognitive appraisal”. If it is the course's own named term, keep it and say what it means in plain words. Say what actually happens.
+- Avoid AI-sounding wording: stock words (“crucial”, “key role”, “facilitates”, “various”, “plays a role in”), vague verbs (“involves”, “relates to”) and stacked abstract nouns.
+- Cut filler, not explanation: no “This refers to”, “It is the process by which”, or restating the Front; no hedge clause or stacked qualifiers. Concision must never remove a causal link or distinction the student needs.
+- Teach one fact, or the short meanings in one related group. The established decks (AnKing, MileDown, Pankow, JackSparrow) are the model for card shape and one-fact focus, not for clipped wording.
+- Use everyday words by default and exact course terms under Technical or Readings. Keep cautious wording only when the claim itself is cautious. Run the friend test on the Back itself. No phrase detector can certify understanding.
 
 ### Before and after, style only (not content to insert into unrelated decks)
 
@@ -114,7 +120,9 @@ House style for every Back, cloze sentence and Extra follows the concise teachin
 - Front: Colonialism. Before: “It establishes enduring domination and dispossession: colonizers take control of land, labor, resources, and political life.” After: “Colonialism means lasting control over another society: colonizers take land and resources, control people's work, and shape political life.”
 - Front: Why does a commodity chain depend on more than a route? Before: “It also depends on labor, money, nature, infrastructure and governing rules that organize production, distribution and consumption.” After: “Workers, money, land, transport, and rules shape how goods are made, moved, and used.”
 
-- Front: Rehearsal. Before: “Repeatedly thinking about or verbalizing information to keep it active, while competing material can still interfere with retention.” After: “Repeating information to keep it in mind.”
+- Scenario answer: evolutionary theory of motivation. Before: “Evolutionary theory, because it explains motivation through adaptive value.” After: “Evolutionary theory: we are driven to do things that helped our ancestors survive and have children.”
+- Scenario answer: functionalist approach to emotion. Before: “Functionalist approach, because the emotion promotes action toward a goal.” After: “Functionalist approach: emotions exist to push us into useful action. Here, fear gets the child to move toward safety.”
+- Front: Rehearsal. Before: “Repeatedly thinking about or verbalizing information to keep it active, while competing material can still interfere with retention.” After: “Repeating information to yourself so it stays in mind.”
 - Front: Long-term memory. Before: “Retaining information over extended periods with very large capacity, without establishing that every memory is stored permanently.” After: “Memory that holds information for a long time, with nearly unlimited room.”
 - Front: Misinformation effect. Before: “An event is reconstructed rather than replayed exactly, so misleading post-event information can alter later recall.” After: “Misleading information after an event changes how you remember it.”
 - Front: Executive control. Before: “Directing attention, selecting strategies, and coordinating a task within limits of capacity, processing efficiency, and relevant knowledge.” After: “Directing your attention and choosing how to tackle a task.”
