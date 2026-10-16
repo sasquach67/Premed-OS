@@ -13,9 +13,9 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the pending October 16i prompt revision and preserves source access rules', () => {
+  it('copies the pending October 16j prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-16i — category hints only, with answer-option warnings; inline breadcrumb chips, meanings-first pairs and export-based updates retained.')
+    expect(prompt).toContain('Prompt revision: 2026-10-16j — short notebook-derived topic labels, single-line chips and a 40-character limit; category hints, meanings-first pairs and export-based updates retained.')
     expect(prompt).toContain('A standalone headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -84,7 +84,7 @@ describe('flashcard prompt handoff', () => {
     expect(prompt).not.toContain('Incentive theory focuses on {{c1::positive::positive/negative}} reinforcement')
   })
 
-  it('requires clarity, available examples, definition recall and copied Journal titles', () => {
+  it('requires clarity, available examples, definition recall and short notebook-derived chips', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
       'Extra holds up to three short lines',
@@ -95,16 +95,21 @@ describe('flashcard prompt handoff', () => {
       'Never invent terms.',
       'Definition recall is never cut.',
       'term has no definition-recall card',
-      'Breadcrumbs come from the notebook, word for word.',
-      '<Journal objective title> › <Journal section title>',
-      'breadcrumb is not a notebook title',
+      'Breadcrumb chips are short topic LABELS, never paragraphs.',
+      'Use 1–4 words and aim for at most about 32 characters',
+      'The builder FAILS above 40 characters',
+      'Every word in a segment must appear in one actual notebook title',
+      'notebookTitles array',
+      'Keep target.topic as the full exact objective in the coverage ledger',
+      'breadcrumb words are not in a notebook title',
       'Report every background term moved into a lecture-specific card.',
-      'Topic uses the F2 chip on the label row',
+      'Use the F2 chip on the label row',
       '11.5px, padding 4px 9px',
       'light background #efe9de with text #6f675a',
       'night background #3a342b with text #cfc6b6',
-      'At 390px the chip may wrap under the label',
-      'guard hides an answer-giving chip on the question and retains it on the answer',
+      "At 390px the chip's complete text must stay on ONE line",
+      'its text must not wrap, clip or use an ellipsis',
+      'supplied question-only guard hides the chip on the question and retains it on the answer',
     ]) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('Extra: one short line, or empty.')
     expect(prompt).not.toContain('at most 80 characters')

@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-16i — category hints only, with answer-option warnings; inline breadcrumb chips, meanings-first pairs and export-based updates retained.
+Prompt revision: 2026-10-16j — short notebook-derived topic labels, single-line chips and a 40-character limit; category hints, meanings-first pairs and export-based updates retained.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -33,7 +33,7 @@ Only this lecture's new content gets cards. A term from an earlier lesson or gen
 
 Never turn worksheet, guided-reading, GRQ or practice questions into cards. Practice already lives in Premed OS; flashcards are for retention. Use those questions only to see which concepts matter, then give those concepts ordinary retention cards. Do not make one card per question, copy a prompt, or disguise the same exercise with different wording, numbers or a cropped worksheet panel. Lecture example cards and picture cards for figures the lecture teaches stay; an exercise appearing in a worksheet does not by itself make it a lecture example. The separate rule for the student's own missed exam or practice questions stays: reinforce the concept missed, never copy the question. For an exercise-style Be-able-to-do item, link the underlying retention concept to its ordinary card and explicitly report that this covers the concept, not performance on the exercise. Keep the practice task in Premed OS.
 
-Build the target map first. Keep a target for every Journal objective (topic), every Understand item and every in-scope new or lecture-defined term; also record Be-able-to-do and Watch-for items so omissions are visible. Set each target's kind to understand, be-able-to-do, watch-for, or topic, matching the Journal; use understand for a named-term meaning. Set topic to the exact Journal objective title, copied word for word; never invent a shorter topic label. Assign stable target IDs and meaningful concept IDs for related groups. IDs are organizational metadata, not proof of redundancy. Check overlap across IDs too. Do not create a new ID for every paraphrase to disguise duplication.
+Build the target map first. Keep a target for every Journal objective (topic), every Understand item and every in-scope new or lecture-defined term; also record Be-able-to-do and Watch-for items so omissions are visible. Set each target's kind to understand, be-able-to-do, watch-for, or topic, matching the Journal; use understand for a named-term meaning. Set target.topic to the exact Journal objective title, copied word for word: this is the coverage ledger, not the chip text. Give each card a separate short breadcrumb under the display rule below. Assign stable target IDs and meaningful concept IDs for related groups. IDs are organizational metadata, not proof of redundancy. Check overlap across IDs too. Do not create a new ID for every paraphrase to disguise duplication.
 
 Coverage guard: every objective (topic) keeps at least one tested card; every Understand item is tested; every in-scope new or lecture-defined term keeps its meaning recallable on its two-blank note or a combined direct card. Extra is supporting help, not active recall. Never drop a topic, an Understand item or an in-scope new or lecture-defined term's meaning to lower the count. Merely used background context does not require its own recall card, and practice-question coverage does not authorize exercise cards. Explain source gaps before agreeing a partial scope; do not claim complete coverage while an essential target is missing.
 
@@ -236,7 +236,9 @@ Keep the supplied serif question/answer design, a one-word card label (recall, l
 
 Final Basic fields, in order: Front, Back, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec, Topic, Source, My notes. Final Cloze fields: Text, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec, Topic, Source, My notes. Native Image Occlusion fields: Occlusion, Image, Header, Back Extra, Comments, Topic, Source, My notes, premedos_concept_id, premedos_source, premedos_spec. Metadata travels with the note but stays off the recall face. The embedded templates and builder, not prose interpretation, determine the final layout and field order. The supplied final note-type IDs are fixed, independent of CSS or template text. Topic, Source and My notes append to the already-released Basic/Cloze fields; the documented merge import upgrades those notes in place. Never change field order or identities for a design edit.
 
-Breadcrumbs come from the notebook, word for word. Use `<Journal objective title> › <Journal section title>`, copying both titles exactly, including punctuation and case. If the section title would reveal the hidden answer, use the objective title alone. If the objective itself gives away the answer, use another genuinely applicable existing Journal objective when available; never misclassify a card just to avoid a cue. If no such objective applies, retain the exact title: the supplied literal-answer guard hides an answer-giving Topic chip on the question only and retains its exact title on the answer. Do not invent titles or misclassify the card to avoid a cue. The literal guard cannot detect synonymous or indirect clues; inspect those in the cold-read pass and report unresolved cues. Never write a new label, shorten a title or paraphrase it. Set target.topic to the same exact objective title. Long copied titles are supported up to 2,000 characters; do not truncate to the old 80-character cap. Empty or omitted breadcrumb uses the linked target's topic. The builder warns “breadcrumb is not a notebook title” unless the first segment matches a target topic exactly; this does not verify the actual section title, so check that against the Journal yourself. Topic uses the F2 chip on the label row: the square and one-word label first, then the exact breadcrumb in a rounded chip. Use the label's ui-monospace, "SF Mono", Menlo, Consolas font at 11.5px, padding 4px 9px, light background #efe9de with text #6f675a, and night background #3a342b with text #cfc6b6. Remove the separate topic line above the label. At 390px the chip may wrap under the label; its text wraps without horizontal overflow. The question-only answer-leak guard hides an answer-giving chip on the question and retains it on the answer. The builder derives the collapsed Source control from sourceRefs location strings; keep those short locators, not source commentary. premedos_source remains hidden evidence JSON. My notes starts empty and is rendered on the back only when the student fills it; never author or overwrite the student's own notes.
+Breadcrumb chips are short topic LABELS, never paragraphs. Use 1–4 words and aim for at most about 32 characters, with one or two segments at most: “Mitosis › DNA content”, “Cell-cycle control”, “Telomeres”. The builder FAILS above 40 characters, including an omitted breadcrumb's fallback; do not rely on a full objective sentence as the fallback. Supply card.breadcrumb explicitly. Take the notebook's short section/topic name, or a key noun phrase from its objective or section title. Every word in a segment must appear in one actual notebook title; two segments may draw from two titles. Do not invent wording, paraphrase a title into new terms, paste a whole objective sentence, or use an objective's verb phrase such as “Recognize/draw…”. Capitalization and separators may change; the words still come from the title. Keep target.topic as the full exact objective in the coverage ledger. Add the actual source section/topic/objective titles to the optional top-level notebookTitles array when they are not already represented by target.topic. The builder warns when a label segment's words do not appear in one of those supplied notebook titles, and flags obvious objective verb phrases. This check cannot authenticate the notebook or decide whether a noun phrase is relevant; cold-read each label against the actual Journal.
+
+Use the F2 chip on the label row: square and one-word card label, then the short breadcrumb in a rounded chip. Use ui-monospace, "SF Mono", Menlo, Consolas at 11.5px, padding 4px 9px, light background #efe9de with text #6f675a, and night background #3a342b with text #cfc6b6. At 390px the chip's complete text must stay on ONE line. The chip may move below the card label as a unit; its text must not wrap, clip or use an ellipsis. Choose a shorter source-derived label if it does not fit; do not shrink its font. Remove the old separate topic paragraph. Avoid a label that gives away a hidden answer. If a source-derived label still contains a literal answer, the supplied question-only guard hides the chip on the question and retains it on the answer; indirect clues still need cold-read review. The builder derives the collapsed Source control from sourceRefs locations. premedos_source remains hidden evidence JSON. My notes starts empty and appears on the back only when the student fills it; never author or overwrite the student's own notes.
 
 Enumerated-list cards keep their one c1 review card, list count, order rule and Extra key. One-by-one reveal runs on any question with two or more active blanks of the same index, regardless of the card label or type: lists, 2–4-term parallel meanings, steps, pathways and other grouped clozes. Single-active-blank questions stay untouched. The front's local template script reveals the next blank on tap/click or Space, Enter, ArrowRight or N; the answer shows all items. No remote scripts or extra notes are added. Without script support or complete cloze answer/index attributes, the ordinary all-blanks question remains usable. Desktop DOM event tests do not establish physical AnkiMobile/AnkiDroid behavior; report any client limitation honestly.
 
@@ -578,7 +580,7 @@ Save each following fenced block under the exact filename shown. The block conte
         },
         "breadcrumb": {
           "type": "string",
-          "maxLength": 2000
+          "maxLength": 40
         },
         "imageOcclusion": {
           "type": [
@@ -825,6 +827,16 @@ Save each following fenced block under the exact filename shown. The block conte
         ],
         "additionalProperties": false
       }
+    },
+    "notebookTitles": {
+      "type": "array",
+      "maxItems": 500,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2000
+      }
     }
   },
   "required": [
@@ -930,10 +942,10 @@ ol.blurt li::before {
 
 /* Supporting information follows the existing muted sans-serif Extra treatment. */
 .topic-chip {
-  display: inline-block; flex: 1 1 0; min-width: 0; max-width: max-content; box-sizing: border-box;
+  display: inline-block; flex: 0 0 auto; max-width: 100%; box-sizing: border-box;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 11.5px; line-height: 1.45; letter-spacing: .02em;
-  border-radius: 999px; padding: 4px 9px; overflow-wrap: anywhere;
+  border-radius: 999px; padding: 4px 9px; white-space: nowrap; overflow-wrap: normal;
   background: #efe9de; color: #6f675a;
 }
 .nightMode .topic-chip, .night_mode .topic-chip { background: #3a342b; color: #cfc6b6; }
@@ -946,8 +958,6 @@ ol.blurt li::before {
 
 /* Preserve exact answer-giving titles on the answer, without cueing the question. */
 .pm-question .topic-answer-cue + .topic-chip { display: none; }
-
-@media (max-width: 480px) { .topic-chip { flex-basis: 100%; } }
 ```
 
 ### File: requirements.txt
@@ -1575,6 +1585,16 @@ def escape(value):
     escaped = html.escape(value, quote=True).replace('\n', '<br>')
     return re.sub(r'\*\*([^*<>]+?)\*\*', r'<b>\1</b>', escaped)
 
+def breadcrumb_label(card, targets):
+    """Resolve a compact label; never silently clip or copy a long objective."""
+    raw = card.get('breadcrumb') or next(t['topic'] for t in targets.values() if t['id'] in card['targetIds'])
+    require(len(raw) <= 40, f'{card["id"]}: breadcrumb exceeds 40 characters; choose a short notebook topic label.')
+    parts = [part.strip() for part in raw.split('›')]
+    require(1 <= len(parts) <= 2 and all(parts), f'{card["id"]}: breadcrumb needs one or two nonempty segments.')
+    words = re.findall(r"[^\W_]+(?:[-’'][^\W_]+)*", raw, re.UNICODE)
+    require(1 <= len(words) <= 4, f'{card["id"]}: breadcrumb needs 1 to 4 words, not an objective sentence.')
+    return raw.strip()
+
 def topic_reveals_answer(topic, card):
     """Keep exact titles on the answer without using them as an answer cue.
 
@@ -1664,7 +1684,7 @@ def direct_card_candidate(card):
             and (not front.endswith('.') or bool(re.search(r'\b(?:[A-Za-z]\.){2,}$', front)))
             and not re.match(r'^(?:what|why|how|which|when|where|who|whose|is|are|does|do|can|could|should|would|define|describe|explain|compare|give|name|list|recall)\b', front, re.IGNORECASE))
 
-def clarity_warnings(card, targets):
+def clarity_warnings(card, targets, notebook_titles=None):
     warnings = []
     linked = [targets[tid] for tid in card['targetIds']]
     if card['clozePattern']:
@@ -1687,9 +1707,13 @@ def clarity_warnings(card, targets):
     excerpt = ' '.join([ref['excerpt'] for ref in card['sourceRefs']] + [t['statement'] + ' ' + t['reason'] for t in linked])
     if definition and not extra_text(card) and not card['extraImages'] and re.search(r'\bexample\b|\be\.g\.|\bfor instance\b', excerpt, re.IGNORECASE):
         warnings.append(f'{card["id"]}: definition is missing an available example; inspect the linked source/target and add its relevant example to Extra.')
-    breadcrumb = card.get('breadcrumb') or next(t['topic'] for t in linked)
-    if not any(breadcrumb == t['topic'] or breadcrumb.startswith(t['topic'] + ' › ') for t in targets.values()):
-        warnings.append(f'{card["id"]}: breadcrumb is not a notebook title; copy the exact Journal objective title, optionally followed by its section title.')
+    breadcrumb = breadcrumb_label(card, targets)
+    titles = [coverage_text(t['topic']).split() for t in targets.values()]
+    titles += [coverage_text(title).split() for title in (notebook_titles or [])]
+    if any(not any(set(coverage_text(part).split()) <= set(title) for title in titles) for part in breadcrumb.split('›')):
+        warnings.append(f'{card["id"]}: breadcrumb words are not in a notebook title; use a short section/topic name or noun phrase from an actual title.')
+    if re.match(r'^(?:study\s+objective|objective\b|(?:recognize|draw|explain|define|describe|list|identify|compare|distinguish|understand|analyze|predict|interpret|demonstrate|outline|evaluate)\b)', breadcrumb, re.IGNORECASE):
+        warnings.append(f'{card["id"]}: breadcrumb reads like an objective verb phrase; choose a short topic noun label.')
     return warnings
 
 def names_instructor_emphasis(reason):
@@ -1724,6 +1748,7 @@ def validate(data, updating=False):
         cid = c['id']
         require(all(t in targets for t in c['targetIds']), f'{cid}: unknown learning target.')
         require(len(c['targetIds']) == len(set(c['targetIds'])), f'{cid}: repeated target reference.')
+        breadcrumb_label(c, targets)
         for ref in c['sourceRefs']:
             evidence(ref)
         cp = c['clozePattern']
@@ -1790,7 +1815,7 @@ def validate(data, updating=False):
                 warnings.append(f'{cid}: Extra exceeds three short lines (about 20 words each); retain useful example, plain restatement and evidence only.')
         if word_count(c['back']) > 45 or any(word_count(i) > 35 for i in c['recallItems']): warnings.append(f'{cid}: long required answer; inspect grading burden.')
         warnings.extend(card_language_warnings(c))
-        warnings.extend(clarity_warnings(c, targets))
+        warnings.extend(clarity_warnings(c, targets, data.get('notebookTitles', [])))
         occlusion = c.get('imageOcclusion')
         require(bool(occlusion) == (c['type'] == 'image-occlusion'), f'{cid}: image-occlusion cards require exactly one mask definition.')
         if occlusion:
@@ -1962,7 +1987,7 @@ def build(data, out, input_dir, previous=None):
             label = LABELS[card['type']]
             if card['clozePattern'] == 'enumerated-list': label = 'list'
             typ = '<span class="verb">' + label + '</span>'
-            topic = card.get('breadcrumb') or next(t['topic'] for t in data['targets'] if t['id'] in card['targetIds'])
+            topic = breadcrumb_label(card, {t['id']: t for t in data['targets']})
             if topic_reveals_answer(topic, card):
                 typ += '<span class="topic-answer-cue" hidden></span>'
             extra = escape(extra_text(card))
@@ -1979,7 +2004,7 @@ def build(data, out, input_dir, previous=None):
                 back = '<ol class="blurt">' + ''.join('<li>' + escape(i) + '</li>' for i in card['recallItems']) + '</ol>' if card['type'] == 'free-recall' else escape(card['back'])
                 fields = [escape(card['front']) + front_images, back, extra] + details
                 model = basic
-            topic = card.get('breadcrumb') or next(t['topic'] for t in data['targets'] if t['id'] in card['targetIds'])
+            topic = breadcrumb_label(card, {t['id']: t for t in data['targets']})
             source = ' · '.join(dict.fromkeys(ref['location'] for ref in card['sourceRefs']))
             fields += [escape(topic), escape(source), '']
             if card['type'] == 'image-occlusion':

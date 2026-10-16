@@ -8,7 +8,7 @@ manifest={}
 for name,language in FILES:
     content=(BASE/name).read_text()
     if '```' in content:raise ValueError('Embedded fence in '+name)
-    parts.append('\n### File: '+name+'\n\n```'+language+'\n'+content.rstrip('\n')+'\n```\n')
+    parts.append('\n### File: '+name+'\n\n```'+language+'\n'+content.removesuffix('\n')+'\n```\n')
     manifest[name]=hashlib.sha256(content.encode()).hexdigest()
 text=''.join(parts)
 OUTPUT=BASE.parents[2]/'src/lib/academics/flashcards/instructions.md'

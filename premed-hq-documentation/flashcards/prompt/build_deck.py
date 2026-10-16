@@ -36,6 +36,16 @@ def escape(value):
     escaped = html.escape(value, quote=True).replace('\n', '<br>')
     return re.sub(r'\*\*([^*<>]+?)\*\*', r'<b>\1</b>', escaped)
 
+def breadcrumb_label(card, targets):
+    """Resolve a compact label; never silently clip or copy a long objective."""
+    raw = card.get('breadcrumb') or next(t['topic'] for t in targets.values() if t['id'] in card['targetIds'])
+    require(len(raw) <= 40, f'{card["id"]}: breadcrumb exceeds 40 characters; choose a short notebook topic label.')
+    parts = [part.strip() for part in raw.split('›')]
+    require(1 <= len(parts) <= 2 and all(parts), f'{card["id"]}: breadcrumb needs one or two nonempty segments.')
+    words = re.findall(r"[^\W_]+(?:[-’'][^\W_]+)*", raw, re.UNICODE)
+    require(1 <= len(words) <= 4, f'{card["id"]}: breadcrumb needs 1 to 4 words, not an objective sentence.')
+    return raw.strip()
+
 def topic_reveals_answer(topic, card):
     """Keep exact titles on the answer without using them as an answer cue.
 
@@ -125,7 +135,7 @@ def direct_card_candidate(card):
             and (not front.endswith('.') or bool(re.search(r'\b(?:[A-Za-z]\.){2,}$', front)))
             and not re.match(r'^(?:what|why|how|which|when|where|who|whose|is|are|does|do|can|could|should|would|define|describe|explain|compare|give|name|list|recall)\b', front, re.IGNORECASE))
 
-def clarity_warnings(card, targets):
+def clarity_warnings(card, targets, notebook_titles=None):
     warnings = []
     linked = [targets[tid] for tid in card['targetIds']]
     if card['clozePattern']:
@@ -148,9 +158,13 @@ def clarity_warnings(card, targets):
     excerpt = ' '.join([ref['excerpt'] for ref in card['sourceRefs']] + [t['statement'] + ' ' + t['reason'] for t in linked])
     if definition and not extra_text(card) and not card['extraImages'] and re.search(r'\bexample\b|\be\.g\.|\bfor instance\b', excerpt, re.IGNORECASE):
         warnings.append(f'{card["id"]}: definition is missing an available example; inspect the linked source/target and add its relevant example to Extra.')
-    breadcrumb = card.get('breadcrumb') or next(t['topic'] for t in linked)
-    if not any(breadcrumb == t['topic'] or breadcrumb.startswith(t['topic'] + ' › ') for t in targets.values()):
-        warnings.append(f'{card["id"]}: breadcrumb is not a notebook title; copy the exact Journal objective title, optionally followed by its section title.')
+    breadcrumb = breadcrumb_label(card, targets)
+    titles = [coverage_text(t['topic']).split() for t in targets.values()]
+    titles += [coverage_text(title).split() for title in (notebook_titles or [])]
+    if any(not any(set(coverage_text(part).split()) <= set(title) for title in titles) for part in breadcrumb.split('›')):
+        warnings.append(f'{card["id"]}: breadcrumb words are not in a notebook title; use a short section/topic name or noun phrase from an actual title.')
+    if re.match(r'^(?:study\s+objective|objective\b|(?:recognize|draw|explain|define|describe|list|identify|compare|distinguish|understand|analyze|predict|interpret|demonstrate|outline|evaluate)\b)', breadcrumb, re.IGNORECASE):
+        warnings.append(f'{card["id"]}: breadcrumb reads like an objective verb phrase; choose a short topic noun label.')
     return warnings
 
 def names_instructor_emphasis(reason):
@@ -185,6 +199,7 @@ def validate(data, updating=False):
         cid = c['id']
         require(all(t in targets for t in c['targetIds']), f'{cid}: unknown learning target.')
         require(len(c['targetIds']) == len(set(c['targetIds'])), f'{cid}: repeated target reference.')
+        breadcrumb_label(c, targets)
         for ref in c['sourceRefs']:
             evidence(ref)
         cp = c['clozePattern']
@@ -251,7 +266,7 @@ def validate(data, updating=False):
                 warnings.append(f'{cid}: Extra exceeds three short lines (about 20 words each); retain useful example, plain restatement and evidence only.')
         if word_count(c['back']) > 45 or any(word_count(i) > 35 for i in c['recallItems']): warnings.append(f'{cid}: long required answer; inspect grading burden.')
         warnings.extend(card_language_warnings(c))
-        warnings.extend(clarity_warnings(c, targets))
+        warnings.extend(clarity_warnings(c, targets, data.get('notebookTitles', [])))
         occlusion = c.get('imageOcclusion')
         require(bool(occlusion) == (c['type'] == 'image-occlusion'), f'{cid}: image-occlusion cards require exactly one mask definition.')
         if occlusion:
@@ -423,7 +438,7 @@ def build(data, out, input_dir, previous=None):
             label = LABELS[card['type']]
             if card['clozePattern'] == 'enumerated-list': label = 'list'
             typ = '<span class="verb">' + label + '</span>'
-            topic = card.get('breadcrumb') or next(t['topic'] for t in data['targets'] if t['id'] in card['targetIds'])
+            topic = breadcrumb_label(card, {t['id']: t for t in data['targets']})
             if topic_reveals_answer(topic, card):
                 typ += '<span class="topic-answer-cue" hidden></span>'
             extra = escape(extra_text(card))
@@ -440,7 +455,7 @@ def build(data, out, input_dir, previous=None):
                 back = '<ol class="blurt">' + ''.join('<li>' + escape(i) + '</li>' for i in card['recallItems']) + '</ol>' if card['type'] == 'free-recall' else escape(card['back'])
                 fields = [escape(card['front']) + front_images, back, extra] + details
                 model = basic
-            topic = card.get('breadcrumb') or next(t['topic'] for t in data['targets'] if t['id'] in card['targetIds'])
+            topic = breadcrumb_label(card, {t['id']: t for t in data['targets']})
             source = ' · '.join(dict.fromkeys(ref['location'] for ref in card['sourceRefs']))
             fields += [escape(topic), escape(source), '']
             if card['type'] == 'image-occlusion':

@@ -38,7 +38,7 @@ def guarded(fn):
 
 def later(fn): QTimer.singleShot(700,guarded(fn))
 def query(callback):
- mw.web.evalWithCallback("JSON.stringify({button:!!document.querySelector('.pm-list-reveal'),texts:Array.from(document.querySelectorAll('#pm-list-question .cloze')).map(x=>x.textContent),revealed:document.querySelectorAll('.pm-list-revealed').length,disabled:document.querySelector('.pm-list-reveal')?.disabled,question:document.getElementById('pm-list-question')?.textContent,chip:(()=>{let e=document.querySelector('.topic-chip');if(!e)return null;let c=getComputedStyle(e);return {display:c.display,font:c.fontFamily,size:c.fontSize,padding:c.padding,background:c.backgroundColor,color:c.color}})()})",guarded(lambda raw:QTimer.singleShot(200,guarded(lambda:callback(json.loads(raw))))))
+ mw.web.evalWithCallback("JSON.stringify({button:!!document.querySelector('.pm-list-reveal'),texts:Array.from(document.querySelectorAll('#pm-list-question .cloze')).map(x=>x.textContent),revealed:document.querySelectorAll('.pm-list-revealed').length,disabled:document.querySelector('.pm-list-reveal')?.disabled,question:document.getElementById('pm-list-question')?.textContent,chip:(()=>{let e=document.querySelector('.topic-chip');if(!e)return null;let c=getComputedStyle(e);return {display:c.display,font:c.fontFamily,size:c.fontSize,padding:c.padding,background:c.backgroundColor,color:c.color,whiteSpace:c.whiteSpace,width:e.clientWidth,scrollWidth:e.scrollWidth,height:e.getBoundingClientRect().height,lineHeight:parseFloat(c.lineHeight),paddingY:parseFloat(c.paddingTop)+parseFloat(c.paddingBottom)}})()})",guarded(lambda raw:QTimer.singleShot(200,guarded(lambda:callback(json.loads(raw))))))
 
 def show(note_id,done):
  ids=mw.col.find_cards('')
@@ -51,6 +51,10 @@ def show(note_id,done):
 
 def record(name,value):
  assert mw.state=='review',mw.state
+ chip=value.get('chip')
+ if chip and chip['display']!='none':
+  assert chip['whiteSpace']=='nowrap' and chip['scrollWidth']<=chip['width']+1,value
+  assert chip['height']<=chip['lineHeight']+chip['paddingY']+1,value
  results['cases'].append({'name':name,**value})
  mw.web.grab().save(str(OUT/(name+'.png')))
 
@@ -104,7 +108,8 @@ def next_group():
  def initial(value):
   record(note+'-initial',value)
   assert value['button'] and len(value['texts'])==count and value['revealed']==0,value
-  if note=='intrinsic-extrinsic-names':assert value['chip']['display']=='none',value
+  if note=='intrinsic-extrinsic-names':
+   assert (value['chip']['display']=='none') == (CONFIG.get('namesChip')=='hidden'),value
   check_reveals(note,count,next_group)
  show(note,lambda:query(initial))
 
@@ -121,6 +126,8 @@ def start():
  global guids,groups,singles
  assert Path(mw.pm.base).resolve()==(OUT/'base').resolve(),mw.pm.base
  assert not mw.col.find_notes(''),'probe requires a fresh collection'
+ if CONFIG.get('reviewWidth'):mw.web.setFixedWidth(CONFIG['reviewWidth'])
+ results['reviewerWidth']=CONFIG.get('reviewWidth') or 'default'
  guids={r['id']:r['guid'] for r in json.loads(Path(CONFIG['report']).read_text())['records']}
  import_current()
  note=next(mw.col.get_note(n) for n in mw.col.find_notes('') if mw.col.get_note(n).guid==guids['opposite-pair'])
@@ -146,6 +153,8 @@ def main():
     parser.add_argument('--work-dir',required=True,type=Path)
     parser.add_argument('--app',type=Path,default=Path('/Applications/Anki.app/Contents/MacOS/Anki'))
     parser.add_argument('--group',action='append',default=[],help='note-id:blank-count')
+    parser.add_argument('--names-chip',choices=['visible','hidden'],default='visible')
+    parser.add_argument('--review-width',type=int,default=0,help='Optional native reviewer viewport width')
     parser.add_argument('--single',action='append',default=[],help='single-blank note ID to check in the native reviewer')
     args=parser.parse_args()
     work=args.work_dir.resolve()
@@ -154,7 +163,7 @@ def main():
     addon=base/'addons21'/'premedos_reveal_probe'
     addon.mkdir(parents=True)
     (addon/'__init__.py').write_text(ADDON)
-    (work/'config.json').write_text(json.dumps({'package':str(args.package.resolve()),'report':str(args.report.resolve()),'groups':[(x.rsplit(':',1)[0],int(x.rsplit(':',1)[1])) for x in args.group],'singles':args.single}))
+    (work/'config.json').write_text(json.dumps({'package':str(args.package.resolve()),'report':str(args.report.resolve()),'groups':[(x.rsplit(':',1)[0],int(x.rsplit(':',1)[1])) for x in args.group],'singles':args.single,'namesChip':args.names_chip,'reviewWidth':args.review_width}))
     now=int(time.time())
     meta=dict(ver=0,updates=False,created=now,id=123456781231,lastMsg=0,suppressUpdate=True,firstRun=False,defaultLang='en_US')
     profile=dict(mainWindowGeom=None,mainWindowState=None,numBackups=0,lastOptimize=now,searchHistory=[],syncKey=None,syncMedia=False,autoSync=False,lastColour='#00f',stripHTML=True,deleteMedia=False,allowHTML=False,importMode=1)

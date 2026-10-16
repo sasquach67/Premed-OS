@@ -516,6 +516,19 @@ class PromptChecks(unittest.TestCase):
         self.assertGreater(hints,0)
         self.assertIn('{{c2::inactivates::effect on Rb}}',prompt)
 
+    def test_assembly_preserves_trailing_newlines_for_exact_portable_files(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);base=root/'premed-hq-documentation/flashcards/prompt'
+            base.mkdir(parents=True);(root/'src/lib/academics/flashcards').mkdir(parents=True)
+            for source in BASE.iterdir():
+                if source.is_file():shutil.copy2(source,base/source.name)
+            css=base/'card-styles.css';css.write_text(css.read_text()+'\n')
+            result=subprocess.run([sys.executable,str(base/'assemble_prompt.py')],capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            prompt=(root/'src/lib/academics/flashcards/instructions.md').read_text()
+            blocks=dict(re.findall(r'### File: ([^\n]+)\n\n```[^\n]+\n(.*?)\n```',prompt,re.S))
+            self.assertEqual(blocks['card-styles.css']+'\n',css.read_text())
+
     def test_embedded_files_and_actual_package_roundtrip(self):
         prompt=(BASE.parents[2]/'src/lib/academics/flashcards/instructions.md').read_text()
         blocks=dict(re.findall(r'### File: ([^\n]+)\n\n```[^\n]+\n(.*?)\n```',prompt,re.S))

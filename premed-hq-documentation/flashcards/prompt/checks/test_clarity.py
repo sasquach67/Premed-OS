@@ -171,28 +171,34 @@ class ClarityChecks(unittest.TestCase):
         data['sources'].append(source)
         self.assertFalse(self.relevant(data, 'definition is missing an available example'))
 
-    def test_breadcrumb_uses_exact_topic_as_first_segment(self):
+    def test_breadcrumb_uses_words_from_actual_notebook_titles(self):
         for breadcrumb in ['Synthetic', 'Synthetic › Shapes']:
             with self.subTest(breadcrumb=breadcrumb):
                 data = self.term_fixture()
+                data['notebookTitles'] = ['Shapes and their outlines']
                 data['cards'][0]['breadcrumb'] = breadcrumb
-                self.assertFalse(self.relevant(data, 'breadcrumb is not a notebook title'))
+                warnings = validate(data)
+                self.assertFalse(any('breadcrumb' in w and 'notebook title' in w for w in warnings))
 
-    def test_breadcrumb_prefix_match_is_not_an_exact_notebook_title(self):
+    def test_breadcrumb_invented_word_is_advisory(self):
         for breadcrumb in ['Invented › Shapes', 'Synthetic extension › Shapes']:
             with self.subTest(breadcrumb=breadcrumb):
                 data = self.term_fixture()
+                data['notebookTitles'] = ['Shapes and their outlines']
                 data['cards'][0]['breadcrumb'] = breadcrumb
-                self.assertTrue(self.relevant(data, 'breadcrumb is not a notebook title'))
+                warnings = validate(data)
+                self.assertTrue(any('breadcrumb' in w and 'notebook title' in w for w in warnings))
 
-    def test_long_notebook_title_is_not_truncated_to_eighty_characters(self):
+    def test_long_objective_is_preserved_in_ledger_with_short_chip(self):
         data = self.term_fixture()
         objective = ('Explain how several cell-signaling proteins regulate growth and survival '
                      'and predict the effects of altered receptor activity')
         data['targets'][0]['topic'] = objective
-        data['cards'][0]['breadcrumb'] = objective + ' › Receptor signaling'
-        self.assertGreater(len(data['cards'][0]['breadcrumb']), 80)
-        self.assertFalse(self.relevant(data, 'breadcrumb is not a notebook title'))
+        data['cards'][0]['breadcrumb'] = 'Receptor activity'
+        self.assertGreater(len(objective), 80)
+        warnings = validate(data)
+        self.assertEqual(data['targets'][0]['topic'], objective)
+        self.assertFalse(any('breadcrumb' in w and 'notebook title' in w for w in warnings))
 
     def rich_extra(self):
         data = self.term_fixture()
