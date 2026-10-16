@@ -15,7 +15,7 @@ function lecture(): LectureRecord {
 describe('flashcard prompt handoff', () => {
   it('copies the October 15g prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-16 — update existing decks with stable note types and reused GUIDs; preserve review history and tag retired notes.')
+    expect(prompt).toContain('Prompt revision: 2026-10-16b — topic, source and personal notes; exam tags, native image occlusion, one-by-one lists and MathJax; export-based updates.')
     expect(prompt).toContain('A headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -195,9 +195,9 @@ describe('flashcard prompt handoff', () => {
   it('includes the complete exact build files and approved teaching/design rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     const files = [...prompt.matchAll(/### File: ([^\n]+)\n\n```[^\n]+\n([\s\S]*?)\n```/g)]
-    expect(files.map(match => match[1])).toEqual(['cards.schema.json', 'card-styles.css', 'requirements.txt', 'read_previous.py', 'build_deck.py', 'verify_deck.py'])
+    expect(files.map(match => match[1])).toEqual(['cards.schema.json', 'card-styles.css', 'requirements.txt', 'list-reveal.js', 'image_occlusion.py', 'prepare_occlusion.py', 'read_previous.py', 'build_deck.py', 'verify_deck.py'])
     for (const [, name, content] of files) expect(`${content}\n`).toBe(readFileSync(resolve('premed-hq-documentation/flashcards/prompt', name), 'utf8'))
-    for (const phrase of ['Both directions are never automatic', 'Do not use free-recall (blurt) cards', 'one unlabelled line', 'smaller sans-serif Extra', 'Native image occlusion is not supported in v1', 'completed Journal']) expect(prompt).toContain(phrase)
+    for (const phrase of ['Both directions are never automatic', 'Do not use free-recall (blurt) cards', 'one unlabelled line', 'smaller sans-serif Extra', 'use native image occlusion', 'completed Journal']) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('review draft')
   })
 

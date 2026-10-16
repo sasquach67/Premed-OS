@@ -7,22 +7,28 @@ import argparse, hashlib, html, json, re, tempfile, time, zipfile
 from collections import Counter, defaultdict
 import genanki
 from jsonschema import Draft202012Validator
+from image_occlusion import native_model, native_occlusion
 
 HERE = Path(__file__).resolve().parent
 SCHEMA = json.loads((HERE / 'cards.schema.json').read_text())
 CSS = (HERE / 'card-styles.css').read_text()
 STYLE_ID = hashlib.sha256(CSS.encode()).hexdigest()[:12]
 SPEC = 'journal-flashcards-v1:' + STYLE_ID
-BASIC_FIELDS = ['Front', 'Back', 'Extra', 'Type', 'Mindset', 'premedos_concept_id', 'premedos_source', 'premedos_spec']
-CLOZE_FIELDS = ['Text', 'Extra', 'Type', 'Mindset', 'premedos_concept_id', 'premedos_source', 'premedos_spec']
+LEGACY_BASIC_FIELDS = ['Front', 'Back', 'Extra', 'Type', 'Mindset', 'premedos_concept_id', 'premedos_source', 'premedos_spec']
+LEGACY_CLOZE_FIELDS = ['Text', 'Extra', 'Type', 'Mindset', 'premedos_concept_id', 'premedos_source', 'premedos_spec']
+NOTE_TYPE_IDS = {'Basic':646888316168, 'Cloze':623388404634}
+BASIC_FIELDS = LEGACY_BASIC_FIELDS + ['Topic', 'Source', 'My notes']
+CLOZE_FIELDS = LEGACY_CLOZE_FIELDS + ['Topic', 'Source', 'My notes']
 TYPE = '<div class="type">{{Type}}</div>'
+TOPIC = '{{#Topic}}<div class="topic">{{Topic}}</div>{{/Topic}}'
+FOOTER = '{{#My notes}}<div class="my-notes">{{My notes}}</div>{{/My notes}}{{#Source}}<details class="source"><summary>Source</summary>{{Source}}</details>{{/Source}}'
 EXTRA = '{{#Extra}}<div class="extra">{{Extra}}</div>{{/Extra}}'
-BASIC_Q = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}</div>'
-BASIC_A = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + '</div>'
-CLOZE_Q = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}</div>'
-CLOZE_A = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}' + EXTRA + '</div>'
-LABELS = {'basic': 'recall', 'cloze': 'recall', 'process': 'list', 'conceptual': 'why', 'comparison': 'compare', 'exemplar': 'example', 'application': 'application', 'free-recall': 'list'}
-MINDSETS = {'basic': ('say', 'say it'), 'cloze': ('say', 'say it'), 'process': ('say', 'say it'), 'conceptual': ('explain', 'explain it'), 'comparison': ('connect', 'connect it'), 'exemplar': ('connect', 'connect it'), 'application': ('use', 'use it'), 'free-recall': ('blurt', 'blurt it')}
+BASIC_Q = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{Front}}</div>'
+BASIC_A = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + FOOTER + '</div>'
+CLOZE_Q = '<div id="pm-list-question" class="pm {{Mindset}}">' + TOPIC + TYPE + '{{cloze:Text}}</div><script>' + (HERE / 'list-reveal.js').read_text() + '</script>'
+CLOZE_A = '<div class="pm {{Mindset}}">' + TOPIC + TYPE + '{{cloze:Text}}' + EXTRA + FOOTER + '</div>'
+LABELS = {'basic': 'recall', 'cloze': 'recall', 'process': 'list', 'conceptual': 'why', 'comparison': 'compare', 'exemplar': 'example', 'application': 'application', 'free-recall': 'list', 'image-occlusion':'recall'}
+MINDSETS = {'basic': ('say', 'say it'), 'cloze': ('say', 'say it'), 'process': ('say', 'say it'), 'conceptual': ('explain', 'explain it'), 'comparison': ('connect', 'connect it'), 'exemplar': ('connect', 'connect it'), 'application': ('use', 'use it'), 'free-recall': ('blurt', 'blurt it'), 'image-occlusion':('say','say it')}
 
 def escape(value):
     # **word** marks a bold cue word; everything else stays plain text.
@@ -181,6 +187,13 @@ def validate(data):
             warnings.append(f'{cid}: Extra exceeds one short line (about 20 words); choose the single most useful detail.')
         if word_count(c['back']) > 45 or any(word_count(i) > 35 for i in c['recallItems']): warnings.append(f'{cid}: long required answer; inspect grading burden.')
         warnings.extend(card_language_warnings(c))
+        occlusion = c.get('imageOcclusion')
+        require(bool(occlusion) == (c['type'] == 'image-occlusion'), f'{cid}: image-occlusion cards require exactly one mask definition.')
+        if occlusion:
+            require(not cp and not c['frontImages'], f'{cid}: use the occlusion image, without another front image or cloze.')
+            x, y, width, height = (occlusion['box'][k] for k in ['x','y','width','height'])
+            require(x + width <= 1 and y + height <= 1, f'{cid}: occlusion box falls outside the image.')
+            evidence(occlusion['source'])
         for img in c['frontImages'] + c['extraImages']: evidence(img['source'])
         prompt = c['cloze'] if cp else c['front']
         prompts[re.sub(r'\W+', ' ', prompt.casefold()).strip()] += 1
@@ -274,21 +287,25 @@ def validate(data):
         require(len(set(normalized_answers)) == len(normalized_answers), f'{concept}: exact repeated required answer; trim redundant review cards.')
     return warnings
 
+def all_models():
+    return create_models() + [native_model(CSS)]
+
 def create_models():
-    # Permanent schema-v1 identities. CSS/template edits MUST NOT change these.
-    # Changing field names/order requires an explicit schema migration and ID bump.
-    return [genanki.Model(stable_id('premedos-prompt-update:fields-v1:' + name), 'premedOS ' + name + ' (prompt v1)', fields=[{'name': f} for f in fields], templates=[{'name': name, 'qfmt': q, 'afmt': a}], css=CSS, model_type=kind) for name, fields, q, a, kind in [('Basic', BASIC_FIELDS, BASIC_Q, BASIC_A, genanki.Model.FRONT_BACK), ('Cloze', CLOZE_FIELDS, CLOZE_Q, CLOZE_A, genanki.Model.CLOZE)]]
+    # Final fields are frozen. Retain released IDs for the tested append-only migration.
+    # Future field changes require deliberate migration; CSS/template edits never change IDs.
+    return [genanki.Model(NOTE_TYPE_IDS[name], 'premedOS ' + name + ' (prompt v1)', fields=[{'name': f} for f in fields], templates=[{'name': name, 'qfmt': q, 'afmt': a}], css=CSS, model_type=kind) for name, fields, q, a, kind in [('Basic', BASIC_FIELDS, BASIC_Q, BASIC_A, genanki.Model.FRONT_BACK), ('Cloze', CLOZE_FIELDS, CLOZE_Q, CLOZE_A, genanki.Model.CLOZE)]]
 
 def build(data, out, input_dir, previous=None):
     warnings = validate(data)
     require(out.suffix == '.apkg' and not out.exists(), 'Choose a new .apkg output filename; existing files are never overwritten.')
     require(not out.with_suffix('.build-report.json').exists(), 'Build report already exists; choose a fresh output name.')
-    basic, cloze = create_models()
+    basic, cloze, io_model = all_models()
     decks = [genanki.Deck(stable_id('deck:' + data['deckName']), data['deckName'])]
     all_media = {}
     manifest = []
     with tempfile.TemporaryDirectory() as temp:
         old = None
+        schema_upgraded = False
         old_notes = {}
         reused = {c['reuseGuid'] for c in data['cards'] if c.get('reuseGuid')}
         require(previous is not None or not reused, 'reuseGuid requires --previous with the current attached .apkg.')
@@ -297,10 +314,14 @@ def build(data, out, input_dir, previous=None):
             old = read_previous(previous, Path(temp) / 'old-media')
             require(old['deckKey'] is not None, 'Older deck: one-time migration required; export a backup, then replace it with a new deck before using update mode.')
             require((old['deckKey'], old['deckName']) == (data['deckKey'], data['deckName']), 'Update mode must keep the previous deckKey and deckName.')
-            models = {m.model_id: m for m in (basic, cloze)}
+            models = {m.model_id: m for m in (basic, cloze, io_model)}
             for row in old['notes']:
                 model = models.get(row['modelId'])
-                require(model and row['fieldNames'] == [f['name'] for f in model.fields], 'Older or incompatible note type: one-time migration required; never reuse its GUID.')
+                require(model and (row['fieldNames'] == [f['name'] for f in model.fields] or (model in (basic, cloze) and row['fieldNames'] == [f['name'] for f in model.fields][:-3])), 'Older or incompatible note type: one-time migration required; never reuse its GUID.')
+                if len(row['fieldNames']) < len(model.fields):
+                    schema_upgraded = True
+                    row['fields'] += [''] * 3
+                    row['fieldNames'] = [f['name'] for f in model.fields]
                 old_notes[row['guid']] = row
             require(reused <= old_notes.keys(), 'reuseGuid was not found in the attached deck.')
             all_media.update({item['name']: Path(item['path']) for item in old['media']})
@@ -328,6 +349,7 @@ def build(data, out, input_dir, previous=None):
             extra = escape(extra_text(card))
             extra += render_images(card['extraImages'])
             evidence = card['sourceRefs'] + [im['source'] for im in card['frontImages'] + card['extraImages']]
+            if card.get('imageOcclusion'): evidence += [card['imageOcclusion']['source']]
             if card['example'] and card['example']['source']: evidence += [card['example']['source']]
             details = [typ, 'm-' + mindset, escape(card['conceptId']), escape(json.dumps(evidence, ensure_ascii=False)), json.dumps({'spec':SPEC, 'deckKey':data['deckKey'], 'deckName':data['deckName']}, ensure_ascii=False)]
             front_images = render_images(card['frontImages'])
@@ -338,6 +360,15 @@ def build(data, out, input_dir, previous=None):
                 back = '<ol class="blurt">' + ''.join('<li>' + escape(i) + '</li>' for i in card['recallItems']) + '</ol>' if card['type'] == 'free-recall' else escape(card['back'])
                 fields = [escape(card['front']) + front_images, back, extra] + details
                 model = basic
+            topic = card.get('breadcrumb') or next(t['topic'] for t in data['targets'] if t['id'] in card['targetIds'])
+            source = ' · '.join(dict.fromkeys(ref['location'] for ref in card['sourceRefs']))
+            fields += [escape(topic), escape(source), '']
+            if card['type'] == 'image-occlusion':
+                occlusion = card['imageOcclusion']
+                box = occlusion['box']
+                mask = native_occlusion(box['x'], box['y'], box['width'], box['height'])
+                fields = [mask, render_images([occlusion]), escape(card['front']), '<div class="answer">' + escape(card['back']) + '</div>' + extra, '', escape(topic), escape(source), '', details[2], details[3], details[4]]
+                model = io_model
             tags = ['premedos::type::' + card['type'], 'premedos::mindset::' + mindset, 'premedos::mechanism::' + (card['clozePattern'] or 'basic'), 'premedos::concept::' + card['conceptId']] + card['tags']
             tags = [re.sub(r'\s+', '_', t) for t in tags]
             require('premedos::retired' not in tags, 'Active cards must not carry the reserved retired tag.')
@@ -345,7 +376,8 @@ def build(data, out, input_dir, previous=None):
             if guid in old_notes:
                 require(card.get('reuseGuid'), 'A new card collides with an old GUID; use a new card id or explicitly reuse the same retrieval demand.')
                 prior = old_notes[guid]
-                tags = list(dict.fromkeys(tags + [t for t in prior['tags'] if t != 'premedos::retired' and not t.startswith(('objective::', 'premedos::type::', 'premedos::mindset::', 'premedos::mechanism::', 'premedos::concept::'))]))
+                fields[[f['name'] for f in model.fields].index('My notes')] = prior['fields'][prior['fieldNames'].index('My notes')]
+                tags = list(dict.fromkeys(tags + [t for t in prior['tags'] if t != 'premedos::retired' and not t.startswith(('objective::', 'premedos::type::', 'premedos::mindset::', 'premedos::mechanism::', 'premedos::concept::', 'exam::'))]))
                 require(prior['modelId'] == model.model_id and prior['ords'] == [i - 1 for i in indices(card)], 'Reused note must keep its note type and cloze numbers; changed retrieval demands need a new note and retire the old one.')
             require(guid not in {row['guid'] for row in manifest}, 'Duplicate generated or reused note GUID.')
             note = genanki.Note(model=model, fields=fields, tags=tags, guid=guid)
@@ -353,7 +385,7 @@ def build(data, out, input_dir, previous=None):
             manifest.append({'id':card['id'], 'guid':guid, 'model':model.name, 'fields':dict(zip([f['name'] for f in model.fields], fields)), 'reviewCards':len(indices(card)), 'status':'updated' if guid in old_notes else 'new'})
         for guid, prior in old_notes.items():
             if guid in reused: continue
-            model = basic if prior['modelId'] == basic.model_id else cloze
+            model = next(m for m in (basic, cloze, io_model) if m.model_id == prior['modelId'])
             tags = list(dict.fromkeys(prior['tags'] + ['premedos::retired']))
             note = genanki.Note(model=model, fields=prior['fields'], tags=tags, guid=guid)
             require(sorted(c.ord for c in note.cards) == prior['ords'], 'Retired note has unsupported card ordinals; stop rather than alter its review identities.')
@@ -362,8 +394,10 @@ def build(data, out, input_dir, previous=None):
         package = genanki.Package(decks)
         package.media_files = [str(path) for path in all_media.values()]
         staged_out = Path(temp) / 'deck.apkg'
-        # A newer timestamp is necessary even for back-to-back builds.
-        timestamp = max([time.time()] + ([r['mod'] + 1 for r in old['notes']] + [m['mod'] + 1 for m in old['models']] if old else []))
+        # Schema merging bumps local note mtimes to import time. A source-version
+        # timestamp avoids choosing that same clock tick (Always permits older notes).
+        # Same-schema updates advance beyond the attached version as before.
+        timestamp = (max(r['mod'] for r in old['notes']) + 2 if schema_upgraded else max([time.time()] + ([r['mod'] + 1 for r in old['notes']] + [m['mod'] + 1 for m in old['models']] if old else [])))
         package.write_to_file(str(staged_out), timestamp=timestamp)
         with zipfile.ZipFile(staged_out, 'a') as archive:
             archive.writestr('premedos-update.json', json.dumps({'version':1, 'deckKey':data['deckKey'], 'deckName':data['deckName']}))
