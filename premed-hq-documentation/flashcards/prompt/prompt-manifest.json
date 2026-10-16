@@ -1,9 +1,10 @@
 {
-  "cards.schema.json": "afed898cdbb37e70e73fad7f43ee5b7090f7cd8ea6e5390c417813b94f5bdf71",
+  "cards.schema.json": "2ee698cb4a02d02a0325b2edc83fda77a7f74aea88ec3ee445768019b62fc1d5",
   "card-styles.css": "85b26bcb4f80b082a27ea47c80ab1672dbac52fd7ef30554ea08abeba96c0dd9",
   "requirements.txt": "3eb30e606f1c387d5f50044ed341350d87faa3e912b3024ac11e23d7609ade24",
-  "build_deck.py": "f871225ba4cf72e73067e23ba2187b86229e1ca8b1a547c396bc33b045cf2e9e",
-  "verify_deck.py": "601aec4cf99fec5332aea3594a7e27bbc30de89fae47f10fdcf30fa4b4f47eac",
-  "authoring.md": "c1d56c3e94e216c820ee167212a65d57cd876a05687ab7ac688ac278cca846c2",
-  "instructions.md": "fa58128c01fa2ade95ba5958bddc8263365503f17d5e877e7be3ae8e2b6e24ca"
+  "read_previous.py": "dc87a8be076d9a40fc5c54b7460062ebee94c48e5d6a0ce9610dd22a823ac644",
+  "build_deck.py": "52e30a1ba2bad90e0372d329bc78ce617a73406ce7e5bb131c4d154126828d8a",
+  "verify_deck.py": "3e3266e2f80589cdcdd2a3d7601517af375c5e56f758a88acab50044598d6c37",
+  "authoring.md": "72ac64bcece1527c64b4c9e50033e744b25b14a8fe20f5ad88b9046ae7f15426",
+  "instructions.md": "671f02eaace722767ad1596a55ebac1a1427df70719289aa6c2a8dc605140356"
 }

@@ -263,6 +263,15 @@
           },
           "maxItems": 20,
           "minItems": 0
+        },
+        "reuseGuid": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^[!-~]+$"
         }
       },
       "required": [

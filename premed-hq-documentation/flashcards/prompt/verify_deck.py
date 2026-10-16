@@ -32,15 +32,34 @@ def source_chatter_warnings(card_id, fields):
             warnings.append(f'{card_id}: {name}: possible source chatter: ' + '; '.join(matches))
     return warnings
 
-def verify(apkg, report_path, input_path):
+def verify(apkg, report_path, input_path, previous=None):
     data = json.loads(input_path.read_text()); structural_warnings = validate(data)
     report = json.loads(report_path.read_text())
     if hashlib.sha256(apkg.read_bytes()).hexdigest() != report['apkgSha256']: raise ValueError('Package hash differs from its build report.')
     if report['targets'] != data['targets'] or report.get('coverageExceptions') != data['coverageExceptions']: raise ValueError('Coverage ledger differs from the validated input.')
-    if report['notes'] != len(data['cards']) or report['reviewCards'] != sum(len(indices(c)) for c in data['cards']): raise ValueError('Review-card counts differ from the validated input.')
+    active = [r for r in report['records'] if r.get('status') != 'retired']
+    retired = [r for r in report['records'] if r.get('status') == 'retired']
+    if len(active) != len(data['cards']) or sum(r['reviewCards'] for r in active) != sum(len(indices(c)) for c in data['cards']): raise ValueError('Active review-card counts differ from the validated input.')
+    if report['notes'] != len(report['records']) or report['reviewCards'] != sum(r['reviewCards'] for r in report['records']): raise ValueError('Total counts differ from the build records.')
+    if report.get('mode') == 'update':
+        if previous is None: raise ValueError('Update verification requires --previous with the attached source package.')
+        from read_previous import read_previous
+        old = read_previous(previous)
+        reused = {c['reuseGuid'] for c in data['cards'] if c.get('reuseGuid')}
+        old_notes = {r['guid']:r for r in old['notes']}
+        if {r['guid'] for r in retired} != old_notes.keys() - reused: raise ValueError('Retired notes do not account for every dropped old note.')
+        for row in retired:
+            prior = old_notes[row['guid']]
+            if row['fields'] != dict(zip(prior['fieldNames'],prior['fields'])): raise ValueError('Retired note fields changed.')
     input_cards = {c['id']:c for c in data['cards']}
-    if {r['id'] for r in report['records']} != set(input_cards): raise ValueError('Build records differ from the validated input.')
+    if {r['id'] for r in active} != set(input_cards): raise ValueError('Build records differ from the validated input.')
+    from genanki import guid_for
+    for row in active:
+        card = input_cards[row['id']]
+        guid = card.get('reuseGuid') or guid_for('premedos-prompt-v1', data['deckKey'], card['id'])
+        if row['guid'] != guid: raise ValueError('Build record GUID differs from the validated input.')
     expected = {r['guid']:r for r in report['records']}
+    if len(expected) != len(report['records']): raise ValueError('Duplicate note GUID in build report.')
     failures = []; renders = []; warnings = list(structural_warnings)
     with tempfile.TemporaryDirectory() as temp:
         col = Collection(str(Path(temp) / 'verify.anki2'))
@@ -57,9 +76,10 @@ def verify(apkg, report_path, input_path):
                 note = col.get_note(nid); model_ids.add(note.mid)
                 row = expected.get(note.guid)
                 if not row: failures.append('Unexpected note identity.'); continue
-                if len(col.find_cards('nid:' + str(nid))) != len(indices(input_cards[row['id']])): failures.append(row['id'] + ': actual review-card count differs, including hinted/grouped cloze.')
+                if len(col.find_cards('nid:' + str(nid))) != row['reviewCards']: failures.append(row['id'] + ': actual review-card count differs, including hinted/grouped cloze.')
                 fields = dict(note.items())
-                warnings.extend(source_chatter_warnings(row['id'], fields))
+                if row.get('status') != 'retired': warnings.extend(source_chatter_warnings(row['id'], fields))
+                if row.get('status') == 'retired' and 'premedos::retired' not in note.tags: failures.append('Retired note is missing its tag.')
                 if fields != row['fields']: failures.append(row['id'] + ': field content changed during import.')
                 # Exercise hidden fields with sentinel content; user-facing text stays intact.
                 for name in ['premedos_concept_id', 'premedos_source', 'premedos_spec']:
@@ -110,4 +130,5 @@ def verify(apkg, report_path, input_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('apkg', type=Path); parser.add_argument('report', type=Path); parser.add_argument('input',type=Path)
-    args = parser.parse_args(); verify(args.apkg,args.report,args.input)
+    parser.add_argument('--previous', type=Path)
+    args = parser.parse_args(); verify(args.apkg,args.report,args.input,args.previous)

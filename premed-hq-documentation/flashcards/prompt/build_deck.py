@@ -1,9 +1,9 @@
-"""Portable prompt v1: validate JSON, apply fixed templates, build a NEW Anki package.
-Run: python build_deck.py cards.json output.apkg
+"""Portable prompt v1: validate JSON, apply fixed templates, build a new or updating Anki package.
+Run: python build_deck.py cards.json output.apkg [--previous current.apkg]
 No Anki profile is opened. Output must not already exist.
 """
 from pathlib import Path
-import argparse, hashlib, html, json, re, tempfile, zipfile
+import argparse, hashlib, html, json, re, tempfile, time, zipfile
 from collections import Counter, defaultdict
 import genanki
 from jsonschema import Draft202012Validator
@@ -99,6 +99,8 @@ def validate(data):
     errors = sorted(Draft202012Validator(SCHEMA).iter_errors(data), key=lambda e: str(list(e.path)))
     require(not errors, '\n'.join(f'{list(e.path)}: {e.message}' for e in errors[:10]))
     warnings = []
+    reused = [c.get('reuseGuid') for c in data['cards'] if c.get('reuseGuid')]
+    require(len(reused) == len(set(reused)), 'Never reuse one GUID for two cards.')
     for key in ['sources', 'targets', 'cards']:
         ids = [r['id'] for r in data[key]]
         require(len(ids) == len(set(ids)), f'Duplicate {key} IDs.')
@@ -273,10 +275,11 @@ def validate(data):
     return warnings
 
 def create_models():
-    # Versioned identities avoid overwriting legacy models for this version.
-    return [genanki.Model(stable_id('premedos-prompt-v1:' + name + ':' + STYLE_ID), 'premedOS ' + name + ' (prompt v1)', fields=[{'name': f} for f in fields], templates=[{'name': name, 'qfmt': q, 'afmt': a}], css=CSS, model_type=kind) for name, fields, q, a, kind in [('Basic', BASIC_FIELDS, BASIC_Q, BASIC_A, genanki.Model.FRONT_BACK), ('Cloze', CLOZE_FIELDS, CLOZE_Q, CLOZE_A, genanki.Model.CLOZE)]]
+    # Permanent schema-v1 identities. CSS/template edits MUST NOT change these.
+    # Changing field names/order requires an explicit schema migration and ID bump.
+    return [genanki.Model(stable_id('premedos-prompt-update:fields-v1:' + name), 'premedOS ' + name + ' (prompt v1)', fields=[{'name': f} for f in fields], templates=[{'name': name, 'qfmt': q, 'afmt': a}], css=CSS, model_type=kind) for name, fields, q, a, kind in [('Basic', BASIC_FIELDS, BASIC_Q, BASIC_A, genanki.Model.FRONT_BACK), ('Cloze', CLOZE_FIELDS, CLOZE_Q, CLOZE_A, genanki.Model.CLOZE)]]
 
-def build(data, out, input_dir):
+def build(data, out, input_dir, previous=None):
     warnings = validate(data)
     require(out.suffix == '.apkg' and not out.exists(), 'Choose a new .apkg output filename; existing files are never overwritten.')
     require(not out.with_suffix('.build-report.json').exists(), 'Build report already exists; choose a fresh output name.')
@@ -285,6 +288,22 @@ def build(data, out, input_dir):
     all_media = {}
     manifest = []
     with tempfile.TemporaryDirectory() as temp:
+        old = None
+        old_notes = {}
+        reused = {c['reuseGuid'] for c in data['cards'] if c.get('reuseGuid')}
+        require(previous is not None or not reused, 'reuseGuid requires --previous with the current attached .apkg.')
+        if previous is not None:
+            from read_previous import read_previous
+            old = read_previous(previous, Path(temp) / 'old-media')
+            require(old['deckKey'] is not None, 'Older deck: one-time migration required; export a backup, then replace it with a new deck before using update mode.')
+            require((old['deckKey'], old['deckName']) == (data['deckKey'], data['deckName']), 'Update mode must keep the previous deckKey and deckName.')
+            models = {m.model_id: m for m in (basic, cloze)}
+            for row in old['notes']:
+                model = models.get(row['modelId'])
+                require(model and row['fieldNames'] == [f['name'] for f in model.fields], 'Older or incompatible note type: one-time migration required; never reuse its GUID.')
+                old_notes[row['guid']] = row
+            require(reused <= old_notes.keys(), 'reuseGuid was not found in the attached deck.')
+            all_media.update({item['name']: Path(item['path']) for item in old['media']})
         def render_images(images):
             result = ''
             for image in images:
@@ -310,7 +329,7 @@ def build(data, out, input_dir):
             extra += render_images(card['extraImages'])
             evidence = card['sourceRefs'] + [im['source'] for im in card['frontImages'] + card['extraImages']]
             if card['example'] and card['example']['source']: evidence += [card['example']['source']]
-            details = [typ, 'm-' + mindset, escape(card['conceptId']), escape(json.dumps(evidence, ensure_ascii=False)), SPEC]
+            details = [typ, 'm-' + mindset, escape(card['conceptId']), escape(json.dumps(evidence, ensure_ascii=False)), json.dumps({'spec':SPEC, 'deckKey':data['deckKey'], 'deckName':data['deckName']}, ensure_ascii=False)]
             front_images = render_images(card['frontImages'])
             if card['clozePattern']:
                 fields = [escape(card['cloze']) + front_images, extra] + details
@@ -321,20 +340,39 @@ def build(data, out, input_dir):
                 model = basic
             tags = ['premedos::type::' + card['type'], 'premedos::mindset::' + mindset, 'premedos::mechanism::' + (card['clozePattern'] or 'basic'), 'premedos::concept::' + card['conceptId']] + card['tags']
             tags = [re.sub(r'\s+', '_', t) for t in tags]
-            guid = genanki.guid_for('premedos-prompt-v1', data['deckKey'], card['id'])
+            require('premedos::retired' not in tags, 'Active cards must not carry the reserved retired tag.')
+            guid = card.get('reuseGuid') or genanki.guid_for('premedos-prompt-v1', data['deckKey'], card['id'])
+            if guid in old_notes:
+                require(card.get('reuseGuid'), 'A new card collides with an old GUID; use a new card id or explicitly reuse the same retrieval demand.')
+                prior = old_notes[guid]
+                tags = list(dict.fromkeys(tags + [t for t in prior['tags'] if t != 'premedos::retired' and not t.startswith(('objective::', 'premedos::type::', 'premedos::mindset::', 'premedos::mechanism::', 'premedos::concept::'))]))
+                require(prior['modelId'] == model.model_id and prior['ords'] == [i - 1 for i in indices(card)], 'Reused note must keep its note type and cloze numbers; changed retrieval demands need a new note and retire the old one.')
+            require(guid not in {row['guid'] for row in manifest}, 'Duplicate generated or reused note GUID.')
             note = genanki.Note(model=model, fields=fields, tags=tags, guid=guid)
             decks[-1].add_note(note)
-            manifest.append({'id':card['id'], 'guid':guid, 'model':model.name, 'fields':dict(zip([f['name'] for f in model.fields], fields)), 'reviewCards':len(indices(card))})
+            manifest.append({'id':card['id'], 'guid':guid, 'model':model.name, 'fields':dict(zip([f['name'] for f in model.fields], fields)), 'reviewCards':len(indices(card)), 'status':'updated' if guid in old_notes else 'new'})
+        for guid, prior in old_notes.items():
+            if guid in reused: continue
+            model = basic if prior['modelId'] == basic.model_id else cloze
+            tags = list(dict.fromkeys(prior['tags'] + ['premedos::retired']))
+            note = genanki.Note(model=model, fields=prior['fields'], tags=tags, guid=guid)
+            require(sorted(c.ord for c in note.cards) == prior['ords'], 'Retired note has unsupported card ordinals; stop rather than alter its review identities.')
+            decks[-1].add_note(note)
+            manifest.append({'id':'retired:' + guid, 'guid':guid, 'model':model.name, 'fields':dict(zip(prior['fieldNames'], prior['fields'])), 'reviewCards':len(prior['ords']), 'status':'retired'})
         package = genanki.Package(decks)
         package.media_files = [str(path) for path in all_media.values()]
         staged_out = Path(temp) / 'deck.apkg'
-        package.write_to_file(str(staged_out))
+        # A newer timestamp is necessary even for back-to-back builds.
+        timestamp = max([time.time()] + ([r['mod'] + 1 for r in old['notes']] + [m['mod'] + 1 for m in old['models']] if old else []))
+        package.write_to_file(str(staged_out), timestamp=timestamp)
+        with zipfile.ZipFile(staged_out, 'a') as archive:
+            archive.writestr('premedos-update.json', json.dumps({'version':1, 'deckKey':data['deckKey'], 'deckName':data['deckName']}))
         with staged_out.open('rb') as src, out.open('xb') as dst: dst.write(src.read())
     with zipfile.ZipFile(out) as archive:
         require(archive.testzip() is None, 'Package CRC check failed.')
     concept_reviews = Counter()
     for card in data['cards']: concept_reviews[card['conceptId']] += len(indices(card))
-    report = {'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'conceptReviewCards':dict(concept_reviews), 'media':sorted(all_media), 'targets':data['targets'], 'coverageExceptions':data['coverageExceptions'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
+    report = {'mode':'update' if previous is not None else 'new', 'activeNotes':len(data['cards']), 'activeReviewCards':sum(len(indices(c)) for c in data['cards']), 'newNotes':sum(n['status'] == 'new' for n in manifest), 'updatedNotes':sum(n['status'] == 'updated' for n in manifest), 'retiredNotes':sum(n['status'] == 'retired' for n in manifest), 'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'conceptReviewCards':dict(concept_reviews), 'media':sorted(all_media), 'targets':data['targets'], 'coverageExceptions':data['coverageExceptions'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
     report_path = out.with_suffix('.build-report.json')
     require(not report_path.exists(), 'Build report already exists; choose a fresh output name.')
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n')
@@ -344,6 +382,7 @@ def build(data, out, input_dir):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('input', type=Path); parser.add_argument('output', type=Path)
+    parser.add_argument('--previous', type=Path, help='Current attached .apkg for GUID-preserving updates.')
     args = parser.parse_args()
     require(args.input.stat().st_size <= 8 * 1024 * 1024, 'Build input exceeds 8 MiB.')
-    build(json.loads(args.input.read_text()), args.output, args.input.resolve().parent)
+    build(json.loads(args.input.read_text()), args.output, args.input.resolve().parent, args.previous)

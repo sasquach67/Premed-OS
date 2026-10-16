@@ -5,6 +5,7 @@ BASE=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(BASE))
 from build_deck import validate
 from verify_deck import source_chatter_warnings
+from test_updates import UpdateChecks
 
 class PromptChecks(unittest.TestCase):
     def setUp(self):self.data=json.loads((BASE/'checks/cards.json').read_text())
@@ -451,7 +452,7 @@ class PromptChecks(unittest.TestCase):
     def test_embedded_files_and_actual_package_roundtrip(self):
         prompt=(BASE.parents[2]/'src/lib/academics/flashcards/instructions.md').read_text()
         blocks=dict(re.findall(r'### File: ([^\n]+)\n\n```[^\n]+\n(.*?)\n```',prompt,re.S))
-        names=['cards.schema.json','card-styles.css','requirements.txt','build_deck.py','verify_deck.py']
+        names=['cards.schema.json','card-styles.css','requirements.txt','read_previous.py','build_deck.py','verify_deck.py']
         self.assertEqual(set(blocks),set(names))
         with tempfile.TemporaryDirectory() as temp:
             work=Path(temp)
