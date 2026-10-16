@@ -21,10 +21,13 @@ BASIC_Q = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}</div>'
 BASIC_A = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + '</div>'
 CLOZE_Q = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}</div>'
 CLOZE_A = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}' + EXTRA + '</div>'
+LABELS = {'basic': 'recall', 'cloze': 'recall', 'process': 'list', 'conceptual': 'why', 'comparison': 'compare', 'exemplar': 'example', 'application': 'application', 'free-recall': 'list'}
 MINDSETS = {'basic': ('say', 'say it'), 'cloze': ('say', 'say it'), 'process': ('say', 'say it'), 'conceptual': ('explain', 'explain it'), 'comparison': ('connect', 'connect it'), 'exemplar': ('connect', 'connect it'), 'application': ('use', 'use it'), 'free-recall': ('blurt', 'blurt it')}
 
 def escape(value):
-    return html.escape(value, quote=True).replace('\n', '<br>')
+    # **word** marks a bold cue word; everything else stays plain text.
+    escaped = html.escape(value, quote=True).replace('\n', '<br>')
+    return re.sub(r'\*\*([^*<>]+?)\*\*', r'<b>\1</b>', escaped)
 
 def stable_id(value):
     return 1_000_000_000 + int(hashlib.sha256(value.encode()).hexdigest()[:10], 16)
@@ -136,6 +139,7 @@ def validate(data):
                 else:
                     require(re.search(r'\b(?:[2-9]|[1-9][0-9]+)\b', remaining) or any(re.search(r'\b' + word + r'\b', remaining, re.IGNORECASE) for word in number_words.values()), f'{cid}: state list count outside deletions.')
                 if not c['listOrdered']: require('any order' in remaining.lower(), f'{cid}: mark unordered list as in any order.')
+            if any('**' in m[2] for m in spans): warnings.append(f'{cid}: bold belongs on cue words outside the blank, never inside it.')
             for span in spans:
                 if word_count(span[2].split('::')[0]) > (25 if cp == 'definition' else 12): warnings.append(f'{cid}: long cloze deletion; inspect recall burden.')
         else:
@@ -291,11 +295,10 @@ def build(data, out, input_dir):
                 result += '<div><img src="' + name + '" alt="' + html.escape(image['alt'], quote=True) + '"></div>'
             return result
         for card in data['cards']:
-            mindset, verb = MINDSETS[card['type']]
-            label = card['type'].replace('-', ' ')
-            if card['type'] == 'exemplar': label = 'example → concept' if card['exampleDirection'] == 'instance-to-concept' else 'concept → example'
-            if card['type'] == 'cloze': label = card['clozePattern'].replace('-', ' ')
-            typ = '<span class="verb">' + verb + '</span><span class="tname">' + label + '</span>'
+            mindset, _ = MINDSETS[card['type']]
+            label = LABELS[card['type']]
+            if card['clozePattern'] == 'enumerated-list': label = 'list'
+            typ = '<span class="verb">' + label + '</span>'
             extra = escape(extra_text(card))
             extra += render_images(card['extraImages'])
             evidence = card['sourceRefs'] + [im['source'] for im in card['frontImages'] + card['extraImages']]
