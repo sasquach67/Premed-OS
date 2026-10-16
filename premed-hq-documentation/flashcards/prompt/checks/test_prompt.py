@@ -153,6 +153,15 @@ class PromptChecks(unittest.TestCase):
         self.assertEqual(source_chatter_warnings('loc',{'Extra':'Slide 14'}),[])
         self.assertTrue(source_chatter_warnings('chat',{'Extra':'The slides say this.'}))
 
+    def test_list_card_key_is_allowed_one_line_per_item(self):
+        data=self.concept_fixture()
+        data['cards'][0].update(type='process',front='',back='',clozePattern='enumerated-list',listOrdered=False,
+            cloze='The 3 sample shapes, in any order, are {{c1::circle}}, {{c1::square}}, and {{c1::triangle}}.',
+            explanation='Circle: round, no corners, like a coin\nSquare: four equal sides, like a tile\nTriangle: three sides, like a yield sign')
+        self.assertFalse(any('Extra exceeds' in w or 'list key' in w for w in validate(data)))
+        data['cards'][0]['explanation']='Circle: '+'very '*20+'round'
+        self.assertTrue(any('list key' in w for w in validate(data)))
+
     def test_unpaired_exemplar_builds_and_verifies_without_warnings(self):
         for direction in ['instance-to-concept','concept-to-instance']:
             with self.subTest(direction=direction):
