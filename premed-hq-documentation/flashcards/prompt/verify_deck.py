@@ -2,11 +2,11 @@
 from pathlib import Path
 import argparse, base64, hashlib, html, json, re, tempfile
 from anki.collection import Collection, ImportAnkiPackageRequest, ImportAnkiPackageOptions
-from build_deck import validate, CSS, create_models, indices
+from build_deck import validate, CSS, all_models, indices
 
 # Advisory language checks inspect only fields used by the supplied templates.
 # Source metadata intentionally contains titles, authors, and lecture references.
-VISIBLE_FIELDS = ('Front', 'Back', 'Text', 'Extra', 'Type', 'Mindset')
+VISIBLE_FIELDS = ('Front', 'Back', 'Text', 'Extra', 'Type', 'Mindset', 'Topic', 'Header', 'Back Extra')
 SOURCE_CHATTER = re.compile(
     r"\b(?:lectures?|slides?|authors?|transcripts?|instructors?)\b"
     r"|\b(?:supplemental|supplementary|external)\s+(?:[\w-]+\s+){0,3}(?:clarification|evidence|explanation|context)\b"
@@ -50,7 +50,8 @@ def verify(apkg, report_path, input_path, previous=None):
         if {r['guid'] for r in retired} != old_notes.keys() - reused: raise ValueError('Retired notes do not account for every dropped old note.')
         for row in retired:
             prior = old_notes[row['guid']]
-            if row['fields'] != dict(zip(prior['fieldNames'],prior['fields'])): raise ValueError('Retired note fields changed.')
+            old_fields = dict(zip(prior['fieldNames'],prior['fields']))
+            if any(row['fields'].get(k) != v for k,v in old_fields.items()) or any(v for k,v in row['fields'].items() if k not in old_fields): raise ValueError('Retired note fields changed.')
     input_cards = {c['id']:c for c in data['cards']}
     if {r['id'] for r in active} != set(input_cards): raise ValueError('Build records differ from the validated input.')
     from genanki import guid_for
@@ -85,11 +86,11 @@ def verify(apkg, report_path, input_path, previous=None):
                 for name in ['premedos_concept_id', 'premedos_source', 'premedos_spec']:
                     note[name] = 'HIDDEN_AUDIT_SENTINEL_' + name
                 col.update_note(note)
-            expected_models = {m.name:m for m in create_models()}
+            expected_models = {m.name:m for m in all_models()}
             for mid in model_ids:
                 model = col.models.get(mid)
                 spec = expected_models.get(model['name'])
-                if not spec or model['css'] != CSS: failures.append('Model style differs.')
+                if not spec or model['css'] != spec.css: failures.append('Model style differs.')
                 if spec and [f['name'] for f in model['flds']] != [f['name'] for f in spec.fields]: failures.append('Field order differs.')
                 if spec and any(model['tmpls'][0][side] != spec.templates[0][side] for side in ['qfmt','afmt']): failures.append('Templates differ.')
             for cid in cids:
@@ -99,10 +100,18 @@ def verify(apkg, report_path, input_path, previous=None):
                 if q == a: failures.append('Question and answer are identical.')
                 if 'HIDDEN_AUDIT_SENTINEL_' in q + a: failures.append('Hidden metadata renders.')
                 if card.type != 0 or card.reps: failures.append('Review history unexpectedly present.')
-                if card.note_type()['type'] == 1:
+                if card.note_type().get('originalStockKind') == 6:
+                    col.get_image_occlusion_note(card.nid)
+                    if 'image-occlusion-container' not in q or 'data-shape' not in q: failures.append('Native image occlusion mask is missing.')
+                elif card.note_type()['type'] == 1:
                     # Hints replace [...] with [hint]; inspect the active Anki span.
                     spans = re.findall(r'<span\b[^>]*\bclass=["\']([^"\']+)["\'][^>]*>(.*?)</span>', q, re.DOTALL)
-                    if not any('cloze' in classes.split() and re.sub(r'<[^>]*>', '', text).strip().startswith('[') for classes, text in spans): failures.append('Cloze does not show its active blank or hint.')
+                    span_blank = any('cloze' in classes.split() and re.sub(r'<[^>]*>', '', text).strip().startswith('[') for classes, text in spans)
+                    # Anki removes the span wrapper inside MathJax and emits a plain placeholder.
+                    body = re.sub(r'<script.*?</script>|<style.*?</style>', '', q, flags=re.DOTALL)
+                    math = re.findall(r'\\\((.*?)\\\)|\\\[(.*?)\\\]', body, flags=re.DOTALL)
+                    math_blank = any(re.search(r'\[[^]\n]+\]', inline or display) for inline, display in math)
+                    if not span_blank and not math_blank: failures.append('Cloze does not show its active blank or hint.')
                 renders.append({'question':q,'answer':a})
             missing = list(col.media.check().missing)
             if missing: failures.append('Missing media: ' + ', '.join(missing))

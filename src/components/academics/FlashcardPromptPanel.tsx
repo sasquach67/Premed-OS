@@ -120,7 +120,7 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
         <li className="flex items-center justify-between gap-3 rounded-lg border border-primary/60 bg-card p-3 sm:p-4"><span className="flex items-center gap-2 text-base font-semibold"><NotebookText aria-hidden="true" className="size-5 text-primary" />Notebook</span><Badge className="shrink-0 whitespace-nowrap px-2.5 py-1 text-xs sm:px-3 sm:text-sm">{hasNotebookFile || !eligibility.eligible ? 'Required' : 'In your prompt'}</Badge></li>
         <li className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 sm:p-4"><span className="flex items-center gap-2 text-base font-semibold"><Paperclip aria-hidden="true" className="size-5 text-muted-foreground" />Lecture materials</span><Badge variant="outline" className="shrink-0 whitespace-nowrap px-2.5 py-1 text-xs sm:px-3 sm:text-sm">Recommended</Badge></li>
       </ul>
-      <p className="text-xs text-muted-foreground">Updating a deck? Attach its current .apkg in your AI chat too.</p>
+      <p className="text-xs text-muted-foreground">Updating a deck? Export its current .apkg from Anki and attach it in your AI chat.</p>
     </div>
     {lectureId ? <div className="rounded-lg border p-3"><p className="text-xs font-semibold text-muted-foreground">Selected Class Journal</p><p className="mt-1 font-semibold">{lecture?.title ?? 'Journal unavailable'}</p></div> : <label className="block space-y-2 text-sm font-semibold">
       <span>Class Journal</span>

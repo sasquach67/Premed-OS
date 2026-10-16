@@ -149,7 +149,8 @@
             "application",
             "exemplar",
             "free-recall",
-            "cloze"
+            "cloze",
+            "image-occlusion"
           ]
         },
         "front": {
@@ -272,6 +273,71 @@
           "minLength": 1,
           "maxLength": 80,
           "pattern": "^[!-~]+$"
+        },
+        "breadcrumb": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "imageOcclusion": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "file": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(png|jpg|jpeg)$"
+            },
+            "alt": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "source": {
+              "$ref": "#/$defs/evidence"
+            },
+            "box": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "y": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "width": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "exclusiveMinimum": 0
+                },
+                "height": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "x",
+                "y",
+                "width",
+                "height"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "file",
+            "alt",
+            "source",
+            "box"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [

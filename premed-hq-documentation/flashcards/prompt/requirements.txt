@@ -1,3 +1,5 @@
 genanki==0.13.1
 jsonschema==4.26.0
 anki==26.8.1
+pdfplumber==0.11.9
+Pillow==12.1.0
