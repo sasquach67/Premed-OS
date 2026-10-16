@@ -15,7 +15,7 @@ function lecture(): LectureRecord {
 describe('flashcard prompt handoff', () => {
   it('copies the October 15c prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-15d — simplify by explaining, not by cutting words; one checkable answer per card; related terms combined.')
+    expect(prompt).toContain('Prompt revision: 2026-10-15e — explain plainly in the neutral register of established review decks; one checkable answer per card; related terms combined.')
     expect(prompt).toContain("Every named term's meaning gets direct recall")
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -88,7 +88,8 @@ describe('flashcard prompt handoff', () => {
       'Never let the question give away its answer.',
       'No essay or policy questions.',
       'simplify by explaining, not by cutting words',
-      'Say-it-aloud test',
+      'Explain-it test',
+      'Keep personal pronouns (you, we, our, us) to a minimum',
       'Both directions are never automatic.',
       'Do not add a separate mirror note.',
       'No card may have an answer that merely repeats another card\'s answer on the same idea.',
