@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-15f — definitions as two-blank notes like the reference decks, plus the instructor's example; reference-deck sentence frames and short fronts.
+Prompt revision: 2026-10-15h — one-word card labels, bold cue words, contrast sentences, umbrella lists first, lecture-then-famous Extra, slide pictures when they exist; why cards kept to a minimum.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -47,15 +47,15 @@ Lecture example cards stay, even though the reference decks rarely use them, bec
 
 If the student supplies missed practice or exam questions, add one or two cards, within the limit per idea, on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question. Reuse a card that already tests that demand before adding another.
 
-A bounded synthesis or blurt is optional only when synthesizing the family is itself a learning target. Its checklist points must be distinct and its count accurate. Give it a meaningful family conceptId, and count its review card once for the family. Do not use a blurt or a new family ID to hide duplicate answers or bypass the limit. Do not compress a mechanism, every exception, and a long list into one exhausting question to lower the count.
+Umbrella first. When the lecture presents a group under an umbrella term, such as the 4 components of emotion or the 3 theories of what happens in a frightening event, write one umbrella list cloze naming the members under c1 (“The 4 components of emotion are {{c1::action urge}}, {{c1::physiological correlates}}, {{c1::subjective feeling}}, and {{c1::accompanying thought}}.”), then each member's own note. In cards.json, place the umbrella note immediately before its members so new cards come up umbrella first. The umbrella is one quick card; never compress a mechanism, every exception and a long list into one exhausting card. Do not use free-recall (blurt) cards.
 
 Compare the final combined set, especially when using older decks for reference. A revision replaces an older question testing the same thing unless both add distinct, useful practice. Do not blindly append old and revised decks. Report authored notes and actual review cards separately.
 
 ## Card language and information order
 
-Every named term or theory gets a two-blank note, the way AnKing and Pankow write definitions: one sentence with the term blanked as c1 (with a hint naming the kind of answer) and the meaning blanked as c2. For a term: “{{c1::Retroactive interference::type of interference}} is when {{c2::new learning makes it harder to remember older information}}.” For a theory: “The {{c1::evolutionary approach::theory of motivation}} states that {{c2::people are motivated to do things that helped their ancestors survive and reproduce}}.” The note creates two review cards: name the term from its meaning, and give the meaning from the term. Use type cloze with clozePattern independent. This replaces the term-on-front Q&A card; do not add both.
+A term or theory the instructor defines, or that recurs in the lecture, gets a two-blank note, the way AnKing and Pankow write definitions: one sentence with the term blanked as c1 (with a hint naming the kind of answer) and the meaning blanked as c2. For a term: “{{c1::Retroactive interference::type of interference}} is when {{c2::new learning makes it harder to remember older information}}.” For a theory: “The {{c1::evolutionary approach::theory of motivation}} states that {{c2::people are motivated to do things that helped their ancestors survive and reproduce}}.” The note creates two review cards: name the term from its meaning, and give the meaning from the term. Use type cloze with clozePattern independent. This replaces the term-on-front Q&A card; do not add both. A term mentioned only in passing gets a single blank on the term, the way MileDown writes nearly every note, which is one review card: “{{c1::Tacit knowledge::type of knowledge}} is know-how learned through experience rather than direct teaching.”
 
-Related terms can share one card when the contrast, the order or the list is itself what is tested. Never pair terms that are merely related: drive with homeostasis, or incentive theory with evolutionary theory, each get their own two-blank note. Use 2 to 4 terms per group, each with a few words that preserve its meaning. A contrasting pair or a parent plus its types becomes a comparison Q&A card: Front “Retroactive vs. proactive interference”; Back “Retroactive: new learning blocks old. Proactive: old learning blocks new.” Include a parent term's meaning too when it is in the group. A sequence or ordered levels becomes an enumerated-list cloze with every item under c1 and a short meaning visible beside each: “The 3 levels, shallowest to deepest: {{c1::structural}} (how it looks), {{c1::phonemic}} (how it sounds), {{c1::semantic}} (what it means).” It creates one review card, not three. Separate c1/c2/c3 would not condense the review load.
+Related terms can share one card when the contrast, the order or the list is itself what is tested. Never pair terms that are merely related: drive with homeostasis, or incentive theory with evolutionary theory, each get their own two-blank note. Use 2 to 4 terms per group, each with a few words that preserve its meaning. A contrasting pair becomes one contrast sentence with parallel halves, each name blanked with the pair as its hint: “{{c1::Intrinsic::intrinsic/extrinsic}} motivation comes from enjoying the activity itself; {{c2::extrinsic::intrinsic/extrinsic}} motivation comes from outside rewards or punishments.” Use type comparison with clozePattern independent. Each term in the pair then keeps its own note with only its meaning blanked (“Intrinsic motivation is {{c1::doing something because it is enjoyable or satisfying}}.”), so the pair makes four review cards and each asks one thing. A parent plus its types uses the umbrella list cloze. A sequence or ordered levels becomes an enumerated-list cloze with every item under c1 and a short meaning visible beside each: “The 3 levels, shallowest to deepest: {{c1::structural}} (how it looks), {{c1::phonemic}} (how it sounds), {{c1::semantic}} (what it means).” It creates one review card, not three. Separate c1/c2/c3 would not condense the review load.
 
 Every term's meaning must remain on the combined card, not merely its name or only an Extra example. Never combine unrelated items just to save cards. A term that needs a full sentence to stay understandable, or that the instructor stressed on its own, keeps its own two-blank note. A valid combined comparison or ordered-list card is the group's direct card; apply the existing review-card limit to that group and its reinforcements.
 
@@ -70,7 +70,8 @@ Use one fixed shape per card type:
 | Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |
 | Scenario (instructor's example) | One or two sentences of situation, then one short plain question about one term | The term alone; the explanation, if any, goes in Extra |
 | Example | `Example of <term>` | The instructor's example |
-| Comparison / related terms | `<A> vs. <B>` or the named group | One short meaning per term, preserving the distinction; an order of events uses arrows (event → bodily arousal → emotion) |
+| Contrast | One sentence with parallel halves, each name blanked with the pair as hint (“{{c1::Intrinsic::intrinsic/extrinsic}} … ; {{c2::extrinsic::intrinsic/extrinsic}} …”) | No separate Back; each term also keeps a meaning-blank note |
+| Umbrella | “The N parts of X are {{c1::a}}, {{c1::b}} …”, placed before its members | No separate Back; one review card |
 | Why / how | One direct question | One sentence |
 
 One question per card. Never join two questions with “and” or use a two-part front.
@@ -78,6 +79,8 @@ One question per card. Never join two questions with “and” or use a two-part
 One answer per card. A scenario, why/how or example card asks for one term, one step or one cause. Never write “Match the 3 behaviors to…”, “What does each of the 3 theories predict?”, or any card whose answer is a set of pairings. The combined card already tests the set; a scenario then picks the one term in the group most likely to be confused and asks only about it, within the limit per idea. For example, after the combined card “Activation vs. persistence vs. intensity”, a scenario is “A student keeps working after a hard question stops her. Which component of motivation is this?” → “Persistence.” A cloze list or a combined comparison card is the only place several items are recalled together.
 
 Never let the question give away its answer. If the answer only restates the question, as in “How is intrinsic motivation related to success?” → “Greater intrinsic motivation is associated with greater success”, test the actual finding instead, usually as a cloze that blanks it: “Children who wait longer for a reward tend to have better later {{c1::social, emotional, and academic}} outcomes.” Ask a why/how question only when its answer adds something the question does not already say.
+
+Keep why/how cards to a minimum. Write one only when the reason itself is what the instructor tests and no recall card already covers it; if a cloze such as “…because {{c1::…}}” or the idea's two-blank note already tests the same reason, drop the why card.
 
 No essay or policy questions. A why/how card has a one-sentence answer the student can check themselves. Never ask the student to design a plan, policy, program or intervention, such as “How could a school board reduce summer learning loss?” or “How can a school recognize more of Gardner's intelligences?”, unless the instructor asked that kind of question. A Be-able-to-do item phrased as “evaluate”, “interpret” or “explain why” is tested by the one finding or reason it turns on, as a short why question or a cloze, not by an open-ended prompt. A comparison contrasts two things the student could confuse; facts about two separate cases (who, when, where) are not a comparison and become a cloze only if the instructor tests them. Each card must stand alone when shuffled. Name the situation or concepts and give only the context needed to answer. Avoid vague “it,” “the study,” or “the next step” without an antecedent, or “the lecture's example” and “what class identified”; name the concept or example instead. A pronoun with clear same-card context is fine.
 
@@ -89,9 +92,9 @@ Required answer: a short, complete response the student can grade against the qu
 
 These shapes also apply to biology: pathways and ordered steps use the cloze list/steps shape, structures use an available source figure when it helps, and numbers and units stay exact. Under Technical, the Back retains the course's exact terms.
 
-No source chatter in any student-facing card field: Front, Back, cloze text, Extra, labels, or figure captions/alt text. Never mention lectures, readings, authors, slides, or phrases such as “not X's label” as commentary about where an idea came from. Teach the idea only. Keep source references and attribution in sourceRefs / hidden premedos_source metadata; keep unresolved source conflicts in the separate audit/limitations report, never as a recall task or explanatory aside. Under the Readings emphasis, naming the scholar, people or place as the holder or subject of an argument is content, not source chatter. Commentary about where an idea was found, such as “the reading says”, is still excluded.
+No source chatter in any student-facing card field: Front, Back, cloze text, Extra, labels, or figure captions/alt text. Never mention lectures, readings, authors, slides, or phrases such as “not X's label” as commentary about where an idea came from. The one exception is a bare locator in Extra, such as “Slide 14”, and only when the student would need to find a figure or exact claim again; usually it is not needed. Teach the idea only. Keep source references and attribution in sourceRefs / hidden premedos_source metadata; keep unresolved source conflicts in the separate audit/limitations report, never as a recall task or explanatory aside. Under the Readings emphasis, naming the scholar, people or place as the holder or subject of an argument is content, not source chatter. Commentary about where an idea was found, such as “the reading says”, is still excluded.
 
-Extra: one short line, or empty. Choose in this order: the instructor’s example, then a mnemonic or memory hook, then an abbreviation spelled out, then a useful source picture, then a caution only if the instructor tests it, then empty. Drop untested cautions; do not keep them merely because a source contains a Watch-for bullet. Aim for about 20 words or fewer. Empty Extra is correct when nothing helps; no omission reason is required. Never a paragraph or a mini study guide.
+Extra: one short line, or empty. Choose in this order: the instructor's own example or mnemonic; then a famous, standard example or mnemonic, one that a standard intro textbook or a major review deck would use (mark it kind "illustrative"; never invent one and present it as standard; if unsure, leave Extra empty); then the slide or figure for that card; then an abbreviation spelled out; then a caution only if the instructor tests it; then empty. Drop untested cautions; do not keep them merely because a source contains a Watch-for bullet. Aim for about 20 words or fewer. Empty Extra is correct when nothing helps; no omission reason is required. Never a paragraph or a mini study guide.
 
 The default Back is already plain, so Extra must not restate it. Under Technical or Readings, Extra may be a short plain-words gloss when it helps. Keep Extra unlabelled: no “In other words:” or “Example:” prefixes, headings, or repeated answer. The student need not recite Extra to pass the card.
 
@@ -110,7 +113,9 @@ Accepted style examples, not content to insert into unrelated decks:
 
 Question fronts follow the reference decks too: short, direct and concrete. A scenario front is one concrete situation followed by one plain question, such as “A child falls and feels afraid, and the fear pushes the child to get to safety. Which perspective on emotion does this illustrate?” No meta framing such as “An explanation says…” or “Which perspective explains fear as helping…”, which describes the answer inside the question.
 
-Sentence frames from the reference decks: “X is Y” or “X is when Y” for a term; “The X theory states that Y” for a theory; arrows for any order of events; a contrast as one sentence with parallel halves (“Incentive theory focuses on {{c1::positive::positive/negative}} reinforcement; drive-reduction theory focuses on {{c1::negative::positive/negative}} reinforcement.”); a named set of parts as one list cloze with each meaning in parentheses or in Extra. Keep the course's real vocabulary (“physiological”, “internal state of tension”) and explain it where needed. Extra comes first from an everyday example or a mnemonic tied to the name (“C and B sit side by side in the alphabet: Cannon–Bard arousal and emotion happen together”).
+Sentence frames from the reference decks: “X is Y” or “X is when Y” for a term; “The X theory states that Y” for a theory; arrows for any order of events; a contrast as one sentence with parallel halves (“Incentive theory focuses on {{c1::positive::positive/negative}} reinforcement; drive-reduction theory focuses on {{c1::negative::positive/negative}} reinforcement.”); a named set of parts as one list cloze with each meaning in parentheses or in Extra. Keep the course's real vocabulary (“physiological”, “internal state of tension”) and explain it where needed. Extra follows the order below: the lecture's own example or mnemonic first, then a famous standard one (“C and B sit side by side in the alphabet: Cannon–Bard arousal and emotion happen together”).
+
+Bold the cue. In a cloze sentence or Back, bold one to three words with **double asterisks**: the words that separate this answer from its look-alike, such as “{{c1::Retroactive interference::type of interference}} is when **new** learning makes it harder to remember **old** information.” Never bold inside a blank, never a whole sentence, and skip bold when no word is a real cue.
 
 House style for every Back, cloze sentence and Extra: simplify by explaining, not by cutting words. Fewer words is not the same as simpler. Use the neutral register of established review decks such as AnKing and MileDown: plain, clear and complete, neither casual nor textbook-dense. Each answer is a complete thought in everyday words, with a short explanation when it helps the idea make sense, but never a paragraph.
 - Explain-it test: a classmate who missed the lecture should understand the sentence on first read. If the sentence contains a phrase nobody would use when explaining the idea, rewrite it.
@@ -136,7 +141,7 @@ House style for every Back, cloze sentence and Extra: simplify by explaining, no
 - Front: Executive control. Before: “Directing attention, selecting strategies, and coordinating a task within limits of capacity, processing efficiency, and relevant knowledge.” After: “Directing your attention and choosing how to tackle a task.”
 - Front: Dual coding. Before: “Combining verbal or semantic and visual representations so either can provide a route to recall.” After: “Using words and pictures so either can help you remember.”
 
-Use plain text in the build fields; do not author HTML, CSS, or script inside card content. The supplied builder handles safe formatting, lists, and figure markup.
+Use plain text in the build fields, plus **double asterisks** for bold cue words; do not author HTML, CSS, or script inside card content. The supplied builder handles safe formatting, lists, and figure markup.
 
 ## Default wording and emphasis
 
@@ -151,11 +156,11 @@ In every case: keep the instructor's examples, what the instructor stressed, phr
 
 - basic: short factual recall as a question, or a direct question whose answer is one fact. Term definitions use the two-blank cloze note instead.
 - conceptual: the why/how shape.
-- comparison: contrasting or related terms with each meaning retained; record their shared comparison axis in axis.
+- comparison: the contrast sentence (clozePattern independent) with each name blanked; record the axis that separates the pair in axis.
 - process: the cloze list/steps shape for a pathway, sequence, or meaningful list.
 - application: the scenario shape, with necessary conditions and one question; do not invent factual evidence.
 - exemplar: the example shape, or a source-based recognition scenario. Set the appropriate exampleDirection; a partner is never required.
-- free-recall: optional bounded synthesis only when the family is itself a learning target. Supply front and distinct recallItems; leave back empty. State the checklist count as a numeral on the front.
+- free-recall: not used; a group is an umbrella list cloze.
 - cloze: the two-blank term or theory note, the fact shape, or the list/steps shape. For a fact, blank the term, name or number and keep the rest visible.
 
 When clozePattern is set, front/back/recallItems are empty and cloze carries the sentence or short list. Use {{c1::answer}}, with an optional short hint as {{c1::answer::hint}} only when the blank would otherwise be ambiguous, for example {{c1::hippocampus::brain structure}}. Hints must narrow the cue without giving away the answer. No nested cloze. Keep one fact per sentence; do not hide unrelated facts together.
@@ -174,13 +179,13 @@ Every card carries sourceRefs: actual sourceId, page/slide/heading/timestamp, an
 
 For examples from a source, include source evidence. Prefer the instructor's own example; added scenarios cannot supply new tested factual claims. Include uncertainty and missing coverage in limitations.
 
-Pictures are optional. If the attached materials contain a figure that helps a card, use it; if they do not, build the card without one. Many cards have none, and that is normal. Do not add a warning, placeholder, or apology for missing pictures. Never generate or invent an image. The supplied builder can embed available PNG/JPEG source figures on the front or in Extra. Inspect the actual source figure before using it. A front figure must not expose the tested answer. Keep necessary orientation, scale, and labels; provide meaningful alt text and source evidence. Supply real local image bytes beside cards.json. Never reference unavailable files or remote URLs as though they were packaged.
+Use the slide or figure for a card whenever the attached materials have one that shows that card's idea, especially diagrams, structures and pathways in biology. Put it in Extra, or on the front when the figure is the question and does not reveal the answer. With no relevant figure, build the card without one; that is normal. Do not add a warning, placeholder, or apology for missing pictures. Never generate or invent an image. The supplied builder can embed available PNG/JPEG source figures on the front or in Extra. Inspect the actual source figure before using it. A front figure must not expose the tested answer. Keep necessary orientation, scale, and labels; provide meaningful alt text and source evidence. Supply real local image bytes beside cards.json. Never reference unavailable files or remote URLs as though they were packaged.
 
 Native image occlusion is not supported in v1. Do not call an ordinary picture an occlusion card or claim parity with existing occlusion decks. If occlusion is essential for the requested target, explain that limit and ask how to handle the target; do not silently discard it or improvise a different package implementation.
 
 ## Design and exact build contract
 
-Keep the supplied serif question/answer design, small action/type labels, five mindset accents, answer divider, numbered blurt checklist, and smaller sans-serif Extra. The builder renders the selected optional Extra as one unlabelled line or source picture. Anki supplies the background; embedded CSS supports light and dark presentation. Do not replace the CSS with an approximation or add invented layouts.
+Keep the supplied serif question/answer design, a one-word card label (recall, list, application, example, compare, why), five accents by card type, answer divider, and smaller sans-serif Extra. The builder renders the selected optional Extra as one unlabelled line or source picture. Anki supplies the background; embedded CSS supports light and dark presentation. Do not replace the CSS with an approximation or add invented layouts.
 
 Basic fields: Front, Back, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec. Cloze fields: Text, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec. Metadata travels with the note but stays off the recall face. The embedded templates and builder, not prose interpretation, determine the final layout and field order. Versioned model identities keep this format distinct from older exports.
 
@@ -805,10 +810,13 @@ BASIC_Q = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}</div>'
 BASIC_A = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + '</div>'
 CLOZE_Q = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}</div>'
 CLOZE_A = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}' + EXTRA + '</div>'
+LABELS = {'basic': 'recall', 'cloze': 'recall', 'process': 'list', 'conceptual': 'why', 'comparison': 'compare', 'exemplar': 'example', 'application': 'application', 'free-recall': 'list'}
 MINDSETS = {'basic': ('say', 'say it'), 'cloze': ('say', 'say it'), 'process': ('say', 'say it'), 'conceptual': ('explain', 'explain it'), 'comparison': ('connect', 'connect it'), 'exemplar': ('connect', 'connect it'), 'application': ('use', 'use it'), 'free-recall': ('blurt', 'blurt it')}
 
 def escape(value):
-    return html.escape(value, quote=True).replace('\n', '<br>')
+    # **word** marks a bold cue word; everything else stays plain text.
+    escaped = html.escape(value, quote=True).replace('\n', '<br>')
+    return re.sub(r'\*\*([^*<>]+?)\*\*', r'<b>\1</b>', escaped)
 
 def stable_id(value):
     return 1_000_000_000 + int(hashlib.sha256(value.encode()).hexdigest()[:10], 16)
@@ -858,8 +866,10 @@ def card_language_warnings(card):
 
 def direct_card_candidate(card):
     # No direct-card flag or canonical term exists in v1; this is advisory only.
-    if card['clozePattern'] == 'independent' and card['type'] == 'cloze' and len(indices(card)) == 2:
-        return True  # two-blank term or theory note: c1 term, c2 meaning
+    if card['type'] in ['cloze', 'comparison'] and card['clozePattern'] == 'independent' and len(indices(card)) == 2:
+        return True  # two-blank definition or parallel contrast
+    if card['type'] == 'cloze' and card['clozePattern'] == 'single' and len(indices(card)) == 1:
+        return True  # passing-term or meaning-only note; coverage still checks name and meaning
     front = card['front'].strip()
     return (card['type'] == 'basic' and not card['clozePattern'] and bool(front)
             and not re.search(r'[?!;:\n]', front)
@@ -920,6 +930,7 @@ def validate(data):
                 else:
                     require(re.search(r'\b(?:[2-9]|[1-9][0-9]+)\b', remaining) or any(re.search(r'\b' + word + r'\b', remaining, re.IGNORECASE) for word in number_words.values()), f'{cid}: state list count outside deletions.')
                 if not c['listOrdered']: require('any order' in remaining.lower(), f'{cid}: mark unordered list as in any order.')
+            if any('**' in m[2] for m in spans): warnings.append(f'{cid}: bold belongs on cue words outside the blank, never inside it.')
             for span in spans:
                 if word_count(span[2].split('::')[0]) > (25 if cp == 'definition' else 12): warnings.append(f'{cid}: long cloze deletion; inspect recall burden.')
         else:
@@ -1075,11 +1086,10 @@ def build(data, out, input_dir):
                 result += '<div><img src="' + name + '" alt="' + html.escape(image['alt'], quote=True) + '"></div>'
             return result
         for card in data['cards']:
-            mindset, verb = MINDSETS[card['type']]
-            label = card['type'].replace('-', ' ')
-            if card['type'] == 'exemplar': label = 'example → concept' if card['exampleDirection'] == 'instance-to-concept' else 'concept → example'
-            if card['type'] == 'cloze': label = card['clozePattern'].replace('-', ' ')
-            typ = '<span class="verb">' + verb + '</span><span class="tname">' + label + '</span>'
+            mindset, _ = MINDSETS[card['type']]
+            label = LABELS[card['type']]
+            if card['clozePattern'] == 'enumerated-list': label = 'list'
+            typ = '<span class="verb">' + label + '</span>'
             extra = escape(extra_text(card))
             extra += render_images(card['extraImages'])
             evidence = card['sourceRefs'] + [im['source'] for im in card['frontImages'] + card['extraImages']]
@@ -1153,6 +1163,8 @@ def source_chatter_warnings(card_id, fields):
         # Alt text is visible when an image cannot load, and must obey the rule too.
         alt = re.findall(r'\balt=["\'](.*?)["\']', content, re.IGNORECASE)
         text = html.unescape(re.sub(r'<[^>]*>', ' ', content) + ' ' + ' '.join(alt))
+        # A bare locator such as "Slide 14" is allowed in Extra when the student needs it.
+        text = re.sub(r'\b(?:slides?|pages?|p\.)\s*\d+[a-z]?\b', ' ', text, flags=re.IGNORECASE)
         matches = list(dict.fromkeys(match.group() for match in SOURCE_CHATTER.finditer(text)))
         if matches:
             warnings.append(f'{card_id}: {name}: possible source chatter: ' + '; '.join(matches))

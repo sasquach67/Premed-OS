@@ -25,6 +25,8 @@ def source_chatter_warnings(card_id, fields):
         # Alt text is visible when an image cannot load, and must obey the rule too.
         alt = re.findall(r'\balt=["\'](.*?)["\']', content, re.IGNORECASE)
         text = html.unescape(re.sub(r'<[^>]*>', ' ', content) + ' ' + ' '.join(alt))
+        # A bare locator such as "Slide 14" is allowed in Extra when the student needs it.
+        text = re.sub(r'\b(?:slides?|pages?|p\.)\s*\d+[a-z]?\b', ' ', text, flags=re.IGNORECASE)
         matches = list(dict.fromkeys(match.group() for match in SOURCE_CHATTER.finditer(text)))
         if matches:
             warnings.append(f'{card_id}: {name}: possible source chatter: ' + '; '.join(matches))

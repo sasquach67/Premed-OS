@@ -13,10 +13,10 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the October 15f prompt revision and preserves source access rules', () => {
+  it('copies the October 15g prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-15f — definitions as two-blank notes like the reference decks, plus the instructor\'s example; reference-deck sentence frames and short fronts.')
-    expect(prompt).toContain('Every named term or theory gets a two-blank note')
+    expect(prompt).toContain('Prompt revision: 2026-10-15h — one-word card labels, bold cue words, contrast sentences, umbrella lists first, lecture-then-famous Extra, slide pictures when they exist; why cards kept to a minimum.')
+    expect(prompt).toContain('A term or theory the instructor defines, or that recurs in the lecture, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
     expect(prompt).toContain('The completed Journal is the required input.')
@@ -46,7 +46,14 @@ describe('flashcard prompt handoff', () => {
       '| Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |',
       '| Scenario (instructor\'s example) | One or two sentences of situation, then one short plain question about one term | The term alone; the explanation, if any, goes in Extra |',
       '| Example | `Example of <term>` | The instructor\'s example |',
-      '| Comparison / related terms | `<A> vs. <B>` or the named group | One short meaning per term, preserving the distinction; an order of events uses arrows (event → bodily arousal → emotion) |',
+      '| Contrast | One sentence with parallel halves, each name blanked with the pair as hint',
+      '| Umbrella | “The N parts of X are {{c1::a}}, {{c1::b}} …”, placed before its members | No separate Back; one review card |',
+      'Bold the cue.',
+      'Keep why/how cards to a minimum.',
+      'Umbrella first.',
+      'gets a single blank on the term',
+      'then a famous, standard example or mnemonic',
+      'a one-word card label (recall, list, application, example, compare, why)',
       '| Why / how | One direct question | One sentence |',
       'One question per card.',
       'Cloze: {{c1::Scientific management::management approach}} (Taylorism)',
@@ -110,8 +117,8 @@ describe('flashcard prompt handoff', () => {
       'Under Technical or Readings, Extra may be a short plain-words gloss',
       'explanation and example are alternative ways to supply the one optional Extra line',
       'The builder renders the selected optional Extra as one unlabelled line or source picture.',
-      'Pictures are optional.',
-      'if they do not, build the card without one',
+      'Use the slide or figure for a card whenever the attached materials have one',
+      'With no relevant figure, build the card without one',
       'Never generate or invent an image.',
       'Inspect the actual source figure before using it.',
       'A front figure must not expose the tested answer.',
@@ -177,7 +184,7 @@ describe('flashcard prompt handoff', () => {
     const files = [...prompt.matchAll(/### File: ([^\n]+)\n\n```[^\n]+\n([\s\S]*?)\n```/g)]
     expect(files.map(match => match[1])).toEqual(['cards.schema.json', 'card-styles.css', 'requirements.txt', 'build_deck.py', 'verify_deck.py'])
     for (const [, name, content] of files) expect(`${content}\n`).toBe(readFileSync(resolve('premed-hq-documentation/flashcards/prompt', name), 'utf8'))
-    for (const phrase of ['Both directions are never automatic', 'optional bounded synthesis', 'one unlabelled line', 'smaller sans-serif Extra', 'Native image occlusion is not supported in v1', 'completed Journal']) expect(prompt).toContain(phrase)
+    for (const phrase of ['Both directions are never automatic', 'Do not use free-recall (blurt) cards', 'one unlabelled line', 'smaller sans-serif Extra', 'Native image occlusion is not supported in v1', 'completed Journal']) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('review draft')
   })
 

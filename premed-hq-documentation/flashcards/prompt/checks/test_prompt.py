@@ -137,6 +137,22 @@ class PromptChecks(unittest.TestCase):
         data['targets'][0]['cardIds']=[c['id'] for c in data['cards']]
         self.assertFalse(any('third review card' in w for w in validate(data)))
 
+    def test_bold_cue_words_render_and_labels_are_one_word(self):
+        from build_deck import escape, LABELS
+        self.assertEqual(escape('when **new** learning'),'when <b>new</b> learning')
+        self.assertEqual(escape('a*b and **'),'a*b and **')
+        self.assertEqual(set(LABELS.values()),{'recall','list','why','compare','example','application'})
+
+    def test_bold_inside_a_blank_warns(self):
+        data=self.concept_fixture()
+        data['cards'][0].update(type='cloze',front='',back='',clozePattern='independent',
+            cloze='{{c1::**Sample** shape::geometry term}} is {{c2::the outline of an object}}.')
+        self.assertTrue(any('outside the blank' in w for w in validate(data)))
+
+    def test_bare_slide_locator_is_not_source_chatter(self):
+        self.assertEqual(source_chatter_warnings('loc',{'Extra':'Slide 14'}),[])
+        self.assertTrue(source_chatter_warnings('chat',{'Extra':'The slides say this.'}))
+
     def test_unpaired_exemplar_builds_and_verifies_without_warnings(self):
         for direction in ['instance-to-concept','concept-to-instance']:
             with self.subTest(direction=direction):
@@ -376,6 +392,30 @@ class PromptChecks(unittest.TestCase):
         data['cards'][0]['back']='Alpha: learn the input. Beta.'
         data['cards'][0]['explanation']='Beta: keep the input.'
         with self.assertRaisesRegex(ValueError,'term-1: named term Beta loses its required meaning'):validate(data)
+
+    def test_single_blank_named_term_formats_build_and_verify(self):
+        for text in ['{{c1::Alpha::term}} means learn the input.', 'Alpha means {{c1::learn the input}}.']:
+            with self.subTest(text=text):
+                data=self.combined_fixture(1)
+                data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',cloze=text)
+                self.assertEqual(validate(data),[])
+                built,verified=self.pipeline_fixture(data)
+                self.assertEqual(built['reviewCards'],1)
+                self.assertEqual(verified['warnings'],[])
+
+    def test_parallel_contrast_named_meanings_build_and_verify(self):
+        data=self.combined_fixture(2)
+        data['cards'][0].update(type='comparison',front='',back='',clozePattern='independent',
+            cloze='{{c1::Alpha::Alpha/Beta}} means learn the input; {{c2::Beta::Alpha/Beta}} means keep the input.')
+        self.assertEqual(validate(data),[])
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['reviewCards'],2)
+        self.assertEqual(verified['warnings'],[])
+
+    def test_new_direct_shapes_still_require_the_recorded_meaning(self):
+        data=self.combined_fixture(1)
+        data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',cloze='{{c1::Alpha::term}}.')
+        with self.assertRaisesRegex(ValueError,'loses its required meaning'):validate(data)
 
     def test_combined_group_larger_than_four_warns(self):
         data=self.combined_fixture(5)
