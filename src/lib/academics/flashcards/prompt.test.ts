@@ -15,8 +15,8 @@ function lecture(): LectureRecord {
 describe('flashcard prompt handoff', () => {
   it('copies the October 15g prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-15i — small cards over heavy ones; one card per checkpoint or stage; look-alike groups as contrast plus meaning notes; biology rules for figures, stages, directions, pathways and numbers.')
-    expect(prompt).toContain('A term or theory the instructor defines, or that recurs in the lecture, gets a two-blank note')
+    expect(prompt).toContain('Prompt revision: 2026-10-15j — no question asked twice: umbrella members blank only their meaning, two blanks only for headline terms, sub-terms stay in their parent\'s sentence; biology rules for figures, stages, directions, pathways and numbers.')
+    expect(prompt).toContain('A headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
     expect(prompt).toContain('The completed Journal is the required input.')
@@ -51,10 +51,13 @@ describe('flashcard prompt handoff', () => {
       'Bold the cue.',
       'Keep why/how cards to a minimum.',
       'Small cards over heavy ones.',
+      'No question asked twice.',
+      'A member of an umbrella group never gets a name blank',
+      'A sub-term that is part of a parent\'s definition stays inside the parent\'s sentence',
       'Biology and other figure-heavy lectures',
       'Look-alike groups of three or four',
       'Umbrella first.',
-      'gets a single blank on the term',
+      'Every other defined term gets one blank, on its meaning, with the term visible',
       'then a famous, standard example or mnemonic',
       'a one-word card label (recall, list, application, example, compare, why)',
       '| Why / how | One direct question | One sentence |',
