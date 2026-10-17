@@ -23,3 +23,16 @@ Use descriptive headings; connected prose for explanation and reasoning; bullets
 Preserve meaningful qualifications, corrections, unusual examples, and source-supported emphasis. Block-count targets must not silently turn rich material into a shallow summary. Omit unsupported conditional sections. For unsupported required content, use the artifact's documented gap or evidence-limit representation instead of fabricating content. Never invent facts to satisfy presentation quotas.
 
 Citation fields and JSON packaging are transport requirements, not extra learning-content demands. Preserve explanations when encoding them. Follow the declared schema; do not add undocumented fields or omit supported teaching content merely to simplify formatting. Never claim every selected passage was understood or used merely because it was supplied.
+
+
+## Grouped-term Review register
+
+For external Review, apply EC-GROUPED-GUIDE's section order, formal course
+vocabulary, inline definitions and separate Practice placement. An explanation
+may be plain and speakable while retaining the exact scientific exam term.
+Definitions use one canonical sentence consistently across the guide and any
+supplied corresponding flashcard definition. If no corresponding flashcards are
+available, author that sentence using the same definition rule; do not claim a
+word-for-word comparison was performed. Never change the flashcard prompt or
+builder to achieve this agreement. Attribute Professor stressed markers only to
+actual instructor evidence, and retain official class-outline objective wording.

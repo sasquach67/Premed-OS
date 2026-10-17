@@ -244,6 +244,47 @@ its conventions. Attention spent decoding the document is attention not spent on
 Deterministic check: within one artifact, the same `concept.kind` must map to the same block type.
 Two comparisons rendered differently in one guide is a defect.
 
+### Grouped-term Review representation
+
+For external Review, use a `study-diagram` of kind `hierarchy` or `concept-map`
+at the start of every teaching section, after its question. Use categories →
+members → connections; details follow the map's branch order. Respect the
+actual diagram limits: use a concept-map rather than distort a larger category
+structure into the constrained hierarchy. Show containment with tree connectors
+and preserve relationship labels rather than imply an unsupported cause.
+
+Node `tone` has one meaning throughout maps, prose explanations and flow chains:
+`stimulatory` = green, positive regulation; `inhibitory` = red, negative
+regulation; `external` = amber, external cues or lecture examples; `checkpoint`
+= purple, checkpoints; `neutral` otherwise. Do not assign colors decoratively.
+The app owns all color rendering; never author CSS or new design tokens.
+Use `targetBlockId` to link a node to the relevant same-section heading or term
+block. Keep the map label and the linked term's name consistent.
+
+Every figure needs numbered “What to look at” explanations and a “Why it matters”
+line beside it. Prefer the supplied lecture figure; use `annotated-figure` with
+verified point coordinates under EC-ANNOTATION. If reliable coordinates are
+unavailable, retain the exact source figure and adjacent numbered explanatory
+steps rather than inventing annotation positions. Do not leave an unexplained
+image or make claims based on an unseen figure.
+
+Use sparse `callout` blocks with tones `question`, `lecture-example`, `analogy`,
+`mix-up`, `builds-on`, and `one-thing`. The opening question and closing one-thing
+line frame each section; optional callouts earn their space. Use the lecture's
+analogy first and a well-known analogy second; label it as an aside, never the
+main scientific definition. Use mix-up only for pairs actually contrasted by
+the course. A builds-on callout identifies the supported earlier lesson and its
+connection. Set `stressed: true` only when transcript or other instructor
+evidence establishes emphasis or a warned misconception. The reader supplies
+lucide icons and the Professor stressed chip; do not insert emoji or rule tags.
+
+Use one level of nested bullets for a parent term and its parts; mechanisms
+remain numbered steps. Supply quick-reference tables for relevant numerical
+facts and shared comparison dimensions, not term/definition rows posing as a
+comparison. The glossary is collected automatically from structured definitions;
+do not duplicate it in authored sections. The app supplies map links, term
+popovers, summary view and eligible section Check yourself links.
+
 ---
 
 ## 9. The scan test

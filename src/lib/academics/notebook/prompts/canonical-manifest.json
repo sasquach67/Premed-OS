@@ -1,13 +1,13 @@
 {
   "instructionsVersion": "notebook-workflows-draft-4",
-  "promptBuild": "notebook-instructions-beta-28",
-  "canonicalHeadAtBuild": "d0161370d2e35337f362d131282ec1ed16d5fe33",
-  "canonicalRootAtBuild": "/private/tmp/premed-guide-visuals-publication-20261011",
+  "promptBuild": "notebook-instructions-beta-29",
+  "canonicalHeadAtBuild": "d316286adf10011ef8468562d013e1c33f0e9b54",
+  "canonicalRootAtBuild": "/Users/andyquach/.codex/worktrees/study-guide-redesign/premed-os",
   "sources": {
     "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
-      "sha256": "67dc7c5ce49da9d97a7dcf8c521bc4711983a358d8c36f45575e8b41d4ad1e83",
+      "sha256": "20dcef7f3fe78fd8247fe0af617b30ff9009cb11332dbe6971945e324f8f4674",
       "sections": {
-        "full": "67dc7c5ce49da9d97a7dcf8c521bc4711983a358d8c36f45575e8b41d4ad1e83"
+        "full": "20dcef7f3fe78fd8247fe0af617b30ff9009cb11332dbe6971945e324f8f4674"
       }
     },
     "premed-hq-documentation/specifications/generation/02-global-rules-and-source-modes.md": {
@@ -22,23 +22,23 @@
       }
     },
     "premed-hq-documentation/specifications/generation/19-study-source-and-format-contract.md": {
-      "sha256": "5af52810969552dde2f1260cdca613544f05a7ed8c4392cdb7fc2c11ee5e7ff8",
+      "sha256": "9b82e9147733061835f5dfa2a9d080af4d37998f398b1070bf0b470b93725370",
       "sections": {
-        "full": "5af52810969552dde2f1260cdca613544f05a7ed8c4392cdb7fc2c11ee5e7ff8"
+        "full": "9b82e9147733061835f5dfa2a9d080af4d37998f398b1070bf0b470b93725370"
       }
     },
     "premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md": {
-      "sha256": "b71f1320cb9193d687dc6a062f7c4f75a1d9ab03b75073daa6e76f8a31e5cf8f",
+      "sha256": "5f21b6f848a5611ee66ee76e1a2f0901be2ce6b7c3b92b5eb290bee1d5299e40",
       "sections": {
-        "full": "b71f1320cb9193d687dc6a062f7c4f75a1d9ab03b75073daa6e76f8a31e5cf8f"
+        "full": "5f21b6f848a5611ee66ee76e1a2f0901be2ce6b7c3b92b5eb290bee1d5299e40"
       }
     },
     "premed-hq-documentation/specifications/generation/03-study-guide-v1.md": {
-      "sha256": "69b7fff9f41b431e2439ad252314795d0bb2971b46fc23f54dc60ece663685f8",
+      "sha256": "d3ea6a2878ab90fc07eb22b0b2ba05e995345c9eb3ea0576542b473ae16be98b",
       "sections": {
         "Runtime briefing mirror": "ea0156a12578f169350c7ef7700ed6f28c72d675bda7cc0f01502e6dbe1267e4",
         "2. Required structure": "5807163d77ee486dfedb134e34148704544f71ab99a382fc13182466bb58d9fc",
-        "Portable review notebook": "17ebe3a3530c27a15fa61bc9ffe9ca593c50e62783ebbe9994349f44fb989c35"
+        "Portable review notebook": "e2c5b4e8111e76d67c018d3ccdffbe6d722252e0a42a08c0013c858882b84843"
       }
     },
     "premed-hq-documentation/specifications/generation/11-unit-mastery-outline-v1.md": {
@@ -49,12 +49,12 @@
       }
     },
     "premed-hq-documentation/specifications/generation/06-visual-system.md": {
-      "sha256": "b3113792f7a57bf123d0ef1d6d538cf992d53f98be0801f1fc86105089e28ed3",
+      "sha256": "57a9c522c4f9d7dfb9932f06b7304b4deb13b3655bad37a005bff60c126e6194",
       "sections": {
         "1. The division of responsibility": "106fae759d043efd93af5bbcc869294a9f0cd637740181c283dbb66894c5fa4c",
         "2. The representation decision": "09786b4b4c2ee8c00c092b86a157d4afaa6b244e89d883e88e5faf4be8b30a4a",
         "7. Density and whitespace": "fdbdeb185bd3568e9f09dd0c9aa6f25bcb521935a305734abd4f91b5078aa579",
-        "8. The consistency rule (invariant)": "b88997aa34af40e2918c03d4a223e85069e1154da57c060c3506e924b00f139e",
+        "8. The consistency rule (invariant)": "d4584267be4a7a42e0af45a705c2f21d56b6dc458083a1ceebad2fc513adbfa8",
         "3.1 Tables": "d30e275ff4d189000916c46573d15942943a93ac06876d874772bfcd02283d41",
         "9. The scan test without renderer-specific proxies": "ba50a1ba0123abbec51e4719c65c1a803f5afd8a792658c7d05a71197271a81f"
       }
@@ -76,7 +76,7 @@
   },
   "schema": {
     "path": "premed-hq-documentation/specifications/generation/portable-notebooks/notebook-package-v4.schema.json",
-    "sha256": "aae31d034e109e8ac4d64cbe2fba0bdb41068b76b5f5c2ddbeb9a4595095ca35"
+    "sha256": "dc8e10c2cd73626f3049da70cf6239e8de414497116f9eed9c01aae2c1d5f32c"
   },
   "supportingData": {
     "premed-hq-documentation/specifications/generation/portable-notebooks/conversation-examples.json": "183022e1116efa58043e8d53a218b380b9358af12d3fa2dbafa1bf9094938bc0",
@@ -101,7 +101,7 @@
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_conversation_examples.py": "bc0c36b25bb604056a5e2342957887aed7be86987271e86fe2cee6aeb667cb81",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_feasibility_case.py": "61ea50db75f7901d6b7f733d02db1204ea7e8dde7a8165b9715e1d5dff88efcc",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_fixtures.py": "31d262db6aafa9788e30e20be0f2b3d4af3c80eba634990984d25a2d623ff169",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "496364ecd7c0f0cfa9d07481bd22f47494176b1a191a98ed322f74f04e81a5d9",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "fbdbfc8068ea2ec9e9d81c6935ae40b18e56827897d7c71dd738df60f49584d5",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_revision_cases.py": "1532a4cec4e1333b3c63c877cc34d8913e0c034a0c220aa090d020532ce201a1",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_schema.py": "86cee42747b37f0dc735f28e21a1aa586f77015454b6fcfd593eb8178684085d",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_standardization.py": "65276c633874b1821335d2774f8543bae3a1293312582cd6ffb25fbdbd368c56",
@@ -117,41 +117,41 @@
   },
   "outputs": {
     "copy-prompt-review.md": {
-      "sha256": "a9d70dd06373bbb52e722b267a6cc68752b7321cd007775d080778172f74d780",
-      "bytes": 172618,
-      "words": 20351,
+      "sha256": "a01f40a00d2f9d4eded5a2e5219f746892d5d65758c59b57027f0d1d84a15829",
+      "bytes": 188470,
+      "words": 21671,
       "componentBytes": {
-        "request": 5997,
-        "commonLearningRules": 16010,
-        "goalLearningRules": 28401,
-        "externalWorkflow": 90294,
-        "schema": 30806,
+        "request": 6331,
+        "commonLearningRules": 16748,
+        "goalLearningRules": 33261,
+        "externalWorkflow": 94033,
+        "schema": 36987,
         "assembly": 1110
       }
     },
     "copy-prompt-assessment.md": {
-      "sha256": "e504d5b4cb59630824347ed0b78f59e2f5732b4c190bcc62dd0e0c5db6a851f3",
-      "bytes": 160280,
-      "words": 18254,
+      "sha256": "c276150272f0843b9c02f2666b69d2576cedd6a77081f14f363af37938dd4a4b",
+      "bytes": 171272,
+      "words": 18895,
       "componentBytes": {
-        "request": 6005,
-        "commonLearningRules": 16010,
+        "request": 6339,
+        "commonLearningRules": 16748,
         "goalLearningRules": 16047,
-        "externalWorkflow": 90294,
-        "schema": 30806,
+        "externalWorkflow": 94033,
+        "schema": 36987,
         "assembly": 1118
       }
     },
     "copy-prompt-assignment.md": {
-      "sha256": "620056b27e069e7907e3d5636a01aa5880857d016858472ea1027e73b59bf925",
-      "bytes": 152623,
-      "words": 17217,
+      "sha256": "34b153c74c89ba7717f2d8ffd402a086cb7679541421527459b4332eb55bcc27",
+      "bytes": 163615,
+      "words": 17858,
       "componentBytes": {
-        "request": 6005,
-        "commonLearningRules": 16010,
+        "request": 6339,
+        "commonLearningRules": 16748,
         "goalLearningRules": 8390,
-        "externalWorkflow": 90294,
-        "schema": 30806,
+        "externalWorkflow": 94033,
+        "schema": 36987,
         "assembly": 1118
       }
     }
@@ -185,6 +185,7 @@
   "examFidelityIncrement": "Beta25 matches item length, representation reading, objective coverage, arithmetic, option counts, select-all difficulty and syllabus cumulative scope in Assessment mocks. Course evidence sets proportions; schemas and modes unchanged.",
   "plainHeadingsIncrement": "Beta26 limits the derived-objective prefix to mastery-objective labels, keeps section titles and other headings plain, and gives source gaps student-facing titles while administrative narration stays in the companion message. No schema or runtime changes.",
   "qualityStatus": "Draft; structural checks and invented fixtures cannot establish learning quality or count as manual course trials.",
+  "groupedTermGuideIncrement": "Beta29 adds the approved grouped-term Review order, formal exam vocabulary, explained figures, structured definitions, semantic callouts, linked toned maps, objective chips and combined-lesson synthesis. Practice stays separate. Existing notebook schemas remain accepted; no flashcard prompt changes.",
   "readerSchemas": {
     "notebook-package.schema.json": {
       "path": "premed-hq-documentation/specifications/generation/portable-notebooks/notebook-package.schema.json",
@@ -196,15 +197,15 @@
     },
     "notebook-package-v4.schema.json": {
       "path": "premed-hq-documentation/specifications/generation/portable-notebooks/notebook-package-v4.schema.json",
-      "sha256": "aae31d034e109e8ac4d64cbe2fba0bdb41068b76b5f5c2ddbeb9a4595095ca35"
+      "sha256": "dc8e10c2cd73626f3049da70cf6239e8de414497116f9eed9c01aae2c1d5f32c"
     }
   },
   "promptSchema": {
     "path": "premed-hq-documentation/specifications/generation/portable-notebooks/notebook-prompt-v4.schema.json",
     "outputFile": "notebook-prompt-v4.schema.json",
-    "sha256": "aae31d034e109e8ac4d64cbe2fba0bdb41068b76b5f5c2ddbeb9a4595095ca35",
-    "embeddedSha256": "9418a41430fa4c13b7bea389dd4db99e643e96e6b6c4559a651b458a3c298228",
+    "sha256": "dc8e10c2cd73626f3049da70cf6239e8de414497116f9eed9c01aae2c1d5f32c",
+    "embeddedSha256": "e55e48b05806d460cfe3e76dd017a1c9609781dab5b223b47ebfbef13b89a678",
     "serialization": "sha256 hashes raw file bytes; embeddedSha256 hashes UTF-8 JSON serialized with ensure_ascii=False and separators=(comma, colon), without a trailing newline.",
-    "relationship": "Prompt and installed v4 reader schemas match, including optional paragraph/bullets more. Beta27 completes the reading-detail authoring contract; no reader, storage or cloud schema change."
+    "relationship": "Prompt and installed v4 reader schemas match, including optional reading-detail and grouped-term guide fields. Beta29 adds opt-in v4 reader/authoring fields while preserving legacy notebooks; no storage or cloud schema change."
   }
 }

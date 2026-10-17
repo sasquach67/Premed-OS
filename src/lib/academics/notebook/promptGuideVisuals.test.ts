@@ -47,7 +47,7 @@ describe('figures in guide source contract through the app composer', () => {
   for (const goal of ['review', 'assessment', 'assignment'] as const) {
     it.each(['new', 'update'] as const)(`${goal} %s includes the approved visual instructions`, mode => {
       const prompt = composeNotebookPrompt(goal, values, mode)
-      expect(prompt).toContain('notebook-instructions-beta-28')
+      expect(prompt).toContain('notebook-instructions-beta-29')
       expect(prompt).toContain('Show source visuals where they are taught.')
       expect(prompt).toContain('using the supplied pixels and a faithful caption; use the answer-neutral version when the original would reveal a practice answer.')
       expect(prompt).toContain('Practice may reuse the same asset: a figure used in Practice still appears in the guide section that teaches it.')

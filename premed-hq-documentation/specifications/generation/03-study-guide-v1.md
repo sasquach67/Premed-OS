@@ -230,4 +230,39 @@ External notebooks compose this guide's learning rules with the shared source co
 
 ### Explanation depth and language
 
-A guide teaches the explanation the learner needs, rather than merely listing tasks to perform. Start with the course term and its plain meaning, explain the supported steps or relationships, and connect an example to the feature that makes it illustrate the concept. For a comparison, name what varies: what consciousness contains versus what it does is more useful than a heading saying only “two schools.” A source-supported explanation may need several sentences; cut repeated wording, not the steps that make it understandable. A short task belongs in the Mastery Map; its substantive explanation belongs in the guide. Evidence evaluation is itself a main learning task when the topic calls for it. Otherwise, keep a concise uncertainty or likely error beside the relevant content without letting it replace the concept being taught.
+A guide teaches the explanation the learner needs, rather than merely listing tasks to perform. Use formal exam vocabulary with a clear definition, explain the supported steps or relationships, and connect an example to the feature that makes it illustrate the concept. For a comparison, name what varies: what consciousness contains versus what it does is more useful than a heading saying only “two schools.” A source-supported explanation may need several sentences; cut repeated wording, not the steps that make it understandable. A short task belongs in the Mastery Map; its substantive explanation belongs in the guide. Evidence evaluation is itself a main learning task when the topic calls for it. Otherwise, keep a concise uncertainty or likely error beside the relevant content without letting it replace the concept being taught.
+
+
+### Grouped-term Review guide — approved October 17, 2026
+
+For external Review notebooks, the grouped-term contract in EC-GROUPED-GUIDE
+supersedes the legacy fixed section skeleton and SG-GENERATED-APPLICATION's
+embedded question/answer panels. Practice belongs exclusively in Practice.
+Keep the coverage, source fidelity and explanatory depth of the rules above.
+
+Use plain topic headings such as “Cell-cycle control,” never instruction verbs
+such as “Predict mutations by following…”. Each teaching section follows:
+**The question → group map → defined terms → numbered mechanisms, tables and
+explained figures in branch order → adjacent lecture examples → If you remember
+one thing.** The question uses exam register. The map categorizes every defined
+term and shows categories, members and their relationships before the details.
+Name a term's group at its first definition. One paragraph develops one idea.
+
+Keep the course's formal vocabulary: loss-of-function, gain-of-function,
+phosphorylates, hydrophobic, proliferation, constitutively active, homozygous
+and heterozygous where appropriate. Define unfamiliar terms without replacing
+them with casual stand-ins such as “gene breaks,” “stuck on” or “fat-loving.”
+Remove hedge tails unless the qualification is scientifically necessary; use
+few parentheses and omit meta wording such as “this entry” and “in this lesson.”
+Preserve exact source quotations and official objective wording in their records.
+
+A mechanism uses numbered steps with the complete cause-and-effect chain,
+followed by the lecture example. For example, where supported: cyclin binds
+Cdk; Cdk is phosphorylated; the complex phosphorylates its target; the cell
+advances; cyclin is degraded. Then explain the Rb example. Follow the actual
+course mechanism rather than imposing these example steps on another process.
+
+Use one notebook when the requested lessons build on one another. Open with a
+big-picture map connecting the lessons and close with “Tie it together,” which
+integrates their pathways and explains where the connections matter. This does
+not authorize adding unrelated lessons or silently expanding selected scope.
