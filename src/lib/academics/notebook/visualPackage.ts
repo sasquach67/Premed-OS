@@ -120,6 +120,22 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
         }
       }
     }
+    const definitions = new Map<string, string>()
+    for (const section of e.sections) {
+      for (const id of section.learningObjectiveIds ?? []) if (!e.objectives.some(o => o.id === id)) fail(path, 'Learning objectives must belong to this entry.')
+      for (const block of section.blocks) {
+        for (const term of block.definedTerms ?? []) {
+          const key = term.term.trim().toLocaleLowerCase()
+          if (definitions.has(key) && definitions.get(key) !== term.definition) fail(path, `Use the same definition for ${term.term} throughout the entry.`)
+          definitions.set(key, term.definition)
+        }
+        if (block.type === 'bullets') {
+          unique((block.nestedItems ?? []).map(item => String(item.parentIndex)), path)
+          for (const item of block.nestedItems ?? []) if (item.parentIndex >= block.items.length) fail(path, 'Nested bullets must reference an existing parent item.')
+        }
+        if (block.type === 'study-diagram') for (const node of block.nodes) if (node.targetBlockId && !section.blocks.some(b => b.id === node.targetBlockId)) fail(path, 'Map targets must reference a block in the same section.')
+      }
+    }
     for (const b of blocks.values()) if (b.type === 'practice' || b.type === 'worked-example') {
       unique(b.stimulusBlockIds ?? [], path)
       const neutral = p.version === 4 ? ['paragraph', 'table', 'figure', 'study-diagram', 'annotated-figure'] : ['paragraph', 'table', 'figure', 'study-diagram']

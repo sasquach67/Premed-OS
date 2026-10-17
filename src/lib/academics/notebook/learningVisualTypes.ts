@@ -1,8 +1,8 @@
-import type { Evidence } from './types'
+import type { Evidence, NotebookStudyMetadata } from './types'
 
 export type LearningEvidence = Evidence & { assetIds: string[] }
 export type LearningItem = Evidence & { id: string }
-type LearningIdentity = LearningItem & { title: string; provenance: 'source' | 'clarification' | 'background' | 'generated-practice' | 'student-work' }
+type LearningIdentity = LearningItem & NotebookStudyMetadata & { title: string; provenance: 'source' | 'clarification' | 'background' | 'generated-practice' | 'student-work' }
 export type LearningAxis = { mode: 'ordinal' | 'numeric'; unit: string | null; minimum: number | null; maximum: number | null }
 export type LearningAnnotation = LearningItem & { label: string; x: number; y: number; positionBasis: string }
 export type AnnotatedFigureBlock = LearningIdentity & {

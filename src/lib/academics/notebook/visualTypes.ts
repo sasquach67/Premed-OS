@@ -1,4 +1,4 @@
-import type { Evidence, ImportedNotebook, NotebookBlock, NotebookEntry, NotebookHistoryVersion, NotebookPackage, NotebookUpdateSession } from './types'
+import type { Evidence, ImportedNotebook, NotebookBlock, NotebookEntry, NotebookHistoryVersion, NotebookPackage, NotebookStudyMetadata, NotebookUpdateSession } from './types'
 
 export type VisualEvidence = Evidence & { assetIds?: string[] }
 export type NotebookAsset = {
@@ -33,13 +33,14 @@ export type NotebookVisualReview = {
     changedFrom: string | null
   }[]
 }
-export type NotebookDiagramNode = VisualEvidence & { id: string; label: string; assetIds: string[] }
+export type NotebookDiagramTone = 'stimulatory' | 'inhibitory' | 'external' | 'checkpoint' | 'neutral'
+export type NotebookDiagramNode = VisualEvidence & { tone?: NotebookDiagramTone; targetBlockId?: string; id: string; label: string; assetIds: string[] }
 export type NotebookDiagramEdge = NotebookDiagramNode & {
   from: string
   to: string
   relation: 'sequence' | 'association' | 'contains' | 'causes' | 'inhibits' | 'other'
 }
-type VisualBlockIdentity = { id: string; provenance: 'source' | 'clarification' | 'background' | 'generated-practice' | 'student-work' }
+type VisualBlockIdentity = NotebookStudyMetadata & { id: string; provenance: 'source' | 'clarification' | 'background' | 'generated-practice' | 'student-work' }
 export type NotebookFigureBlock = VisualEvidence & VisualBlockIdentity & {
   type: 'figure'; assetId: string; caption: string | null; alt: string; context: string
 }
