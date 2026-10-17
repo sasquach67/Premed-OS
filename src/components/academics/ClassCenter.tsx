@@ -1069,7 +1069,6 @@ function ClassCenterDashboard({
             <section aria-label="What this sets up" className="academics-empty-setup">
               <div className="academics-empty-setup-header">
                 <p className="academics-empty-setup-title">What this sets up</p>
-                <p className="academics-empty-setup-subtitle">one import, then you stay in control</p>
               </div>
               <div className="academics-empty-setup-list">
                 {([
@@ -1083,7 +1082,10 @@ function ClassCenterDashboard({
                     </span>
                     <div>
                       <p className="academics-empty-setup-row-title">{title}</p>
-                      <p className="academics-empty-setup-row-detail">{detail}</p>
+                      <details className="academics-empty-setup-row-detail">
+                        <summary className="cursor-pointer font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Learn more about ${title.toLowerCase()}`}>Learn more</summary>
+                        <p>{detail}</p>
+                      </details>
                     </div>
                   </div>
                 ))}
@@ -2354,7 +2356,7 @@ function LectureJournalPanel({ data, classes }: { data: ClassCenterViewData; cla
       <div className="flex items-end justify-between gap-3">
         <p className="font-display text-3xl font-bold tabular-nums">{lectures.length}<span className="ml-1 text-sm text-muted-foreground">captured</span></p>
       </div>
-      <p className="mt-2 text-xs font-bold text-muted-foreground">lecture records added in the last four weeks</p>
+      <p className="mt-2 text-xs font-bold text-muted-foreground">Added: past four weeks</p>
       <div className="mt-4 grid grid-cols-7 gap-1.5" aria-label="Lecture captures per day for the last four weeks">
         {days.map((day) => (
           <span

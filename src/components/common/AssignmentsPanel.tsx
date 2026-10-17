@@ -522,7 +522,7 @@ export function AssignmentsPanel({
       title="Add a class before an assignment"
       actions={<Button size="sm" asChild><Link to="/academics?mode=daily&tab=class-center&importFor=new"><Plus className="size-4" /> Import a syllabus</Link></Button>}
     >
-      Assignments are coursework commitments, so each one needs a real class. Start with the syllabus you already have, or add the class manually from Class Center.
+      Add a class from its syllabus or enter it manually.
     </MascotNote>
   }
 
@@ -1312,7 +1312,12 @@ function ProjectedWorkload({
           <div className="flex flex-wrap gap-3 border-t border-border pt-3 text-xs font-semibold text-muted-foreground">
             {relevantCourses.map((course) => <span key={course.id} className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-full" style={{ backgroundColor: courseColor(course.id, courses) }} />{course.code}</span>)}
           </div>
-          <PaceProjectionLine id="academics.assignments.workload" insufficientLabel={recommendation} />
+          <PaceProjectionLine id="academics.assignments.workload" insufficientLabel={weighted.length > 0 && heavy.length >= 2 ? (
+            <details>
+              <summary className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Planning tip</summary>
+              <p>{recommendation}</p>
+            </details>
+          ) : recommendation} />
         </div>
       )}
     </section>

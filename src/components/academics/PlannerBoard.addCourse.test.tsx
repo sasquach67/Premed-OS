@@ -397,7 +397,7 @@ describe('Planner reviewed Add course entry', () => {
 
     expect(useStore.getState().courses).toHaveLength(1)
     expect(useStore.getState().courses[0]).toMatchObject({ code: 'HIST 101', title: 'World History', credits: 3, term: 'Fall 2026', status: 'planned', inResidence: true })
-    expect(container.textContent).not.toContain('Give the empty plan a starting point.')
+    expect(container.textContent).not.toContain('Start with one course.')
     expect(container.querySelector('[aria-label="Academic planner"]')).toBeTruthy()
     expect(container.textContent).toContain('HIST 101')
   })

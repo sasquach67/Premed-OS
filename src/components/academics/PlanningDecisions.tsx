@@ -44,9 +44,7 @@ export function PlanningDecisions() {
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <section className={cn(CARD, 'p-4')}>
         <p className={EYEBROW}>Relative course timing</p>
-        <h3 className="mt-0.5 font-display text-base font-extrabold">
-          What this sequence could ask you to revisit later.
-        </h3>
+        <details className="mt-0.5 text-xs font-bold text-muted-foreground"><summary>Learn more</summary><p>What this sequence could ask you to revisit later.</p></details>
         <p className="mt-0.5 text-xs font-bold text-muted-foreground">
           Order uses course timing and MCAT content share. It is not a retention prediction and it is not a score.
         </p>
@@ -85,11 +83,7 @@ export function PlanningDecisions() {
 
       <aside className={cn(CARD, 'h-fit p-4')}>
         <p className={EYEBROW}>Advisor snapshot · prepared, not official</p>
-        <h3 className="mt-0.5 font-display text-sm font-extrabold">Bring your plan to the meeting.</h3>
-        <p className="mt-1 text-[11.5px] font-bold text-muted-foreground">
-          Every assumption and source boundary stays visible to the next person who reviews it.
-          Open requirements are listed by name, never hidden behind a count.
-        </p>
+        <details className="mt-1 text-[11.5px] font-bold text-muted-foreground"><summary>Learn more</summary><p>Every assumption and source boundary stays visible to the next person who reviews it. Open requirements are listed by name, never hidden behind a count.</p></details>
         <Button
           size="sm" className="mt-3"
           onClick={() => {
@@ -152,7 +146,6 @@ function PlanComparison() {
   return (
     <section className={cn(CARD, 'p-4')}>
       <p className={EYEBROW}>Saved plan comparison</p>
-      <h3 className="mt-0.5 font-display text-base font-extrabold">See the choice side by side.</h3>
       <p className="mt-0.5 text-xs font-bold text-muted-foreground">
         Neither plan is marked as the better one. Restore the one that fits your actual decision.
       </p>

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Eye, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStore } from '@/store/store'
@@ -13,7 +14,7 @@ export function PaceProjectionLine({
   rate?: string | null
   outcome?: string | null
   date?: string | null
-  insufficientLabel?: string
+  insufficientLabel?: ReactNode
 }) {
   const dismissed = useStore((state) => Boolean(state.settings.projectionDismissals[id]))
   const update = useStore((state) => state.update)
@@ -34,11 +35,11 @@ export function PaceProjectionLine({
 
   return (
     <div className="flex items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2 text-xs">
-      <p className="min-w-0 flex-1 font-semibold text-muted-foreground">
+      <div className="min-w-0 flex-1 font-semibold text-muted-foreground">
         {rate && outcome && date
           ? <><span className="font-extrabold text-foreground">At {rate}</span> → {outcome} by <span className="font-extrabold text-foreground">{date}</span></>
           : insufficientLabel}
-      </p>
+      </div>
       <Button
         type="button"
         size="icon"

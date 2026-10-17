@@ -163,3 +163,17 @@ it('reviews and imports guidance and reference notes together without activating
   expect(matchingGuideNotes(notes, { courseId }).map(note => note.title)).toEqual(['Design controls.'])
   expect(container.textContent).toContain('Added 2 entries to your Guide.')
 })
+
+it('keeps the effects and preservation promises available when optional Guide instructions are closed', () => {
+  expect(container.textContent).toContain('Study guidance shapes future notebooks and flashcards.')
+  for (const [label, protectedCopy] of [
+    ['Import a compiled Guide', 'Review imported guidance and reference notes; your existing notes stay saved.'],
+    ['Paste rough notes', 'Review and edit headlines before saving; your original text stays attached.'],
+    ['Suggestions from lectures', 'Only suggestions you accept guide your materials.'],
+  ]) {
+    const disclosure = [...container.querySelectorAll<HTMLDetailsElement>('details')].find(item => item.querySelector('summary')?.textContent?.startsWith(label))
+    expect(disclosure).toBeTruthy()
+    expect(disclosure!.open).toBe(false)
+    expect(disclosure!.textContent).toContain(protectedCopy)
+  }
+})

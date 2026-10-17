@@ -44,9 +44,7 @@ export function MaterialCatalog({ files, onAdd }: {
           <div>
             <p className={EYEBROW}>Course shelf</p>
             <h3 className="mt-0.5 font-display text-base font-extrabold">Material, with its provenance</h3>
-            <p className="mt-0.5 text-xs font-bold text-muted-foreground">
-              Only material you added is here. Origin is visible before anything becomes part of a study plan.
-            </p>
+            <details className="mt-0.5 text-xs font-bold text-muted-foreground"><summary className="cursor-pointer">About sources</summary><p>Only material you added is here. Origin is visible before anything becomes part of a study plan.</p></details>
           </div>
           <span className="shrink-0 rounded-lg border border-border bg-muted px-2 py-1 font-display text-[10.5px] font-extrabold text-muted-foreground">
             {entries.length} {entries.length === 1 ? 'material' : 'materials'}

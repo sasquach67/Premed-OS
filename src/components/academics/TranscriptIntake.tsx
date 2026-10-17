@@ -205,7 +205,7 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
         {needing > 0 ? ` · ${needing} need${needing === 1 ? 's' : ''} a decision` : ''}
       </h3>
       <p className="grades-transcript-copy">
-        Every field stays editable. Correct anything the file got wrong, then save only the lines you keep.
+        Edit any field, then save only the records you keep.
       </p>
       {rows.map((row) => {
         const duplicate = isDuplicateOf(row, existing)
@@ -301,7 +301,7 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
     </div>
     <div className="grades-intake-note" data-unconfigured="true">
       <b>Email a transcript</b><span className="grades-intake-chip">Not configured</span><br />
-      No mail processor is connected, so this route is unavailable rather than pretending to accept a message.
+      Email import is not connected.
     </div>
     <p className="grades-transcript-copy mt-3 flex items-center gap-1">
       <FileText className="size-3.5" aria-hidden="true" />
