@@ -18,7 +18,7 @@ import { collectReaderAnnotations, collectReaderEvidence, notebookReaderContents
 import { ReadingContents } from './ReadingContents'
 import { scrollGuideHeadingIntoReadingPane } from './lectureGuideNavigation'
 import { NotebookAssetsProvider, NotebookPracticeStimulus, NotebookVisualBlock, NotebookVisualReview, useNotebookPracticeImages } from './NotebookVisuals'
-import { NotebookPortableExports, NotebookUpdateImageFiles } from './NotebookPortableExports'
+import { NotebookPortableExports } from './NotebookPortableExports'
 import { NotebookIllustration } from './NotebookIllustration'
 import { useNotebookReadingDetail, type NotebookReadingDetail } from './useNotebookReadingDetail'
 import { assertNotebookBackupFits } from '@/lib/academics/notebook/notebookBundle'
@@ -268,7 +268,7 @@ function ValidatedExternalNotebookView({ lecture, courseCode, onNavigateEntry }:
     } catch (error) { setMessage((error as Error).message) }
   }
   const staleUpdate = Boolean(n.updateSession && canonical(n.updateSession.baseline) !== notebookContentKey(n))
-  if (updating && n.updateSession) return <section className="external-notebook" aria-label="Update saved notebook"><div className="en-actions"><Button variant="outline" onClick={() => { setUpdating(false); setMode('study') }}>Back to saved entry</Button><Button variant="ghost" onClick={() => startUpdate(true)}>Restart from latest saved entry</Button></div><p className="en-muted">Restart only when you need a newer baseline. Keep any unfinished prompt or proposal first; it starts a fresh update draft, not a new notebook.</p><p role="status">{message}</p><NotebookUpdateImageFiles lecture={lecture} revision={n.updateSession} disabled={staleUpdate} /><ExternalNotebookWorkflow key={n.updateSession.id} courseId={lecture.courseId} revision={n.updateSession} baselineFresh={!staleUpdate} onImported={id => { setUpdating(false); setMode('study'); setMessage(id === lecture.id ? 'Notebook update saved. Previous versions remain in history.' : 'Separate entry saved. The original notebook remains unchanged.'); onNavigateEntry?.(id) }} /></section>
+  if (updating && n.updateSession) return <section className="external-notebook" aria-label="Update saved notebook"><div className="en-actions"><Button variant="outline" onClick={() => { setUpdating(false); setMode('study') }}>Back to saved entry</Button><Button variant="ghost" onClick={() => startUpdate(true)}>Restart from latest saved entry</Button></div><p className="en-muted">Restart only when you need a newer baseline. Keep any unfinished prompt or proposal first; it starts a fresh update draft, not a new notebook.</p><p role="status">{message}</p><ExternalNotebookWorkflow key={n.updateSession.id} courseId={lecture.courseId} revision={n.updateSession} baselineFresh={!staleUpdate} onImported={id => { setUpdating(false); setMode('study'); setMessage(id === lecture.id ? 'Notebook update saved. Previous versions remain in history.' : 'Separate entry saved. The original notebook remains unchanged.'); onNavigateEntry?.(id) }} /></section>
   const restoreVersionPreview = restore ? n.history?.find(v => v.id === restore.id) : undefined
   const entry = n.current.entries.find(entry => entry.id === n.entryId)!
   const practiceCount = entry.sections.flatMap(section => section.blocks).filter(block => block.type === 'practice').length
