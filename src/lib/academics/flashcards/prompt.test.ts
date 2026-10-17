@@ -15,7 +15,7 @@ function lecture(): LectureRecord {
 describe('flashcard prompt handoff', () => {
   it('copies the pending October 16l prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-16l — biology concepts and mechanisms only, target 20–30 reviews and no passage drills; PSYC lecture examples retained.')
+    expect(prompt).toContain('Prompt revision: 2026-10-16m — no card-count target for any subject; biology concepts and mechanisms only with no passage drills; PSYC lecture examples retained.')
     expect(prompt).toContain('A standalone headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -96,9 +96,8 @@ describe('flashcard prompt handoff', () => {
       'one checkable one-sentence answer',
       'A connecting card REPLACES a plain cloze testing the same fact',
       'senescence versus apoptosis, or expression versus enzyme activity',
-      'Target about 20–30 actual review cards per biology lecture',
-      'The builder warns above 35 active review cards',
-      'subject="biology"',
+      'no target card count for any subject, biology included',
+      'set the top-level subject to "biology"',
       'Apply this subject scope BEFORE building targets',
       'as explicit entries in cards.json limitations',
       'do not classify a PSYC course as biology merely because a title mentions biology',

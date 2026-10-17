@@ -1,4 +1,4 @@
-"""Biology size is an explicit-subject advisory measured in active review cards."""
+"""Biology decks have no card-count target or size warning; subject is an explicit closed enum."""
 import copy
 import json
 from pathlib import Path
@@ -35,30 +35,13 @@ def size_warnings(data):
 
 
 class BiologyChecks(unittest.TestCase):
-    def test_35_active_review_cards_do_not_warn(self):
-        self.assertEqual(size_warnings(biology_fixture(35)), [])
+    def test_no_size_warning_at_any_count(self):
+        for count in (20, 36, 80):
+            with self.subTest(count=count):
+                self.assertEqual(size_warnings(biology_fixture(count)), [])
 
-    def test_36_active_review_cards_warn_without_failing(self):
-        warnings = size_warnings(biology_fixture(36))
-        self.assertEqual(len(warnings), 1)
-        for phrase in ('36 active review cards', '20–30', 'Report why', 'advisory'):
-            self.assertIn(phrase, warnings[0])
-
-    def test_cloze_indices_count_reviews_not_notes(self):
-        data = biology_fixture(18, two_blank=True)
-        self.assertEqual(len(data['cards']), 18)
-        self.assertIn('36 active review cards', size_warnings(data)[0])
-        data['cards'][0]['cloze'] = data['cards'][0]['cloze'].replace('c2::', 'c1::')
-        data['cards'][0]['clozePattern'] = 'single'
-        self.assertEqual(size_warnings(data), [])
-
-    def test_other_and_legacy_inputs_do_not_infer_biology_from_titles(self):
-        data = biology_fixture(36)
-        data.update(deckName='PSYC Biological Bases', journalTitle='Biology and behavior')
-        data['subject'] = 'other'
-        self.assertEqual(size_warnings(data), [])
-        del data['subject']
-        self.assertEqual(size_warnings(data), [])
+    def test_two_blank_notes_never_trigger_a_size_warning(self):
+        self.assertEqual(size_warnings(biology_fixture(30, two_blank=True)), [])
 
     def test_subject_is_a_closed_enum(self):
         data = biology_fixture(1)
@@ -66,27 +49,12 @@ class BiologyChecks(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'subject'):
             validate(data)
 
-    def test_size_warning_is_saved_in_build_report(self):
+    def test_build_report_still_counts_active_reviews(self):
         data = biology_fixture(36)
         with tempfile.TemporaryDirectory() as temp:
             out = Path(temp) / 'biology.apkg'
-            report = build(data, out)
+            build(data, out)
             saved = json.loads(out.with_suffix('.build-report.json').read_text())
-            self.assertEqual(saved['warnings'], report['warnings'])
             self.assertEqual(saved['activeReviewCards'], 36)
-            self.assertTrue(any('36 active review cards' in warning for warning in saved['warnings']))
+            self.assertFalse(any(w.startswith('Biology deck has ') for w in saved['warnings']))
             self.assertTrue(out.is_file())
-
-    def test_retired_notes_do_not_count_toward_active_size_advisory(self):
-        initial_data = biology_fixture(36)
-        with tempfile.TemporaryDirectory() as temp:
-            work = Path(temp)
-            initial = build(initial_data, work / 'initial.apkg')
-            updated = biology_fixture(35)
-            for card, record in zip(updated['cards'], initial['records']):
-                card['reuseGuid'] = record['guid']
-            final = build(updated, work / 'updated.apkg', work / 'initial.apkg')
-            self.assertEqual(final['activeReviewCards'], 35)
-            self.assertEqual(final['reviewCards'], 36)
-            self.assertEqual(final['retiredNotes'], 1)
-            self.assertFalse(any(w.startswith('Biology deck has ') for w in final['warnings']))
