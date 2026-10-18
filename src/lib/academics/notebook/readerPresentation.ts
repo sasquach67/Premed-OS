@@ -1,6 +1,6 @@
 import type { NotebookBlock, NotebookPackage } from './types'
 
-export type NotebookReadingMode = 'all' | 'study' | 'practice' | 'coverage' | 'sources'
+export type NotebookReadingMode = 'all' | 'study' | 'mastery' | 'practice' | 'coverage' | 'sources'
 export type ReaderAnnotation = { text: string; kind: 'citation' | 'limit'; displayText?: string }
 const escapePattern = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const referenceLabel = /^(?:sources?(?: synthesis)?(?: and clarification)?|student-source explanation(?: and clarification)?|student work(?: and (?:correction|evidence limit))?|student response and evidence tension|instructor (?:emphasis|explanation)|clarification(?: and source paraphrase)?|source illustration|evidence limit)(?:\s*:\s*|\s+(?:of|from|integrating)\s+)/i
@@ -101,7 +101,7 @@ export function notebookReaderContents(pkg: NotebookPackage, entryId: string | u
     items.push({ id: targetId, targetId, title })
   }
   for (const entry of pkg.entries.filter(entry => !entryId || entry.id === entryId)) {
-    if ((mode === 'practice' || mode === 'all') && entry.objectives.length) add(entry.id, 'objectives', 'Mastery objectives')
+    if ((mode === 'mastery' || mode === 'all') && entry.objectives.length) add(entry.id, 'objectives', 'Mastery objectives')
     for (const section of entry.sections) if (readerBlocks(section.blocks, mode, section.purpose).length) add(entry.id, 'section', section.title, section.id)
     if ((mode === 'coverage' || mode === 'all' || mode === 'study') && entry.limitations.length) add(entry.id, 'limits', 'Limits of this entry')
     if (mode === 'coverage' || mode === 'all' || mode === 'study') add(entry.id, 'coverage', "What's covered and missing")

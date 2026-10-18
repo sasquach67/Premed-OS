@@ -28,6 +28,7 @@ import { isLearningVisualBlock } from '@/lib/academics/notebook/learningVisualTy
 import { NotebookPracticeCard } from './NotebookPracticeCard'
 import { practicePromptDisplay } from './notebookPracticePrompt'
 import { NotebookCallout, NotebookGlossary, NotebookInlineText, NotebookSummary, NotebookTermsProvider, ProfessorStressed, printNotebookSummary, guideTerms, isGroupedGuide, sectionPracticeIds, useGuideBlockId } from './NotebookStudyGuide'
+import { NotebookMasteryObjectives } from './NotebookMasteryObjectives'
 import './externalNotebook.css'
 import './notebookVisuals.css'
 import './notebookPractice.css'
@@ -160,27 +161,7 @@ function ReaderSection({ section, index, entryIndex, mode, reader, headingId, ch
   </section>
 }
 function NotebookObjectives({ entry, entryIndex, headingId, pkg, change }: { entry: NotebookEntry; entryIndex: number; headingId?: string; pkg: NotebookPackage; change?: ChangeText }) {
-  const ei = entryIndex
-  const text = (value: string, path: (string | number)[], label: string) => <ContentText value={value} path={path} label={label} change={change} />
-  return <section aria-label="Mastery objectives" className="nbr-objectives">
-    <h3 id={headingId} tabIndex={headingId ? -1 : undefined}>Mastery objectives</h3>
-    <ol className="nbr-objective-list">{entry.objectives.map((o, oi) => {
-      const requirement = entry.requirements.find(r => r.id === o.requirementId)?.text
-      const heading = !change && o.origin === 'derived' ? o.title.replace(/^Study objective:\s*/, '') || o.title : o.title
-      return <li className="nbr-objective" key={o.id}>
-        <header className="nbr-objective-head"><span className="nbr-objective-number" aria-hidden="true">{String(oi + 1).padStart(2, '0')}</span><div><h4 className="nbr-objective-title">{heading}</h4><span className="nbr-objective-origin">{o.origin === 'official' ? 'Course objective' : 'Derived study objective'}</span></div></header>
-        <div className="nbr-objective-body">
-          {change && text(o.title, ['entries', ei, 'objectives', oi, 'title'], 'Objective title')}
-          {requirement && requirement !== o.title && <p className="nbr-objective-requirement">Requirement: {requirement}</p>}
-          {o.freeRecallCues.length > 0 && <div className="nbr-objective-recall"><h5>Try recalling first</h5>{o.freeRecallCues.map((cue, i) => <div key={i}>{text(cue, ['entries', ei, 'objectives', oi, 'freeRecallCues', i], 'Recall cue')}</div>)}</div>}
-          <div className="nbr-objective-columns">{(['understand', 'beAbleToDo'] as const).map(key => o[key].length > 0 && <div className={`nbr-objective-${key}`} key={key}><h5>{key === 'understand' ? 'Understand' : 'Be able to do'}</h5><ul>{o[key].map((item, i) => <li key={i}>{text(item, ['entries', ei, 'objectives', oi, key, i], key)}</li>)}</ul></div>)}</div>
-          {o.watchFor.length > 0 && <div className="nbr-objective-caution"><h5>Watch for</h5>{o.watchFor.map((item, i) => <div key={i}>{text(item, ['entries', ei, 'objectives', oi, 'watchFor', i], 'watchFor')}</div>)}</div>}
-          {o.evidenceLimit !== null && <div className="nbr-objective-limit"><h5>Evidence limit</h5>{text(o.evidenceLimit, ['entries', ei, 'objectives', oi, 'evidenceLimit'], 'Evidence limit')}</div>}
-          <EvidenceView evidence={o} pkg={pkg} />
-        </div>
-      </li>
-    })}</ol>
-  </section>
+  return <NotebookMasteryObjectives entry={entry} entryIndex={entryIndex} headingId={headingId} renderEvidence={objective => <EvidenceView evidence={objective} pkg={pkg} />} renderText={change ? (value, path, label) => <ContentText value={value} path={path} label={label} change={change} /> : undefined} />
 }
 function NotebookPackageContent({ pkg, entryId, change, progress, onProgress, mode = 'all', reader = false, practiceFilter, onCheckPractice, summary = false }: { practiceFilter?: string[]; onCheckPractice?: (ids: string[]) => void; summary?: boolean; pkg: NotebookPackage; entryId?: string; change?: ChangeText; progress?: NotebookProgress; onProgress?: (id: string, response: string, complete: boolean) => void; mode?: ReadingMode; reader?: boolean }) {
   const prefix = useId()
@@ -196,7 +177,7 @@ function NotebookPackageContent({ pkg, entryId, change, progress, onProgress, mo
       {!reader && <><h2>{change ? text(entry.title, ['entries', ei, 'title'], 'Entry title') : entry.title}</h2><p className="en-muted">{entry.goal} / Revision {entry.revision}{entry.baseRevision ? ` / Based on revision ${entry.baseRevision}` : ''}</p>
       <h3>Scope</h3>{text(entry.scope, ['entries', ei, 'scope'], 'Entry scope')}
       <details><summary>Request and class preferences</summary>{Object.entries(entry.request).map(([key, value]) => value !== null && <div key={key}><b>{key === 'helpStage' ? 'Help stage' : key === 'assessmentFormat' ? 'Assessment format' : 'Class preferences'}</b>{text(value, ['entries', ei, 'request', key], key)}</div>)}</details></>}
-      {reader && (mode === 'all' || mode === 'practice') && entry.objectives.length > 0 && <NotebookObjectives entry={practiceFilter ? { ...entry, objectives: entry.objectives.filter(objective => objective.practiceBlockIds.some(id => practiceFilter.includes(id))) } : entry} entryIndex={ei} headingId={readerHeadingId(prefix, entry.id, 'objectives')} pkg={pkg} change={change} />}
+      {reader && (mode === 'all' || mode === 'mastery') && entry.objectives.length > 0 && <NotebookObjectives entry={practiceFilter ? { ...entry, objectives: entry.objectives.filter(objective => objective.practiceBlockIds.some(id => practiceFilter.includes(id))) } : entry} entryIndex={ei} headingId={readerHeadingId(prefix, entry.id, 'objectives')} pkg={pkg} change={change} />}
       {!change && (mode === 'practice' || mode === 'all') && entry.sections.some(section => section.blocks.some(block => block.type === 'practice')) && <p className="np-set-cue">Answer each question in your head first, then reveal.</p>}
       {summary ? <NotebookSummary entry={entry} renderMap={block => <NotebookVisualBlock block={block} />} /> : entry.sections.map((section, si) => <ReaderSection key={`${section.id}-${mode}`} section={mode === 'practice' && practiceFilter ? { ...section, blocks: section.blocks.filter(block => block.type !== 'practice' || practiceFilter.includes(block.id)) } : section} index={si} entryIndex={ei} mode={mode} reader={reader} readingDetail={detail} onCheckPractice={onCheckPractice} headingId={readerHeadingId(prefix, entry.id, 'section', section.id)} change={change} pkg={pkg} progress={progress} onProgress={onProgress} />)}
       {!summary && reader && (mode === 'study' || mode === 'all') && <NotebookGlossary entry={entry} headingId={readerHeadingId(prefix, entry.id, 'glossary')} />}
@@ -298,7 +279,7 @@ function ValidatedExternalNotebookView({ lecture, courseCode, onNavigateEntry }:
     </div></details>
     {draft && <div className="en-notice"><b>Editing your copy</b><p>Exports use the last saved content. Reveal collapsed sections to edit their text.</p><p>{notebookPracticePolicy(n.current, draft, n.entryId).explanation}</p><div className="en-actions"><Button onClick={save}>Save edits</Button><Button variant="outline" onClick={() => { setDraft(null); setMode('study'); setNotes(n.notes); setNotesBase(n.notes); setMessage('Unsaved content changes discarded.') }}>Cancel edits</Button></div></div>}
     <p className={message ? 'en-reader-status' : 'sr-only'} role="status" aria-live="polite">{message}</p>
-    <nav className="en-actions nbr-views" aria-label="Notebook reading views">{(['study', 'practice', 'sources'] as const).map(view => <Button asChild key={view} variant={mode === view ? 'default' : 'outline'} aria-pressed={mode === view} data-count={view === 'practice' ? practiceCount : view === 'sources' ? n.current.sources.length : undefined} onClick={() => { setMode(view); setSummary(false); setPracticeFilter(undefined) }}><button type="button">{view === 'study' ? entry.goal === 'assessment' ? 'Assessment prep' : entry.goal === 'assignment' ? 'Assignment workspace' : 'Study guide' : view === 'practice' ? 'Practice' : 'Sources'}</button></Button>)}</nav>
+    <nav className="en-actions nbr-views" aria-label="Notebook reading views">{(['study', 'mastery', 'practice', 'sources'] as const).map(view => <Button asChild key={view} variant={mode === view ? 'default' : 'outline'} aria-pressed={mode === view} data-count={view === 'practice' ? practiceCount : view === 'sources' ? n.current.sources.length : undefined} onClick={() => { setMode(view); setSummary(false); setPracticeFilter(undefined) }}><button type="button">{view === 'study' ? entry.goal === 'assessment' ? 'Assessment prep' : entry.goal === 'assignment' ? 'Assignment workspace' : 'Study guide' : view === 'mastery' ? 'Mastery objectives' : view === 'practice' ? 'Practice' : 'Sources'}</button></Button>)}</nav>
     {isGroupedGuide(entry) && !draft && <div className="en-actions"><Button variant="outline" aria-pressed={summary} onClick={() => { setSummary(previous => !previous); setMode('study') }}>{summary ? 'Back to study guide' : 'One-page summary'}</Button>{summary && <Button variant="outline" onClick={() => void printNotebookSummary()}>Print summary</Button>}{practiceFilter && mode === 'practice' && <Button variant="ghost" onClick={() => setPracticeFilter(undefined)}>Show all practice</Button>}</div>}
     <NotebookPackageView summary={summary && !draft} practiceFilter={practiceFilter} onCheckPractice={ids => { setPracticeFilter(ids); setSummary(false); setMode('practice') }} mode={draft ? 'all' : mode} pkg={draft ?? n.current} entryId={n.entryId} change={draft ? updateText : undefined} progress={n.progress} onProgress={progress} reader={!draft} assetBindings={n.assetBindings} />
   </section>

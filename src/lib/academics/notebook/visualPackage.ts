@@ -158,6 +158,21 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
         if (!b || b.type !== 'practice') fail(path, 'Objective practice references must be practice blocks in this entry.')
         if (b!.sourceIds.some(id => !o.sourceIds.includes(id)) || b!.excerptIds.some(id => !o.excerptIds.includes(id)) || visualAssetReferences(b!).some(id => !visualAssetReferences(o).includes(id))) fail(path, 'Objective evidence must contain its practice evidence.')
       }
+      if (o.howTested) {
+        const questions = identify(o.howTested.questions, `${path}.objectives.${o.id}.howTested.questions`)
+        if (!questions.size && !o.howTested.noQuestionsReason?.trim()) fail(path, 'Explain when the supplied sources contain no actual question for this objective.')
+        if (questions.size && o.howTested.noQuestionsReason) fail(path, 'A no-questions explanation cannot accompany actual sourced questions.')
+        for (const question of questions.values()) {
+          evidence(question, true)
+          if (question.sourceIds.some(id => !o.sourceIds.includes(id)) || question.excerptIds.some(id => !o.excerptIds.includes(id)) || visualAssetReferences(question).some(id => !visualAssetReferences(o).includes(id))) fail(path, 'Objective evidence must contain its quoted question evidence.')
+          for (const id of visualAssetReferences(question)) referenced.add(id)
+        }
+        for (const skill of o.applicationSkills ?? []) {
+          unique(skill.questionIds, path)
+          if (questions.size && !skill.questionIds.length) fail(path, 'Application skills must reference the actual questions they answer.')
+          if (skill.questionIds.some(id => !questions.has(id))) fail(path, 'Application skills must reference questions in this objective.')
+        }
+      } else if (o.applicationSkills) fail(path, 'Question-linked application skills need a how-tested setup and question list.')
       for (const id of visualAssetReferences(o)) referenced.add(id)
     }
   }

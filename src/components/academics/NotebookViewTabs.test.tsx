@@ -27,7 +27,7 @@ beforeEach(() => {
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 
-it('preserves the three native view buttons, counts, selected state and saved content', async () => {
+it('preserves the four native view buttons, counts, selected state and saved content', async () => {
   const pkg = structuredClone(fixture) as NotebookPackage, original = JSON.stringify(pkg)
   const lecture = { id: 'view-tabs-demo', courseId: 'view-tabs-course', title: pkg.entries[0].title, importedNotebook: {
     entryId: pkg.entries[0].id, original: structuredClone(pkg), originalRaw: original, current: pkg, notes: '', progress: {}, history: [],
@@ -38,10 +38,10 @@ it('preserves the three native view buttons, counts, selected state and saved co
   expect(container.querySelector('.nbr-head [data-notebook-test-motion="true"]')).not.toBeNull()
   expect(nav.querySelector('[data-notebook-test-motion]')).toBeNull()
   expect(buttons.every(button => button.type === 'button')).toBe(true)
-  expect(buttons.map(button => button.textContent)).toEqual(['Study guide', 'Practice', 'Sources'])
-  expect(buttons.map(button => button.getAttribute('data-count'))).toEqual([null, String(pkg.entries[0].sections.flatMap(section => section.blocks).filter(block => block.type === 'practice').length), String(pkg.sources.length)])
-  for (const [index, view] of ['study', 'practice', 'sources', 'study'].entries()) {
-    const active = index % 3
+  expect(buttons.map(button => button.textContent)).toEqual(['Study guide', 'Mastery objectives', 'Practice', 'Sources'])
+  expect(buttons.map(button => button.getAttribute('data-count'))).toEqual([null, null, String(pkg.entries[0].sections.flatMap(section => section.blocks).filter(block => block.type === 'practice').length), String(pkg.sources.length)])
+  for (const [index, view] of ['study', 'mastery', 'practice', 'sources', 'study'].entries()) {
+    const active = index % 4
     await act(async () => { buttons[active].focus(); buttons[active].click() })
     expect(document.activeElement).toBe(buttons[active])
     expect(buttons.map(button => button.getAttribute('aria-pressed'))).toEqual(buttons.map((_, at) => String(at === active)))

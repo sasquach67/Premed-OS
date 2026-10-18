@@ -32,3 +32,29 @@ it.each([
   const pkg = fixture(); mutate(pkg)
   expect(() => parseNotebookPackage(JSON.stringify(pkg))).toThrow()
 })
+function masteryFixture() {
+  const pkg = fixture(), objective = pkg.entries[0].objectives[0]
+  objective.howTested = { setup: 'A replication enzyme is inhibited.', questions: [{ id: 'course-q1', text: 'What happens to replication?', sourceIds: objective.sourceIds, excerptIds: objective.excerptIds }] }
+  objective.applicationSkills = [{ text: 'Predict the consequence.', questionIds: ['course-q1'] }]
+  return pkg
+}
+it('retains new mastery fields and legacy retrieval arrays together', () => {
+  const pkg = masteryFixture()
+  expect(parseNotebookPackage(JSON.stringify(pkg))).toEqual(pkg)
+})
+it.each([
+  ['unknown skill question', (p: ReturnType<typeof masteryFixture>) => { p.entries[0].objectives[0].applicationSkills![0].questionIds = ['absent'] }],
+  ['missing skill reference', (p: ReturnType<typeof masteryFixture>) => { p.entries[0].objectives[0].applicationSkills![0].questionIds = [] }],
+  ['duplicate question', (p: ReturnType<typeof masteryFixture>) => { const q = p.entries[0].objectives[0].howTested!.questions; q.push(q[0]) }],
+  ['unsupported question', (p: ReturnType<typeof masteryFixture>) => { const q = p.entries[0].objectives[0].howTested!.questions[0]; q.sourceIds = []; q.excerptIds = [] }],
+  ['unexplained absence', (p: ReturnType<typeof masteryFixture>) => { p.entries[0].objectives[0].howTested!.questions = [] }],
+] as const)('rejects invalid mastery %s', (_, mutate) => {
+  const pkg = masteryFixture(); mutate(pkg)
+  expect(() => parseNotebookPackage(JSON.stringify(pkg))).toThrow()
+})
+it('accepts an explicit no-source-question gap with unlinked application skills', () => {
+  const pkg = masteryFixture(), o = pkg.entries[0].objectives[0]
+  o.howTested = { setup: 'The sources do not demonstrate an exam format.', questions: [], noQuestionsReason: 'No question for this objective appears in the supplied materials.' }
+  o.applicationSkills![0].questionIds = []
+  expect(parseNotebookPackage(JSON.stringify(pkg))).toEqual(pkg)
+})

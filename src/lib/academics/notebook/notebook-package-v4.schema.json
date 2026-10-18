@@ -2976,6 +2976,111 @@
           },
           "minItems": 0,
           "maxItems": 64
+        },
+        "howTested": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "setup": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200000
+            },
+            "questions": {
+              "type": "array",
+              "maxItems": 256,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200000
+                  },
+                  "sourceIds": {
+                    "type": "array",
+                    "maxItems": 256,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "excerptIds": {
+                    "type": "array",
+                    "maxItems": 256,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "assetIds": {
+                    "type": "array",
+                    "maxItems": 256,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "text",
+                  "sourceIds",
+                  "excerptIds"
+                ]
+              }
+            },
+            "noQuestionsReason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200000
+            }
+          },
+          "required": [
+            "setup",
+            "questions"
+          ]
+        },
+        "applicationSkills": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200000
+              },
+              "questionIds": {
+                "type": "array",
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "required": [
+              "text",
+              "questionIds"
+            ]
+          }
         }
       },
       "required": [

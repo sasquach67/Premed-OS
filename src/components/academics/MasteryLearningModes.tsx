@@ -1,4 +1,3 @@
-import { NotebookPracticeCard } from './NotebookPracticeCard'
 import './notebookPractice.css'
 import { GenerationReviewNotice } from './GenerationReviewNotice'
 import { useId, useState } from 'react'
@@ -53,10 +52,10 @@ function SourceDetails({ ids, chunks }: { ids: string[]; chunks: SourceChunk[] }
   )
 }
 
-function MasterySection({ label, items, caution = false }: { label: string; items: string[]; caution?: boolean }) {
+function MasterySection({ label, items }: { label: string; items: string[] }) {
   if (!items.length) return null
   return (
-    <section className={cn(caution && 'rounded-xl border-l-4 border-warning bg-muted p-4')}>
+    <section>
       <h4 className="text-sm font-extrabold">{label}</h4>
       <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-7 marker:text-primary">
         {items.map((item, index) => <li key={index}>{studentText(item)}</li>)}
@@ -65,40 +64,19 @@ function MasterySection({ label, items, caution = false }: { label: string; item
   )
 }
 
-function ObjectiveChecklist({ standard, chunks, imported = false }: { standard: Standard; chunks: SourceChunk[]; imported?: boolean }) {
+function ObjectiveChecklist({ standard }: { standard: Standard }) {
   return (
     <div className="space-y-6">
       {standard.evidenceLimit && <p className="rounded-xl border-l-4 border-warning bg-muted p-4 text-sm leading-6"><b>Limited source support: </b>{standard.evidenceLimit}</p>}
+      <section><h4 className="text-sm font-extrabold">How it's tested</h4>
+        {standard.howTested ? <>
+          <p className="mt-2 text-sm font-bold leading-7">{standard.howTested.setup}</p>
+          {standard.howTested.questions.length ? <ol className="mt-2 space-y-2 text-sm leading-7">{standard.howTested.questions.map((question, index) => <li key={question.id}><b className="mr-2">Q{index + 1}</b>{question.text}</li>)}</ol> : <p className="mt-2 text-sm leading-7">{standard.howTested.noQuestionsReason ?? 'No actual question was identified in the supplied sources for this objective.'}</p>}
+        </> : <p className="mt-2 text-sm leading-7">This saved map has no quoted course questions. Check the source materials for how it is tested.</p>}
+      </section>
+      {standard.applicationSkills ? <section><h4 className="text-sm font-extrabold">Be able to do</h4><ul className="mt-2 space-y-2 text-sm leading-7">{standard.applicationSkills.map((skill, index) => <li key={index}>{skill.questionIds.length > 0 && <b className="mr-2">{skill.questionIds.map(id => `Q${(standard.howTested?.questions.findIndex(question => question.id === id) ?? -1) + 1}`).join(' ')}</b>}{skill.text}</li>)}</ul></section> : <MasterySection label="Be able to do" items={standard.beAbleToDo} />}
       <MasterySection label="Understand" items={standard.understand} />
-      <MasterySection label="Be able to do" items={standard.beAbleToDo} />
-      <MasterySection label="Watch for" items={standard.watchFor} caution />
-      {!imported && <section aria-label={`Exam practice for ${standard.title}`} data-testid={`exam-practice-${standard.id}`} className="border-t border-border pt-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-lg font-extrabold">Apply the objective</h4>
-          <Badge variant="secondary">Generated practice</Badge>
-        </div>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">Original practice built from the selected sources—not an instructor-authored question, exam prediction, or readiness score.</p>
-        {standard.examPractice?.length ? standard.examPractice.map((question, index) => (
-          <article key={index} className="external-notebook mt-4">
-            <div className="en-block-practice en-practice-unit"><NotebookPracticeCard
-              number={index + 1} origin="Generated practice" original={question.prompt}
-              prompt={<p className="en-text" data-reader-role="question">{studentText(question.prompt)}</p>}
-              stimulus={null} hasStimulus={false} missing={[]}
-              answer={<p className="en-text" data-reader-role="answer">{studentText(question.answer)}</p>}
-              rationale={<p className="en-text" data-reader-role="reasoning">{studentText(question.rationale)}</p>}
-              sources={<SourceDetails ids={question.sourceChunkIds} chunks={chunks} />}
-              solutionTestId={`practice-solution-${standard.id}-${index}`}
-            /></div>
-          </article>
-        )) : standard.evidenceLimit ? (
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">No application question was generated because the selected sources do not support a worked solution. Use the supported recall and understanding points above.</p>
-        ) : (
-          <div data-testid={`legacy-practice-${standard.id}`} className="mt-3 rounded-xl border border-dashed border-border p-4">
-            <p className="text-sm font-bold">Use the application targets above</p>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">This earlier saved map has no generated application questions or worked answers. Its “Be able to do” targets remain available for practice.</p>
-          </div>
-        )}
-      </section>}
+
     </div>
   )
 }
@@ -188,11 +166,11 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
         <h2 className="mt-2 font-display text-3xl font-extrabold">{mode === 'outline' ? 'Learn the map' : 'Practice from memory'}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
           {mode === 'outline'
-            ? 'Keep your notes open. Learn what each objective means, what you must be able to do, and which traps to recognize.'
+            ? 'Keep your notes open. Learn what each objective means, what you must be able to do, and how to apply it.'
             : 'Close your notes. Answer first, reveal the teaching checklist afterward, then record what you can do.'}
         </p>
         <section aria-label="Choose how to study" className="mt-5 grid gap-3 sm:grid-cols-2">
-          <ModeChoice mode={mode} value="outline" title="Open note" purpose="Learn and check every concept, application, and exam trap." onChoose={setMode} />
+          <ModeChoice mode={mode} value="outline" title="Open note" purpose="Learn the concepts and skills for each objective." onChoose={setMode} />
           <ModeChoice mode={mode} value="recall" title="Closed note" purpose="Attempt an objective from memory before seeing the checklist." onChoose={setMode} />
         </section>
         <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs font-semibold">
@@ -218,7 +196,7 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
                 <AccordionContent className="pb-6">
                   {mode === 'outline' ? (
                     <>
-                      <ObjectiveChecklist standard={standard} chunks={chunks} imported={outline.specHash === 'external-import-v1'} />
+                      <ObjectiveChecklist standard={standard} />
                       <SelfAssessment standard={standard} onChange={(state) => setMastery(standard.id, state)} />
                       <SourceDetails ids={standard.sourceChunkIds} chunks={chunks} />
                     </>
@@ -227,13 +205,13 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
                       <section aria-label={`Closed-notes prompt for ${standard.title}`} className="rounded-xl border-l-4 border-warning bg-muted p-5">
                         <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-extrabold">Try before you reveal</h3><Badge variant="outline"><EyeOff className="mr-1 size-3" />Notes closed</Badge></div>
                         <p className="mt-2 text-sm text-muted-foreground">Answer aloud or on a blank page. Explain the “why,” not only the vocabulary.</p>
-                        <ul className="mt-3 space-y-3 text-base leading-7">{(standard.freeRecallCues?.length ? standard.freeRecallCues : [standard.title]).map((cue, cueIndex) => <li key={cueIndex}>{studentText(cue)}</li>)}</ul>
+                        <ul className="mt-3 space-y-3 text-base leading-7">{<li>{studentText(standard.title)}</li>}</ul>
                       </section>
                       <details data-testid={`recall-reveal-${standard.id}`} className="mt-4 rounded-xl border border-border">
                         <summary className="cursor-pointer rounded-xl px-4 py-3 text-sm font-bold focus-visible:ring-2 focus-visible:ring-ring">Reveal after trying</summary>
                         <div className="border-t border-border p-5">
                           <p className="mb-5 text-xs font-bold text-primary">Compare your answer with the teaching checklist</p>
-                          <ObjectiveChecklist standard={standard} chunks={chunks} imported={outline.specHash === 'external-import-v1'} />
+                          <ObjectiveChecklist standard={standard} />
                           <SelfAssessment standard={standard} onChange={(state) => setMastery(standard.id, state)} />
                           <SourceDetails ids={standard.sourceChunkIds} chunks={chunks} />
                         </div>
