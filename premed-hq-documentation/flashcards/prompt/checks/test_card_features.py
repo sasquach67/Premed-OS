@@ -40,7 +40,11 @@ class CardFeatureChecks(unittest.TestCase):
             ['Front','Back','Extra','Type','Mindset','premedos_concept_id','premedos_source','premedos_spec','Topic','Source','My notes'])
         self.assertEqual([f['name'] for f in cloze.fields],
             ['Text','Extra','Type','Mindset','premedos_concept_id','premedos_source','premedos_spec','Topic','Source','My notes'])
-        self.assertEqual([f['name'] for f in native_model(build_deck.CSS).fields], IO_FIELDS)
+        self.assertEqual([f['name'] for f in native_model(build_deck.CSS).fields],
+            ['Occlusion','Image','Header','Back Extra','Comments','Topic','Source','My notes',
+             'premedos_concept_id','premedos_source','premedos_spec'])
+        self.assertEqual([basic.model_id, cloze.model_id, native_model(build_deck.CSS).model_id],
+            [646888316168, 623388404634, 895232792405])
         before = [m.model_id for m in build_deck.create_models()]
         with patch.object(build_deck, 'CSS', build_deck.CSS + '\n.card { line-height: 1.7; }'):
             self.assertEqual([m.model_id for m in build_deck.create_models()], before)
@@ -59,14 +63,63 @@ class CardFeatureChecks(unittest.TestCase):
                 self.assertEqual(note['Topic'], 'Shapes › Outlines')
                 self.assertEqual(note['Source'], 'Slide 14 · Transcript 12:31')
                 self.assertIn('Shapes › Outlines', card.question()); self.assertIn('Shapes › Outlines', card.answer())
-                self.assertIn('<details class="source">', card.answer())
-                self.assertIn('Slide 14 · Transcript 12:31', card.answer())
+                for face in (card.question(), card.answer()):
+                    self.assertNotIn('<details class="source">', face)
+                    self.assertNotIn('Slide 14 · Transcript 12:31', face)
                 self.assertEqual(note['My notes'], '')
                 self.assertNotIn('<div class="my-notes">', card.answer())
             finally: col.close()
             data['cards'][0]['breadcrumb'] = ''
             report = build(data, work / 'fallback.apkg')
             self.assertEqual(report['records'][0]['fields']['Topic'], data['targets'][0]['topic'])
+
+    def test_source_toggle_removal_updates_all_templates_without_changing_notes(self):
+        for kind in ('basic', 'cloze', 'image-occlusion'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temp:
+                work=Path(temp); data=as_cloze(fixture(1)) if kind=='cloze' else fixture(1)
+                if kind=='image-occlusion':
+                    (work/'figure.png').write_bytes((BASE/'checks/fixture.png').read_bytes())
+                    data['cards'][0].update(type=kind,front='Which label is hidden?',back='Sample shape',
+                        imageOcclusion={'file':'figure.png','alt':'Synthetic figure',
+                            'source':copy.deepcopy(data['cards'][0]['sourceRefs'][0]),
+                            'box':{'x':0.1,'y':0.1,'width':0.2,'height':0.1}})
+                locator='Source metadata only: slide 14'
+                data['cards'][0]['sourceRefs'][0]['location']=locator
+                old_models=build_deck.all_models()
+                for model in old_models:
+                    for template in model.templates:
+                        template['afmt']+='{{#Source}}<details class="source"><summary>Source</summary>{{Source}}</details>{{/Source}}'
+                with patch.object(build_deck,'all_models',return_value=old_models):
+                    first=build(data,work/'old-source-toggle.apkg')
+                col=Collection(str(work/'source-removal.anki2'))
+                try:
+                    import_package(col,work/'old-source-toggle.apkg')
+                    nid=col.find_notes('')[0]; before={}
+                    for cid in col.find_cards(''):
+                        card=col.get_card(cid)
+                        self.assertIn('<details class="source">',card.answer())
+                        card.type=2;card.queue=2;card.reps=8;card.ivl=17;card.due=345;col.update_card(card)
+                        before[cid]=(card.reps,card.ivl,card.due)
+                    note=col.get_note(nid);mid=note.mid;field_names=list(note.keys())
+                    note['My notes']='<b>Student reminder stays</b>';col.update_note(note)
+                    export_current(col,work/'current.apkg')
+                    data['cards'][0]['reuseGuid']=first['records'][0]['guid']
+                    build(data,work/'without-toggle.apkg',work/'current.apkg')
+                    import_package(col,work/'without-toggle.apkg');col.models._cache.clear()
+                    self.assertEqual(col.find_notes(''),[nid])
+                    note=col.get_note(nid)
+                    self.assertEqual(note.mid,mid);self.assertEqual(list(note.keys()),field_names)
+                    self.assertEqual(note['Source'],locator)
+                    self.assertEqual(note['My notes'],'<b>Student reminder stays</b>')
+                    self.assertEqual({cid:(col.get_card(cid).reps,col.get_card(cid).ivl,col.get_card(cid).due)
+                        for cid in col.find_cards('')},before)
+                    for cid in col.find_cards(''):
+                        card=col.get_card(cid)
+                        for face in (card.question(),card.answer()):
+                            self.assertNotIn('<details class="source">',face)
+                            self.assertNotIn(locator,face)
+                        self.assertIn('Student reminder stays',card.answer())
+                finally:col.close()
 
     def test_exported_personal_notes_html_survives_update_by_guid(self):
         for cloze in (False, True):
@@ -205,6 +258,10 @@ class CardFeatureChecks(unittest.TestCase):
                 self.assertIn('data-shape="rect"',card.question())
                 self.assertIn('cloze-highlight',card.answer())
                 self.assertIn('Shapes › Diagram',card.answer())
+                self.assertTrue(note['Source'])
+                for face in (card.question(),card.answer()):
+                    self.assertNotIn('<details class="source">',face)
+                    self.assertNotIn(note['Source'],face)
             finally:col.close()
 
 
