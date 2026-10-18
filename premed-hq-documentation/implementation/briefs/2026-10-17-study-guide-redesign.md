@@ -23,3 +23,14 @@ STOP before merge or deployment. Send Andy preview screenshots alongside the moc
 ## Local handoff (completed)
 
 Implementation and automated checks are complete. Local review artifacts are in `output/study-guide-redesign-proof/` (course material remains outside code commits). See `QA-REPORT.md`, `SOURCE-AUDIT.md`, `review.html`, notebook JSON/ZIP and screenshots there. The notebook suites passed 626 tests; final affected reader suites passed 22 tests; prompt tooling passed 9 tests; semantic proof/bundle passed 2 tests. Signed-out Academics and live map/popover/practice behavior were observed. Exact comparison to existing flashcard wording remains unverified. Visual acceptance, merge and deployment remain gated on Andy’s approval.
+
+## Approved addendum — Parts 4–7
+
+Authority: `/Users/andyquach/Documents/Premed OS Academics Audit/2026-10-17-study-guide-codex-addendum.md`. Mastery Proposed and all three notebook-flow mockup views are approved, with question source tags omitted from the teaching face. Work remains on `codex/study-guide-redesign`, one feature per commit, with the same pre-merge/deployment hold.
+
+- Part 4: dedicated mastery tab; actual source questions/setup, question-linked application skills, factual understanding. Old recall/watch fields stay stored and are not rendered. Additive v4 fields and old imports remain supported.
+- Part 5: compact scope; Flashcards primary, Update secondary, overflow tools; four tabs and a small shared reading-detail toggle.
+- Part 6: shared Gather / Copy / Bring-back steps for new notebooks, updates and flashcards; new notebooks offer lesson/exam goals. Preserve draft and baseline guards. Class folder is the preferred AI save destination; Downloads is fallback only. Flashcard prompt receives only that single save-location instruction.
+- Part 7: honest file/source checklist, explicit destination choices, scrolling/full preview, precise change list and one pinned save action with blocker reasons. Preserve the existing image, account, revision and durable-save safeguards.
+
+Validation extends the prior proof with a source-grounded BIOL103 Lesson9 mastery notebook, all create/update/flashcard copy paths, class mismatch and update change review, dark/light desktop/375px captures with measured surfaces, retired-label build grep, notebook suites/build/prompt parity and signed-out behavior. Real course proof artifacts stay local and outside code commits.

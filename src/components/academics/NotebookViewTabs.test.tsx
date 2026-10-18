@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { URL as NodeURL } from 'node:url'
+import { MemoryRouter } from 'react-router-dom'
 import { act, type ComponentPropsWithoutRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -34,7 +35,7 @@ it('preserves the four native view buttons, counts, selected state and saved con
   } } as unknown as LectureRecord
   await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={pkg.course.code} />))
   const nav = container.querySelector<HTMLElement>('nav[aria-label="Notebook reading views"]')!
-  const buttons = [...nav.querySelectorAll<HTMLButtonElement>('button')]
+  const buttons = [...nav.querySelectorAll<HTMLButtonElement>('.nbr-tab-buttons button')]
   expect(container.querySelector('.nbr-head [data-notebook-test-motion="true"]')).not.toBeNull()
   expect(nav.querySelector('[data-notebook-test-motion]')).toBeNull()
   expect(buttons.every(button => button.type === 'button')).toBe(true)
@@ -78,4 +79,23 @@ it('clears 4.5:1 for the reported light active background without changing the d
   const mixed = primary.map((channel, index) => channel * .55 + foreground[index] * .45)
   const luminance = (rgb: number[]) => rgb.map(channel => channel / 255).map(channel => channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4).reduce((sum, channel, index) => sum + channel * [.2126, .7152, .0722][index], 0)
   expect((luminance(background) + .05) / (luminance(mixed) + .05)).toBeGreaterThanOrEqual(4.5)
+})
+
+it('keeps the lesson header compact and opens preserved notebook details from More', async () => {
+  const pkg = structuredClone(fixture) as NotebookPackage
+  pkg.entries[0].scope = 'DNA replication and telomeres. More complete scope remains available.\nAn additional paragraph.'
+  const raw = JSON.stringify(pkg), lecture = { id: 'compact-header', courseId: 'view-tabs-course', title: pkg.entries[0].title, importedNotebook: { entryId: pkg.entries[0].id, original: structuredClone(pkg), originalRaw: raw, current: pkg, notes: 'Keep my note.', progress: {}, history: [] } } as unknown as LectureRecord
+  await act(async () => root.render(<MemoryRouter><ExternalNotebookView lecture={lecture} courseCode={pkg.course.code} /></MemoryRouter>))
+  expect(container.querySelector('.nbr-scope')?.textContent).toBe('DNA replication and telomeres.')
+  expect([...container.querySelectorAll('.nbr-head-actions button')].map(button => button.textContent)).toEqual(['Flashcards', 'Update', ''])
+  expect(container.querySelector('.nbr-head .nsg-lo-chips,.nbr-head .en-badge')).toBeNull()
+  expect(container.querySelector('.nbr-reading-detail')).toBeNull()
+  expect(container.querySelector('.nbr-header-detail')?.textContent).toBe('CondensedFull')
+  await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="More notebook actions"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })))
+  const details = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(item => item.textContent === 'Notebook details')!
+  expect(details).toBeDefined()
+  await act(async () => details.click())
+  expect(document.querySelector('[role="dialog"]')?.textContent).toContain('More complete scope remains available.')
+  expect(lecture.importedNotebook!.notes).toBe('Keep my note.')
+  expect(JSON.stringify(pkg)).toBe(raw)
 })
