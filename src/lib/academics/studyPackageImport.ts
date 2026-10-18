@@ -54,7 +54,7 @@ export function parseStudyPackage(raw: string): StudyPackage {
   const objectives = array(p.objectives ?? [], 'Objectives', 200).map(v => {
     const r = record(v); const understand = strings(r.understand, 'Understand')
     if (!understand.length) throw new Error('Each objective needs at least one understanding point.')
-    return { title: text(r.title, 'Objective title', 300), understand, freeRecallCues: strings(r.freeRecallCues, 'Recall cues'), beAbleToDo: strings(r.beAbleToDo, 'Be able to do'), watchFor: strings(r.watchFor, 'Watch for'), sourceIds: array(r.sourceIds ?? [], 'Objective sources', 500).map(sourceId) }
+    return { title: text(r.title, 'Objective title', 300), understand, freeRecallCues: strings(r.freeRecallCues, 'Recall cues'), beAbleToDo: strings(r.beAbleToDo, 'Be able to do'), watchFor: strings(r.watchFor, 'Legacy caution data'), sourceIds: array(r.sourceIds ?? [], 'Objective sources', 500).map(sourceId) }
   })
   return { format: 'premed-os-study-package', version: 1, title: text(p.title, 'Guide title', 300), sources, sections, objectives }
 }

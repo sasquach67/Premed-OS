@@ -14,7 +14,7 @@ it.each(['new', 'update'] as const)('includes the Assessment exam profile and pr
   expect(assessmentRules).toContain('Without real exams, use the course blueprint and say so.')
   expect(assessmentRules).toContain('Unless the request already says, ask once, in the first reply')
   expect(assessmentRules).toContain('If the student doesn\'t choose, use (a).')
-  expect(prompt).toContain('Prompt build: notebook-instructions-beta-29.')
+  expect(prompt).toContain('Prompt build: notebook-instructions-beta-30.')
 })
 it.each(['new', 'update'] as const)('preserves mock fidelity and cumulative scope boundaries in %s Assessment prompts', mode => {
   const prompt = composeNotebookPrompt('assessment', values, mode)
@@ -75,7 +75,8 @@ it.each(['review', 'assessment', 'assignment'] as const)('delivers a complete fo
     const prompt = composeNotebookPrompt(goal, values, mode)
     expect(prompt).toContain('Default to one real folder named after the notebook')
     expect(prompt).toContain('Create a ZIP only when the student explicitly requests one')
-    expect(prompt).toContain('creates the complete titled folder there')
+    expect(prompt).toContain('saves the complete titled folder in my actual class folder')
+    expect(prompt).toContain('Only if that class folder cannot be reached, fall back to my actual Downloads directory')
     expect(prompt).not.toMatch(/ZIP-first|Default to one real downloadable ZIP|deliver one complete titled ZIP|one titled ZIP under EC-DELIVERY/)
     expect(prompt).toContain('A text-only notebook still uses a folder containing its JSON')
     expect(prompt).toContain('Ordinary AI-created folders need no app-owned bindings.json')

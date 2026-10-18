@@ -38,10 +38,10 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   const refinements = notebookRequest?.trim() ? `Additional student instructions (preferences, not factual evidence): ${JSON.stringify(notebookRequest.trim().slice(0, 4000))}. Apply within the Mastery Map contract and selected evidence; preserve objective depth and do not invent support.` : ''
   const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]
   const validationEvidence = {
-    privateAssessmentPhrases: chunks.filter((chunk) => questionReferenceIds.includes(chunk.id))
-      .flatMap((chunk) => [chunk.content, ...chunk.content.split(/\n+|(?<=\?)\s+/)]),
+    requireSourcedMastery: true,
+    sourceContent: new Map(chunks.filter(chunk => preparedIds.has(chunk.id)).map(chunk => [chunk.id, chunk.content])),
   }
-  const examInstruction = 'For every sufficiently supported objective, include examPractice with 1 or 2 original self-contained application questions, each with prompt, answer, rationale, and sourceChunkIds drawn only from that objective. Provide the complete scenario and all necessary values, units, sequences, orientation, or text representations in the prompt. The answer must solve every requested part; the rationale must work through the evidence and mechanism or calculation, not merely repeat the answer. Label invented scenarios or data hypothetical. Do not copy supplied assessment wording, reference absent diagrams, invent instructor emphasis, or predict exam content. Keep questions distinct across objectives. If the selected evidence cannot support a solution, explain the specific absent support in evidenceLimit and use an empty examPractice array rather than inventing support. The evidenceLimit exception may not compress rich source material; retain every supported point and omit evidenceLimit when support is complete.'
+  const examInstruction = 'Each objective has exactly How it is tested, Be able to do, Understand. Supply howTested with one setup line and questions quoting actual selected class-outline, live-response, GRQ or lecture text. Each question has id, text, sourceChunkIds from its objective; never invent a question. If no actual question is present use questions:[] and a concrete noQuestionsReason. Keep question source references for collapsed evidence, not source tags in the question text. applicationSkills contains observable text and questionIds referencing those same questions; use at least one reference when real questions exist, empty references only when none exist. Keep beAbleToDo strings equal to the skill text. Understand contains factual answers in exam vocabulary, preserving supported instructor answers and resolving any conflict explicitly. Required legacy freeRecallCues, watchFor and examPractice are empty arrays for new authoring; do not delete old saved data. Preserve every supported objective and subpoint without numeric quotas. Keep exact closed source evidence and specific limitations; absence of a real question alone is not a conceptual evidence limitation.'
   const assembled = assembleGenerationRequest({
     specId: 'unit-mastery-outline-v1', chunkIds: prepared.chunkIds, controls: { source_mode: 'SOURCE_ONLY' },
     request: [
@@ -51,27 +51,27 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
       refinements,
       examInstruction,
 
-      `Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Build the detailed mastery map from the selected sources. Preserve every explicit objective relevant to this scope and all distinct supported Free-recall cues, Understand, Be able to do, and Watch for points. Each objective needs a concrete blank-page retrieval cue; process or mechanism objectives must ask the student to explain or reconstruct the full process without notes.`,
-      questionReferenceIds.length ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Use their task patterns, representations, distinctions, and traps to make Be able to do and Watch for concrete. Do not copy stems, and never treat distractors as facts.` : '',
+      `Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Build the detailed mastery map from the selected sources. Preserve every explicit objective relevant to this scope and its distinct factual understanding and observable application skills, with real quoted course questions first.`,
+      questionReferenceIds.length ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Quote actual relevant questions faithfully in howTested and link skills to their question IDs. Never treat distractors as facts or invent an answer key.` : '',
     ].filter(Boolean).join('\n'),
   })
-  const result = await generateWithSourceRecovery(courseId, chunks, { action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `${studentGuideInstruction(guideDirections)} ${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map with objective-specific free-recall cues. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline. ${examInstruction}${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
+  const result = await generateWithSourceRecovery(courseId, chunks, { action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `${studentGuideInstruction(guideDirections)} ${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Build a source-grounded three-part Mastery Map with actual course questions, referenced skills and factual answers. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline. ${examInstruction}${questionReferenceIds.length ? ' Quote the actual relevant marked questions; retain their source evidence.' : ''}` })
 
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
   let generationAuditStatus = result.data.auditStatus
   const issues: string[] = []
-  let artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds, issues, true, validationEvidence)
+  let artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds, issues, false, validationEvidence)
   if (!artifact) {
     const repair = await generateWithSourceRecovery(courseId, chunks, {
       action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds,
       specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt,
-      request: `${studentGuideInstruction(guideDirections)} ${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Rebuild the complete Mastery Map from the same selected evidence. A prior attempt failed these deterministic checks: ${issues.join('; ')}. Correct every listed requirement. Keep all required fields, objective-specific cues, at least one cue explicitly saying "without notes" per objective, the ordinary five distinct Understand points, two distinct Be able to do points, and one Watch for point. Only if the selected evidence genuinely cannot support these floors, explain the specific missing support in evidenceLimit using at least eight words; retain at least one supported Understand point and all supported detail, and allow unsupported task or watch-for arrays to be empty. Never use a limitation to compress rich evidence. ${examInstruction} Source IDs must come only from the supplied evidence. Do not invent missing facts or repeat points to satisfy counts. Return the full valid artifact, not a patch.`,
+      request: `${studentGuideInstruction(guideDirections)} ${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Rebuild the complete Mastery Map from the same selected evidence. A prior attempt failed these deterministic checks: ${issues.join('; ')}. Correct every listed requirement. Keep all required fields, nonempty supported factual understanding, observable skills and real question references. Only mark a genuine conceptual evidence gap with evidenceLimit; never invent a question to fill missing course material. ${examInstruction} Source IDs must come only from the supplied evidence. Do not invent missing facts or repeat points to satisfy counts. Return the full valid artifact, not a patch.`,
 
     })
     if (!repair.ok) return { ok: false, failure: failureFor(repair.code), message: repair.message }
     generationAuditStatus = repair.data.auditStatus
     issues.length = 0
-    artifact = validateMasteryOutline(repair.data.artifact, assembled.chunkIds, issues, true, validationEvidence)
+    artifact = validateMasteryOutline(repair.data.artifact, assembled.chunkIds, issues, false, validationEvidence)
   }
   if (!artifact) return { ok: false, failure: 'invalid-response', message: `The mastery outline did not pass its source-trace and section checks. Nothing was saved. Check: ${issues.join('; ')}` }
   return {

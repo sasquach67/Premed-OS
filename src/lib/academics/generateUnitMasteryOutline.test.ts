@@ -9,106 +9,51 @@ vi.mock('./syncGenerationSources', () => ({
 }))
 vi.mock('./generationPolicy', () => ({ assertGenerationAllowed: vi.fn(), generatedTitle: (s: string) => s, GenerationNotAllowedError: class extends Error {} }))
 
-const artifact = {
-  title: 'Gene expression', unit: 'Lecture 2', standards: [{
-    id: 'objective-1', title: 'Transcription',
-    freeRecallCues: ['Explain the steps of transcription without notes.'],
-    understand: ['Template selection', 'Complementary base pairing', 'RNA direction', 'Initiation', 'Termination'],
-    beAbleToDo: ['Identify the template strand.', 'Predict the RNA sequence.'],
-    watchFor: ['Do not confuse coding and template strands.'], sourceChunkIds: ['chunk-1'],
-    examPractice: [{
-      prompt: 'In a hypothetical transcription exercise, the template strand is 3′-TAC-5′. Write the RNA product and explain its orientation.',
-      answer: '5′-AUG-3′.',
-      rationale: 'The RNA is complementary and antiparallel: T pairs with A, A with U, and C with G.',
-      sourceChunkIds: ['chunk-1'],
-    }],
-  }],
+// Invented workshop fixture; no course material or provider execution.
+const question = 'Which marked route reaches the station with the fewest turns?'
+const skill = 'Given a route map, compare the turns on each marked route.'
+const standard = {
+  id: 'objective-1', title: 'Study objective: Route comparison', sourceChunkIds: ['chunk-1'],
+  howTested: { setup: 'A route map is given; compare the turns.', questions: [{ id: 'q-route', text: question, sourceChunkIds: ['chunk-1'] }] },
+  applicationSkills: [{ text: skill, questionIds: ['q-route'] }],
+  understand: ['Routes can be compared by counting direction changes.'], beAbleToDo: [skill],
+  freeRecallCues: [], watchFor: [], examPractice: [],
 }
-const input = { courseId: 'course-1', chunks: [{ id: 'chunk-1', content: 'Transcription uses a DNA template.' } as SourceChunk], unit: 'Lecture 2', label: 'Transcription' }
+const artifact = { title: 'Route comparison', unit: 'Workshop', standards: [standard] }
+const input = { courseId: 'course-1', chunks: [{ id: 'chunk-1', content: `Compare direction changes. ${question}` } as SourceChunk], unit: 'Workshop', label: 'Route comparison' }
 const response = (value: unknown) => ({ ok: true as const, data: { artifact: value, citations: [], auditStatus: 'approved' as const } })
 beforeEach(() => { vi.clearAllMocks(); vi.mocked(generateWithSourceRecovery).mockReset() })
 
-it('repairs a rejected map once using exact validation feedback and the same source boundary', async () => {
-  vi.mocked(generateWithSourceRecovery)
-    .mockResolvedValueOnce(response({ ...artifact, standards: [{ ...artifact.standards[0], understand: ['One detail'] }] }))
-    .mockResolvedValueOnce(response(artifact))
-  const result = await generateUnitMasteryOutline(input)
-  expect(result.ok).toBe(true)
-  expect(generateWithSourceRecovery).toHaveBeenCalledTimes(2)
-  const repair = vi.mocked(generateWithSourceRecovery).mock.calls[1][2]
-  expect(repair.chunkIds).toEqual(['chunk-1'])
-  expect(repair.request).toContain('standards[0].understand: needs at least 5 distinct points')
-  expect(repair.request).toContain('examPractice with 1 or 2')
-  expect(result.artifact?.standards[0].examPractice).toEqual(artifact.standards[0].examPractice)
-  expect(result.artifact?.standards[0].masteryState).toBe('not-started')
-})
-
-it('rejects an old-format provider result for a new build and repairs it with practice', async () => {
-  vi.mocked(generateWithSourceRecovery)
-    .mockResolvedValueOnce(response({ ...artifact, standards: [{ ...artifact.standards[0], examPractice: undefined }] }))
-    .mockResolvedValueOnce(response(artifact))
-  const result = await generateUnitMasteryOutline(input)
-  expect(result.ok).toBe(true)
-  expect(generateWithSourceRecovery).toHaveBeenCalledTimes(2)
-  const requests = vi.mocked(generateWithSourceRecovery).mock.calls.map((call) => call[2])
-  expect(requests[1].request).toContain('standards[0].examPractice: needs 1 to 2')
-  expect(requests[0].systemPrompt).toBe(requests[1].systemPrompt)
-  for (const request of requests) {
-    expect(request.chunkIds).toEqual(['chunk-1'])
-    expect(request.request).toContain('examPractice with 1 or 2')
-    expect(request.request).not.toContain(input.chunks[0].content)
-  }
-})
-
-it('rejects copied selected assessment text on both attempts without returning an artifact', async () => {
+it('saves actual quoted questions, linked observable skills and facts without generated practice', async () => {
   vi.mocked(generateWithSourceRecovery).mockResolvedValue(response(artifact))
-  const privatePrompt = artifact.standards[0].examPractice[0].prompt
-  const result = await generateUnitMasteryOutline({ ...input, chunks: [{ ...input.chunks[0], content: privatePrompt }], practiceQuestionChunkIds: ['chunk-1', 'not-selected'] })
-  expect(result.ok).toBe(false)
-  expect(result.artifact).toBeUndefined()
-  expect(result.message).toContain('resembles supplied assessment wording')
-  expect(result.message).not.toContain(privatePrompt)
-  expect(generateWithSourceRecovery).toHaveBeenCalledTimes(2)
-  expect(vi.mocked(generateWithSourceRecovery).mock.calls[0][2].systemPrompt).not.toContain('not-selected')
-})
-
-it('does not fabricate practice or retry after a provider failure', async () => {
-  vi.mocked(generateWithSourceRecovery).mockResolvedValue({ ok: false, code: 'unavailable', message: 'Provider unavailable' })
   const result = await generateUnitMasteryOutline(input)
-  expect(result.ok).toBe(false)
-  expect(result.artifact).toBeUndefined()
+  expect(result.ok).toBe(true)
+  expect(result.artifact?.standards[0]).toMatchObject({ ...standard, masteryState: 'not-started' })
   expect(generateWithSourceRecovery).toHaveBeenCalledTimes(1)
 })
 
-it('never saves a still-invalid repair or retries indefinitely', async () => {
-  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [{ ...artifact.standards[0], sourceChunkIds: ['unknown'] }] }))
-  const result = await generateUnitMasteryOutline(input)
-  expect(result.ok).toBe(false)
-  expect(result.artifact).toBeUndefined()
-  expect(result.message).toContain('sourceChunkIds: missing or outside selected sources')
-  expect(generateWithSourceRecovery).toHaveBeenCalledTimes(2)
-})
-
-it('keeps exam scope and the review-sheet instructions on both generation and repair', async () => {
+it('repairs unsupported question text once using exact feedback and the same sources', async () => {
   vi.mocked(generateWithSourceRecovery)
-    .mockResolvedValueOnce(response({ ...artifact, standards: [] }))
+    .mockResolvedValueOnce(response({ ...artifact, standards: [{ ...standard, howTested: { ...standard.howTested, questions: [{ ...standard.howTested.questions[0], text: 'Invented question?' }] } }] }))
     .mockResolvedValueOnce(response(artifact))
-  const result = await generateUnitMasteryOutline({ ...input, scope: 'exam', chunks: [{ ...input.chunks[0], fileId: 'review' }], studyIntent: { purpose: 'exam-prep', reviewSheetFileId: 'review', instructions: 'Connect the readings.' } })
+  const result = await generateUnitMasteryOutline(input)
   expect(result.ok).toBe(true)
-  expect(result.artifact?.scope).toBe('exam')
-  for (const call of vi.mocked(generateWithSourceRecovery).mock.calls) {
-    expect(call[2].request).toContain('Exam review-sheet chunk IDs: chunk-1.')
-    expect(call[2].request).toContain('Connect the readings.')
-  }
+  const calls = vi.mocked(generateWithSourceRecovery).mock.calls
+  expect(calls).toHaveLength(2)
+  expect(calls[1][2].request).toContain('text must quote an actual selected source')
+  expect(calls[1][2].chunkIds).toEqual(['chunk-1'])
+  expect(calls[1][2].systemPrompt).toBe(calls[0][2].systemPrompt)
 })
 
 it.each([
-  [{ ...artifact, title: '' }, 'artifact.title: a nonempty title is required'],
-  [{ ...artifact, unit: '' }, 'artifact.unit: a nonempty unit is required'],
-  [{ ...artifact, standards: [] }, 'artifact.standards: no study objectives were returned'],
-  [{ artifact }, 'artifact.title: a nonempty title is required'],
-])('rejects malformed top-level output after one repair without saving', async (value, issue) => {
-  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response(value))
+  [{ ...standard, howTested: undefined }, 'howTested'],
+  [{ ...standard, applicationSkills: [{ text: skill, questionIds: ['wrong-objective'] }] }, 'references must resolve'],
+  [{ ...standard, sourceChunkIds: ['unknown'] }, 'outside selected sources'],
+  [{ ...standard, understand: [] }, 'factual answers required'],
+  [{ ...standard, freeRecallCues: ['Invent a recall task.'] }, 'retired fields must be empty'],
+  [{ ...standard, beAbleToDo: ['Different skill'] }, 'compatibility strings must match'],
+])('never saves a still-invalid repair', async (invalid, issue) => {
+  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [invalid] }))
   const result = await generateUnitMasteryOutline(input)
   expect(result.ok).toBe(false)
   expect(result.artifact).toBeUndefined()
@@ -116,87 +61,42 @@ it.each([
   expect(generateWithSourceRecovery).toHaveBeenCalledTimes(2)
 })
 
-it('allows source-derived study objectives in generation and repair without claiming instructor authority', async () => {
-  vi.mocked(generateWithSourceRecovery)
-    .mockResolvedValueOnce(response({ title: 'Psychology', unit: 'Chapter 1', status: 'failed_missing_explicit_objectives', standards: [] }))
-    .mockResolvedValueOnce(response(artifact))
-  await generateUnitMasteryOutline(input)
-  for (const call of vi.mocked(generateWithSourceRecovery).mock.calls) {
-    expect(call[2].systemPrompt).toContain('Do not require formal learning objectives')
-    expect(call[2].systemPrompt).toContain('Study objective:')
-    expect(call[2].systemPrompt).toContain('never create or modify syllabus Topics')
+it('accepts supported concepts without real source questions using an honest reason', async () => {
+  const noQuestion = { ...standard, howTested: { setup: 'Use the route comparison principle.', questions: [], noQuestionsReason: 'The supplied workshop notes contain no course question for this objective.' }, applicationSkills: [{ text: skill, questionIds: [] }] }
+  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [noQuestion] }))
+  const result = await generateUnitMasteryOutline({ ...input, chunks: [{ ...input.chunks[0], content: 'Routes are compared by counting turns.' }] })
+  expect(result.ok).toBe(true)
+  expect(result.artifact?.standards[0].evidenceLimit).toBeUndefined()
+})
+
+it('rejects empty questions without a reason or a reason alongside real questions', async () => {
+  for (const howTested of [{ setup: 'Compare routes.', questions: [] }, { ...standard.howTested, noQuestionsReason: 'No questions.' }]) {
+    vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [{ ...standard, howTested }] }))
+    expect((await generateUnitMasteryOutline(input)).ok).toBe(false)
   }
 })
 
-it('saves an explicitly evidence-limited objective without inventing depth or application', async () => {
-  const limited = { ...artifact, standards: [{ ...artifact.standards[0],
-    evidenceLimit: 'The selected excerpt describes only template selection; it supplies no steps or worked examples supporting further application.',
-    understand: ['RNA is complementary to the DNA template.'], beAbleToDo: [], watchFor: [], examPractice: [],
-  }] }
-  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response(limited))
+it('does not retry a provider failure or return invented work', async () => {
+  vi.mocked(generateWithSourceRecovery).mockResolvedValue({ ok: false, code: 'unavailable', message: 'Provider unavailable' })
   const result = await generateUnitMasteryOutline(input)
-  expect(result.ok).toBe(true)
-  expect(result.artifact?.standards[0]).toMatchObject(limited.standards[0])
+  expect(result.ok).toBe(false)
+  expect(result.artifact).toBeUndefined()
   expect(generateWithSourceRecovery).toHaveBeenCalledTimes(1)
 })
 
-it('does not let an evidence limitation waive grounding or a useful understanding point', async () => {
-  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [{ ...artifact.standards[0],
-    evidenceLimit: 'The selected excerpt supplies no steps or examples supporting further application.',
-    understand: [], beAbleToDo: [], watchFor: [], examPractice: [],
-  }] }))
-  const result = await generateUnitMasteryOutline(input)
-  expect(result.ok).toBe(false)
-  expect(result.message).toContain('understand')
-})
-
-
-it.each(['', 'Too short', undefined])('does not waive rich-source depth for a missing or vague limitation %j', async (evidenceLimit) => {
-  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [{ ...artifact.standards[0],
-    evidenceLimit, understand: ['One supported detail.'], beAbleToDo: [], watchFor: [], examPractice: [],
-  }] }))
-  expect((await generateUnitMasteryOutline(input)).ok).toBe(false)
-})
-
-it('retains the closed source boundary even for an evidence-limited map', async () => {
-  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [{ ...artifact.standards[0],
-    evidenceLimit: 'The selected excerpt supplies no worked scenarios or detailed process steps.',
-    understand: ['One supported detail.'], beAbleToDo: [], watchFor: [], examPractice: [], sourceChunkIds: ['unselected'],
-  }] }))
-  const result = await generateUnitMasteryOutline(input)
-  expect(result.ok).toBe(false)
-  expect(result.message).toContain('outside selected sources')
-})
-
-it('assembles mutually consistent thin-source, citation, and practice instructions on both attempts', async () => {
-  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [] }))
-  await generateUnitMasteryOutline(input)
-  for (const call of vi.mocked(generateWithSourceRecovery).mock.calls) {
-    expect(call[2].systemPrompt).toContain('Only when selected evidence genuinely cannot support these floors')
-    expect(call[2].systemPrompt).toContain('Do not invent extra fields or objects inside string arrays')
-    expect(call[2].systemPrompt).toContain('Coverage is a runtime and presentation responsibility')
-    expect(call[2].systemPrompt).not.toContain('fail instead of padding')
-    expect(call[2].request).toContain('empty examPractice array')
-  }
-})
-
-it('records the audit status of the final valid response, including a shape repair', async () => {
-  vi.mocked(generateWithSourceRecovery)
-    .mockResolvedValueOnce({ ok: true, data: { artifact: { ...artifact, standards: [] }, citations: [], auditStatus: 'approved' } })
+it('preserves exam scope, student instructions, personal-note role and final audit status through repair', async () => {
+  vi.mocked(generateWithSourceRecovery).mockResolvedValueOnce(response({ ...artifact, standards: [] }))
     .mockResolvedValueOnce({ ok: true, data: { artifact, citations: [], auditStatus: 'unavailable' } })
-  const result = await generateUnitMasteryOutline(input)
+  const result = await generateUnitMasteryOutline({ ...input, scope: 'exam', chunks: [{ ...input.chunks[0], fileId: 'review' }], personalNoteChunkIds: ['chunk-1', 'not-selected'], studyIntent: { purpose: 'exam-prep', reviewSheetFileId: 'review', instructions: 'Connect the routes.' } })
   expect(result.ok).toBe(true)
+  expect(result.artifact?.scope).toBe('exam')
   expect(result.artifact?.generationAuditStatus).toBe('unavailable')
-})
-
-it('keeps the written source contract and selected personal-note role through shape repair', async () => {
-  const { STUDY_SOURCE_CONTRACT } = await import('../generation/layers/studySourceContract')
-  vi.mocked(generateWithSourceRecovery).mockResolvedValueOnce(response({ ...artifact, standards: [] })).mockResolvedValueOnce(response(artifact))
-  const result = await generateUnitMasteryOutline({ ...input, personalNoteChunkIds: ['chunk-1', 'not-selected'] })
-  expect(result.ok).toBe(true)
   for (const call of vi.mocked(generateWithSourceRecovery).mock.calls) {
-    expect(call[2].systemPrompt).toContain(STUDY_SOURCE_CONTRACT)
+    expect(call[2].request).toContain('Exam review-sheet chunk IDs: chunk-1.')
+    expect(call[2].request).toContain('Connect the routes.')
     expect(call[2].request).toContain('Personal class-note chunk IDs: chunk-1.')
     expect(call[2].request).not.toContain('not-selected')
+    expect(call[2].request).toContain('never invent a question')
+    expect(call[2].systemPrompt).toContain('Do not require formal learning objectives')
   }
 })

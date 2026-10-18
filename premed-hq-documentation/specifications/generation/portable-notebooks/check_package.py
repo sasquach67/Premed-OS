@@ -49,7 +49,8 @@ def prompt_methodology_errors(root,goal,prompt):
         required += [line for line in guide.split('## Runtime briefing mirror',1)[1].split('\n---',1)[0].splitlines() if line.startswith('| `SG-')]
         required.append('## 2. Required structure\n'+guide.split('## 2. Required structure\n',1)[1].split('\n## 3. Study-guide rules',1)[0])
         mastery=(gen/'11-unit-mastery-outline-v1.md').read_text()
-        required += [line for line in mastery.split('## Rules',1)[1].split('\nThe runtime artifact spec',1)[0].splitlines() if line.startswith('| `UMO-')]
+        required.append('## Portable objective coverage\n'+mastery.split('## Portable objective coverage\n',1)[1])
+        required += [line for line in mastery.splitlines() if line.startswith('| `UMO-')]
         visual=(gen/'06-visual-system.md').read_text()
         required += [line for line in visual.splitlines() if line.startswith('| `VIS-')]
     else:

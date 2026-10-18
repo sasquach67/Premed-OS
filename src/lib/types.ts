@@ -1143,6 +1143,8 @@ export interface GeneratedMasteryOutlineStandard {
   evidenceLimit?: string
   /** Added after v41. Older saved maps omit this and render their objective
    * title as a compatibility recall cue. */
+  howTested?: { setup: string; questions: { id: string; text: string; sourceChunkIds: ID[] }[]; noQuestionsReason?: string }
+  applicationSkills?: { text: string; questionIds: string[] }[]
   freeRecallCues?: string[]
   understand: string[]
   beAbleToDo: string[]
