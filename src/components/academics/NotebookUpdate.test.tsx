@@ -27,25 +27,35 @@ beforeEach(async () => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
 function button(label: string) { return [...container.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.trim() === label)! }
 async function click(label: string) {
-  expect(button(label), label).toBeTruthy(); await act(async () => button(label).click())
-  if (label === 'Validate and preview' || label === 'Accept update to this entry' || label.startsWith('Save editable')) await vi.waitFor(async () => { await act(async () => {}); expect(container.querySelector('input[type="file"]')?.hasAttribute('disabled')).not.toBe(true) }, { timeout: 10000, interval: 20 })
+  let target=[...document.querySelectorAll<HTMLElement>('button,[role="menuitem"]')].find(node=>node.textContent?.trim()===label)
+  if (!target && ['Edit notebook','Download','Version history','Notebook details','My notes'].includes(label)) {
+    const trigger=document.querySelector<HTMLButtonElement>('[aria-label="More notebook actions"]')!
+    expect(trigger,label).toBeTruthy();await act(async()=>trigger.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true})))
+    target=[...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(node=>node.textContent?.trim()===label)
+  }
+  if (!target && ['Export current JSON','Export original','JSON records with progress','Download current notebook + images','Download complete portable backup'].includes(label)) {
+    await click('Download');target=[...document.querySelectorAll<HTMLElement>('button')].find(node=>node.textContent?.trim()===label)
+  }
+  expect(target,label).toBeTruthy();await act(async()=>target!.click())
+  if (['Validate and preview','Save notebook','Save update'].includes(label)) await vi.waitFor(async()=>{await act(async()=>{});expect(container.querySelector('input[type="file"]')?.hasAttribute('disabled')).not.toBe(true)},{timeout:10000,interval:20})
 }
+
 async function fill(label: string, value: string) {
-  const field = [...container.querySelectorAll('label')].find(l => l.childNodes[0]?.textContent?.trim() === label)?.querySelector('textarea')
+  const field = [...document.querySelectorAll('label')].find(l => l.childNodes[0]?.textContent?.trim() === label)?.querySelector('textarea')
   if (!field) throw new Error(`Missing textarea: ${label}`)
   expect(field, label).toBeTruthy(); await act(async () => { Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(field, value); field.dispatchEvent(new Event('input', { bubbles: true })) })
 }
-async function check(text: string) { const box = [...container.querySelectorAll('label')].find(l => l.textContent?.includes(text))?.querySelector<HTMLInputElement>('input[type="checkbox"]'); if (!box) throw new Error(`Missing checkbox: ${text}`); await act(async () => box.click()) }
+async function check(text: string) { const box = [...document.querySelectorAll('label')].find(l => l.textContent?.includes(text))?.querySelector<HTMLInputElement>('input[type="checkbox"]'); if (!box) throw new Error(`Missing checkbox: ${text}`); await act(async () => box.click()) }
 async function toImport() {
-  await click('Update this notebook')
+  await click('Update')
   expect(button('Copy prompt').disabled).toBe(true)
   await click('I already have the current notebook and images'); await click('Copy prompt');await click('Choose the folder your AI made')
 }
 async function preview() { await toImport(); await fill('Paste complete JSON', JSON.stringify(correctedFixture())); await click('Validate and preview') }
 it('requires saved edits/notes, uses the same goal and names the real saved baseline', async () => {
-  await click('Edit entry'); await fill('Entry title', 'My saved wording'); await click('Update this notebook')
+  await click('Edit notebook'); await fill('Entry title', 'My saved wording'); await click('Update')
   expect(container.textContent).toContain('Save your edits and notes'); expect(lecture().importedNotebook!.updateSession).toBeUndefined()
-  await click('Save edits'); await click('Update this notebook')
+  await click('Save edits'); await click('Update')
   expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(0)
   expect(container.textContent).toContain('My saved wording')
   const prompt = container.querySelector<HTMLTextAreaElement>('[aria-label="Full customized prompt"]') ?? container.querySelector<HTMLTextAreaElement>('[aria-label="Full customized prompt"]')!
@@ -68,7 +78,7 @@ it('opens the saved reader after reload and resumes the untouched update draft o
   expect(container.querySelector('[aria-label="Update saved notebook"]')).toBeNull()
   expect(JSON.stringify(lecture().importedNotebook!.updateSession)).toBe(savedDraft)
   expect(JSON.stringify({ ...sessionStorage })).toBe(sessionBefore)
-  await click('Update this notebook')
+  await click('Update')
   expect(container.querySelector('h1')?.textContent).toBe('Update notebook')
   expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeNull()
   expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toContain('200 milliseconds')
@@ -78,14 +88,14 @@ it('opens the saved reader after reload and resumes the untouched update draft o
 it('shows readable differences and explicit acceptance, preserves independent practice through store reload', async () => {
   await preview()
   expect(container.textContent).toContain('Hypothetical task: how long is the shape shown?')
-  expect(container.textContent).toContain('Source / excerpts'); expect(button('Accept update to this entry').disabled).toBe(true)
+  expect(container.textContent).toContain('Source / excerpts'); expect(button('Save update').disabled).toBe(true)
   const previewFrame = [...container.querySelectorAll('.en-notebook-preview')].find(node => node.querySelector('h3')?.textContent === 'Preview — not saved yet')!
   expect(container.querySelector('.en-import-comparison-scroll[tabindex="0"]')).toBeTruthy()
   expect(previewFrame.querySelector('.en-notebook-preview-scroll[tabindex="0"]')).toBeTruthy()
   expect(previewFrame.querySelector('[inert]')).toBeNull()
   expect(previewFrame.textContent).not.toMatch(/Expand preview|Collapse preview/)
-  expect(button('Accept update to this entry').disabled).toBe(true)
-  await check('I reviewed the content'); await click('Accept update to this entry')
+  expect(button('Save update').disabled).toBe(true)
+  await check('I reviewed the content'); await click('Save update')
   expect(lecture().id).toBe(id); expect(lecture().importedNotebook!.current.entries[0].revision).toBe(2)
   expect(lecture().importedNotebook!.progress['question-mapping'].complete).toBe(true)
   expect(lecture().importedNotebook!.progress['question-timing']).toBeUndefined()
@@ -94,16 +104,16 @@ it('shows readable differences and explicit acceptance, preserves independent pr
   useStore.setState({ academics: createInitialDataForMode(false).academics }); localStorage.setItem(STORAGE_KEY, JSON.stringify(disk)); await act(async () => useStore.persist.rehydrate())
   await act(async () => root.render(<Harness />))
   expect(lecture().importedNotebook!.history).toHaveLength(1); expect(lecture().importedNotebook!.notes).toBe('Protected notes')
-  await click('Edit entry'); await fill('Entry title', 'Edited after acceptance'); await click('Save edits')
+  await click('Edit notebook'); await fill('Entry title', 'Edited after acceptance'); await click('Save edits')
   expect(JSON.parse(exportNotebook(lecture(), 'current')).entries[0].title).toBe('Edited after acceptance')
 })
 it('blocks content changed after preview and explains a separate copy accurately', async () => {
   await preview(); await check('I reviewed the content')
   await act(async () => notebookTransaction(state => { state.academics.classCenter.lectures[0].importedNotebook!.current.entries[0].title = 'Newer saved title' }))
-  expect(container.textContent).toContain('The saved notebook changed after this update started'); expect(button('Accept update to this entry').disabled).toBe(true)
+  expect(container.textContent).toContain('The saved notebook changed after this update started'); expect(button('Save update').disabled).toBe(true)
   await check('Save as separate entries instead')
   expect(container.textContent).toContain('separate copy starts with empty notes and practice records')
-  await check('Save revised content as separate entries'); await click(`Save editable entry to ${course.code}`)
+  await check('Save revised content as separate entries'); await click('Save notebook')
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(2)
   expect(lecture().importedNotebook!.current.entries[0].title).toBe('Newer saved title')
   const copy = useStore.getState().academics.classCenter.lectures.find(l => l.id !== id)!.importedNotebook!
@@ -112,26 +122,26 @@ it('blocks content changed after preview and explains a separate copy accurately
 it('rolls back content, history and study records when persistence fails during acceptance', async () => {
   await preview(); await check('I reviewed the content'); const before = JSON.stringify(lecture().importedNotebook)
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Quota exceeded') })
-  await click('Accept update to this entry')
+  await click('Save update')
   expect(container.textContent).toContain('Browser storage could not save'); expect(JSON.stringify(lecture().importedNotebook)).toBe(before)
 })
 it('rejects a cross-tab change after preview without replacing newer disk content', async () => {
   await preview(); await check('I reviewed the content')
   const disk = JSON.parse(localStorage.getItem(STORAGE_KEY)!); disk.state.academics.classCenter.lectures[0].importedNotebook.notes = 'Newer other-tab notes'; localStorage.setItem(STORAGE_KEY, JSON.stringify(disk))
-  await click('Accept update to this entry'); expect(container.textContent).toContain('another tab')
+  await click('Save update'); expect(container.textContent).toContain('another tab')
   expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).state.academics.classCenter.lectures[0].importedNotebook.notes).toBe('Newer other-tab notes')
   expect(lecture().importedNotebook!.current.entries[0].revision).toBe(1)
 })
 it('restores a reviewed history version and retains the replaced version', async () => {
-  await preview(); await check('I reviewed the content'); await click('Accept update to this entry')
-  await act(async () => container.querySelector('.en-history summary')!.dispatchEvent(new MouseEvent('click', { bubbles: true })))
-  await click('Review this version'); expect(container.textContent).toContain('Review before restoring')
+  await preview(); await check('I reviewed the content'); await click('Save update')
+  await click('Version history')
+  await click('Review this version'); expect(document.body.textContent).toContain('Review before restoring')
   await click('Restore this version')
   expect(lecture().importedNotebook!.current.entries[0].revision).toBe(1); expect(lecture().importedNotebook!.history).toHaveLength(2)
   expect(lecture().importedNotebook!.progress['question-timing'].complete).toBe(true)
 })
 it('uses the shared three steps and one collapsed troubleshooting disclosure for updates', async () => {
-  await click('Update this notebook')
+  await click('Update')
   expect(container.querySelectorAll('.nai-step')).toHaveLength(3)
   expect([...container.querySelectorAll('.nai-step-body > h2')].map(node=>node.textContent)).toEqual(['Gather your files','Copy the prompt into a new AI chat','Bring it back'])
   const help=container.querySelector<HTMLDetailsElement>('.nai-help')!
@@ -142,9 +152,9 @@ it('uses the shared three steps and one collapsed troubleshooting disclosure for
 it('blocks an old handoff after saved edits, then restarts with the latest content and fresh acknowledgments', async () => {
   await toImport(); await fill('Paste complete JSON', JSON.stringify(correctedFixture()))
   const oldSession = lecture().importedNotebook!.updateSession!.id
-  await click('Back to saved entry'); await click('Edit entry'); await fill('Entry title', 'Latest manual title'); await click('Save edits')
+  await click('Back to saved entry'); await click('Edit notebook'); await fill('Entry title', 'Latest manual title'); await click('Save edits')
   const before = structuredClone(lecture().importedNotebook!)
-  await click('Update this notebook')
+  await click('Update')
   expect(container.textContent).toContain('The saved notebook changed after this update started')
   expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toContain('200 milliseconds')
   expect(button('Copy prompt').disabled).toBe(true)
@@ -165,7 +175,7 @@ it('blocks an old handoff after saved edits, then restarts with the latest conte
   expect(button('I already have the current notebook and images').getAttribute('aria-pressed')).toBe('false')
 })
 it('stops copying and downloading immediately if content changes while the prompt step is open', async () => {
-  await click('Update this notebook');await click('I already have the current notebook and images');await click('Copy prompt')
+  await click('Update');await click('I already have the current notebook and images');await click('Copy prompt')
   expect(button('Copy prompt').disabled).toBe(false)
   await act(async () => notebookTransaction(state => { state.academics.classCenter.lectures[0].importedNotebook!.current.entries[0].title = 'Changed while prompt was open' }))
   expect(button('Copy prompt').disabled).toBe(true)
@@ -180,7 +190,7 @@ it('uses the exact canonical update prompt for preview, clipboard and download w
   Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: (blob: Blob) => { blobs.push(blob); return 'blob:update-test' } })
   Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() })
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { names.push(this.download) })
-  await click('Update this notebook')
+  await click('Update')
   const prompt = container.querySelector<HTMLTextAreaElement>('[aria-label="Full customized prompt"]')!.value
   expect(prompt.startsWith('# Update my Premed OS notebook: review\n\n')).toBe(true)
   expect(prompt).toContain('complete prompt works in a fresh AI chat')
@@ -197,7 +207,7 @@ it('uses the exact canonical update prompt for preview, clipboard and download w
   expect(baseline).not.toContain('"complete"')
 })
 it('does not invalidate the content baseline for independent saved notes or progress changes', async () => {
-  await click('Update this notebook');await click('I already have the current notebook and images')
+  await click('Update');await click('I already have the current notebook and images')
   await act(async () => notebookTransaction(state => { const n = state.academics.classCenter.lectures[0].importedNotebook!; n.notes = 'New independent note'; n.progress['question-mapping'].response = 'A newer independent response' }))
   expect(button('Copy prompt').disabled).toBe(false)
   expect(container.querySelector<HTMLButtonElement>('.nai-file button')!.disabled).toBe(false)
@@ -211,7 +221,7 @@ it('downloads current, original and backup JSON with their actual titles and exa
   Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: (blob: Blob) => { blobs.push(blob); return 'blob:title-test' } })
   Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() })
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { names.push(this.download) })
-  await click('Edit entry'); await fill('Entry title', 'Current: lesson/notes'); await click('Save edits')
+  await click('Edit notebook'); await fill('Entry title', 'Current: lesson/notes'); await click('Save edits')
   const before = JSON.stringify(lecture().importedNotebook)
   const expected = ['current', 'original', 'backup'].map(kind => exportNotebook(lecture(), kind as 'current' | 'original' | 'backup'))
   await click('Export current JSON'); await click('Export original'); await click('JSON records with progress')
@@ -231,7 +241,7 @@ it.each(['current', 'backup'] as const)('suggests the current title for the %s Z
   vi.spyOn(notebookAssetStore, 'notebookAssetRepository').mockReturnValue({} as ReturnType<typeof notebookAssetStore.notebookAssetRepository>)
   const currentBundle = vi.spyOn(notebookBundles, 'exportNotebookPackageBundle').mockResolvedValue(blob)
   const backupBundle = vi.spyOn(notebookBundles, 'exportNotebookBackupBundle').mockResolvedValue(blob)
-  await click('Edit entry'); await fill('Entry title', 'Current: lesson/notes'); await click('Save edits')
+  await click('Edit notebook'); await fill('Entry title', 'Current: lesson/notes'); await click('Save edits')
   const before = JSON.stringify(lecture().importedNotebook)
   await click(kind === 'current' ? 'Download current notebook + images' : 'Download complete portable backup')
   await vi.waitFor(() => expect(names).toEqual(['Current- lesson-notes.zip']))
@@ -242,7 +252,7 @@ it.each(['current', 'backup'] as const)('suggests the current title for the %s Z
 })
 
 it('returns from update to Study guide while retaining its draft and saved study records', async () => {
-  await click('Practice recall'); await toImport(); await fill('Paste complete JSON', JSON.stringify(correctedFixture()))
+  await click('Practice'); await toImport(); await fill('Paste complete JSON', JSON.stringify(correctedFixture()))
   const before = JSON.stringify(lecture().importedNotebook)
   const sessionBefore = JSON.stringify({ ...sessionStorage })
   await click('Back to saved entry')
@@ -250,12 +260,12 @@ it('returns from update to Study guide while retaining its draft and saved study
   expect(container.querySelector('.nbr-doc')?.getAttribute('data-reader-mode')).toBe('study')
   expect(JSON.stringify(lecture().importedNotebook)).toBe(before)
   expect(JSON.stringify({ ...sessionStorage })).toBe(sessionBefore)
-  await click('Update this notebook')
+  await click('Update')
   expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toBe(JSON.stringify(correctedFixture()))
 })
 it.each(['Save edits', 'Cancel edits'])('returns to Study guide after %s without changing notes or practice progress', async action => {
   const before = structuredClone(lecture().importedNotebook!)
-  await click('Practice recall'); await click('Edit entry'); await fill('Entry title', 'My revised title'); await click(action)
+  await click('Practice'); await click('Edit notebook'); await fill('Entry title', 'My revised title'); await click(action)
   expect(button('Study guide').getAttribute('aria-pressed')).toBe('true')
   expect(container.querySelector('.nbr-doc')?.getAttribute('data-reader-mode')).toBe('study')
   expect(lecture().importedNotebook!.notes).toBe(before.notes)
@@ -266,7 +276,7 @@ it.each(['Save edits', 'Cancel edits'])('returns to Study guide after %s without
 })
 
 it('reopens an existing update draft without requiring another workspace write', async () => {
-  await click('Update this notebook')
+  await click('Update')
   const draft = JSON.stringify(lecture().importedNotebook!.updateSession)
   await click('Back to saved entry')
   const set = Storage.prototype.setItem
@@ -275,8 +285,26 @@ it('reopens an existing update draft without requiring another workspace write',
     if (this === localStorage) { writes.push(key); throw new DOMException('Storage temporarily unavailable', 'UnknownError') }
     return set.call(this, key, value)
   })
-  await click('Update this notebook')
+  await click('Update')
   expect(container.querySelector('[aria-label="Update saved notebook"]')).toBeTruthy()
   expect(writes).toEqual([])
   expect(JSON.stringify(lecture().importedNotebook!.updateSession)).toBe(draft)
+})
+
+it('reports the selected destination when an update is saved as a separate notebook in another class', async () => {
+  const destination={...course,id:'separate-destination',code:'OTHER 101',title:'Other class'}
+  await act(async()=>useStore.getState().update(state=>{state.courses.push(destination)}))
+  const navigate=vi.fn()
+  function DestinationHarness(){const current=useStore(state=>state.academics.classCenter.lectures.find(item=>item.id===id)!);return <ExternalNotebookView lecture={current} courseCode={course.code} onNavigateEntry={navigate} />}
+  await act(async()=>root.render(<DestinationHarness />))
+  const before=structuredClone(lecture().importedNotebook)
+  await toImport()
+  const proposal=correctedFixture();proposal.course={code:destination.code,title:destination.title,term:destination.term}
+  await fill('Paste complete JSON',JSON.stringify(proposal));await click('Validate and preview')
+  await check('Save as separate entries instead');await click('Save to OTHER 101');await click('Save notebook')
+  const saved=useStore.getState().academics.classCenter.lectures.find(item=>item.courseId===destination.id)!
+  expect(saved).toBeTruthy();expect(navigate).toHaveBeenCalledWith(saved.id,destination.id)
+  expect(lecture().importedNotebook!.current).toEqual(before!.current)
+  expect(lecture().importedNotebook!.notes).toEqual(before!.notes)
+  expect(lecture().importedNotebook!.progress).toEqual(before!.progress)
 })

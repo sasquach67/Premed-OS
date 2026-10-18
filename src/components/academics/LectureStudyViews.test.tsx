@@ -26,7 +26,8 @@ describe('lecture mastery study view', () => {
     title: 'Gene Expression Textbook', fileName: 'BIOL103-Chapter-8.pdf', type: 'reading',
     linkedTopicIds: [], owner: 'course', processingStatus: 'ready', createdAt: 1, updatedAt: 1, order: 0,
   }
-  const sourceText = 'Transcription produces an RNA copy of a DNA template.\nThe polymerase reads the template strand while building RNA 5′ to 3′.'
+  const sourceQuestion = 'Given a DNA template, what RNA sequence is produced?'
+  const sourceText = 'Transcription produces an RNA copy of a DNA template.\nThe polymerase reads the template strand while building RNA 5′ to 3′.' + '\n' + sourceQuestion
   const chunks: SourceChunk[] = [
     { id: 'source-1', fileId: textbook.id, courseId, content: sourceText, sourcePosition: { index: 11, label: 'Page 12' }, coveredByKeyPoint: true, createdAt: 1, updatedAt: 1, order: 0 },
     { id: 'source-2', fileId: textbook.id, courseId, content: 'Translation uses the codon sequence to assemble a polypeptide.', sourcePosition: { index: 12, label: 'Page 13' }, coveredByKeyPoint: true, createdAt: 1, updatedAt: 1, order: 1 },
@@ -38,6 +39,8 @@ describe('lecture mastery study view', () => {
     standards: [
       {
         id: 'objective-1', title: 'Explain how transcription preserves genetic information',
+        howTested: { setup: 'A template strand is supplied; determine the RNA product.', questions: [{ id: 'q-rna', text: sourceQuestion, sourceChunkIds: ['source-1'] }] },
+        applicationSkills: [{ text: 'Given a template sequence, write the RNA product 5′ to 3′.', questionIds: ['q-rna'] }],
         freeRecallCues: ['Without notes, trace transcription from DNA template to RNA product.'],
         understand: ['RNA is complementary to the DNA template strand.'],
         beAbleToDo: ['Given a template sequence, write the RNA product 5′ to 3′.'],
@@ -99,20 +102,24 @@ describe('lecture mastery study view', () => {
     expect(container.querySelector('[data-source-chunk-id="source-1"]')?.textContent).toContain(sourceText)
   })
 
-  it('shows the full objective outline first while keeping generated answers hidden and sources exact', async () => {
+  it('shows actual questions, linked skills and facts in order with exact collapsed source evidence', async () => {
     await render()
 
     expect(container.textContent).toContain('Learn the map')
     expect(container.querySelector('nav[aria-label="Mastery objectives"]')).toBeTruthy()
     expect(container.textContent).toContain('RNA is complementary to the DNA template strand.')
     expect(container.textContent).toContain('Given a template sequence, write the RNA product 5′ to 3′.')
-    expect(container.textContent).toContain('Do not copy the coding strand')
-    expect(container.textContent).toContain('Original practice built from the selected sources')
-    expect(container.textContent).toContain('A template strand reads 3′-TAC-5′.')
-
-    const solution = container.querySelector<HTMLDetailsElement>('[data-testid="practice-solution-objective-1-0"]')!
-    expect(solution.open).toBe(false)
-    expect(solution.querySelector('.np-closed-label')?.textContent).toBe('Reveal answer')
+    expect(container.textContent).not.toContain('Do not copy the coding strand')
+    expect(container.textContent).not.toContain('Without notes, trace transcription')
+    expect(container.textContent).toContain(sourceQuestion)
+    const headings = [...container.querySelectorAll('h4')].map(heading => heading.textContent)
+    expect(headings.slice(0, 3)).toEqual(["How it's tested", 'Be able to do', 'Understand'])
+    const questionRow = [...container.querySelectorAll('li')].find(item => item.textContent?.includes(sourceQuestion))!
+    expect(questionRow.textContent).toContain('Q1')
+    expect(questionRow.textContent).not.toContain('Page 12')
+    const skillRow = [...container.querySelectorAll('li')].find(item => item.textContent?.includes('Given a template sequence'))!
+    expect(skillRow.textContent).toContain('Q1')
+    expect(container.querySelector('[data-testid^="practice-solution-"]')).toBeNull()
 
     const objectiveSources = [...container.querySelectorAll<HTMLDetailsElement>('details')].find((details) => details.querySelector('[data-source-chunk-id="source-1"]'))!
     expect(objectiveSources.open).toBe(false)
@@ -138,7 +145,9 @@ describe('lecture mastery study view', () => {
     expect(secondTrigger.getAttribute('data-state')).toBe('open')
     expect(document.activeElement).toBe(secondTrigger)
     expect(scrollIntoView).toHaveBeenCalled()
-    expect(container.textContent).toContain('Explain how a codon sequence becomes an amino-acid sequence.')
+    const closedPrompt = container.querySelector('[aria-label="Closed-notes prompt for Connect codons to a polypeptide product"]')!
+    expect(closedPrompt.textContent).toContain('Connect codons to a polypeptide product')
+    expect(closedPrompt.textContent).not.toContain('Explain how a codon sequence becomes an amino-acid sequence.')
     expect(container.querySelector<HTMLDetailsElement>('[data-testid="recall-reveal-objective-2"]')?.open).toBe(false)
   })
 
@@ -156,13 +165,15 @@ describe('lecture mastery study view', () => {
       ...outline,
       id: 'legacy-outline',
       scope: undefined,
-      standards: outline.standards.map(({ examPractice: _examPractice, ...standard }) => standard),
+      standards: outline.standards.map(({ examPractice: _examPractice, howTested: _howTested, applicationSkills: _applicationSkills, ...standard }) => standard),
     }
     await render(legacy)
 
     expect(container.textContent).toContain('Legacy unit scope')
-    expect(container.querySelector('[data-testid="legacy-practice-objective-1"]')).toBeTruthy()
-    expect(container.textContent).toContain('This earlier saved map has no generated application questions or worked answers')
+    expect(container.textContent).toContain('This saved map has no quoted course questions. Check the source materials for how it is tested.')
+    expect(container.textContent).not.toContain('Do not copy the coding strand')
+    expect(legacy.standards[0].watchFor).toEqual(outline.standards[0].watchFor)
+    expect(legacy.standards[0].freeRecallCues).toEqual(outline.standards[0].freeRecallCues)
     expect(container.textContent).toContain('Given a template sequence, write the RNA product 5′ to 3′.')
     expect(container.textContent).not.toContain('Rebuild with AI')
     expect(container.querySelector('[data-testid^="practice-solution-"]')).toBeNull()

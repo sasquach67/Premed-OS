@@ -797,7 +797,36 @@ function GeneratedMasteryOutlines({ courseId, data }: { courseId: string; data: 
   if (!outlines.length) return null
   return <section className="rounded-2xl border border-border bg-card p-4" aria-label="Generated Mastery Maps">
     <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Generated resource</p><h3 className="mt-1 font-display text-lg font-extrabold">Mastery Maps</h3></div><Badge variant="outline">{outlines.length} {outlines.length === 1 ? 'scope' : 'scopes'}</Badge></div>
-    <div className="mt-3 space-y-2">{outlines.map((outline) => <details key={outline.id} className="class-hub-record-row rounded-[13px] p-3"><summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{outline.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{outline.unit} · {outline.standards.length} standards</span></summary><div className="mt-3 space-y-3 border-t border-border pt-3"><GenerationReviewNotice status={outline.generationAuditStatus} />{outline.standards.map((standard) => <div key={standard.id} className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4"><div><p className="font-display font-extrabold">{standard.title}</p>{standard.evidenceLimit && <p className="mt-2 text-xs text-muted-foreground">Source limitation: {standard.evidenceLimit}</p>}<p className="mt-1 text-xs font-bold uppercase tracking-wide text-primary">Free recall</p><p className="text-muted-foreground">{(standard.freeRecallCues?.length ? standard.freeRecallCues : [standard.title]).join(' ')}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Understand</p><p className="text-muted-foreground">{standard.understand.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Be able to do</p><p className="text-muted-foreground">{standard.beAbleToDo.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Watch for</p><p className="text-muted-foreground">{standard.watchFor.join(' ') || 'Not stated'}</p></div></div>)}</div></details>)}</div>
+    <div className="mt-3 space-y-2">{outlines.map((outline) => <details key={outline.id} className="class-hub-record-row rounded-[13px] p-3">
+      <summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{outline.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{outline.unit} · {outline.standards.length} standards</span></summary>
+      <div className="mt-3 space-y-5 border-t border-border pt-3"><GenerationReviewNotice status={outline.generationAuditStatus} />{outline.standards.map((standard) => {
+        const questions = standard.howTested?.questions ?? []
+        const skills = standard.applicationSkills ?? standard.beAbleToDo.map(text => ({ text, questionIds: [] }))
+        const sourceIds = [...new Set([...standard.sourceChunkIds, ...questions.flatMap(question => question.sourceChunkIds)])]
+        return <article key={standard.id} className="space-y-3 text-sm">
+          <h4 className="font-display font-extrabold">{standard.title}</h4>
+          {standard.evidenceLimit && <p className="text-xs text-muted-foreground">Source limitation: {standard.evidenceLimit}</p>}
+          <section><h5 className="text-xs font-bold uppercase tracking-wide text-primary">How it's tested</h5>
+            {standard.howTested && <p className="mt-1 font-bold">{standard.howTested.setup}</p>}
+            {questions.length ? <ol className="mt-2 space-y-2">{questions.map((question, index) => <li key={question.id}><b className="mr-2">Q{index + 1}</b>{question.text}</li>)}</ol> : <p className="mt-1 text-muted-foreground">{standard.howTested?.noQuestionsReason ?? 'This saved map has no quoted course questions. Check the source materials for how it is tested.'}</p>}
+          </section>
+          <section><h5 className="text-xs font-bold uppercase tracking-wide text-primary">Be able to do</h5>
+            {skills.length ? <ul className="mt-2 space-y-2">{skills.map((skill, index) => {
+              const references = skill.questionIds.map(id => questions.findIndex(question => question.id === id)).filter(position => position >= 0)
+              return <li key={index}>{references.length > 0 && <b className="mr-2">{references.map(position => `Q${position + 1}`).join(' ')}</b>}{skill.text}</li>
+            })}</ul> : <p className="mt-1 text-muted-foreground">Not stated</p>}
+          </section>
+          <section><h5 className="text-xs font-bold uppercase tracking-wide text-primary">Understand</h5>
+            {standard.understand.length ? <ul className="mt-2 list-disc space-y-2 pl-5">{standard.understand.map((fact, index) => <li key={index}>{fact}</li>)}</ul> : <p className="mt-1 text-muted-foreground">Not stated</p>}
+          </section>
+          {sourceIds.length > 0 && <details className="text-xs text-muted-foreground"><summary className="w-fit cursor-pointer rounded-md py-2 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Source evidence</summary><div className="mt-2 space-y-3">{sourceIds.map(id => {
+            const chunk = data.sourceChunks.find(source => source.id === id)
+            const file = data.files.find(source => source.id === chunk?.fileId)
+            return <blockquote key={id} className="border-l-2 border-border pl-3 leading-6"><p className="font-bold">{file?.fileName ?? file?.title ?? 'Source passage'}{chunk?.sourcePosition?.label ? ` · ${chunk.sourcePosition.label}` : ''}</p><p className="whitespace-pre-wrap break-words">{chunk?.content ?? 'This source is no longer available.'}</p></blockquote>
+          })}</div></details>}
+        </article>
+      })}</div>
+    </details>)}</div>
     <p className="mt-3 text-xs font-semibold text-muted-foreground">Use the learning objectives and supporting course materials to review this outline.</p>
   </section>
 }

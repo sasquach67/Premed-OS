@@ -111,7 +111,7 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
     }
   }
 
-  return <section className="space-y-5" aria-label="Flashcard prompt">
+  return <section className="space-y-5 nai-flashcards" aria-label="Flashcard prompt">
     {showHeader && <header className="flex items-start justify-between gap-4">
       <div><h2 className="font-display text-xl font-bold">Create flashcards</h2><p className="mt-1 text-sm text-muted-foreground">{courseLabel} · From your completed Class Journal</p></div>
       <Button type="button" variant="ghost" size="icon" aria-label="Close flashcard prompt" onClick={onClose}><X className="size-4" /></Button>

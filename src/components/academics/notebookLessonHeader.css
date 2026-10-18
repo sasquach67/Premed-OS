@@ -22,3 +22,6 @@
 }
 .nbr .nbr-header-detail button[aria-pressed] { border: 0; box-shadow: none; }
 .dark .nbr .nbr-header-detail button[aria-pressed='true'] { color: var(--foreground); }
+.nbr .nbr-head-actions { flex: 0 0 auto; flex-wrap: nowrap; }
+.nbr .nbr-head-actions > button { flex: 0 0 auto; }
+@media(max-width: 640px) { .nbr .nbr-head-actions { flex-basis: 100%; } }

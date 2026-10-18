@@ -98,7 +98,7 @@ export function GeneratedLectureGuideView({ lecture, guide, brief, chunks, files
     <div className="lecture-guide-layout mt-6 grid items-start gap-8 @min-[52rem]:grid-cols-[13rem_minmax(0,1fr)] @min-[52rem]:gap-10">
       <aside className="min-w-0 @min-[52rem]:sticky @min-[52rem]:top-4">
         <ReadingContents label="Study guide sections" standalone={standalone} items={sections.map(section => ({ id: section.id, title: section.title, targetId: `${prefix}-${section.id}` }))} onNavigate={jumpToSection}/>
-        <Button onClick={onOpenMastery} variant="outline" className="mt-4 h-auto min-h-11 w-full justify-between whitespace-normal">Practice recall<ArrowRight className="size-4" /></Button>
+        <Button onClick={onOpenMastery} variant="outline" className="mt-4 h-auto min-h-11 w-full justify-between whitespace-normal">Mastery objectives<ArrowRight className="size-4" /></Button>
       </aside>
       <article data-guide-scroll-container={standalone || undefined} aria-label={standalone ? "Study guide text" : undefined} tabIndex={standalone ? 0 : undefined} className="lecture-study-guide-content min-w-0 rounded-2xl border border-border bg-card px-5 py-6 shadow-sm sm:px-9 sm:py-8">
         {brief.conceptMap && <ConceptConnections map={brief.conceptMap} chunks={chunks} files={files} />}

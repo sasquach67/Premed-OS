@@ -29,3 +29,21 @@
 .nai-step[hidden], .nai-number[hidden], .nai-step-body > h2[hidden], .nai-help[hidden] { display: none; }
 .nai-reviewing .nai-step { display: block; padding: 0; border: 0; }
 .nai-reviewing .nai-step[hidden] { display: none; }
+.nai-files { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.nai-step-body > button { max-width: 100%; height: auto; min-height: 36px; white-space: normal; text-align: left; }
+/* Scoped surfaces and hierarchy from the approved shared-flow reference. */
+.en-flow:not(:has(.nai-reviewing)), .nai-flashcards { max-width: 760px; margin-inline: auto; padding: 26px 28px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); }
+.external-notebook .notebook-ai-flow .nai-step-body > h2, .nai-flashcards .nai-step-body > h2, .external-notebook .nai-goal > h2 { font-size: 17px; font-weight: 800; line-height: 1.4; margin: 2px 0 16px; }
+.nai-step { grid-template-columns: 36px minmax(0, 1fr); position: relative; border-bottom: 0; }
+.nai-number { width: 36px; height: 36px; background: #e3f0f9; border-color: var(--primary); color: #22618c; font: 800 16px var(--font-display); }
+.dark .nai-number { background: #132535; color: #7bbbe4; }
+.nai-step:not(:last-child)::before { content: ''; position: absolute; left: 18px; top: 64px; bottom: -20px; width: 1px; background: var(--border); }
+.nai-file, .nai-materials span { background: var(--muted); }
+.nai-focus button[aria-pressed='true'], .en-flow .en-goal-card:has(input:checked) { background: #e3f0f9; }
+.dark .nai-focus button[aria-pressed='true'], .dark .en-flow .en-goal-card:has(input:checked) { background: #132535; }
+.nai-files { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nai-files > :not(.nai-file) { grid-column: 1 / -1; }
+.nai-files > button { max-width: 100%; white-space: normal; height: auto; min-height: 36px; justify-content: flex-start; }
+@media(max-width: 520px) { .en-flow:not(:has(.nai-reviewing)), .nai-flashcards { padding: 16px; } .nai-files { grid-template-columns: minmax(0, 1fr); } }
+.nai-file, .nai-materials span, .nai-expect { background: #efe5d3; }
+.dark .nai-file, .dark .nai-materials span, .dark .nai-expect { background: #322e28; }

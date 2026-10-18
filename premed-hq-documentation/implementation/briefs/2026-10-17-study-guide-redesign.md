@@ -34,3 +34,11 @@ Authority: `/Users/andyquach/Documents/Premed OS Academics Audit/2026-10-17-stud
 - Part 7: honest file/source checklist, explicit destination choices, scrolling/full preview, precise change list and one pinned save action with blocker reasons. Preserve the existing image, account, revision and durable-save safeguards.
 
 Validation extends the prior proof with a source-grounded BIOL103 Lesson9 mastery notebook, all create/update/flashcard copy paths, class mismatch and update change review, dark/light desktop/375px captures with measured surfaces, retired-label build grep, notebook suites/build/prompt parity and signed-out behavior. Real course proof artifacts stay local and outside code commits.
+
+### Addendum completion evidence
+
+Parts 4–7 are implemented locally. The review/save change retains durable image, stale-session, revision/history, account and rollback guards; selected-class destinations propagate through page navigation. The pinned native Save has an accessible live reason. Legacy stored mastery fields are preserved while all production renderers use the three approved sections. No storage migration was needed.
+
+Validation: 956 broad notebook/Academics/account/signed-out tests; 91 final persistence/page-route tests; 18 final flashcard/review tests (overlapping sets); successful production build and beta30 prompt parity; zero retired labels in built JavaScript. Flashcard prompt comparison confirms the one save-location sentence is its only change. No dependency/global-token/font/theme changes.
+
+Local approval artifacts: `output/study-guide-addendum-proof/review.html`, with 32 dark/light desktop/375px comparisons, measured backgrounds and no horizontal overflow; source-grounded Lesson 9 revision 5 plus a labeled revision 6 update demonstration. The prior Lessons 10–12 proof remains available. Local review harnesses/course material are not committed. Production import and external AI-chat execution are not claimed. **Stop here until Andy approves; do not merge or deploy.**

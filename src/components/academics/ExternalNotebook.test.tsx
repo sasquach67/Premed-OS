@@ -2,7 +2,7 @@ import { webcrypto } from 'node:crypto'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
-import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
+import { Link, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { JournalEntryPage } from '@/pages/JournalEntryPage'
 import { createInitialDataForMode, STORAGE_KEY, useStore } from '@/store/store'
 import { NotebookImportPanel } from './NotebookImportPanel'
@@ -26,8 +26,21 @@ beforeEach(() => {
   const data = createInitialDataForMode(false); data.courses = [course]; useStore.getState().replaceAll(data); imported.mockClear()
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
-async function click(label: string) { const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.trim() === label)!; expect(button, label).toBeTruthy(); await act(async () => button.click()); if (label === 'Validate and preview' || label.startsWith('Save editable')) await vi.waitFor(async () => { await act(async () => {}); expect(container.textContent).not.toContain('Checking package...'); expect(container.querySelector('input[type="file"]')?.hasAttribute('disabled')).not.toBe(true) }, { timeout: 10000, interval: 20 }) }
-async function fill(label: string, text: string) { const el = [...container.querySelectorAll<HTMLLabelElement>('label')].find(l => l.childNodes[0]?.textContent?.trim() === label)?.querySelector('textarea,input') as HTMLTextAreaElement | HTMLInputElement; expect(el, label).toBeTruthy(); await act(async () => { Object.getOwnPropertyDescriptor(el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, 'value')!.set!.call(el, text); el.dispatchEvent(new Event('input', { bubbles: true })) }) }
+async function click(label: string) {
+  let target=[...document.querySelectorAll<HTMLElement>('button,[role="menuitem"]')].find(node=>node.textContent?.trim()===label)
+  if (!target && ['Edit notebook','Download','Version history','Notebook details','My notes'].includes(label)) {
+    const trigger=document.querySelector<HTMLButtonElement>('[aria-label="More notebook actions"]')!
+    expect(trigger,label).toBeTruthy();await act(async()=>trigger.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true})))
+    target=[...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(node=>node.textContent?.trim()===label)
+  }
+  if (!target && ['Export current JSON','Export original','JSON records with progress','Download current notebook + images','Download complete portable backup'].includes(label)) {
+    await click('Download');target=[...document.querySelectorAll<HTMLElement>('button')].find(node=>node.textContent?.trim()===label)
+  }
+  expect(target,label).toBeTruthy();await act(async()=>target!.click())
+  if (['Validate and preview','Save notebook','Save update'].includes(label)) await vi.waitFor(async()=>{await act(async()=>{});expect(container.querySelector('input[type="file"]')?.hasAttribute('disabled')).not.toBe(true)},{timeout:10000,interval:20})
+}
+
+async function fill(label: string, text: string) { const el = [...document.querySelectorAll<HTMLLabelElement>('label')].find(l => l.childNodes[0]?.textContent?.trim() === label)?.querySelector('textarea,input') as HTMLTextAreaElement | HTMLInputElement; expect(el, label).toBeTruthy(); await act(async () => { Object.getOwnPropertyDescriptor(el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, 'value')!.set!.call(el, text); el.dispatchEvent(new Event('input', { bubbles: true })) }) }
 async function renderImport() { await act(async () => root.render(<NotebookImportPanel courseId={course.id} onImported={imported} />)) }
 async function choose(goal: 'review' | 'assessment') { await act(async () => container.querySelector<HTMLInputElement>(`input[value="${goal}"]`)!.click()) }
 async function openFallback() { const detail = container.querySelector<HTMLDetailsElement>('.en-prompt-detail')!; if (!detail.open) await act(async () => detail.querySelector('summary')!.click()); return detail }
@@ -43,7 +56,7 @@ it('reopens the saved reader from normal notebook navigation and reload while re
     <Route path="/academics/classes/:courseId" element={<Link to={path}>Open notebook</Link>} />
   </Routes></MemoryRouter>
   await act(async () => root.render(page))
-  await click('Update this notebook')
+  await click('Update')
   await fill('Additional instructions for your AI', 'Keep my unfinished update instructions.')
   const session = JSON.stringify(useStore.getState().academics.classCenter.lectures.find(item => item.id === id)!.importedNotebook!.updateSession)
   const draftStorage = JSON.stringify({ ...sessionStorage })
@@ -57,7 +70,7 @@ it('reopens the saved reader from normal notebook navigation and reload while re
   expect(container.querySelector('[aria-label="Saved external notebook"]')).toBeTruthy()
   expect(JSON.stringify(useStore.getState().academics.classCenter.lectures.find(item => item.id === id)!.importedNotebook!.updateSession)).toBe(session)
   expect(JSON.stringify({ ...sessionStorage })).toBe(draftStorage)
-  await click('Update this notebook')
+  await click('Update')
   expect(container.querySelector('[aria-label="Update saved notebook"]')).toBeTruthy()
   expect([...container.querySelectorAll('textarea')].some(field => field.value === 'Keep my unfinished update instructions.')).toBe(true)
 })
@@ -132,7 +145,7 @@ it('does not save before preview/explicit save and identifies exact malformed fi
   expect(container.querySelector('[role="alert"]')?.textContent).toContain('$.entries[0].requirements[0].status')
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
   await fill('Paste complete JSON', raw); await click('Validate and preview')
-  expect(container.textContent).toContain(`Save to ${course.code}`); expect(container.textContent).toContain('Covered:')
+  expect(container.textContent).toContain(`Save in ${course.code}`); expect(container.textContent).toContain('Covered:')
   const excerpt = container.querySelector('.en-notebook-preview')!
   expect(excerpt.textContent).toContain('Preview — not saved yet')
   expect(excerpt.querySelector('.en-notebook-preview-scroll[tabindex="0"]')).toBeTruthy()
@@ -140,7 +153,7 @@ it('does not save before preview/explicit save and identifies exact malformed fi
   expect(container.querySelector('.en-save-actions')?.closest('.en-notebook-preview')).toBeNull()
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
   // The complete preview is available immediately; validation gates already passed.
-  await click(`Save editable entry to ${course.code}`)
+  await click('Save notebook')
   expect(imported).toHaveBeenCalledTimes(1); expect(useStore.getState().academics.classCenter.lectures).toHaveLength(1)
 })
 it('shows the complete accessible preview without granting destination approval', async () => {
@@ -156,11 +169,28 @@ it('shows the complete accessible preview without granting destination approval'
   expect(body.getAttribute('aria-labelledby')).toBe(frame.querySelector('h3')!.id)
   expect(body.textContent).toContain(review.entries[0].title)
   expect(save.disabled).toBe(true)
-  const confirmation = [...container.querySelectorAll('label')].find(label => label.textContent?.includes('I want to save this package'))!.querySelector<HTMLInputElement>('input')!
-  await act(async () => confirmation.click())
+  expect(flowButton('Save to OTHER 101').disabled).toBe(true)
+  await click(`Keep in ${course.code}`)
   expect(save.disabled).toBe(false)
   expect(container.querySelector<HTMLTextAreaElement>('.en-json')!.value).toBe(differentClass)
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
+})
+it('saves to an existing matching class only after an explicit destination choice', async () => {
+  const other={...course,id:'matched-class',code:'OTHER 101',title:'Other class'}
+  await act(async()=>useStore.getState().update(state=>{state.courses.push(other)}))
+  const differentClass=JSON.stringify({...review,course:{code:other.code,title:other.title,term:other.term}})
+  await renderImport();await fill('Paste complete JSON',differentClass);await click('Validate and preview')
+  expect(flowButton('Save notebook').disabled).toBe(true)
+  expect(flowButton('Save to OTHER 101').disabled).toBe(false)
+  expect(container.textContent).toContain('Choose where to save first.')
+  await click('Save to OTHER 101')
+  expect(flowButton('Save notebook').disabled).toBe(false)
+  expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
+  await click('Save notebook')
+  const record=useStore.getState().academics.classCenter.lectures[0]
+  expect(record.courseId).toBe(other.id)
+  expect(imported).toHaveBeenCalledWith(record.id,other.id)
+  expect(exportNotebook(record,'original')).toBe(differentClass)
 })
 it('changes focus and scope fields with the notebook goal without losing hidden exam format', async () => {
   await renderWorkflow(); await choose('review')
@@ -182,7 +212,7 @@ it('rejects destination removed between validation and save', async () => {
   await renderImport(); await fill('Paste complete JSON', raw); await click('Validate and preview')
   await act(async () => useStore.getState().update(state => { state.courses = [] }))
   expect(container.textContent).toContain('Destination class not found')
-  expect(container.textContent).not.toContain(`Save editable entry to ${course.code}`)
+  expect(container.textContent).not.toContain('Save notebook')
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
 })
 it('keeps answers behind reveal and persists manual edits/response/notes through actual store reload', async () => {
@@ -196,8 +226,8 @@ it('keeps answers behind reveal and persists manual edits/response/notes through
   await act(async () => notebookTransaction(state => { state.academics.classCenter.lectures.find(l => l.id === id)!.importedNotebook!.progress[practice.id] = { response: 'My attempted answer', complete: false } }))
   expect(container.querySelector('.en-block-practice textarea')).toBeNull()
   expect(container.querySelector('.nbr-earlier-work')?.textContent).toContain('My attempted answer')
-  await fill('My notes', 'My independent note'); await click('Save notes')
-  await click('Edit entry'); await fill('Entry title', 'My edited notebook'); await click('Save edits')
+  await click('My notes'); await fill('My notes', 'My independent note'); await click('Save notes')
+  await click('Edit notebook'); await fill('Entry title', 'My edited notebook'); await click('Save edits')
   const disk = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
   expect(disk.state.academics.classCenter.lectures[0].importedNotebook.progress[practice.id].response).toBe('My attempted answer')
   await act(async () => root.unmount()); root = createRoot(container)
@@ -270,7 +300,7 @@ it('restores raw import JSON but requires revalidation before saving and clears 
   expect(container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Paste complete JSON"]')?.value ?? [...container.querySelectorAll('textarea')].find(el=>el.value===raw)?.value).toBe(raw)
   expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeNull()
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
-  await click('Validate and preview');await click(`Save editable entry to ${course.code}`)
+  await click('Validate and preview');await click('Save notebook')
   expect(imported).toHaveBeenCalledTimes(1);expect(sessionStorage.getItem(notebookWorkflowDraftKey(course.id))).toBeNull()
 })
 
@@ -399,7 +429,7 @@ it('renders practice-prompt data as a safe table while retaining exact JSON, edi
   expect(container.querySelector('img[src="x"]')).toBeNull()
   expect(exportNotebook(lecture, 'original')).toBe(prepared.raw)
   expect(JSON.parse(exportNotebook(lecture, 'current')).entries[0].sections.flatMap((s: { blocks: { id: string; prompt?: string }[] }) => s.blocks).find((b: { id: string }) => b.id === practice.id).prompt).toBe(prompt)
-  await click('Edit entry'); expect([...container.querySelectorAll('textarea')].some(e => e.value === prompt)).toBe(true)
+  await click('Edit notebook'); expect([...container.querySelectorAll('textarea')].some(e => e.value === prompt)).toBe(true)
 })
 
 it('relocates provenance into source details without changing saved text, exports, notes or history', async () => {
@@ -434,7 +464,7 @@ it('relocates provenance into source details without changing saved text, export
   const article = container.querySelector('.nbr-doc article')!, firstSection = article.querySelector('.en-section')!, coverage = article.querySelector('.nbr-coverage-disclosure')!
   expect(firstSection.querySelector('h2')?.textContent).toBe('At a glance')
   expect(firstSection.compareDocumentPosition(coverage) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  expect(container.querySelector('.nbr-tools > summary')?.textContent).toBe('Downloads, notes and history')
+  expect(container.querySelector('[aria-label="More notebook actions"]')).toBeTruthy()
   expect(container.querySelector('.nbr-views')?.tagName).toBe('NAV')
   await click('Practice'); await click('Sources'); await click('Study guide')
   expect(JSON.stringify(lecture.importedNotebook)).toBe(before)
@@ -523,4 +553,21 @@ it('uses current Guide directions in the handoff, allows exclusions, and refresh
   await openFallback()
   expect(prompt()).not.toContain('Interpret healing through cultural and social context.')
   expect(prompt()).toContain('Explain how the anthropologist knows.')
+})
+
+it('opens the saved notebook under the explicitly selected destination class route', async () => {
+  const target={...course,id:'route-target',code:'OTHER 101',title:'Other class'}
+  await act(async()=>useStore.getState().update(state=>{state.courses.push(target)}))
+  function Location(){return <output aria-label="Current notebook route">{useLocation().pathname}</output>}
+  await act(async()=>root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}/journal/new`]}><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<JournalEntryPage />} /></Routes><Location /></MemoryRouter>))
+  await choose('review');await click('I copied it manually');await click('Choose the folder your AI made')
+  const proposal=JSON.stringify({...review,course:{code:target.code,title:target.title,term:target.term}})
+  await fill('Paste complete JSON',proposal);await click('Validate and preview');await click('Save to OTHER 101');await click('Save notebook')
+  const saved=useStore.getState().academics.classCenter.lectures[0]
+  expect(saved.courseId).toBe(target.id)
+  expect(container.querySelector('[aria-label="Current notebook route"]')?.textContent).toBe(`/academics/classes/${target.id}/journal/${saved.id}`)
+  expect(container.querySelector('h1')?.textContent).toBe(review.entries[0].title)
+  expect(container.textContent).not.toContain('Notebook entry not found')
+  expect([...container.querySelectorAll('button')].filter(button=>button.textContent?.trim()==='Flashcards')).toHaveLength(1)
+  expect([...container.querySelectorAll('button')].some(button=>button.textContent?.trim()==='Create flashcards')).toBe(false)
 })
