@@ -498,6 +498,31 @@ function canonicalCourseFields(form: Pick<ClassFormState, 'courseCode' | 'course
   }
 }
 
+/** An exam's stated scope as the assignment stores it (D9b stage 4). Lessons
+ *  are kept as the schedule's own labels, because at first import a class has
+ *  no topics yet and topic ids alone would lose "lessons 1–7" on the day it was
+ *  read. `coveredTopicIds` is filled wherever a topic already matches a lesson
+ *  by its scheduled date or its `Lesson N` title; a cumulative exam covers every
+ *  topic and every lesson up to its date. */
+export function examScopeFromSyllabus(center: ClassCenterData, courseId: string, proposal: SyllabusProposal, item: SyllabusItem): Pick<ClassAssignment, 'examScope' | 'coveredTopicIds'> {
+  if (item.kind !== 'exams' || !item.scope) return {}
+  const schedule = proposal.items.filter((unit) => unit.kind === 'units' && /^Lesson\s+\d+$/i.test(unit.label))
+  const numbers = item.scope.cumulative
+    ? schedule.filter((unit) => !item.value || !unit.value || unit.value <= item.value).map((unit) => Number(unit.label.replace(/\D+/g, '')))
+    : item.scope.lessons ?? []
+  const lessons = [...new Set(numbers)].sort((left, right) => left - right).map((number) => `Lesson ${number}`)
+  const lessonDates = new Set(schedule.filter((unit) => lessons.includes(unit.label)).map((unit) => unit.value).filter((value): value is string => Boolean(value)))
+  const topics = center.topics.filter((topic) => topic.courseId === courseId)
+  const covered = item.scope.cumulative
+    ? topics.map((topic) => topic.id)
+    : topics.filter((topic) => (topic.scheduledFor && lessonDates.has(topic.scheduledFor.slice(0, 10)))
+      || lessons.some((label) => new RegExp(`^${label}\\b`, 'i').test(topic.title))).map((topic) => topic.id)
+  return {
+    examScope: { ...(lessons.length ? { lessons } : {}), ...(item.scope.cumulative !== undefined ? { cumulative: item.scope.cumulative } : {}) },
+    ...(covered.length ? { coveredTopicIds: covered } : {}),
+  }
+}
+
 /** Applies only a student's explicit review choices. The diff itself stays in
  * syllabusReimport.ts; these keys merely locate the records that it identified. */
 function applyAcceptedReimport(center: ClassCenterData, courseId: string, proposal: SyllabusProposal, decisions: ReimportDecision[], sourceFileId: string | undefined, now: number) {
@@ -528,10 +553,11 @@ function applyAcceptedReimport(center: ClassCenterData, courseId: string, propos
       existing.syllabusSourceKey = key
       if (sourceFileId && !existing.linkedFileIds.includes(sourceFileId)) existing.linkedFileIds.push(sourceFileId)
       existing.notes = `Source: ${item.evidence.location} — “${item.evidence.quote}”`
+      Object.assign(existing, examScopeFromSyllabus(center, courseId, proposal, item))
       existing.updatedAt = now
       return
     }
-    center.assignments.push({ id: uid(), courseId, title: item.label, syllabusSourceKey: key, type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: sourceFileId ? [sourceFileId] : [], notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: center.assignments.filter((assignment) => assignment.courseId === courseId).length })
+    center.assignments.push({ id: uid(), courseId, title: item.label, syllabusSourceKey: key, type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: sourceFileId ? [sourceFileId] : [], notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: center.assignments.filter((assignment) => assignment.courseId === courseId).length, ...examScopeFromSyllabus(center, courseId, proposal, item) })
   })
   proposal.items.filter((item) => item.kind === 'weights').forEach((item) => {
     const key = syllabusCategorySourceKey(item.label)
@@ -822,6 +848,7 @@ function ClassCenterDashboard({
         evidenceByFile.forEach((items, fileId) => persistConfirmedSyllabusEvidence(center, courseId, fileId, items, now))
         proposal.items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines').forEach((item, index) => center.assignments.push({
           id: uid(), courseId, title: item.label, syllabusSourceKey: syllabusAssignmentSourceKey(item.label, item.value), type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: linkedFileIdsForItem(item), notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
+          ...(proposal ? examScopeFromSyllabus(center, courseId, proposal, item) : {}),
         }))
         proposal.items.filter((item) => item.kind === 'weights').forEach((item, index) => center.gradeCategories.push({
           id: uid(), courseId, name: item.label || 'Untitled category', syllabusSourceKey: syllabusCategorySourceKey(item.label), weight: Number(item.value?.replace('%', '')) || 0,

@@ -78,6 +78,26 @@ describe('BIOL 103 Fall 2026 OCR schedule', () => {
     expectDatesIsoOrUnset(biol().items)
   })
 
+  it('reads the scope each exam states, and the final for this section', () => {
+    const exams = biol().items.filter((item) => item.kind === 'exams')
+    expect(exams.find((item) => item.label === 'Exam 1')?.scope).toEqual({ lessons: [1, 2, 3, 4, 5, 6, 7] })
+    expect(exams.find((item) => item.label === 'Exam 2')?.scope).toEqual({ lessons: [9, 10, 11, 12, 13, 14, 15] })
+    expect(exams.find((item) => item.label === 'Exam 1')?.context).toContain('Covers lessons 1–7')
+    // The header line says Section 004, so 004's final is the one, not 005's.
+    const final = exams.find((item) => /final/i.test(item.label))
+    expect(final).toEqual(expect.objectContaining({ label: 'Final Exam', value: '2026-12-07', confidence: 'high' }))
+    expect(final?.context).toContain('Section 004')
+  })
+
+  it('offers every section\'s final, low confidence, when the section is unknown', () => {
+    const parsed = parseSyllabusText(`BIOL 103 — How Cells Work · Fall 2026\n${ocrExcerpt}`, 'BIOL103 Syllabus 2.pdf', 'pdf')
+    const finals = parsed.items.filter((item) => item.kind === 'exams' && /final/i.test(item.label))
+    expect(finals.map((item) => [item.label, item.value, item.confidence])).toEqual(expect.arrayContaining([
+      ['Final Exam (Section 004)', '2026-12-07', 'low'],
+      ['Final Exam (Section 005)', '2026-12-05', 'low'],
+    ]))
+  })
+
   it('does not make a lesson out of the Fall Break row', () => {
     // OCR reads it as `oe Mo Class (Fall Breald ]`.
     const units = biol().items.filter((item) => item.kind === 'units')
@@ -125,6 +145,26 @@ describe('BIOL 103 FA23 Canvas print', () => {
     // `No class -- UNC Wellbeing Day` is not a session.
     expect(parsed.items.some((item) => item.kind === 'units' && item.value === '2023-09-25')).toBe(false)
     expectDatesIsoOrUnset(parsed.items)
+  })
+})
+
+describe('a document\'s own sentences about cumulative exams', () => {
+  it('marks every exam not cumulative when the syllabus says so in prose', () => {
+    const parsed = parseSyllabusText(`PSYC 101 — Introduction to Psychology
+Fall 2026
+Examinations: There will be two non-cumulative exams and a final in this course.
+The final exam is not cumulative but application of earlier material may be needed.
+Thurs 9/17 Exam 1
+Tues 11/3 Exam 2
+Thurs 12/10 Final Exam`)
+    const exams = parsed.items.filter((item) => item.kind === 'exams')
+    expect(exams).toHaveLength(3)
+    exams.forEach((item) => expect(item.scope?.cumulative, item.label).toBe(false))
+  })
+
+  it('reads the scope across a parenthesis split over two lines', () => {
+    const parsed = parseSyllabusText(fa23Rows, 'BIOL-103-syllabus.pdf', 'pdf')
+    expect(parsed.items.find((item) => item.kind === 'exams' && item.label === 'Exam 1')?.scope).toEqual({ lessons: [1, 2, 3, 4, 5, 6, 7, 8] })
   })
 })
 

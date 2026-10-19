@@ -116,8 +116,7 @@ describe('a deadline is named by its work, however the line is written', () => {
   })
 })
 
-// Exam scope is read in the exam-scope commit; this block is switched on there.
-describe.skip('every common way to state what an exam covers is read', () => {
+describe('every common way to state what an exam covers is read', () => {
   const forms: Array<[string, string, number[] | 'cumulative' | 'non-cumulative']> = [
     ['lessons range', 'Exam 1 (lessons 1-7) — 9/17', [1, 2, 3, 4, 5, 6, 7]],
     ['lessons en dash', 'Exam 1 (Lessons 1–7) 9/17', [1, 2, 3, 4, 5, 6, 7]],

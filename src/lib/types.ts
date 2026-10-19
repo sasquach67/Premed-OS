@@ -574,6 +574,10 @@ export interface ClassAssignment {
   examStudyFileIds?: ID[]
   notes?: string
   coveredTopicIds?: ID[]
+  /** The syllabus's own statement of what the exam covers: its lessons as
+   *  schedule labels (`Lesson 9`), and whether it is cumulative. Absent means
+   *  the syllabus said nothing; never inferred here. */
+  examScope?: { lessons?: string[]; cumulative?: boolean }
   /** When graded work came back. Absent means unknown — never inferred. */
   returnedAt?: string
   /** The instructor's dispute deadline. Absent is `unknown`, never `expired`. */
