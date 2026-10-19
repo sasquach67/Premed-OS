@@ -35,8 +35,9 @@ describe('schedule regions are found by row shape', () => {
     expect(prepared.lines).toContain('1 8/23')
     // `25` arrives after a page break, long after `Mon.,` / `Sep.`: it completes
     // that no-class row and never becomes lesson 25 of the exam row below it.
-    expect(prepared.lines).toContain('Mon., 9/25')
-    expect(prepared.lines).toContain('Wed., 9/27')
+    // Prepared rows are canonical, so `Mon.,` is spelled `Monday`.
+    expect(prepared.lines).toContain('Monday 9/25')
+    expect(prepared.lines).toContain('Wednesday 9/27')
     expect(prepared.lines).not.toContain('25 9/27')
     expect(detectScheduleRegions(prepared.lines)).toHaveLength(1)
   })

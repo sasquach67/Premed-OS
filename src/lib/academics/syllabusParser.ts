@@ -133,14 +133,169 @@ function monthDateOrRange(raw: string, yearHint?: number): { date?: string; rema
   const range = monthDateRange(raw, yearHint)
   if (range) return range
   const single = raw.match(new RegExp(`^(${month})\\.?\\s+(\\d{1,2})(?:\\s+(.*))?$`, 'i'))
-  if (!single) return undefined
-  return { date: toIsoDate(`${single[1]} ${single[2]}`, yearHint), remainder: (single[3] ?? '').trim() }
+  if (single) return { date: toIsoDate(`${single[1]} ${single[2]}`, yearHint), remainder: (single[3] ?? '').trim() }
+  // Prepared schedule lines are canonical (`8/17`, `11/16 Final Group Presentations`).
+  const numeric = raw.match(/^(\d{1,2})\/(\d{1,2})(?:\s+(.*))?$/)
+  if (!numeric) return undefined
+  return { date: numericDateToIso(numeric[1], numeric[2], yearHint), remainder: (numeric[3] ?? '').trim() }
 }
 
-function scheduleStart(line: string, yearHint?: number): { label: string; date?: string } | undefined {
-  const match = line.match(/^((?:Introduction|Wk|Week)\s*\d*)\s*:\s*(\d{1,2})\/(\d{1,2})/i)
+
+/** Every way a syllabus writes a calendar date, read in one place (Andy, Oct
+ *  19 2026: "any possible way something can be formatted should still be
+ *  recognizable"). ISO, `9/17`, `09/17/26`, `9/17/2026`, `Sept. 17`,
+ *  `September 17th, 2026`, `17 September 2026`, `17-Sep`. A bare `1-7` or
+ *  `9-15` is never a date: those are lesson ranges. `iso` is set only when a
+ *  year is known; otherwise the caller keeps the raw text. */
+export interface FoundDate { raw: string; index: number; month: number; day: number; year?: number; iso?: string }
+const ORDINAL_SUFFIX = '(?:st|nd|rd|th)?'
+export function findDates(line: string, yearHint?: number): FoundDate[] {
+  const found: FoundDate[] = []
+  const add = (index: number, raw: string, monthNumber: number, day: number, year?: number) => {
+    if (!monthNumber || monthNumber > 12 || !day || day > 31) return
+    if (found.some((other) => index < other.index + other.raw.length && other.index < index + raw.length)) return
+    const resolvedYear = year ?? yearHint
+    const iso = resolvedYear ? `${resolvedYear}-${String(monthNumber).padStart(2, '0')}-${String(day).padStart(2, '0')}` : undefined
+    found.push({ raw, index, month: monthNumber, day, year: resolvedYear, iso })
+  }
+  const fullYear = (raw?: string) => (raw ? (raw.length === 2 ? 2000 + Number(raw) : Number(raw)) : undefined)
+  const monthOf = (name: string) => MONTH_INDEX[name.slice(0, 3).toLowerCase()]
+  for (const match of line.matchAll(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/g)) add(match.index ?? 0, match[0], Number(match[2]), Number(match[3]), Number(match[1]))
+  for (const match of line.matchAll(/\b(\d{1,2})\/(\d{1,2})\/(20\d{2}|\d{2})\b/g)) add(match.index ?? 0, match[0], Number(match[1]), Number(match[2]), fullYear(match[3]))
+  for (const match of line.matchAll(/(?<![\d/])(\d{1,2})\/(\d{1,2})\b(?!\/\d)/g)) add(match.index ?? 0, match[0], Number(match[1]), Number(match[2]))
+  for (const match of line.matchAll(new RegExp(`\\b(${month})\\.?\\s+(\\d{1,2})${ORDINAL_SUFFIX}\\b(?:,?\\s+(20\\d{2}))?`, 'gi'))) add(match.index ?? 0, match[0], monthOf(match[1]), Number(match[2]), fullYear(match[3]))
+  for (const match of line.matchAll(new RegExp(`\\b(\\d{1,2})${ORDINAL_SUFFIX}(?:\\s+of)?(?:\\s+|-)(${month})\\b\\.?(?:,?\\s+(20\\d{2}))?`, 'gi'))) add(match.index ?? 0, match[0], monthOf(match[2]), Number(match[1]), fullYear(match[3]))
+  return found.sort((left, right) => left.index - right.index)
+}
+
+const ROMAN_NUMERALS: Record<string, number> = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6 }
+const ORDINAL_WORDS: Record<string, number> = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6 }
+
+/** The exam a line names, however it is named: `Exam 1`, `EXAM #1`,
+ *  `Midterm I`, `Test 2`, `Prelim 1`, `First Examination`, `Unit 1 Exam`,
+ *  `Final Exam`, `Final Examination`, `Final:`. Undefined when none. */
+export function examLabelIn(line: string): string | undefined {
+  const unit = line.match(/\bunit\s+(\d+)\s+(?:exam(?:ination)?|test)\b/i)
+  if (unit) return `Unit ${unit[1]} Exam`
+  const numbered = line.match(/\b(midterm|exam(?:ination)?|test|prelim(?:inary exam(?:ination)?)?)\s*#?\s*(\d{1,2}|[ivx]{1,4})\b(?!\s*(?:%|points?|pts|minutes?|questions?))/i)
+  if (numbered) {
+    const raw = numbered[2].toLowerCase()
+    const number = /^\d+$/.test(raw) ? Number(raw) : ROMAN_NUMERALS[raw]
+    if (number) {
+      const word = numbered[1].toLowerCase()
+      if (word.startsWith('midterm')) return `Midterm Exam ${number}`
+      if (word.startsWith('test')) return `Test ${number}`
+      if (word.startsWith('prelim')) return `Prelim ${number}`
+      return `Exam ${number}`
+    }
+  }
+  const ordinal = line.match(/\b(first|second|third|fourth|fifth|sixth)\s+(midterm|exam(?:ination)?|test)\b/i)
+  if (ordinal) return `${/midterm/i.test(ordinal[2]) ? 'Midterm Exam' : 'Exam'} ${ORDINAL_WORDS[ordinal[1].toLowerCase()]}`
+  if (/\bfinal\s+(?:exam(?:ination)?|test|assessment)\b|\bfinal\s*[:(—–-]\s*(?:\d|[A-Z][a-z]{2})/i.test(line)) return 'Final Exam'
+  if (/\bmidterm(?:\s+exam(?:ination)?)?\b(?!\s+(?:group|presentation|project|paper|grade))/i.test(line)) return 'Midterm Exam'
+  return undefined
+}
+
+/** Prose about an exam that is not the exam itself. */
+const NOT_AN_EXAM_DATE = /\b(?:review (?:activity|session|sheet|for)|practice (?:exam|test)|exam (?:score|review|grades?|wrapper)|score (?:on|for) the exam|replaced by|make[- ]?ups?|study guide|drop(?:ped)?|lowest|returned|regrade|accommodations?|request)\b/i
+const DEADLINE_CUE = /\b(?:due|deadline|submit(?:ted)?|submission|turn(?:ed)? in|quiz(?:zes)?|assignment|homework|problem set|p-?set|paper|essay|response|reflection|lab report|presentation|project|poster|worksheet|forum|discussion post)\b/i
+
+const WEEKDAY_NAMES: Record<string, string> = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' }
+const WEEKDAY_LEAD = /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?,?\s*/i
+
+/** Rewrites any session-row shape into the forms the row grammars read:
+ *  `N M/D rest` for a numbered lesson, lecture, class, day or session;
+ *  `Weekday M/D rest` for a weekday row; `Week N: M/D rest` for a week; and
+ *  `M/D rest` for a dated row. Table pipes and tabs become spaces. Lines that
+ *  do not start with a date (after an optional label and weekday) are kept. */
+export function canonicalRow(raw: string): string {
+  const text = raw.replace(/\t+/g, ' ').replace(/\s*\|\s*/g, ' ').replace(/\s+/g, ' ').trim()
+  const leading = (rest: string) => {
+    const unwrapped = rest.replace(/^[([]\s*/, '')
+    const first = findDates(unwrapped)[0]
+    if (!first || first.index !== 0) return undefined
+    // Drop the end of a range (`-8/27`, `; 9/24`, `–21`, `- Sep 4`) along with the start.
+    const after = unwrapped.slice(first.raw.length)
+      .replace(/^\s*[)\]]?\s*[-–—;]\s*(?:\d{1,2}\/\d{1,2}\b|(?:[A-Za-z]{3,9}\.?\s+)?\d{1,2}(?![\d/]))\s*[)\]]?/, '')
+      .replace(/^\s*[)\]]?\s*[:,.\-–—]*\s*/, '')
+    return { date: `${first.month}/${first.day}`, after }
+  }
+  const join = (head: string, after: string) => (after ? `${head} ${after}` : head)
+
+  const week = text.match(/^(?:Week|Wk)\.?\s*(\d{1,2})\b\s*[:.)\-–—]?\s*(.*)$/i)
+  if (week) {
+    const dated = leading(week[2])
+    if (dated) return join(`Week ${week[1]}: ${dated.date}`, dated.after)
+    return text
+  }
+  const direct = leading(text)
+  // `Sept. 5 at 11:59 PM, ET)` is the tail of a due date, not a class session.
+  if (direct && /^(?:at\s+)?\d{1,2}(?::\d{2})?\s*(?:am|pm|a\.m\.|p\.m\.)\b|^\d{1,2}:\d{2}/i.test(direct.after)) return text
+  if (direct) return join(direct.date, direct.after)
+  const labelled = text.match(/^(?:lesson|lecture|class|day|session|meeting|module)\s*#?\s*(\d{1,3}(?:\s*&\s*\d{1,2})?)\b\s*[:.)\-–—]?\s*(.*)$/i)
+    ?? text.match(/^(\d{1,2}(?:\s*&\s*\d{1,2})?)\s+(.+)$/)
+  if (labelled) {
+    let rest = labelled[2]
+    const weekday = rest.match(WEEKDAY_LEAD)
+    if (weekday) rest = rest.slice(weekday[0].length)
+    const dated = leading(rest)
+    if (dated) return join(`${labelled[1].replace(/\s+/g, '')} ${dated.date}`, dated.after)
+    return text
+  }
+  const weekday = text.match(WEEKDAY_LEAD)
+  if (weekday) {
+    const dated = leading(text.slice(weekday[0].length))
+    if (dated) return join(`${WEEKDAY_NAMES[weekday[1].toLowerCase()]} ${dated.date}`, dated.after)
+  }
+  return text
+}
+
+/** A day the class does not meet, however the syllabus says so. Never a session. */
+export function isNoClassRow(text: string): boolean {
+  return /\bno\s+cl[ao]ss(?:es)?\b|\b(?:fall|spring|winter|thanksgiving|autumn)\s+(?:break|brea\w*|recess)\b|\bbreak\b.*\bno class\b|\bwell-?being day\b|\bholiday\b|\breading day\b|\b(?:university|campus) (?:closed|holiday)\b|\bclass(?:es)? (?:cancel+ed|canceled)\b|\brecess\b/i.test(text)
+}
+
+/** The one dated-fact sweep: every line that names an exam or a piece of work
+ *  next to a date, in any of the forms above. It only adds what the
+ *  structure-aware passes did not already take from the same line. */
+function parseDatedFacts(lines: string[], items: SyllabusItem[], searched: Record<SyllabusKind, string>, yearHint?: number) {
+  lines.forEach((line, index) => {
+    if (/\boffice hours?\b/i.test(line)) return
+    const dates = findDates(line, yearHint)
+    if (!dates.length) return
+    const location = `line ${index + 1}`
+    const fromLine = (kind: SyllabusKind) => items.filter((item) => item.kind === kind && item.evidence.location === location)
+    const exam = examLabelIn(line)
+    const nearby = lines.slice(Math.max(0, index - 2), index + 1).join(' ')
+    if (exam && !NOT_AN_EXAM_DATE.test(line) && !/\bmake[- ]?up\b/i.test(nearby) && !looksLikeReading(line)) {
+      const date = dates[0]
+      if (!fromLine('exams').length && !items.some((item) => item.kind === 'exams' && item.value === date.iso && item.label === exam)) {
+        pushUnique(items, 'exams', exam, date.iso, date.iso ? 'high' : 'low', lineEvidence(line, index), date.iso ? undefined : `Date as written: ${date.raw}`)
+        searched.exams = 'Exam dates found'
+      }
+      return
+    }
+    if (!DEADLINE_CUE.test(line) || looksLikeReading(line) || /\bmake[- ]?up\b/i.test(nearby)) return
+    if (/^(?:mon(?:day)?|tues?(?:day)?|wed(?:nesday)?|thu(?:rs?)?(?:day)?|fri(?:day)?)\b/i.test(line) && fromLine('units').length) return
+    const existing = fromLine('deadlines')
+    dates.forEach((date) => {
+      if (existing.some((item) => item.value === date.iso)) return
+      if (items.some((item) => item.kind === 'deadlines' && item.value === date.iso && item.evidence.location === location)) return
+      const cue = line.match(/^(.{2,120}?)\s+(?:are\s+|is\s+)?(?:due|must be (?:completed|submitted) by|deadline)\b/i)?.[1]
+      const label = trimConnectives((cue ?? line.replace(date.raw, '')).replace(/^(?:deadline for|submit)\s+/i, '').replace(/\s*[:—–-]\s*$/, '')) || 'Deadline'
+      // A prose line that only restates a date another pass already named
+      // ("…assignments tab, on Canvas. They are due … (9/3 and 10/8)") adds nothing.
+      if (!/^[A-Z0-9]/.test(label) && items.some((item) => item.kind === 'deadlines' && item.value === date.iso)) return
+      pushUnique(items, 'deadlines', label, date.iso, date.iso ? 'high' : 'low', lineEvidence(line, index), date.iso ? 'Syllabus deadline' : `Date as written: ${date.raw}`)
+      searched.deadlines = 'Assignment deadlines found'
+    })
+  })
+}
+
+function scheduleStart(line: string, yearHint?: number): { label: string; date?: string; inline: string } | undefined {
+  const match = line.match(/^((?:Introduction|Wk|Week)\s*\d*)\s*:\s*(\d{1,2})\/(\d{1,2})(?:\s*[-–]\s*\d{1,2}(?:\/\d{1,2})?)?\s*(.*)$/i)
   if (!match) return undefined
-  return { label: match[1].replace(/^Wk\b/i, 'Week').trim(), date: numericDateToIso(match[2], match[3], yearHint) }
+  return { label: match[1].replace(/^Wk\b/i, 'Week').trim(), date: numericDateToIso(match[2], match[3], yearHint), inline: match[4].trim() }
 }
 
 function scheduleExam(line: string): string | undefined {
@@ -271,7 +426,7 @@ export function prepareScheduleText(lines: string[]): ScheduleSegment {
     out.push(line); origin.push(index)
   }
   abandon()
-  return { lines: out, origin }
+  return { lines: out.map(canonicalRow), origin }
 }
 
 /** Three or more row starts no more than twelve lines apart make a region,
@@ -388,7 +543,7 @@ function parseFlattenedSchedule(segment: ScheduleSegment, items: SyllabusItem[],
   const lineEvidence = (_line: string, index: number) => segmentEvidence(segment, index)
   const scheduleHeader = -1
   const end = lines.length
-  const rowStarts: Array<{ index: number; label: string; date?: string }> = []
+  const rowStarts: Array<{ index: number; label: string; date?: string; inline: string }> = []
   for (let index = scheduleHeader + 1; index < end; index += 1) {
     const start = scheduleStart(lines[index], yearHint)
     if (start) rowStarts.push({ index, ...start })
@@ -404,6 +559,9 @@ function parseFlattenedSchedule(segment: ScheduleSegment, items: SyllabusItem[],
     let readingStarted = false
 
     cells.forEach((cell, offset) => {
+      // A bare date (`10/8:` once prepared is `10/8`) or one no-class day of
+      // the week (`10/15-No Class, FALL BREAK`) is not the week's theme.
+      if (/^\d{1,2}\/\d{1,2}$/.test(cell) || isNoClassRow(cell)) return
       if (/^(?:week\/theme|reading|recitation to discuss|yes\b|no\b|discussion\b|go over exam)/i.test(cell)) return
       if (/^(?:\d{1,2}\/\d{1,2}\s*[-:]|\(?no class|fall break|thanksgiving break|in our classroom)/i.test(cell)) return
       if (/\b(?:review session|review for (?:the )?(?:exam|final)|review all readings)\b/i.test(cell)) return
@@ -427,8 +585,11 @@ function parseFlattenedSchedule(segment: ScheduleSegment, items: SyllabusItem[],
       else themeParts.push(cell)
     })
 
-    const theme = (themeParts.join(' ') || genericTheme).replace(/\s+/g, ' ').trim()
-    if (theme) {
+    // A week's own cells name its theme; the words beside the date (`LDOC`,
+    // `No Class, Wellness Day` for one day of the week) are a fallback only.
+    const inlineTheme = row.inline && !isNoClassRow(row.inline) ? row.inline : ''
+    const theme = (themeParts.join(' ') || genericTheme || inlineTheme).replace(/\s+/g, ' ').trim()
+    if (theme && !isNoClassRow(theme)) {
       push(items, 'units', theme, row.date, row.date ? 'high' : 'low', lineEvidence(lines[row.index], row.index), row.label)
       searched.units = 'Schedule scope found'
     }
@@ -472,6 +633,12 @@ function parseDatedScheduleRows(segment: ScheduleSegment, items: SyllabusItem[],
       lastLesson = Number(continued[1].slice(1))
     } else if (datedEvent) starts.push({ index, date: numericDateToIso(datedEvent[1], datedEvent[2], yearHint), label: `Class ${datedEvent[1]}/${datedEvent[2]}`, inline: datedEvent[3].trim(), kind: 'dated-event' })
   }
+  // In a week table (`Week 3.` headings with date cells) a dated cell belongs
+  // to its week, which parseWeekRangeSchedule reads. It is not a session.
+  const weekTable = lines.filter((line) => /^Week\s+\d+\b/i.test(line)).length >= 3
+  if (weekTable) {
+    for (let index = starts.length - 1; index >= 0; index -= 1) if (starts[index].kind === 'dated-event') starts.splice(index, 1)
+  }
   // In a lesson-numbered table a dated row with no number is the next lesson
   // (OCR lost `8` from `8 9/15`). Exam rows keep their own identity.
   if (starts.some((row) => row.kind === 'lesson')) {
@@ -511,10 +678,11 @@ function parseDatedScheduleRows(segment: ScheduleSegment, items: SyllabusItem[],
     const dateTaken = items.some((item) => item.kind === 'units' && item.value === row.date)
     // "Continuation of lesson 1 content" is a second class day of a lesson
     // already on the schedule, not a lesson of its own.
-    const continuation = /^continuation of (?:lesson|the lesson)\b/i.test(topic ?? '')
+    const continuation = meaningful.slice(0, 3).some((cell) => /^continuation of (?:lesson|the lesson)\b/i.test(cell))
     // A row whose first cell is an exam heading is the exam, not a lesson.
     const examRow = Boolean(scheduleExam(meaningful[0] ?? '')) && /^(?:[*•+]\s*)?(?:exam|midterm|final)/i.test(meaningful[0] ?? '')
-    if (row.date && !isAssessmentOnly && !continuation && !examRow && (unitLabels.length > 1 || !dateTaken)) {
+    const noClass = isNoClassRow([row.inline, ...cells.slice(0, 2)].join(' ')) && !/\bexam\b/i.test(row.inline)
+    if (row.date && !isAssessmentOnly && !continuation && !examRow && !noClass && (unitLabels.length > 1 || !dateTaken)) {
       unitLabels.forEach((label) => pushUnique(items, 'units', label, row.date, confidence, lineEvidence(lines[row.index], row.index), unitLabels.length > 1 ? label : row.label))
       searched.units = 'Schedule scope found'
     }
@@ -574,7 +742,7 @@ function parseWeekRangeSchedule(segment: ScheduleSegment, items: SyllabusItem[],
     const title = row.match[2].trim()
     const cells = lines.slice(row.index + 1, nextIndex)
     const range = cells.map((line, offset) => ({ line, offset, parsed: monthDateOrRange(line, yearHint) })).find((candidate) => candidate.parsed)
-    if (!range) return
+    if (!range || isNoClassRow(title)) return
 
     const existingUnit = items.find((item) => item.kind === 'units' && item.evidence.location === `line ${segment.origin[row.index] + 1}`)
     if (existingUnit) Object.assign(existingUnit, { label: title, value: range.parsed?.date, context: week, confidence: range.parsed?.date ? 'high' : 'low' })
@@ -1335,7 +1503,7 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
       const scheduledDate = numericDateToIso(schedule[1], schedule[2], yearHint)
       const detail = schedule[3].trim()
       const topic = scheduleTopic(detail)
-      if (topic && !/^(?:exam\s*\d*|final exam|fall break|thanksgiving break|well-being day)$/i.test(topic)) {
+      if (topic && !/^(?:exam\s*\d*|final exam)$/i.test(topic) && !isNoClassRow(topic)) {
         // The date is planning context for the schedule topic. It must not
         // create a recall obligation before the student logs that lecture.
         push(items, 'units', topic, scheduledDate, 'high', evidence)
@@ -1423,6 +1591,7 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
   })
   parsePointBasedWeights(lines, items, searched)
   parseNumericActionDates(lines, items, searched, yearHint)
+  parseDatedFacts(lines, items, searched, yearHint)
   parsePolicySections(lines, items, searched)
   parseSourceBackedSections(lines, items, searched)
   parseRegistrarSections(lines, items, searched)
