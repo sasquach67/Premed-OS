@@ -147,11 +147,187 @@ function looksLikeReading(line: string): boolean {
     || /^[A-Z][A-Za-z'’-]+,\s*(?:[A-Z](?:\.|[A-Za-z'’-]+\.)|(?:[A-Z][A-Za-z'’-]+,\s*)?\d{4})/.test(line)
 }
 
-function parseFlattenedSchedule(lines: string[], items: SyllabusItem[], searched: Record<SyllabusKind, string>, yearHint?: number) {
-  const scheduleHeader = lines.findIndex((line) => /^(?:schedule for class|course (?:schedule|calendar))/i.test(line))
-  if (scheduleHeader < 0) return
-  const scheduleEnd = lines.findIndex((line, index) => index > scheduleHeader && /^(?:tips for success|required books|course requirements|honou?r code)\b/i.test(line))
-  const end = scheduleEnd < 0 ? lines.length : scheduleEnd
+/** A schedule is found by the shape of its rows, never by a heading
+ *  (SYLLABUS-PARSER-AUDIT-2026-10-18, F1 and F3). OCR drops the "Class
+ *  Schedule" title from an image table and a Canvas print buries it in a page
+ *  header; three heading-gated parsers therefore read 0 of 26 BIOL 103 lessons
+ *  whose rows they could already match. */
+export interface ScheduleRegion { start: number; end: number; hasHeading: boolean }
+/** Lines prepared for the row grammars. `origin[i]` is the source line that
+ *  prepared line `i` came from, so evidence keeps the document's own numbers. */
+export interface ScheduleSegment { lines: string[]; origin: number[]; recovered?: Set<number> }
+
+const WEEKDAY_ONLY = /^(?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)[a-z]*\.?,?$/i
+const MONTH_ONLY = new RegExp(`^${month}\\.?$`, 'i')
+const DAY_ONLY = /^\d{1,2}$/
+const SCHEDULE_HEADING = /\b(?:schedule for class|class schedule|course (?:schedule|calendar))\b/i
+const SCHEDULE_SECTION_END = /^(?:university polic(?:y|ies)|student support|honou?r code|tips for success|required books|course requirements)\b/i
+const ROW_START_PATTERNS = [
+  /^(?:lesson\s*)?\d{1,3}(?:\s*&\s*\d{1,2})?\s+\d{1,2}\/\d{1,2}\b/i,
+  /^(?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)[a-z]*\.?,?\s+(?:\d{1,2}\/\d{1,2}|[A-Z][a-z]{2,8}\.?\s+\d{1,2})\b/i,
+  /^[*•.\-|\s]*\d{1,2}\/\d{1,2}\s+\S/,
+  /^Week\s+\d+\b/i,
+  /^(?:Introduction|Wk|Week)\s*\d*\s*:\s*\d{1,2}\/\d{1,2}/i,
+]
+export function isScheduleRowStart(line: string): boolean {
+  return ROW_START_PATTERNS.some((pattern) => pattern.test(line))
+}
+
+function segmentEvidence(segment: ScheduleSegment, index: number): SyllabusEvidence {
+  return lineEvidence(segment.lines[index], segment.origin[index])
+}
+
+/** Document-wide preparation that needs no region: drop a Canvas print header
+ *  or footer that repeats on every page, and rejoin a date the export printed
+ *  one token per line (`1` / `Wed.,` / `Aug.` / `23` → `1 8/23`). A dangling
+ *  day number completes the weekday+month pair that is still waiting for it,
+ *  even across a dropped page break, and never starts the row that follows. */
+export function prepareScheduleText(lines: string[]): ScheduleSegment {
+  const pageKey = (line: string) => line.replace(/\s+\d+\/\d+$/, '')
+  const repeats = new Map<string, number>()
+  lines.forEach((line) => repeats.set(pageKey(line), (repeats.get(pageKey(line)) ?? 0) + 1))
+  const isPrintChrome = (line: string) => (repeats.get(pageKey(line)) ?? 0) >= 3 && (CANVAS_PRINT_HEADER.test(line) || CANVAS_PRINT_FOOTER.test(line))
+
+  const out: string[] = []
+  const origin: number[] = []
+  type Pending = { weekday: string; month: string; origin: number; lessonNumber?: string; held: Array<[string, number]> }
+  let pending: Pending | undefined
+  const abandon = () => {
+    if (!pending) return
+    if (pending.lessonNumber) { out.push(pending.lessonNumber); origin.push(pending.origin - 1) }
+    out.push(pending.weekday, pending.month); origin.push(pending.origin, pending.origin + 1)
+    pending.held.forEach(([line, at]) => { out.push(line); origin.push(at) })
+    pending = undefined
+  }
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]
+    if (isPrintChrome(line)) continue
+    if (pending) {
+      if (DAY_ONLY.test(line)) {
+        const monthNumber = MONTH_INDEX[pending.month.slice(0, 3).toLowerCase()]
+        const date = `${monthNumber}/${Number(line)}`
+        out.push(pending.lessonNumber ? `${pending.lessonNumber} ${date}` : `${pending.weekday} ${date}`)
+        origin.push(pending.origin)
+        pending.held.forEach(([held, at]) => { out.push(held); origin.push(at) })
+        pending = undefined
+        continue
+      }
+      if (pending.held.length < 6 && !isScheduleRowStart(line) && !WEEKDAY_ONLY.test(line)) { pending.held.push([line, index]); continue }
+      abandon()
+    }
+    if (WEEKDAY_ONLY.test(line) && MONTH_ONLY.test(lines[index + 1] ?? '')) {
+      let lessonNumber: string | undefined
+      if (out.length && DAY_ONLY.test(out[out.length - 1]) && origin[origin.length - 1] === index - 1) { lessonNumber = out.pop(); origin.pop() }
+      pending = { weekday: line, month: lines[index + 1], origin: index, lessonNumber, held: [] }
+      index += 1
+      continue
+    }
+    out.push(line); origin.push(index)
+  }
+  abandon()
+  return { lines: out, origin }
+}
+
+/** Three or more row starts no more than twelve lines apart make a region,
+ *  or fewer when a schedule heading sits just above them. A region runs to
+ *  the last row start plus up to eight trailing lines, stopping at a section
+ *  heading. The heading is never required. */
+export function detectScheduleRegions(lines: string[]): ScheduleRegion[] {
+  const starts = lines.map((line, index) => (isScheduleRowStart(line) ? index : -1)).filter((index) => index >= 0)
+  const regions: ScheduleRegion[] = []
+  let run: number[] = []
+  const close = () => {
+    const first = run[0]
+    // A heading never gates a region, but it vouches for a short one: a
+    // two-row sample under "Course Schedule" is a schedule.
+    const hasHeading = run.length > 0 && lines.slice(Math.max(0, first - 8), first).some((line) => SCHEDULE_HEADING.test(line))
+    if (run.length >= 3 || (run.length >= 1 && hasHeading)) {
+      let end = run[run.length - 1] + 1
+      for (let trailing = 0; trailing < 8 && end < lines.length; trailing += 1, end += 1) {
+        if (SCHEDULE_SECTION_END.test(lines[end]) || isScheduleRowStart(lines[end])) break
+      }
+      regions.push({ start: first, end, hasHeading })
+    }
+    run = []
+  }
+  starts.forEach((start) => {
+    if (run.length && start - run[run.length - 1] > 12) close()
+    run.push(start)
+  })
+  close()
+  return regions
+}
+
+/** Region-scoped repairs that need neighbouring rows: a slash-less OCR date
+ *  (`917` between `9/15` and `9/24` is `9/17`), an exam heading whose date sits
+ *  alone on the next line (`EXAM 2 (lessons 9-15) …` / `10/22 exam`), and a
+ *  cell that wraps inside an open parenthesis. Repaired rows are recorded so
+ *  their items go out low confidence. */
+export function normalizeScheduleCells(prepared: ScheduleSegment, region: ScheduleRegion): ScheduleSegment {
+  const source = prepared.lines.slice(region.start, region.end)
+  const sourceOrigin = prepared.origin.slice(region.start, region.end)
+  const rowDate = (line: string) => {
+    const match = line.match(/^[*•.\-|\s]*(?:(?:lesson\s*)?\d{1,3}(?:\s*&\s*\d{1,2})?\s+)?(\d{1,2})\/(\d{1,2})\b/i)
+    return match ? Number(match[1]) * 100 + Number(match[2]) : undefined
+  }
+  const lines: string[] = []
+  const origin: number[] = []
+  const recovered = new Set<number>()
+  const skip = new Set<number>()
+  for (let index = 0; index < source.length; index += 1) {
+    if (skip.has(index)) continue
+    let line = source[index]
+    let repaired = false
+
+    const slashless = line.match(/^(\d{3,4})\s+(\S.*)$/)
+    if (slashless) {
+      const digits = slashless[1]
+      const splits = digits.length === 3 ? [1] : [2, 1]
+      const before = source.slice(0, index).map(rowDate).filter((value): value is number => value != null).at(-1)
+      const after = source.slice(index + 1).map(rowDate).find((value): value is number => value != null)
+      for (const monthLength of splits) {
+        const monthNumber = Number(digits.slice(0, monthLength))
+        const dayNumber = Number(digits.slice(monthLength))
+        if (!monthNumber || monthNumber > 12 || !dayNumber || dayNumber > 31) continue
+        const value = monthNumber * 100 + dayNumber
+        if (before != null && after != null && value > before && value < after) {
+          line = `${monthNumber}/${dayNumber} ${slashless[2]}`
+          repaired = true
+          break
+        }
+      }
+    }
+
+    if (/^[*•+\-\s]*EXAM\b/i.test(line) && !/\d{1,2}\/\d{1,2}/.test(line)) {
+      for (let next = index + 1; next <= Math.min(index + 2, source.length - 1); next += 1) {
+        const dated = source[next].match(/^(\d{1,2}\/\d{1,2})\s+exam\s*$/i)
+        if (!dated) continue
+        line = `${dated[1]} ${line.replace(/^[*•+\-\s]+/, '')}`
+        skip.add(next)
+        break
+      }
+    }
+
+    const opens = (line.match(/\(/g) ?? []).length
+    const closes = (line.match(/\)/g) ?? []).length
+    const following = source[index + 1]
+    if (opens > closes && following && !skip.has(index + 1) && !isScheduleRowStart(following) && /\)/.test(following)) {
+      line = `${line} ${following}`.replace(/\s+/g, ' ')
+      skip.add(index + 1)
+    }
+
+    if (repaired) recovered.add(lines.length)
+    lines.push(line)
+    origin.push(sourceOrigin[index])
+  }
+  return { lines, origin, recovered }
+}
+
+function parseFlattenedSchedule(segment: ScheduleSegment, items: SyllabusItem[], searched: Record<SyllabusKind, string>, yearHint?: number) {
+  const { lines } = segment
+  const lineEvidence = (_line: string, index: number) => segmentEvidence(segment, index)
+  const scheduleHeader = -1
+  const end = lines.length
   const rowStarts: Array<{ index: number; label: string; date?: string }> = []
   for (let index = scheduleHeader + 1; index < end; index += 1) {
     const start = scheduleStart(lines[index], yearHint)
@@ -212,19 +388,43 @@ function parseFlattenedSchedule(lines: string[], items: SyllabusItem[], searched
   }
 }
 
-function parseDatedScheduleRows(lines: string[], items: SyllabusItem[], searched: Record<SyllabusKind, string>, yearHint?: number) {
-  const scheduleHeader = lines.findIndex((line) => /^(?:schedule for class|class schedule|course (?:schedule|calendar))/i.test(line))
-  if (scheduleHeader < 0) return
-  const endAt = lines.findIndex((line, index) => index > scheduleHeader && /^(?:university polic(?:y|ies)|student support|honou?r code|tips for success|required books)\b/i.test(line))
-  const end = endAt < 0 ? lines.length : endAt
-  const starts: Array<{ index: number; date?: string; label: string; inline: string; kind: 'weekday' | 'lesson' | 'dated-event' }> = []
-  for (let index = scheduleHeader + 1; index < end; index += 1) {
+function parseDatedScheduleRows(segment: ScheduleSegment, items: SyllabusItem[], searched: Record<SyllabusKind, string>, yearHint?: number) {
+  const { lines } = segment
+  const lineEvidence = (_line: string, index: number) => segmentEvidence(segment, index)
+  const scheduleHeader = -1
+  const end = lines.length
+  const starts: Array<{ index: number; date?: string; label: string; inline: string; kind: 'weekday' | 'lesson' | 'dated-event'; recovered?: boolean }> = []
+  let lastLesson: number | undefined
+  for (let index = 0; index < end; index += 1) {
     const weekday = lines[index].match(/^(?:mon(?:day)?|tues(?:day)?|wed(?:nesday)?|thurs?(?:day)?|fri(?:day)?)\.?,?\s+(\d{1,2})\/(\d{1,2})(?:\s+(.+))?$/i)
     const lesson = lines[index].match(/^(?:lesson\s*)?(\d{1,2}(?:\s*&\s*\d{1,2})?)\s+(\d{1,2})\/(\d{1,2})(?:\s+(.+))?$/i)
+    // `123 11/19`: OCR put a stray digit in front of lesson 23. Read the last
+    // two digits when they continue the numbering, and say so (low confidence).
+    const strayDigit = lines[index].match(/^(\d{3})\s+(\d{1,2})\/(\d{1,2})(?:\s+(.+))?$/)
+    const continued = strayDigit && lastLesson != null && Number(strayDigit[1].slice(1)) === lastLesson + 1 ? strayDigit : undefined
     const datedEvent = lines[index].match(/^[*•.\-|\s]*(\d{1,2})\/(\d{1,2})\s+(.+)$/)
     if (weekday) starts.push({ index, date: numericDateToIso(weekday[1], weekday[2], yearHint), label: `Class ${weekday[1]}/${weekday[2]}`, inline: weekday[3]?.trim() ?? '', kind: 'weekday' })
-    else if (lesson) starts.push({ index, date: numericDateToIso(lesson[2], lesson[3], yearHint), label: `Lesson ${lesson[1].replace(/\s+/g, '')}`, inline: lesson[4]?.trim() ?? '', kind: 'lesson' })
-    else if (datedEvent) starts.push({ index, date: numericDateToIso(datedEvent[1], datedEvent[2], yearHint), label: `Class ${datedEvent[1]}/${datedEvent[2]}`, inline: datedEvent[3].trim(), kind: 'dated-event' })
+    else if (lesson) {
+      starts.push({ index, date: numericDateToIso(lesson[2], lesson[3], yearHint), label: `Lesson ${lesson[1].replace(/\s+/g, '')}`, inline: lesson[4]?.trim() ?? '', kind: 'lesson' })
+      lastLesson = Number(lesson[1].split(/\s*&\s*/).pop())
+    } else if (continued) {
+      starts.push({ index, date: numericDateToIso(continued[2], continued[3], yearHint), label: `Lesson ${continued[1].slice(1)}`, inline: continued[4]?.trim() ?? '', kind: 'lesson', recovered: true })
+      lastLesson = Number(continued[1].slice(1))
+    } else if (datedEvent) starts.push({ index, date: numericDateToIso(datedEvent[1], datedEvent[2], yearHint), label: `Class ${datedEvent[1]}/${datedEvent[2]}`, inline: datedEvent[3].trim(), kind: 'dated-event' })
+  }
+  // In a lesson-numbered table a dated row with no number is the next lesson
+  // (OCR lost `8` from `8 9/15`). Exam rows keep their own identity.
+  if (starts.some((row) => row.kind === 'lesson')) {
+    let running: number | undefined
+    starts.forEach((row) => {
+      if (row.kind === 'lesson') { running = Number(row.label.replace(/^Lesson\s*/i, '').split('&').pop()); return }
+      if (row.kind === 'dated-event' && running != null && !isScheduledExamLine(row.inline)) {
+        running += 1
+        row.label = `Lesson ${running}`
+        row.kind = 'lesson'
+        row.recovered = true
+      }
+    })
   }
 
   starts.forEach((row, rowIndex) => {
@@ -242,8 +442,15 @@ function parseDatedScheduleRows(lines: string[], items: SyllabusItem[], searched
     const unitLabel = row.kind === 'lesson' ? row.label : topic?.trim() || row.label
     const isAssessmentOnly = (row.kind === 'dated-event' && /^(?:[*•]\s*)?(?:exam|midterm|final exam)\b/i.test(row.inline))
       || (!topic && isScheduledExamLine(meaningful[0] ?? ''))
-    if (row.date && !isAssessmentOnly && !items.some((item) => item.kind === 'units' && item.value === row.date)) {
-      pushUnique(items, 'units', unitLabel, row.date, 'high', lineEvidence(lines[row.index], row.index), row.label)
+    const confidence: 'high' | 'low' = row.recovered || segment.recovered?.has(row.index) ? 'low' : 'high'
+    // `10&11 9/24`: one class day covering two lessons is two schedule
+    // entries sharing the date; the lesson is the unit (Andy, Oct 19 2026).
+    const unitLabels = row.kind === 'lesson' && /&/.test(row.label)
+      ? row.label.replace(/^Lesson\s*/i, '').split(/\s*&\s*/).map((number) => `Lesson ${number}`)
+      : [unitLabel]
+    const dateTaken = items.some((item) => item.kind === 'units' && item.value === row.date)
+    if (row.date && !isAssessmentOnly && (unitLabels.length > 1 || !dateTaken)) {
+      unitLabels.forEach((label) => pushUnique(items, 'units', label, row.date, confidence, lineEvidence(lines[row.index], row.index), unitLabels.length > 1 ? label : row.label))
       searched.units = 'Schedule scope found'
     }
 
@@ -253,13 +460,16 @@ function parseDatedScheduleRows(lines: string[], items: SyllabusItem[], searched
         .map((candidate) => scheduleExam(candidate))
         .find(Boolean)
       const examCellOwnsRowDate = cell === row.inline || (cell === meaningful[0] && !topic)
+      // "Exam 1 review" and "Review for the exam" are study sessions, not the
+      // exam. A row that says "To prepare for the exam, review: GRQs…" is the
+      // exam; the word alone must not veto it.
       const isDatedExamHeading = examCellOwnsRowDate
         && (/^(?:[*•]\s*)?(?:(?:exam|midterm(?:\s+exam)?)\s*#?\s*\d+|final exam)\b/i.test(cell)
           || (/^exam$/i.test(cell.trim()) && Boolean(precedingExam)))
-        && !/\breview\b/i.test(cell)
+        && !/\b(?:exam|midterm|final)(?:\s*#?\s*\d+)?\s+review\b|\breview\s+(?:for|of|session|day)\b/i.test(cell)
       if (row.date && isDatedExamHeading) {
         const examLabel = scheduleExam(cell) ?? (/^exam$/i.test(cell.trim()) ? precedingExam : undefined) ?? trimConnectives(cell)
-        pushUnique(items, 'exams', examLabel, row.date, 'high', evidenceFor(cell), row.label)
+        pushUnique(items, 'exams', examLabel, row.date, confidence, evidenceFor(cell), row.label)
         searched.exams = 'Exam dates found'
       }
       const reading = cell.match(/(?:^|\bbefore class\s*:\s*)(read\s+.+|(?:chapter|ch\.?)\s*\d+(?:\s*[-–]\s*\d+)?(?:\b.*)?)$/i)?.[1]
@@ -282,11 +492,11 @@ function parseDatedScheduleRows(lines: string[], items: SyllabusItem[], searched
   })
 }
 
-function parseWeekRangeSchedule(lines: string[], items: SyllabusItem[], searched: Record<SyllabusKind, string>, yearHint?: number) {
-  const scheduleHeader = lines.findIndex((line) => /^(?:course (?:schedule|calendar)|schedule for class)/i.test(line))
-  if (scheduleHeader < 0) return
-  const scheduleEnd = lines.findIndex((line, index) => index > scheduleHeader && /^(?:university polic(?:y|ies)|student support|required books|course requirements)\b/i.test(line))
-  const end = scheduleEnd < 0 ? lines.length : scheduleEnd
+function parseWeekRangeSchedule(segment: ScheduleSegment, items: SyllabusItem[], searched: Record<SyllabusKind, string>, yearHint?: number) {
+  const { lines } = segment
+  const lineEvidence = (_line: string, index: number) => segmentEvidence(segment, index)
+  const scheduleHeader = -1
+  const end = lines.length
   const rows = lines
     .map((line, index) => ({ index, match: line.match(/^Week\s+(\d+)\.\s*(.+)$/i) }))
     .filter((row): row is { index: number; match: RegExpMatchArray } => row.index > scheduleHeader && row.index < end && Boolean(row.match))
@@ -299,7 +509,7 @@ function parseWeekRangeSchedule(lines: string[], items: SyllabusItem[], searched
     const range = cells.map((line, offset) => ({ line, offset, parsed: monthDateRange(line, yearHint) })).find((candidate) => candidate.parsed)
     if (!range) return
 
-    const existingUnit = items.find((item) => item.kind === 'units' && item.evidence.location === `line ${row.index + 1}`)
+    const existingUnit = items.find((item) => item.kind === 'units' && item.evidence.location === `line ${segment.origin[row.index] + 1}`)
     if (existingUnit) Object.assign(existingUnit, { label: title, value: range.parsed?.date, context: week, confidence: range.parsed?.date ? 'high' : 'low' })
     else pushUnique(items, 'units', title, range.parsed?.date, range.parsed?.date ? 'high' : 'low', lineEvidence(lines[row.index], row.index), week)
     searched.units = 'Schedule scope found'
@@ -801,6 +1011,10 @@ function lineEvidence(line: string, index: number): SyllabusEvidence {
  *  6 • Evaluate science-related claims...") and inside the evidence quote the
  *  student reads to check our work. */
 const PAGE_FOOTER = /^page\s+\d{1,3}\s+of\s+\d{1,3}$/i
+/** A Canvas "print this page" export repeats these on every page. Dropped only
+ *  when they repeat, by `prepareScheduleText`; a single dated line is content. */
+const CANVAS_PRINT_HEADER = /^\d{1,2}\/\d{1,2}\/\d{2,4},\s+\d{1,2}:\d{2}\s*(?:AM|PM)\b/i
+const CANVAS_PRINT_FOOTER = /^https?:\/\/\S+\s+\d+\/\d+$/
 
 function normalizeExtractedLine(line: string): string {
   if (PAGE_FOOTER.test(line.trim())) return ''
@@ -1131,9 +1345,13 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
       if (bullet) next = bullet.lastIndex
     }
   })
-  parseFlattenedSchedule(lines, items, searched, yearHint)
-  parseDatedScheduleRows(lines, items, searched, yearHint)
-  parseWeekRangeSchedule(lines, items, searched, yearHint)
+  const prepared = prepareScheduleText(lines)
+  detectScheduleRegions(prepared.lines).forEach((region) => {
+    const segment = normalizeScheduleCells(prepared, region)
+    parseFlattenedSchedule(segment, items, searched, yearHint)
+    parseDatedScheduleRows(segment, items, searched, yearHint)
+    parseWeekRangeSchedule(segment, items, searched, yearHint)
+  })
   parsePointBasedWeights(lines, items, searched)
   parseNumericActionDates(lines, items, searched, yearHint)
   parsePolicySections(lines, items, searched)
