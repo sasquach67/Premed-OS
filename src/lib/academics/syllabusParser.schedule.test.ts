@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import ocrExcerpt from './fixtures/syllabus/biol103-fall26-ocr-excerpt.txt?raw'
 import fa23Rows from './fixtures/syllabus/biol103-fa23-canvas-rows.txt?raw'
-import { detectScheduleRegions, normalizeScheduleCells, parseSyllabusText, prepareScheduleText } from './syllabusParser'
+import { detectScheduleRegions, normalizeScheduleCells, parseSyllabusText, prepareScheduleText, syllabusYearHint, type SyllabusItem } from './syllabusParser'
+
+/** Every exam and deadline is ISO or unset. The app writes `value` straight
+ *  into `dueDate`, and display text there renders as "Date TBD". */
+const expectDatesIsoOrUnset = (items: SyllabusItem[]) => {
+  items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines').forEach((item) => {
+    expect(item.value === undefined || /^\d{4}-\d{2}-\d{2}$/.test(item.value), `${item.kind} "${item.label}" has value ${JSON.stringify(item.value)}`).toBe(true)
+  })
+}
 
 // Both fixtures are text the app itself produced: tesseract OCR of the Fall 26
 // BIOL 103 schedule images at the app's 4× render, and pdf.js lines of the
@@ -66,6 +74,7 @@ describe('BIOL 103 Fall 2026 OCR schedule', () => {
     // "Review Activity for the Final Exam" is a lesson, not an exam. The
     // FINAL EXAM block with its section times is read in a later stage.
     expect(exams.some((item) => item.value === '2026-12-01')).toBe(false)
+    expectDatesIsoOrUnset(biol().items)
   })
 
   it.todo('does not make a lesson out of the Fall Break row (stage 3)')
@@ -80,5 +89,52 @@ describe('BIOL 103 FA23 Canvas print', () => {
     expect(segment.lines.some((line) => line.endsWith('(due Aug. 27, 11:59 PM, ET)'))).toBe(true)
   })
 
-  it.todo('dates Lesson 1 and Exam 1 in 2023 from "FA23" (stage 2)')
+  it('dates Lesson 1 and Exam 1 in 2023, the only year the print carries as "FA23" and "8/18/23"', () => {
+    expect(syllabusYearHint(fa23Rows)).toBe(2023)
+    const parsed = parseSyllabusText(fa23Rows, 'BIOL-103-syllabus.pdf', 'pdf')
+    expect(parsed.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'units', label: 'Lesson 1', value: '2023-08-23' }),
+      expect.objectContaining({ kind: 'exams', label: 'Exam 1', value: '2023-09-27' }),
+      expect.objectContaining({ kind: 'deadlines', value: '2023-08-27' }),
+    ]))
+    expectDatesIsoOrUnset(parsed.items)
+  })
+})
+
+describe('dates are ISO or unset', () => {
+  it('leaves a date unset, low confidence, with the source wording in context when no year can be found', () => {
+    const parsed = parseSyllabusText(`CHEM 262 — Organic Chemistry II
+Midterm Exam — October 14
+Problem set 1 due September 9`)
+    const dated = parsed.items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines')
+    expect(dated).toHaveLength(2)
+    dated.forEach((item) => {
+      expect(item.value).toBeUndefined()
+      expect(item.confidence).toBe('low')
+      expect(item.context).toMatch(/^Date as written: (?:October 14|September 9)$/)
+    })
+    expectDatesIsoOrUnset(parsed.items)
+  })
+
+  it('dates a week written as a single day, not only as a range', () => {
+    const parsed = parseSyllabusText(`GEOG 121 — Geographies of Globalization
+Fall 2026
+Course Schedule
+Week 14. Group Presentations
+Nov 16-20 Final Group Presentations
+Week 15. The Planetary and the Global
+Nov 23
+Dipesh Chakrabarty, “The Climate of History: Four Theses,” Critical Inquiry 35, No. 2 (Winter 2009), 197-222.`)
+    expect(parsed.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'units', label: 'The Planetary and the Global', value: '2026-11-23', context: 'Week 15' }),
+    ]))
+  })
+
+  it('reads the year from a term code or from dated page headers', () => {
+    expect(syllabusYearHint('Syllabus: BIOL103.002.FA23')).toBe(2023)
+    expect(syllabusYearHint("PSYC 101 SP '27")).toBe(2027)
+    expect(syllabusYearHint('8/18/23, 12:30 PM header\n8/18/23, 12:31 PM header\n1/2/99 footnote')).toBe(2023)
+    // The term in words still wins over a print header's date.
+    expect(syllabusYearHint('Fall 2026\n8/18/23, 12:30 PM header')).toBe(2026)
+  })
 })

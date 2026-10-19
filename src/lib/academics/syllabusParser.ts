@@ -105,13 +105,36 @@ function monthDateRange(raw: string, yearHint?: number): { date?: string; remain
   return { date: toIsoDate(`${match[1]} ${match[2]}`, yearHint), remainder: (match[5] ?? '').trim() }
 }
 
-/** Prefer the stated academic term over unrelated publication/copyright years. */
-function syllabusYearHint(text: string): number | undefined {
+/** Prefer the stated academic term over unrelated publication/copyright years.
+ *  A Canvas print carries the year only as the registrar's term code (`FA23`)
+ *  and in dated page headers (`8/18/23`); without those every deadline fell
+ *  back to display text and rendered as "Date TBD" (audit F4). */
+export function syllabusYearHint(text: string): number | undefined {
   const term = text.match(/\b(?:fall|autumn|spring|summer|winter)\s+(20\d{2})\b/i)
   if (term) return Number(term[1])
   const academicYear = text.match(/\b(20\d{2})\s*[-–—/]\s*20\d{2}\b/)
   if (academicYear) return Number(academicYear[1])
+  const termCode = text.match(/\b(?:FA|SP|SU|FALL|SPRING|SUMMER)\s*'?(\d{2})\b/i)
+  if (termCode && Number(termCode[1]) >= 15 && Number(termCode[1]) <= 40) return 2000 + Number(termCode[1])
+  const yearCounts = new Map<number, number>()
+  for (const match of text.matchAll(/\b\d{1,2}\/\d{1,2}\/(20\d{2}|\d{2})\b/g)) {
+    const year = match[1].length === 2 ? 2000 + Number(match[1]) : Number(match[1])
+    yearCounts.set(year, (yearCounts.get(year) ?? 0) + 1)
+  }
+  const commonest = [...yearCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0]
+  if (commonest) return commonest
   return Number(text.match(/\b20\d{2}\b/)?.[0]) || undefined
+}
+
+/** A week's date cell is usually a range (`Aug 17-21`) but GEOG writes a
+ *  single day for its last weeks (`Nov 23`). Only the week-range parser uses
+ *  this; the deadline sweep keeps the stricter range test as its guard. */
+function monthDateOrRange(raw: string, yearHint?: number): { date?: string; remainder: string } | undefined {
+  const range = monthDateRange(raw, yearHint)
+  if (range) return range
+  const single = raw.match(new RegExp(`^(${month})\\.?\\s+(\\d{1,2})(?:\\s+(.*))?$`, 'i'))
+  if (!single) return undefined
+  return { date: toIsoDate(`${single[1]} ${single[2]}`, yearHint), remainder: (single[3] ?? '').trim() }
 }
 
 function scheduleStart(line: string, yearHint?: number): { label: string; date?: string } | undefined {
@@ -158,6 +181,10 @@ export interface ScheduleRegion { start: number; end: number; hasHeading: boolea
 export interface ScheduleSegment { lines: string[]; origin: number[]; recovered?: Set<number> }
 
 const WEEKDAY_ONLY = /^(?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)[a-z]*\.?,?$/i
+/** `2 Mon.,` — the Canvas print sometimes keeps the lesson number on the weekday's line. */
+const NUMBERED_WEEKDAY = /^(\d{1,2})\s+((?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)[a-z]*\.?,?)$/i
+/** `Fri., Sep.` / `20 Wed., Nov.` — weekday and month on one line, day on the next. */
+const WEEKDAY_MONTH = new RegExp(`^(?:(\\d{1,2})\\s+)?((?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)[a-z]*\\.?,?)\\s+(${month})\\.?$`, 'i')
 const MONTH_ONLY = new RegExp(`^${month}\\.?$`, 'i')
 const DAY_ONLY = /^\d{1,2}$/
 const SCHEDULE_HEADING = /\b(?:schedule for class|class schedule|course (?:schedule|calendar))\b/i
@@ -195,7 +222,7 @@ export function prepareScheduleText(lines: string[]): ScheduleSegment {
   const abandon = () => {
     if (!pending) return
     if (pending.lessonNumber) { out.push(pending.lessonNumber); origin.push(pending.origin - 1) }
-    out.push(pending.weekday, pending.month); origin.push(pending.origin, pending.origin + 1)
+    out.push(`${pending.weekday} ${pending.month}`); origin.push(pending.origin)
     pending.held.forEach(([line, at]) => { out.push(line); origin.push(at) })
     pending = undefined
   }
@@ -212,13 +239,32 @@ export function prepareScheduleText(lines: string[]): ScheduleSegment {
         pending = undefined
         continue
       }
-      if (pending.held.length < 6 && !isScheduleRowStart(line) && !WEEKDAY_ONLY.test(line)) { pending.held.push([line, index]); continue }
+      if (pending.held.length < 6 && !isScheduleRowStart(line) && !WEEKDAY_ONLY.test(line) && !NUMBERED_WEEKDAY.test(line) && !WEEKDAY_MONTH.test(line)) { pending.held.push([line, index]); continue }
       abandon()
     }
-    if (WEEKDAY_ONLY.test(line) && MONTH_ONLY.test(lines[index + 1] ?? '')) {
-      let lessonNumber: string | undefined
-      if (out.length && DAY_ONLY.test(out[out.length - 1]) && origin[origin.length - 1] === index - 1) { lessonNumber = out.pop(); origin.pop() }
-      pending = { weekday: line, month: lines[index + 1], origin: index, lessonNumber, held: [] }
+    const weekdayMonth = line.match(WEEKDAY_MONTH)
+    if (weekdayMonth) {
+      let lessonNumber: string | undefined = weekdayMonth[1]
+      if (!lessonNumber && out.length && DAY_ONLY.test(out[out.length - 1]) && origin[origin.length - 1] === index - 1) { lessonNumber = out.pop(); origin.pop() }
+      pending = { weekday: weekdayMonth[2], month: weekdayMonth[3], origin: index, lessonNumber, held: [] }
+      continue
+    }
+    const numberedWeekday = line.match(NUMBERED_WEEKDAY)
+    // `10 Mon.,` / `Oct. 2`: month and day arrive together on the next line.
+    const monthDay = (WEEKDAY_ONLY.test(line) || numberedWeekday) ? (lines[index + 1] ?? '').match(new RegExp(`^(${month})\\.?\\s+(\\d{1,2})$`, 'i')) : null
+    if (monthDay) {
+      let lessonNumber: string | undefined = numberedWeekday?.[1]
+      if (!lessonNumber && out.length && DAY_ONLY.test(out[out.length - 1]) && origin[origin.length - 1] === index - 1) { lessonNumber = out.pop(); origin.pop() }
+      const date = `${MONTH_INDEX[monthDay[1].slice(0, 3).toLowerCase()]}/${Number(monthDay[2])}`
+      out.push(lessonNumber ? `${lessonNumber} ${date}` : `${numberedWeekday?.[2] ?? line} ${date}`)
+      origin.push(index)
+      index += 1
+      continue
+    }
+    if ((WEEKDAY_ONLY.test(line) || numberedWeekday) && MONTH_ONLY.test(lines[index + 1] ?? '')) {
+      let lessonNumber: string | undefined = numberedWeekday?.[1]
+      if (!lessonNumber && out.length && DAY_ONLY.test(out[out.length - 1]) && origin[origin.length - 1] === index - 1) { lessonNumber = out.pop(); origin.pop() }
+      pending = { weekday: numberedWeekday?.[2] ?? line, month: lines[index + 1], origin: index, lessonNumber, held: [] }
       index += 1
       continue
     }
@@ -250,8 +296,22 @@ export function detectScheduleRegions(lines: string[]): ScheduleRegion[] {
     }
     run = []
   }
+  // A schedule moves forward in time. Rows a long way apart (a Canvas print
+  // gives each lesson twenty lines of objectives) still belong to one table
+  // when each row's date is later than the one before it.
+  const rowDate = (index: number) => {
+    const match = lines[index].match(/\b(\d{1,2})\/(\d{1,2})\b/)
+    return match ? Number(match[1]) * 100 + Number(match[2]) : undefined
+  }
   starts.forEach((start) => {
-    if (run.length && start - run[run.length - 1] > 12) close()
+    const previous = run[run.length - 1]
+    if (previous != null) {
+      const gap = start - previous
+      const before = rowDate(previous)
+      const after = rowDate(start)
+      const advances = before != null && after != null && after > before
+      if (gap > 12 && !(gap <= 80 && advances)) close()
+    }
     run.push(start)
   })
   close()
@@ -449,7 +509,12 @@ function parseDatedScheduleRows(segment: ScheduleSegment, items: SyllabusItem[],
       ? row.label.replace(/^Lesson\s*/i, '').split(/\s*&\s*/).map((number) => `Lesson ${number}`)
       : [unitLabel]
     const dateTaken = items.some((item) => item.kind === 'units' && item.value === row.date)
-    if (row.date && !isAssessmentOnly && (unitLabels.length > 1 || !dateTaken)) {
+    // "Continuation of lesson 1 content" is a second class day of a lesson
+    // already on the schedule, not a lesson of its own.
+    const continuation = /^continuation of (?:lesson|the lesson)\b/i.test(topic ?? '')
+    // A row whose first cell is an exam heading is the exam, not a lesson.
+    const examRow = Boolean(scheduleExam(meaningful[0] ?? '')) && /^(?:[*•+]\s*)?(?:exam|midterm|final)/i.test(meaningful[0] ?? '')
+    if (row.date && !isAssessmentOnly && !continuation && !examRow && (unitLabels.length > 1 || !dateTaken)) {
       unitLabels.forEach((label) => pushUnique(items, 'units', label, row.date, confidence, lineEvidence(lines[row.index], row.index), unitLabels.length > 1 ? label : row.label))
       searched.units = 'Schedule scope found'
     }
@@ -459,7 +524,9 @@ function parseDatedScheduleRows(segment: ScheduleSegment, items: SyllabusItem[],
         .reverse()
         .map((candidate) => scheduleExam(candidate))
         .find(Boolean)
-      const examCellOwnsRowDate = cell === row.inline || (cell === meaningful[0] && !topic)
+      // The first cell of a row owns its date when it is a numbered exam
+      // heading, even if a later cell (exam instructions) reads like a topic.
+      const examCellOwnsRowDate = cell === row.inline || (cell === meaningful[0] && (!topic || Boolean(scheduleExam(cell))))
       // "Exam 1 review" and "Review for the exam" are study sessions, not the
       // exam. A row that says "To prepare for the exam, review: GRQs…" is the
       // exam; the word alone must not veto it.
@@ -506,7 +573,7 @@ function parseWeekRangeSchedule(segment: ScheduleSegment, items: SyllabusItem[],
     const week = `Week ${row.match[1]}`
     const title = row.match[2].trim()
     const cells = lines.slice(row.index + 1, nextIndex)
-    const range = cells.map((line, offset) => ({ line, offset, parsed: monthDateRange(line, yearHint) })).find((candidate) => candidate.parsed)
+    const range = cells.map((line, offset) => ({ line, offset, parsed: monthDateOrRange(line, yearHint) })).find((candidate) => candidate.parsed)
     if (!range) return
 
     const existingUnit = items.find((item) => item.kind === 'units' && item.evidence.location === `line ${segment.origin[row.index] + 1}`)
@@ -520,7 +587,7 @@ function parseWeekRangeSchedule(segment: ScheduleSegment, items: SyllabusItem[],
     }
 
     const readingCells = cells.flatMap((line, offset) => {
-      const parsedRange = monthDateRange(line, yearHint)
+      const parsedRange = monthDateOrRange(line, yearHint)
       if (parsedRange) return parsedRange.remainder ? [{ line: parsedRange.remainder, offset }] : []
       return [{ line, offset }]
     }).filter(({ line }) => !/^\d{1,2}$/.test(line)
@@ -1254,7 +1321,9 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
       const label = ((isExam ? scheduleExam(line) : undefined)
         ?? trimConnectives(line.replace(date[0], '')))
         || (isExam ? 'Exam' : 'Deadline')
-      push(items, kind, label, iso ?? date[0], iso ? 'high' : 'low', evidence)
+      // `value` is ISO or unset, never display text: the app writes it straight
+      // into `dueDate`. The date as the syllabus wrote it stays visible in context.
+      push(items, kind, label, iso, iso ? 'high' : 'low', evidence, iso ? undefined : `Date as written: ${date[0]}`)
       searched[kind] = isExam ? 'Exam dates found' : 'Assignment deadlines found'
     }
     // Schedule tables often use numeric dates, e.g. "Tues 8/25 Research
