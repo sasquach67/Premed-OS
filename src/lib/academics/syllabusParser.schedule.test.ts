@@ -78,7 +78,30 @@ describe('BIOL 103 Fall 2026 OCR schedule', () => {
     expectDatesIsoOrUnset(biol().items)
   })
 
-  it.todo('does not make a lesson out of the Fall Break row (stage 3)')
+  it('does not make a lesson out of the Fall Break row', () => {
+    // OCR reads it as `oe Mo Class (Fall Breald ]`.
+    const units = biol().items.filter((item) => item.kind === 'units')
+    expect(units.some((item) => /break|class \(/i.test(item.label))).toBe(false)
+  })
+
+  it('names each deadline the way the syllabus names the work, not with the row text around it', () => {
+    const deadlines = biol().items.filter((item) => item.kind === 'deadlines')
+    expect(deadlines).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Lesson 15 quiz', value: '2026-10-19' }),
+      expect.objectContaining({ label: 'Lesson 16 reflection and poster', value: '2026-10-20' }),
+      expect.objectContaining({ label: 'Unit 2 Quiz', value: '2026-10-20' }),
+      expect.objectContaining({ label: 'Quizzes Lessons 9, 10, and 11', value: '2026-09-27' }),
+      expect.objectContaining({ label: 'Lesson 0 and 1 quiz', value: '2026-08-23' }),
+      expect.objectContaining({ label: 'Bio 103 Baseline Quiz', value: '2026-08-19' }),
+    ]))
+    deadlines.forEach((item) => {
+      expect(item.label.length, item.label).toBeLessThanOrEqual(60)
+      expect(item.label, item.label).toMatch(/^[A-Z0-9]/)
+      expect(item.label).not.toMatch(/^impacts\b/i)
+    })
+    // The row's own date is when the class meets; `1 8/20 … quiz due 8/23` is one deadline.
+    expect(deadlines.some((item) => item.value === '2026-08-20' && /quiz/i.test(item.label))).toBe(false)
+  })
 })
 
 describe('BIOL 103 FA23 Canvas print', () => {
@@ -96,8 +119,11 @@ describe('BIOL 103 FA23 Canvas print', () => {
     expect(parsed.items).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'units', label: 'Lesson 1', value: '2023-08-23' }),
       expect.objectContaining({ kind: 'exams', label: 'Exam 1', value: '2023-09-27' }),
-      expect.objectContaining({ kind: 'deadlines', value: '2023-08-27' }),
+      expect.objectContaining({ kind: 'deadlines', label: 'Lesson 1 quiz', value: '2023-08-27' }),
     ]))
+    expect(parsed.items.some((item) => item.kind === 'deadlines' && /^Gradescope/.test(item.label))).toBe(false)
+    // `No class -- UNC Wellbeing Day` is not a session.
+    expect(parsed.items.some((item) => item.kind === 'units' && item.value === '2023-09-25')).toBe(false)
     expectDatesIsoOrUnset(parsed.items)
   })
 })

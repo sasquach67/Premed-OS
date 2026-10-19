@@ -100,6 +100,22 @@ describe('no-class days are never sessions, however they are written', () => {
   })
 })
 
+describe('a deadline is named by its work, however the line is written', () => {
+  const forms: Array<[string, string, string]> = [
+    ['after class', 'After class: Lesson 15 quiz (due 9/14 at 11:59 PM)', 'Lesson 15 quiz'],
+    ['before class', 'Before class: read Chapter 3 and complete GRQ-3 — due 9/14', 'Read Chapter 3 and complete GRQ-3'],
+    ['submit verb', 'Submit Lab Report 2 on Canvas by 9/14 at 5pm', 'Lab Report 2'],
+    ['platform', 'Problem Set 3 on Gradescope (due Sept. 14, 11:59 PM)', 'Problem Set 3'],
+    ['objective in front', 'Explain osmosis in plant cells. After class: Lesson 4 worksheet due 9/14', 'Lesson 4 worksheet'],
+    ['deadline for', 'Deadline for Essay 1: September 14th', 'Essay 1'],
+    ['is due', 'The Annotated Bibliography is due 9/14.', 'The Annotated Bibliography'],
+  ]
+  it.each(forms)('%s: "%s"', (_name, line, expected) => {
+    const found = deadlines(parse(line)).find((item) => item.value === '2026-09-14')
+    expect(found?.label).toBe(expected)
+  })
+})
+
 // Exam scope is read in the exam-scope commit; this block is switched on there.
 describe.skip('every common way to state what an exam covers is read', () => {
   const forms: Array<[string, string, number[] | 'cumulative' | 'non-cumulative']> = [

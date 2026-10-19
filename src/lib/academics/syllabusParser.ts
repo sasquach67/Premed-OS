@@ -255,6 +255,62 @@ export function isNoClassRow(text: string): boolean {
   return /\bno\s+cl[ao]ss(?:es)?\b|\b(?:fall|spring|winter|thanksgiving|autumn)\s+(?:break|brea\w*|recess)\b|\bbreak\b.*\bno class\b|\bwell-?being day\b|\bholiday\b|\breading day\b|\b(?:university|campus) (?:closed|holiday)\b|\bclass(?:es)? (?:cancel+ed|canceled)\b|\brecess\b/i.test(text)
 }
 
+
+/** Words that name a piece of work. A label without one is a fragment. */
+const ASSIGNMENT_NOUN = /\b(?:quiz(?:zes)?|exam|test|worksheet|reflections?|posters?|homework|hw|problem sets?|p-?sets?|papers?|essays?|drafts?|forums?|discussion(?: post)?s?|lab(?: report)?s?|reports?|presentations?|projects?|assignments?|responses?|GRQs?|Mastering|InCLA|assessments?|readings?|proposals?|abstracts?|portfolios?|journals?|annotations?|modules?|surveys?|requirement)\b/i
+const OBJECTIVE_VERB = /^(?:identify|describe|explain|compare|contrast|predict|interpret|generate|analy[sz]e|draw|define|construct|review|discern|outline|make|recognize|trace|correlate|design|evaluate|apply|relate|connect|discuss|summari[sz]e|distinguish|calculate|determine|use|work through)\b/i
+
+/** A short assignment name from the cell or sentence that carries a due date
+ *  (audit F5: the live Next Assignment read "impacts of those changes. After
+ *  class: Lesson 15 quiz ("). Keeps the syllabus's own words; never invents. */
+export function assignmentLabel(text: string): string | undefined {
+  let label = text.replace(/\s+/g, ' ').trim()
+  const phase = [...label.matchAll(/\b(?:before|after)\s+class\s*:\s*/gi)].at(-1)
+  if (phase) label = label.slice((phase.index ?? 0) + phase[0].length)
+  // Row furniture: the row's own number and date, list numbering, OCR glyph noise.
+  label = label.replace(/^(?:\d{1,3}(?:\s*&\s*\d{1,2})?\s+)?\d{1,2}\/\d{1,2}\s+/, '')
+  label = label.replace(/^\d{1,2}(?:\.\d{1,2})?\s*[:.)]\s+/, '')
+  for (let pass = 0; pass < 3; pass += 1) label = label.replace(/^(?:[«»•●*+~|©"“”'.\-–—]+\s*|(?:[A-Za-z]{1,2}|oe|vp|typ)\s+(?=[A-Za-z0-9]))/, '')
+  // An objective sentence ahead of the work: keep the last sentence that names work.
+  const sentences = label.split(/(?<=[.!?])\s+/).filter(Boolean)
+  const withWork = sentences.filter((sentence) => ASSIGNMENT_NOUN.test(sentence))
+  if (withWork.length) label = withWork.at(-1) as string
+  if (OBJECTIVE_VERB.test(label)) {
+    const work = label.slice(1).search(/\b(?:Lessons?\s+\d|Units?\s+\d|Quiz|Quizzes|Submit|Complete|Forum|Paper|Problem Set|Homework|Lab|Project|Essay)\b/)
+    if (work >= 0) label = label.slice(work + 1)
+  }
+  label = label.split(/\s*\(|,?\s+due\b|\s+(?:on|via|in|through)\s+(?:Gradescope|Canvas|Sakai|Blackboard|Moodle|Mastering)\b|\s+(?:at|by|before)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm|a\.m\.|p\.m\.)?\b|\s+(?:is|are)\s+due\b|\s*[:;]\s+due\b/i)[0]
+  // The date is the item's value, never part of its name.
+  findDates(label).reverse().forEach((date) => { label = `${label.slice(0, date.index)}${label.slice(date.index + date.raw.length)}` })
+  label = label.replace(/\s+(?:on|by)\s*$/i, '').replace(/\s{2,}/g, ' ').trim()
+  // `from class) and 2) Unit 1 quiz`: the tail of an earlier parenthesis and list numbering.
+  if (/^[^(]*\)/.test(label)) label = label.replace(/^[^(]*?\)\s*(?:(?:and|or)\s+)?(?:\d{1,2}\)\s*)?/i, '')
+  label = label.replace(/^(?:submit|complete|turn in|upload|post|finish)\s+(?:the\s+|your\s+)?/i, '').replace(/^deadline (?:for|to submit)\s+/i, '')
+  label = label.replace(/\s+(?:and|or|&)$/i, '').replace(/\s+(?:uploaded|submitted|turned in|posted)$/i, '')
+  label = trimConnectives(label).replace(/[\s,;:.\-–—]+$/, '').trim()
+  if (label.length > 60) label = label.slice(0, 61).replace(/\s+\S*$/, '').replace(/[\s,;:]+$/, '')
+  if (!label) return undefined
+  return label[0].toUpperCase() + label.slice(1)
+}
+
+/** The label for a deadline on `lines[index]`. A wrapped cell (`Gradescope
+ *  (due Oct. 1 at`) carries no work noun of its own; its name is on the line
+ *  or two above (`After class: Lesson 9 quiz on`). */
+function deadlineLabel(lines: string[], index: number): string | undefined {
+  for (let back = 0; back <= 2; back += 1) {
+    const text = lines.slice(Math.max(0, index - back), index + 1).join(' ')
+    const label = assignmentLabel(text)
+    if (label && ASSIGNMENT_NOUN.test(label) && !/^[a-z]/.test(label)) return label
+  }
+  return assignmentLabel(lines[index])
+}
+
+/** A row's own date (`1 8/20 …`, `8/20 …`) is when the class meets, not when
+ *  work is due. It counts only when the row names no other date. */
+function isRowLeadDate(line: string, date: { index: number }, others: number): boolean {
+  return others > 1 && date.index <= 8 && /^(?:\d{1,3}(?:\s*&\s*\d{1,2})?\s+)?\d{1,2}\/\d{1,2}\b/.test(line)
+}
+
 /** The one dated-fact sweep: every line that names an exam or a piece of work
  *  next to a date, in any of the forms above. It only adds what the
  *  structure-aware passes did not already take from the same line. */
@@ -275,17 +331,20 @@ function parseDatedFacts(lines: string[], items: SyllabusItem[], searched: Recor
       }
       return
     }
-    if (!DEADLINE_CUE.test(line) || looksLikeReading(line) || /\bmake[- ]?up\b/i.test(nearby)) return
+    // `…poster (due` / `16 10/20 10/20 at 11:59 PM)`: the cue sits on the line above.
+    const continuesDue = index > 0 && /\(\s*due\s*$|\bdue\s*(?:on|by)?\s*$/i.test(lines[index - 1])
+    if ((!DEADLINE_CUE.test(line) && !continuesDue) || looksLikeReading(line) || /\bmake[- ]?up\b/i.test(nearby)) return
     if (/^(?:mon(?:day)?|tues?(?:day)?|wed(?:nesday)?|thu(?:rs?)?(?:day)?|fri(?:day)?)\b/i.test(line) && fromLine('units').length) return
     const existing = fromLine('deadlines')
     dates.forEach((date) => {
+      if (isRowLeadDate(line, date, dates.length)) return
       if (existing.some((item) => item.value === date.iso)) return
       if (items.some((item) => item.kind === 'deadlines' && item.value === date.iso && item.evidence.location === location)) return
-      const cue = line.match(/^(.{2,120}?)\s+(?:are\s+|is\s+)?(?:due|must be (?:completed|submitted) by|deadline)\b/i)?.[1]
-      const label = trimConnectives((cue ?? line.replace(date.raw, '')).replace(/^(?:deadline for|submit)\s+/i, '').replace(/\s*[:—–-]\s*$/, '')) || 'Deadline'
+      const label = deadlineLabel(lines, index) ?? 'Deadline'
       // A prose line that only restates a date another pass already named
       // ("…assignments tab, on Canvas. They are due … (9/3 and 10/8)") adds nothing.
-      if (!/^[A-Z0-9]/.test(label) && items.some((item) => item.kind === 'deadlines' && item.value === date.iso)) return
+      const restates = !/^[A-Z0-9]/.test(label) || /^(?:this|these|that|those|it|they|the|each|all|your)\b/i.test(label)
+      if (restates && items.some((item) => item.kind === 'deadlines' && item.value === date.iso)) return
       pushUnique(items, 'deadlines', label, date.iso, date.iso ? 'high' : 'low', lineEvidence(line, index), date.iso ? 'Syllabus deadline' : `Date as written: ${date.raw}`)
       searched.deadlines = 'Assignment deadlines found'
     })
@@ -687,7 +746,10 @@ function parseDatedScheduleRows(segment: ScheduleSegment, items: SyllabusItem[],
       searched.units = 'Schedule scope found'
     }
 
-    meaningful.forEach((cell) => {
+    meaningful.forEach((rawCell, cellIndex) => {
+      const following = meaningful[cellIndex + 1]
+      const cell = /\bbefore class\s*:/i.test(rawCell) && /(?:\b(?:and|or)|[,\-–])\s*$/.test(rawCell) && following && !/^(?:before|after|during) class\b/i.test(following)
+        ? `${rawCell} ${following}` : rawCell
       const precedingExam = lines.slice(Math.max(scheduleHeader, row.index - 3), row.index)
         .reverse()
         .map((candidate) => scheduleExam(candidate))
@@ -718,7 +780,7 @@ function parseDatedScheduleRows(segment: ScheduleSegment, items: SyllabusItem[],
       if (!beforeClass && !inClass) return
       const explicit = cell.match(/\b(?:due\s*)?(\d{1,2})\/(\d{1,2})\b/i)
       const due = explicit ? numericDateToIso(explicit[1], explicit[2], yearHint) : row.date
-      const label = trimConnectives((beforeClass ?? inClass ?? '').replace(/\([^)]*\)/g, '').replace(/\b(?:due\s*)?\d{1,2}\/\d{1,2}(?:\s+at\s+[^,;.]+)?/ig, '').trim())
+      const label = assignmentLabel(beforeClass ?? inClass ?? '') ?? trimConnectives((beforeClass ?? inClass ?? '').replace(/\([^)]*\)/g, '').replace(/\b(?:due\s*)?\d{1,2}\/\d{1,2}(?:\s+at\s+[^,;.]+)?/ig, '').trim())
       if (label && due) {
         pushUnique(items, 'deadlines', label, due, 'high', evidenceFor(cell), beforeClass ? `Before ${row.label}` : row.label)
         searched.deadlines = 'Assignment deadlines found'
@@ -832,13 +894,17 @@ function parseNumericActionDates(lines: string[], items: SyllabusItem[], searche
     if (!matches.length) return
     const cue = line.match(/^(.{2,120}?)\s+(?:are\s+)?(?:due|must be (?:completed|submitted) by|deadline|by)\b/i)?.[1]
     const base = (isExam ? scheduleExam(line) : undefined)
+      ?? (isExam ? undefined : deadlineLabel(lines, index))
       ?? (trimConnectives(cue ?? line.replace(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b.*$/, '')) || (isExam ? 'Exam' : 'Deadline'))
-    matches.forEach((match, matchIndex) => {
+    const dueMatches = matches.filter((match) => !isRowLeadDate(line, { index: match.index ?? 0 }, matches.length))
+    dueMatches.forEach((match, matchIndex) => {
       const explicitYear = match[3] ? Number(match[3].length === 2 ? `20${match[3]}` : match[3]) : yearHint
       const iso = numericDateToIso(match[1], match[2], explicitYear)
       if (!iso) return
       const kind: SyllabusKind = isExam ? 'exams' : 'deadlines'
-      const label = matches.length > 1 && !isExam ? `${base} ${matchIndex + 1}` : base
+      // "Papers due 9/3 and 10/8" names two pieces of work; number them unless
+      // the name already carries its own number.
+      const label = dueMatches.length > 1 && !isExam && !/\d\s*$/.test(base) ? `${base} ${matchIndex + 1}` : base
       if (items.some((item) => item.kind === kind && item.value === iso)) return
       pushUnique(items, kind, label, iso, 'high', lineEvidence(line, index), isExam ? undefined : 'Syllabus deadline')
       searched[kind] = isExam ? 'Exam dates found' : 'Assignment deadlines found'
@@ -1486,7 +1552,7 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
       if (!isExam && !isDeadline) return
       const kind: SyllabusKind = isExam ? 'exams' : 'deadlines'
       const iso = toIsoDate(date[0], yearHint)
-      const label = ((isExam ? scheduleExam(line) : undefined)
+      const label = ((isExam ? scheduleExam(line) : deadlineLabel(lines, index))
         ?? trimConnectives(line.replace(date[0], '')))
         || (isExam ? 'Exam' : 'Deadline')
       // `value` is ISO or unset, never display text: the app writes it straight
