@@ -317,6 +317,12 @@ export interface SyllabusScheduleEntry {
   startDate?: string
   source?: string
   order: number
+  /** The lesson number the syllabus gives this entry, when its schedule is per lesson. */
+  lesson?: number
+  /** Every class date in the lesson, when it meets more than once. */
+  dates?: string[]
+  /** The learning objectives the syllabus lists for this lesson. */
+  objectives?: string[]
 }
 
 /** Operational extension for one canonical Course. It exists only for the

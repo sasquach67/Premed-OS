@@ -14,6 +14,12 @@ export interface SyllabusItem {
   /** Exams only: what the syllabus itself says the exam covers. Absent means
    *  it said nothing; never inferred from dates (audit F2). */
   scope?: { lessons?: number[]; cumulative?: boolean }
+  /** Units only: the lesson number (from the row, the chapter, or the order). */
+  lesson?: number
+  /** Units only: every class date in this lesson, when it meets more than once. */
+  dates?: string[]
+  /** Units only: the learning objectives the schedule lists for this lesson. */
+  objectives?: string[]
 }
 export interface SyllabusProposal {
   sourceName: string
@@ -883,6 +889,10 @@ function parseDatedScheduleRows(segment: ScheduleSegment, items: SyllabusItem[],
     if (row.date && !isAssessmentOnly && !continuation && !examRow && !noClass && (unitLabels.length > 1 || !dateTaken)) {
       unitLabels.forEach((label) => pushUnique(items, 'units', label, row.date, confidence, lineEvidence(lines[row.index], row.index), unitLabels.length > 1 ? label : row.label))
       searched.units = 'Schedule scope found'
+      const objectives = lessonObjectives(meaningful)
+      if (objectives.length) {
+        items.filter((item) => item.kind === 'units' && item.value === row.date && unitLabels.includes(item.label)).forEach((item) => { item.objectives = objectives })
+      }
     }
 
     meaningful.forEach((rawCell, cellIndex) => {
@@ -1641,6 +1651,92 @@ function pruneRedundantLogistics(items: SyllabusItem[]): SyllabusItem[] {
   })
 }
 
+
+/** The verbs a learning objective starts with, for the lesson objectives a
+ *  schedule table lists beside each row. */
+const OBJECTIVE_START = /^(?:identify|describe|explain|compare|contrast|predict|interpret|generate|analy[sz]e|draw|define|construct|review|discern|outline|make|recognize|trace|correlate|design|evaluate|apply|relate|connect|discuss|summari[sz]e|distinguish|calculate|determine|use|work through|classify|differentiate|illustrate|list|name|state|demonstrate|assess|justify|model|diagram|formulate|propose|solve|derive|measure|estimate|sketch|label|argue|critique|reflect|articulate|organi[sz]e|practice|recall|understand|examine|interpret|infer|hypothesi[sz]e|synthesi[sz]e|develop|perform|read|write|locate|map|order|rank|select|choose|match|convert|balance|graph|plot|test)\b/i
+
+/** The learning objectives a schedule row lists for its lesson. A table cell
+ *  may wrap over several lines ("Identify the" / "independent and" /
+ *  "dependent variables…"), carry OCR bullet noise, or run on into the row's
+ *  assignment ("… Before class: GRQ-3"). Objectives start with a verb; a line
+ *  that starts lowercase continues the one before it. */
+export function lessonObjectives(cells: string[]): string[] {
+  const objectives: string[] = []
+  cells.forEach((raw) => {
+    const cell = raw
+      .replace(/\b(?:before|after|during)\s+class\s*:.*$/i, '')
+      .replace(/\bIn-?Class Learning Assessment\b.*$/i, '')
+      .replace(/\bInCLA\b.*$/i, '')
+      .replace(/^(?:[«»•●*+~|©"“”'.\-–—]+\s*|(?:[A-Za-z]{1,2}|oe|vp|typ)\s+(?=[A-Za-z]))/, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (!cell) return
+    const current = objectives[objectives.length - 1]
+    if (/^[A-Z]/.test(cell) && OBJECTIVE_START.test(cell)) { objectives.push(cell); return }
+    if (current && /^[a-z(]/.test(cell) && !/[.!?]$/.test(current)) objectives[objectives.length - 1] = `${current} ${cell}`
+  })
+  return [...new Set(objectives
+    .map((objective) => objective.replace(/\s*[-–—|]+\s*$/, '').replace(/\s*\(\s*$/, '').trim())
+    .filter((objective) => objective.length >= 12 && objective.length <= 240 && !/\bdue\b/i.test(objective)))].slice(0, 8)
+}
+
+/** A class meets more than once per lesson. PSYC 101 teaches "Human Memory"
+ *  on 9/22 and 9/24; Andy's folders, the exam scope and the notebook are all
+ *  per lesson, so consecutive sessions on one topic become one lesson with
+ *  both dates (Andy, Oct 19 2026). The number comes from the chapter the
+ *  readings name for those dates; without chapters, from the order, with an
+ *  introduction day as lesson 0. Week-based schedules (GEOG, ANTH) are not
+ *  sessions and are left alone. */
+function groupSessionsIntoLessons(items: SyllabusItem[]): SyllabusItem[] {
+  const isWeek = (unit: SyllabusItem) => /^(?:week|wk|introduction)\b/i.test(unit.context ?? '')
+  const sessions = items.filter((unit) => unit.kind === 'units' && unit.value && !isWeek(unit))
+  sessions.filter((unit) => /^Lesson\s+\d+$/i.test(unit.label)).forEach((unit) => {
+    unit.lesson = Number(unit.label.replace(/\D+/g, ''))
+    unit.dates = [unit.value as string]
+  })
+  const topical = sessions.filter((unit) => !/^Lesson\s+\d+$/i.test(unit.label) && !/^Unit\s+\d+\b/i.test(unit.label))
+  if (topical.length < 3) return items
+  const normalize = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const removed = new Set<SyllabusItem>()
+  const lessons: SyllabusItem[] = []
+  ;[...topical].sort((left, right) => (left.value as string).localeCompare(right.value as string)).forEach((unit) => {
+    const previous = lessons[lessons.length - 1]
+    if (previous && normalize(previous.label) === normalize(unit.label)) {
+      previous.dates = [...(previous.dates ?? [previous.value as string]), unit.value as string]
+      if (unit.objectives?.length) previous.objectives = [...(previous.objectives ?? []), ...unit.objectives]
+      removed.add(unit)
+    } else {
+      unit.dates = [unit.value as string]
+      lessons.push(unit)
+    }
+  })
+  const chapterOf = (unit: SyllabusItem) => {
+    for (const date of unit.dates ?? []) {
+      const reading = items.find((item) => item.kind === 'readings' && item.value === date && /^Chapter\s+(\d+)\b/i.test(item.label))
+      if (reading) return Number(reading.label.match(/\d+/)?.[0])
+    }
+    return undefined
+  }
+  const chapters = lessons.map(chapterOf)
+  const isIntroduction = (unit: SyllabusItem) => /\b(?:introduction|intro|syllabus|welcome|overview|orientation|first day)\b/i.test(unit.label)
+  if (chapters.some((chapter) => chapter != null)) {
+    lessons.forEach((unit, index) => {
+      if (chapters[index] != null) unit.lesson = chapters[index]
+      // "Class Introduction" before chapter 1 is lesson 0, as in BIOL 103's table.
+      else if (index === 0 && isIntroduction(unit)) unit.lesson = 0
+    })
+  } else {
+    let number = 0
+    lessons.forEach((unit) => {
+      if (number === 0 && isIntroduction(unit)) { unit.lesson = 0; return }
+      number += 1
+      unit.lesson = number
+    })
+  }
+  return items.filter((item) => !removed.has(item))
+}
+
 /** Last-pass corrections that need the whole proposal (audit F8, F12). */
 function tidyItems(items: SyllabusItem[]): SyllabusItem[] {
   const lineSpan = (location: string): number[] => {
@@ -1803,8 +1899,14 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
   // Standards are a separate pass so a numbered objective is never confused
   // with a schedule date or a scoreable assessment. Only explicit outcome/
   // objective blocks supply study topics; a course schedule remains context.
+  // A lesson's own objectives inside the schedule table belong to that lesson
+  // (`objectives` on its unit), not to the course's goals.
+  const prepared = prepareScheduleText(lines)
+  const regions = detectScheduleRegions(prepared.lines)
+  const inSchedule = new Set<number>()
+  regions.forEach((region) => { for (let at = region.start; at < region.end; at += 1) inSchedule.add(prepared.origin[at]) })
   lines.forEach((line, index) => {
-    if (GENERIC_OUTCOMES_HEADER.test(line)) return
+    if (GENERIC_OUTCOMES_HEADER.test(line) || inSchedule.has(index)) return
     if (!STANDARD_HEADER.test(line)) return
     const inline = line.split(/[:—–-]/, 2)[1]
     const inlineLabel = inline ? standardLabel(inline) : undefined
@@ -1812,14 +1914,14 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
     for (let next = index + 1; next < Math.min(lines.length, index + 64); next += 1) {
       const candidate = lines[next]
       if (STANDARD_HEADER.test(candidate) || STANDARD_SECTION_END.test(candidate)) break
+      if (inSchedule.has(next)) break
       const bullet = standardBullet(lines, next)
       const label = bullet?.label ?? standardLabel(candidate)
       if (label) push(items, 'standards', label, undefined, 'high', lineEvidence(candidate, next))
       if (bullet) next = bullet.lastIndex
     }
   })
-  const prepared = prepareScheduleText(lines)
-  detectScheduleRegions(prepared.lines).forEach((region) => {
+  regions.forEach((region) => {
     const segment = normalizeScheduleCells(prepared, region)
     parseFlattenedSchedule(segment, items, searched, yearHint)
     parseDatedScheduleRows(segment, items, searched, yearHint)
@@ -1846,7 +1948,7 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
   // Deliberately conservative: a one-page syllabus with just office hours still counts
   // as a syllabus, and the student can override this either way.
   const documentKind: DocumentKind = !scanDetected && structureFound.length === 0 ? 'unrecognized' : 'syllabus'
-  return { sourceName, sourceKind, text, items: tidyItems(pruneRedundantLogistics(items)), searched, scanDetected, documentKind, structureFound, numberedItems }
+  return { sourceName, sourceKind, text, items: tidyItems(groupSessionsIntoLessons(pruneRedundantLogistics(items))), searched, scanDetected, documentKind, structureFound, numberedItems }
 }
 
 const SYLLABUS_KINDS: SyllabusKind[] = ['identity', 'standards', 'exams', 'weights', 'units', 'readings', 'deadlines', 'policies', 'logistics']

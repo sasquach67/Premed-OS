@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { examScopeFromSyllabus } from '@/lib/academics/examScope'
+import { examScopeFromSyllabus, lessonFields } from '@/lib/academics/examScope'
 import type { SyllabusItem, SyllabusProposal } from '@/lib/academics/syllabusParser'
 import type { ClassCenterData } from '@/lib/types'
 
@@ -34,6 +34,19 @@ describe('examScopeFromSyllabus', () => {
     const exam: SyllabusItem = { id: 'e', kind: 'exams', label: 'Final Exam', value: '2026-08-26', confidence: 'high', evidence, scope: { cumulative: true } }
     const result = examScopeFromSyllabus(centerWith([{ id: 'a', title: 'Cells' }]), 'c1', proposal([...schedule, exam]), exam)
     expect(result).toEqual({ examScope: { lessons: ['Lesson 1', 'Lesson 2'], cumulative: true }, coveredTopicIds: ['a'] })
+  })
+
+  it('matches topics on any date of a lesson that meets twice', () => {
+    const memory: SyllabusItem = { id: 'm', kind: 'units', label: 'Human Memory', value: '2026-09-22', dates: ['2026-09-22', '2026-09-24'], lesson: 7, confidence: 'high', evidence }
+    const exam: SyllabusItem = { id: 'e', kind: 'exams', label: 'Exam 2', value: '2026-11-03', confidence: 'high', evidence, scope: { lessons: [7] } }
+    const center = centerWith([{ id: 'second-day', title: 'Encoding', scheduledFor: '2026-09-24' }])
+    expect(examScopeFromSyllabus(center, 'c1', proposal([memory, exam]), exam)).toEqual({ examScope: { lessons: ['Lesson 7'] }, coveredTopicIds: ['second-day'] })
+  })
+
+  it('carries a lesson\'s number, dates and objectives into the schedule entry', () => {
+    const unit: SyllabusItem = { id: 'u', kind: 'units', label: 'Lesson 10', value: '2026-09-24', lesson: 10, dates: ['2026-09-24'], objectives: ['Predict how mutations affect cell cycle progression'], confidence: 'high', evidence }
+    expect(lessonFields(unit)).toEqual({ lesson: 10, dates: ['2026-09-24'], objectives: ['Predict how mutations affect cell cycle progression'] })
+    expect(lessonFields({ ...unit, lesson: undefined, dates: undefined, objectives: undefined })).toEqual({})
   })
 
   it('writes nothing when the syllabus says nothing about scope', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import ocrExcerpt from './fixtures/syllabus/biol103-fall26-ocr-excerpt.txt?raw'
 import fa23Rows from './fixtures/syllabus/biol103-fa23-canvas-rows.txt?raw'
-import { detectScheduleRegions, normalizeScheduleCells, parseSyllabusText, prepareScheduleText, syllabusYearHint, type SyllabusItem } from './syllabusParser'
+import { detectScheduleRegions, lessonObjectives, normalizeScheduleCells, parseSyllabusText, prepareScheduleText, syllabusYearHint, type SyllabusItem } from './syllabusParser'
 
 /** Every exam and deadline is ISO or unset. The app writes `value` straight
  *  into `dueDate`, and display text there renders as "Date TBD". */
@@ -145,6 +145,64 @@ describe('BIOL 103 FA23 Canvas print', () => {
     // `No class -- UNC Wellbeing Day` is not a session.
     expect(parsed.items.some((item) => item.kind === 'units' && item.value === '2023-09-25')).toBe(false)
     expectDatesIsoOrUnset(parsed.items)
+  })
+})
+
+describe('lessons, not class days', () => {
+  it('folds two class days on one topic into one lesson, numbered by the chapter read that day', () => {
+    const parsed = parseSyllabusText(`PSYC 101 — Introduction to Psychology
+Fall 2026
+Course Schedule
+Tues 8/18 Class Introduction
+Thurs 8/20 The Evolution of Psychology (Chapter 1)
+Tues 8/25 Research Enterprise in Psychology (Chapter 2)
+Thurs 8/27 The Biological Bases of Behavior (Chapter 3)
+Tues 9/1 The Biological Bases of Behavior (Chapter 3)
+Thurs 9/3 Sensation and Perception (Chapter 4)`)
+    const units = parsed.items.filter((item) => item.kind === 'units')
+    const biological = units.find((item) => item.label === 'The Biological Bases of Behavior')
+    expect(biological).toEqual(expect.objectContaining({ lesson: 3, value: '2026-08-27', dates: ['2026-08-27', '2026-09-01'] }))
+    expect(units.filter((item) => item.label === 'The Biological Bases of Behavior')).toHaveLength(1)
+    expect(units.find((item) => item.label === 'Class Introduction')?.lesson).toBe(0)
+    expect(units.find((item) => item.label === 'Sensation and Perception')?.lesson).toBe(4)
+  })
+
+  it('numbers topics in order when the syllabus names no chapters', () => {
+    const parsed = parseSyllabusText(`HIST 101 — World History
+Fall 2026
+Course Schedule
+Mon 8/17 Welcome and syllabus
+Wed 8/19 Ancient River Valleys
+Mon 8/24 Ancient River Valleys
+Wed 8/26 Classical Empires
+Mon 8/31 Trade Networks`)
+    const units = parsed.items.filter((item) => item.kind === 'units')
+    expect(units.map((item) => [item.label, item.lesson])).toEqual([
+      ['Welcome and syllabus', 0], ['Ancient River Valleys', 1], ['Classical Empires', 2], ['Trade Networks', 3],
+    ])
+  })
+
+  it('attaches each lesson\'s learning objectives to it, not to the course goals', () => {
+    const parsed = parseSyllabusText(fa23Rows, 'BIOL-103-syllabus.pdf', 'pdf')
+    const lesson1 = parsed.items.find((item) => item.kind === 'units' && item.label === 'Lesson 1')
+    // The excerpt keeps the row's assignment cells, not its objective lines;
+    // objective reading itself is the next test.
+    expect(lesson1?.lesson).toBe(1)
+    expect(parsed.items.some((item) => item.kind === 'standards' && /GRQ|Mastering/.test(item.label))).toBe(false)
+    const withObjectives = parseSyllabusText(`BIO 101 — Cells\nFall 2026\n1 8/20 Identify positive and negative controls\nInterpret different kinds of data\n2 8/25 Outline the major pathways of protein transport\n3 8/27 Discern the mode of inheritance`)
+    expect(withObjectives.items.find((item) => item.kind === 'units' && item.label === 'Lesson 1')?.objectives)
+      .toEqual(['Identify positive and negative controls', 'Interpret different kinds of data'])
+    expect(withObjectives.items.filter((item) => item.kind === 'standards')).toHaveLength(0)
+  })
+
+  it('reads objectives that wrap across table lines and stops at the assignment column', () => {
+    expect(lessonObjectives([
+      'Identify the',
+      'independent and',
+      'dependent variables in a controlled experiment',
+      'Interpret different kinds of data Before class: GRQ-1 and Mastering-Lesson 1',
+      'After class: Lesson 1 quiz on Gradescope',
+    ])).toEqual(['Identify the independent and dependent variables in a controlled experiment', 'Interpret different kinds of data'])
   })
 })
 
