@@ -1,5 +1,68 @@
 import { describe, expect, it } from 'vitest'
 import { parseSyllabusText, pdfTextToLines } from './syllabusParser'
+import { isPlausibleClassMeetingTime } from './meetingSchedule'
+
+describe('stage 5 tightening (SYLLABUS-PARSER-AUDIT-2026-10-18 F6, F8, F10, F11, F12)', () => {
+  it('keeps a classroom line but not prose that mentions a building (F6)', () => {
+    const parsed = parseSyllabusText(`GEOG 121 — Geographies of Globalization
+Fall 2026
+Peabody Hall ∙ Rm 1040
+0121 Hanes Art Center
+Go to the CAPS website or visit their facilities on the third floor of the Campus Health building for a walk-in evaluation.
+Makeups are given at the Undergraduate Testing Center and the Undergraduate Testing
+Center`)
+    const places = parsed.items.filter((item) => item.kind === 'logistics' && !item.value && !item.context).map((item) => item.label)
+    expect(places).toEqual(expect.arrayContaining(['Peabody Hall ∙ Rm 1040', '0121 Hanes Art Center']))
+    expect(places.some((label) => /CAPS|Testing|^Center$/.test(label))).toBe(false)
+  })
+
+  it('does not turn a grading row into a unit of the schedule (F8)', () => {
+    const parsed = parseSyllabusText(`ENGL 105 — Introduction to Composition and Rhetoric
+Fall 2026
+Assignment
+Total
+Unit 1 Project (Social Sciences)
+10
+Unit 2 Project (Natural Sciences)
+15
+Unit 3 Project (Humanities)
+20
+Feeder assignments
+30
+Attendance and Participation
+25
+100 points`)
+    expect(parsed.items.filter((item) => item.kind === 'units')).toHaveLength(0)
+    expect(parsed.items.filter((item) => item.kind === 'weights')).toHaveLength(5)
+  })
+
+  it('reads a start time with no meridiem as the one that makes a class (F10)', () => {
+    expect(isPlausibleClassMeetingTime('1:25–2:15 PM')).toBe(true)
+    expect(isPlausibleClassMeetingTime('11:15–12:05 PM')).toBe(true)
+    // Both meridiems written and twelve hours apart: still flagged for review.
+    expect(isPlausibleClassMeetingTime('8 AM–9:15 PM')).toBe(false)
+  })
+
+  it('joins PDF text items that touch, so a ligature glyph does not split a word (F11)', () => {
+    const item = (str: string, x: number, width: number) => ({ str, transform: [1, 0, 0, 1, x, 700], width })
+    expect(pdfTextToLines([item('be waning in power and in', 19, 128), item('fl', 147, 6), item('uence as global', 153, 73), item(' ', 226, 2), item('fl', 229, 6), item('ows', 235, 20)]))
+      .toBe('be waning in power and influence as global flows')
+    // Items without widths keep the old space join.
+    expect(pdfTextToLines([{ str: 'of', transform: [1, 0, 0, 1, 0, 700] }, { str: 'fi', transform: [1, 0, 0, 1, 9, 700] }])).toBe('of fi')
+  })
+
+  it('keeps one grade scale and a clean course title (F12)', () => {
+    const parsed = parseSyllabusText(`BIOL 103 — How Cells Work (section 002)!
+Fall 2023
+Grade Scale
+94-100 A
+90-93 A-
+Assignment Frequency/Timing Total Points
+Midterm Exam Oct. 5 (In-class) 20 pts`)
+    expect(parsed.items.find((item) => item.kind === 'identity')?.value).toBe('How Cells Work')
+    expect(parsed.items.filter((item) => item.kind === 'logistics' && item.label === 'Grade scale').length).toBeLessThanOrEqual(1)
+  })
+})
 
 describe('syllabus corpus regressions', () => {
   it('keeps ANTH standards limited to the three stated course goals', () => {

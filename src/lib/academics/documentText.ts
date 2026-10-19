@@ -47,6 +47,8 @@ export interface DocumentExtractionOptions {
 export interface PdfTextItem {
   str?: string
   hasEOL?: boolean
+  /** Advance width in user space; with `transform[4]` it says where the item ends. */
+  width?: number
   /** [a, b, c, d, x, y] — index 5 is the baseline y in PDF user space. */
   transform?: number[]
 }
@@ -82,11 +84,24 @@ export function validateDocumentBounds(fileSize: number, pageCount?: number) {
  */
 export function pdfTextToLines(items: PdfTextItem[], tolerance = 2): string {
   const lines: string[] = []
-  let current: Array<{ text: string; x: number }> = []
+  let current: Array<{ text: string; x: number; width?: number }> = []
   let currentY: number | undefined
 
+  // pdf.js emits a ligature glyph (`fi`, `fl`) as its own item, butted against
+  // its neighbours: `in` ends at x=147 and `fl` starts at 147. Joining every
+  // item with a space produced "in fl uence" and "of fi cials" (audit F11).
+  // Items that touch are one word; a real gap arrives as its own " " item.
   const flush = () => {
-    const text = current.sort((left, right) => left.x - right.x).map((item) => item.text).join(' ').replace(/\s+/g, ' ').trim()
+    const sorted = current.sort((left, right) => left.x - right.x)
+    let text = ''
+    sorted.forEach((item, index) => {
+      const previous = sorted[index - 1]
+      const touches = previous?.width != null && item.width != null
+        && Math.abs(item.x - (previous.x + previous.width)) < 0.75
+        && !/\s$/.test(previous.text) && !/^\s/.test(item.text)
+      text += index === 0 ? item.text : touches ? item.text : ` ${item.text}`
+    })
+    text = text.replace(/\s+/g, ' ').trim()
     if (text) lines.push(text)
     current = []
   }
@@ -98,7 +113,7 @@ export function pdfTextToLines(items: PdfTextItem[], tolerance = 2): string {
 
     if (currentY != null && y != null && Math.abs(y - currentY) > tolerance) flush()
     if (y != null) currentY = y
-    if (str) current.push({ text: str, x: typeof x === 'number' ? x : current.length })
+    if (str) current.push({ text: str, x: typeof x === 'number' ? x : current.length, width: typeof item.width === 'number' ? item.width : undefined })
     if (item.hasEOL) { flush(); currentY = undefined }
   }
   flush()

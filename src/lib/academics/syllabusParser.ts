@@ -50,8 +50,22 @@ const month = '(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?
 const datePattern = new RegExp(`\\b${month}\\.?\\s+\\d{1,2}(?:,?\\s+20\\d{2})?\\b`, 'gi')
 const headers: Array<[SyllabusKind, RegExp]> = [
   ['units', /^(?:week|unit|module|chapter)\s*\d+/i],
-  ['logistics', /^(?:office hours|meets?|meeting|instructor|prof(?:essor)?\.?|office|room|location)\s*:|^(?=.{3,180}$).+\b(?:Hall|Center|Building)\b(?:\s*[·∙|,;-]?\s*(?:Room|Rm\.?)?\s*[A-Za-z]?\d+[A-Za-z]?)?|^(?:MWF|M\s*\/\s*W\s*\/\s*F|TR|TTH)\s*:?\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i],
+  ['logistics', /^(?:office hours|meets?|meeting|instructor|prof(?:essor)?\.?|office|room|location|classroom)\s*:|^(?:MWF|M\s*\/\s*W\s*\/\s*F|TR|TTH)\s*:?\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i],
 ]
+
+/** A line that is a place: a building with its room (`Peabody Hall ∙ Rm 1040`,
+ *  `Hanes Art Center Rm 121`, `0121 Hanes Art Center`, `Room 104`), not prose
+ *  that mentions one. "…visit their facilities on the third floor of the Campus
+ *  Health building…" became a logistics row in every syllabus (audit F6). */
+const BUILDING = '(?:Hall|Center|Centre|Building|Library|Annex|Auditorium|Laboratory|Complex|Pavilion|Theat(?:er|re))'
+const PLACE_LINE = new RegExp(`^(?:(?:[A-Z0-9][\\w.'’&-]*\\s+){1,5}${BUILDING}\\b(?:\\s*[·∙|,;-]?\\s*(?:Room|Rm\\.?|#)?\\s*[A-Za-z]?\\d+[A-Za-z]?)?|(?:Room|Rm\\.?)\\s*[A-Za-z]?\\d+[A-Za-z]?(?:\\s*[·∙|,;-]?\\s*(?:[A-Z][\\w'’-]*\\s*){1,5})?|[A-Za-z]?\\d{2,4}[A-Za-z]?\\s+(?:[A-Z][\\w'’-]*\\s+){0,4}${BUILDING})\\s*$`)
+const NOT_A_PLACE = /\b(?:visit|contact|website|coordinator|facilities|resources?|proctor|testing|appointment|services|located in|located at)\b/i
+export function isPlaceLine(line: string): boolean {
+  // A header that PDF columns flattened (`Peabody Hall · Rm 1040 Office Hours:
+  // By appt. …`) starts with the place; the next column begins at a field label.
+  const place = line.split(/\s+(?=(?:office hours?|office|email|e-mail|phone|instructor|prof(?:essor)?|teaching assistants?|tas?)\s*:)/i)[0].trim()
+  return place.length <= 80 && PLACE_LINE.test(place) && !NOT_A_PLACE.test(place)
+}
 
 const NAMED_SUBJECT_CODES: Record<string, string> = {
   anthropology: 'ANTH',
@@ -1627,6 +1641,33 @@ function pruneRedundantLogistics(items: SyllabusItem[]): SyllabusItem[] {
   })
 }
 
+/** Last-pass corrections that need the whole proposal (audit F8, F12). */
+function tidyItems(items: SyllabusItem[]): SyllabusItem[] {
+  const lineSpan = (location: string): number[] => {
+    const match = location.match(/^lines? (\d+)(?:-(\d+))?/)
+    if (!match) return []
+    const start = Number(match[1])
+    const end = Number(match[2] ?? match[1])
+    return Array.from({ length: Math.max(1, end - start + 1) }, (_, offset) => start + offset)
+  }
+  // A grading row (`Unit 1 Project (Social Sciences)` beside its 10%) is a
+  // grade category, not a unit of the schedule.
+  const weightLines = new Set(items.filter((item) => item.kind === 'weights').flatMap((item) => lineSpan(item.evidence.location)))
+  // One grade scale: the band list, not a section body that ran on into the
+  // assignment table.
+  const scales = items.filter((item) => item.kind === 'logistics' && item.label === 'Grade scale')
+  const keptScale = scales.length > 1 ? scales.reduce((shortest, item) => ((item.value ?? '').length < (shortest.value ?? '').length ? item : shortest)) : undefined
+  return items
+    .filter((item) => !(item.kind === 'units' && !item.value && lineSpan(item.evidence.location).some((line) => weightLines.has(line))))
+    .filter((item) => !keptScale || item.kind !== 'logistics' || item.label !== 'Grade scale' || item === keptScale)
+    .map((item) => {
+      if (item.kind !== 'identity' || !item.value) return item
+      // `How Cells Work (section 002)!`: the section is its own fact.
+      const title = item.value.replace(/\s*\(section\s+\d+\)\s*/i, ' ').replace(/\s*[!]+\s*$/, '').replace(/\s+/g, ' ').trim()
+      return title === item.value ? item : { ...item, value: title }
+    })
+}
+
 /** A key-free parser. It deliberately proposes only regular, attributable facts. */
 export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', sourceKind: SyllabusProposal['sourceKind'] = 'text'): SyllabusProposal {
   const lines = text.replace(/\r/g, '').split('\n').map(normalizeExtractedLine).filter(Boolean)
@@ -1724,6 +1765,10 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
         searched.deadlines = 'Assignment deadlines found'
       }
     }
+    if (isPlaceLine(line) && !items.some((item) => item.kind === 'logistics' && item.evidence.location === evidence.location)) {
+      push(items, 'logistics', line, undefined, 'high', evidence)
+      searched.logistics = `Logistics found`
+    }
     for (const [kind, pattern] of headers) {
       // A final-exam instruction can refer back to the class location without
       // providing a location fact of its own.
@@ -1801,7 +1846,7 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
   // Deliberately conservative: a one-page syllabus with just office hours still counts
   // as a syllabus, and the student can override this either way.
   const documentKind: DocumentKind = !scanDetected && structureFound.length === 0 ? 'unrecognized' : 'syllabus'
-  return { sourceName, sourceKind, text, items: pruneRedundantLogistics(items), searched, scanDetected, documentKind, structureFound, numberedItems }
+  return { sourceName, sourceKind, text, items: tidyItems(pruneRedundantLogistics(items)), searched, scanDetected, documentKind, structureFound, numberedItems }
 }
 
 const SYLLABUS_KINDS: SyllabusKind[] = ['identity', 'standards', 'exams', 'weights', 'units', 'readings', 'deadlines', 'policies', 'logistics']
