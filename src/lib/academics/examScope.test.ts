@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { examScopeFromSyllabus } from './ClassCenter'
+import { examScopeFromSyllabus } from '@/lib/academics/examScope'
 import type { SyllabusItem, SyllabusProposal } from '@/lib/academics/syllabusParser'
 import type { ClassCenterData } from '@/lib/types'
 
