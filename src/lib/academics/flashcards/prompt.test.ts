@@ -366,3 +366,12 @@ it('includes selected student direction in the flashcard handoff without changin
   expect(prompt).toContain('not flashcard structure')
   expect(JSON.stringify(record)).toBe(before)
 })
+
+it('accepts beta-31 empty legacy cues and beta-32 reasoned step content for a completed notebook',()=>{
+ const saved=lecture(),entry=saved.importedNotebook!.current.entries.find(item=>item.id==='topic-demo')!
+ for(const objective of entry.objectives){objective.freeRecallCues=[];objective.watchFor=[]}
+ expect(flashcardNotebookEligibility(saved)).toEqual({eligible:true,reason:''})
+ entry.sections=[{id:'reasoned-guide',title:'Mechanism',purpose:'study-guide',blocks:[{id:'reasoned-step',type:'steps',provenance:'clarification',sourceIds:[],excerptIds:[],items:[{text:'A signal activates a receptor.',reason:'Binding changes the receptor shape.'}]}]}]
+ expect(flashcardNotebookEligibility(saved).eligible).toBe(true)
+ entry.objectives=[];expect(flashcardNotebookEligibility(saved).eligible).toBe(false)
+})

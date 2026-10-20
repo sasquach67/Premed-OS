@@ -14,7 +14,7 @@ it.each(['new', 'update'] as const)('includes the Assessment exam profile and pr
   expect(assessmentRules).toContain('Without real exams, use the course blueprint and say so.')
   expect(assessmentRules).toContain('Unless the request already says, ask once, in the first reply')
   expect(assessmentRules).toContain('If the student doesn\'t choose, use (a).')
-  expect(prompt).toContain('Prompt build: notebook-instructions-beta-31.')
+  expect(prompt).toContain('Prompt build: notebook-instructions-beta-32.')
 })
 it.each(['new', 'update'] as const)('preserves mock fidelity and cumulative scope boundaries in %s Assessment prompts', mode => {
   const prompt = composeNotebookPrompt('assessment', values, mode)
@@ -74,7 +74,14 @@ it.each(['review', 'assessment', 'assignment'] as const)('delivers a complete fo
   for (const mode of ['new', 'update'] as const) {
     const prompt = composeNotebookPrompt(goal, values, mode)
     expect(prompt).toContain('Default to one real folder named after the notebook')
-    expect(prompt).toContain('Create a ZIP only when the student explicitly requests one')
+    expect(prompt).toContain('Create a ZIP only when the student explicitly requests one or a web chat needs a ZIP')
+    expect(prompt).toContain('premedOS/Lesson N - Title')
+    expect(prompt).not.toContain('This is a draft instruction workflow')
+    expect(prompt).not.toContain('Transport instructionsVersion:')
+    if (mode === 'update') {
+      expect(modes.update.intro).toContain('premedOS/Lesson N - Title')
+      expect(modes.update.intro).toContain('Downloads is a fallback only when that class folder cannot be reached')
+    }
     expect(prompt).toContain('saves the complete titled folder in my actual class folder')
     expect(prompt).toContain('Only if that class folder cannot be reached, fall back to my actual Downloads directory')
     expect(prompt).not.toMatch(/ZIP-first|Default to one real downloadable ZIP|deliver one complete titled ZIP|one titled ZIP under EC-DELIVERY/)

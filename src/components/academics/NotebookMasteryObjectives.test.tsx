@@ -16,9 +16,10 @@ it('shows sourced questions, mapped skills, then factual understanding with evid
   objective.freeRecallCues = ['Hidden legacy recall cue']; objective.watchFor = ['Hidden legacy caution']
   const before = JSON.stringify(e)
   await act(async () => root.render(<NotebookMasteryObjectives entry={e} renderEvidence={() => <details><summary>Source evidence</summary><p>Instructor materials</p></details>} />))
-  expect([...host.querySelectorAll('.nmo-body section')].slice(0, 3).map(s => s.getAttribute('aria-label'))).toEqual(["How it's tested", 'Be able to do', 'Understand'])
+  expect([...host.querySelectorAll('.nmo-body section')].slice(0, 3).map(s => s.getAttribute('aria-label'))).toEqual(["How it may be tested", 'Be able to do', 'Understand'])
   expect(host.textContent).toContain('What happens if topoisomerase is inhibited?')
-  expect(host.querySelector('.nmo-question-refs')?.textContent).toBe('Q1')
+  expect(host.querySelector('.nmo-question-refs,.nmo-question-number')).toBeNull()
+  expect(host.querySelector('.nmo-questions')?.tagName).toBe('UL')
   expect(host.querySelector('details')?.open).toBe(false)
   expect(host.textContent).not.toContain('Hidden legacy')
   expect(host.textContent).not.toContain('Try recalling first')

@@ -27,6 +27,7 @@ beforeEach(async () => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
 function button(label: string) { return [...container.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.trim() === label)! }
 async function click(label: string) {
+  if (label === 'Practice') label = [...container.querySelectorAll('button')].find(node => node.textContent?.trim().startsWith('Practice set'))?.textContent?.trim() ?? label
   let target=[...document.querySelectorAll<HTMLElement>('button,[role="menuitem"]')].find(node=>node.textContent?.trim()===label)
   if (!target && ['Edit notebook','Download','Version history','Notebook details','My notes'].includes(label)) {
     const trigger=document.querySelector<HTMLButtonElement>('[aria-label="More notebook actions"]')!

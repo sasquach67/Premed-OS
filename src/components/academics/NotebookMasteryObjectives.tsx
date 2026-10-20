@@ -23,14 +23,14 @@ export function NotebookMasteryObjectives({ entry, entryIndex = 0, headingId, re
         <div className="nmo-body"><h3 className="nbr-objective-title">{title}</h3>
           <p className="nmo-origin">{objective.origin === 'official' ? 'Course objective' : 'Derived study objective'}</p>
           {renderText && text(objective.title, [...path, 'title'], 'Objective title')}
-          <section className="nmo-tested" aria-label="How it's tested"><h4>How it's tested</h4>
+          <section className="nmo-tested" aria-label="How it may be tested"><h4>How it may be tested</h4>
             {objective.howTested ? <>
-              <div className="nmo-setup">{text(objective.howTested.setup, [...path, 'howTested', 'setup'], 'How the objective is tested')}</div>
-              {questions.length ? <ol className="nmo-questions">{questions.map((question, qi) => <li key={question.id}><span className="nmo-question-number">Q{qi + 1}</span>{text(question.text, [...path, 'howTested', 'questions', qi, 'text'], `Course question ${qi + 1}`)}</li>)}</ol> : text(objective.howTested.noQuestionsReason ?? 'No actual question was identified in the supplied sources for this objective.', [...path, 'howTested', 'noQuestionsReason'], 'Missing course question explanation')}
+              {(renderText || /gel|draw|diagram/i.test([objective.howTested.setup, ...questions.map(question => question.text)].join(' '))) && <div className="nmo-setup">{text(objective.howTested.setup, [...path, 'howTested', 'setup'], 'How the objective is tested')}</div>}
+              {questions.length ? <ul className="nmo-questions">{questions.map((question, qi) => <li key={question.id}>{text(question.text, [...path, 'howTested', 'questions', qi, 'text'], `Course question ${qi + 1}`)}</li>)}</ul> : text(objective.howTested.noQuestionsReason ?? 'No actual question was identified in the supplied sources for this objective.', [...path, 'howTested', 'noQuestionsReason'], 'Missing course question explanation')}
             </> : <p className="en-text">This saved objective has no quoted course questions. Check the source materials for how it is tested.</p>}
           </section>
           <div className="nmo-columns"><section className="nmo-skills" aria-label="Be able to do"><h4>Be able to do</h4><ul>
-            {objective.applicationSkills ? objective.applicationSkills.map((skill, si) => <li key={si}>{skill.questionIds.length > 0 && <span className="nmo-question-refs" aria-label={`Applies to ${skill.questionIds.map(id => `question ${questions.findIndex(q => q.id === id) + 1}`).join(', ')}`}>{skill.questionIds.map(id => `Q${questions.findIndex(q => q.id === id) + 1}`).join(' ')}</span>}{text(skill.text, [...path, 'applicationSkills', si, 'text'], 'Application skill')}</li>) : objective.beAbleToDo.map((skill, si) => <li key={si}>{text(skill, [...path, 'beAbleToDo', si], 'Application skill')}</li>)}
+            {objective.applicationSkills ? objective.applicationSkills.map((skill, si) => <li key={si}>{text(skill.text, [...path, 'applicationSkills', si, 'text'], 'Application skill')}</li>) : objective.beAbleToDo.map((skill, si) => <li key={si}>{text(skill, [...path, 'beAbleToDo', si], 'Application skill')}</li>)}
           </ul></section><section className="nmo-understand" aria-label="Understand"><h4>Understand</h4><ul>{objective.understand.map((fact, fi) => <li key={fi}>{text(fact, [...path, 'understand', fi], 'Understanding')}</li>)}</ul></section></div>
           {objective.evidenceLimit && <p className="nmo-limit">{objective.evidenceLimit}</p>}
           {renderEvidence(objective)}

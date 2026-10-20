@@ -39,7 +39,7 @@ it('preserves the four native view buttons, counts, selected state and saved con
   expect(container.querySelector('.nbr-head [data-notebook-test-motion="true"]')).not.toBeNull()
   expect(nav.querySelector('[data-notebook-test-motion]')).toBeNull()
   expect(buttons.every(button => button.type === 'button')).toBe(true)
-  expect(buttons.map(button => button.textContent)).toEqual(['Study guide', 'Mastery objectives', 'Practice', 'Sources'])
+  expect(buttons.map(button => button.textContent)).toEqual(['Study guide', 'Mastery objectives', 'Practice set', 'Sources'])
   expect(buttons.map(button => button.getAttribute('data-count'))).toEqual([null, null, String(pkg.entries[0].sections.flatMap(section => section.blocks).filter(block => block.type === 'practice').length), String(pkg.sources.length)])
   for (const [index, view] of ['study', 'mastery', 'practice', 'sources', 'study'].entries()) {
     const active = index % 4
@@ -87,7 +87,7 @@ it('keeps the lesson header compact and opens preserved notebook details from Mo
   const raw = JSON.stringify(pkg), lecture = { id: 'compact-header', courseId: 'view-tabs-course', title: pkg.entries[0].title, importedNotebook: { entryId: pkg.entries[0].id, original: structuredClone(pkg), originalRaw: raw, current: pkg, notes: 'Keep my note.', progress: {}, history: [] } } as unknown as LectureRecord
   await act(async () => root.render(<MemoryRouter><ExternalNotebookView lecture={lecture} courseCode={pkg.course.code} /></MemoryRouter>))
   expect(container.querySelector('.nbr-scope')?.textContent).toBe('DNA replication and telomeres.')
-  expect([...container.querySelectorAll('.nbr-head-actions button')].map(button => button.textContent)).toEqual(['Flashcards', 'Update', ''])
+  expect([...container.querySelectorAll('.nbr-head-actions button')].map(button => button.textContent)).toEqual(['Update', ''])
   expect(container.querySelector('.nbr-head .nsg-lo-chips,.nbr-head .en-badge')).toBeNull()
   expect(container.querySelector('.nbr-reading-detail')).toBeNull()
   expect(container.querySelector('.nbr-header-detail')?.textContent).toBe('CondensedFull')

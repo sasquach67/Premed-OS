@@ -8,6 +8,9 @@ import './notebookStudyGuide.css'
 type Term = { term: string; definition: string }
 const Terms = createContext<Term[]>([])
 const BlockTargets = createContext('')
+const LinesFirst = createContext(false)
+export function isLinesFirstGuide(entry: NotebookEntry) { return Boolean(entry.argumentChain?.length || entry.sections.some(section => section.blocks.some(block => block.detail !== undefined || block.type === 'claim' || (block.type === 'paragraph' && block.role)))) }
+export function useLinesFirstGuide() { return useContext(LinesFirst) }
 export function guideTerms(entry: NotebookEntry): Term[] {
   const terms = new Map<string, Term>()
   for (const section of entry.sections) for (const block of section.blocks) {
@@ -21,7 +24,7 @@ export function isGroupedGuide(entry: NotebookEntry) {
 }
 export function NotebookTermsProvider({ entry, children }: { entry: NotebookEntry; children: ReactNode }) {
   const prefix = useId()
-  return <Terms.Provider value={guideTerms(entry)}><BlockTargets.Provider value={prefix}>{children}</BlockTargets.Provider></Terms.Provider>
+  return <LinesFirst.Provider value={isLinesFirstGuide(entry)}><Terms.Provider value={guideTerms(entry)}><BlockTargets.Provider value={prefix}>{children}</BlockTargets.Provider></Terms.Provider></LinesFirst.Provider>
 }
 export function useGuideBlockId(id: string) { return `${useContext(BlockTargets)}-block-${id}` }
 /** Deliberately bounded inline syntax: no HTML, arbitrary Markdown, or links. */
@@ -36,7 +39,7 @@ export function NotebookInlineText({ text }: { text: string }) {
 }
 const callouts = {
   question: { label: 'The question', icon: null },
-  'lecture-example': { label: 'From lecture', icon: Presentation },
+  'lecture-example': { label: 'Lecture example', icon: Presentation },
   analogy: { label: 'Analogy / memory hook', icon: Lightbulb },
   'mix-up': { label: 'Easy to mix up', icon: TriangleAlert },
   'builds-on': { label: 'Builds on', icon: Link },
@@ -44,7 +47,9 @@ const callouts = {
 }
 export function NotebookCallout({ block }: { block: Extract<NotebookBlock, { type: 'callout' }> }) {
   const { label, icon: Icon } = callouts[block.tone]
-  return <aside className="nsg-callout" data-tone={block.tone}><div className="nsg-callout-label">{Icon && <Icon size={15} aria-hidden="true" />}{label}</div><p className="en-text"><NotebookInlineText text={block.text} /></p></aside>
+  const notes = block.tone === 'mix-up' && /^Your notes:\s*/i.test(block.text)
+  const content = notes ? block.text.replace(/^Your notes:\s*/i, '') : block.text
+  return <aside className="nsg-callout" data-tone={block.tone}><div className="nsg-callout-label">{Icon && <Icon size={15} aria-hidden="true" />}{notes ? 'Your notes' : label}</div><p className="en-text"><NotebookInlineText text={content} /></p></aside>
 }
 export function ProfessorStressed() { return <span className="nsg-stressed"><Presentation size={12} aria-hidden="true" />Professor stressed</span> }
 export function NotebookGlossary({ entry, headingId }: { entry: NotebookEntry; headingId?: string }) {
@@ -64,19 +69,19 @@ export function isGroupedTree(block: NotebookStudyDiagramBlock) {
   return visited.size === block.nodes.length
 }
 export function NotebookGroupMap({ block }: { block: NotebookStudyDiagramBlock }) {
-  const prefix = useContext(BlockTargets)
+  const prefix = useContext(BlockTargets), linesFirst = useLinesFirstGuide()
   const incoming = new Set(block.edges.map(edge => edge.to))
   const roots = block.nodes.filter(node => !incoming.has(node.id))
   function render(id: string, ancestors: string[] = [], relation?: string): ReactNode {
     const node = block.nodes.find(node => node.id === id)
     if (!node || ancestors.includes(id)) return null
     const children = block.edges.filter(edge => edge.from === id)
-    return <li key={id}><div className="nsg-map-item">{relation && <small className={['includes', 'contains'].includes(relation.toLowerCase()) ? 'sr-only' : undefined}>{relation}</small>}{node.targetBlockId ? <a className="nsg-node" data-tone={node.tone ?? 'neutral'} href={`#${prefix}-block-${node.targetBlockId}`} onClick={event => {
+    return <li key={id}><div className={`nsg-map-item${linesFirst && ancestors.length > 1 ? ' lf-map-member' : ''}`}>{relation && (!linesFirst || (ancestors.length === 1 && children.length === 0)) && <small className={['includes', 'contains'].includes(relation.toLowerCase()) ? 'sr-only' : undefined}>{relation}</small>}{node.targetBlockId ? <a className="nsg-node" data-tone={node.tone ?? 'neutral'} href={`#${prefix}-block-${node.targetBlockId}`} onClick={event => {
       const target = event.currentTarget.ownerDocument.getElementById(`${prefix}-block-${node.targetBlockId}`)
       if (target) { event.preventDefault(); target.scrollIntoView({ block: 'start', behavior: 'auto' }); target.focus({ preventScroll: true }) }
     }}>{node.label}</a> : <span className="nsg-node" data-tone={node.tone ?? 'neutral'}>{node.label}</span>}</div>{children.length > 0 && <ul>{children.map(edge => render(edge.to, [...ancestors, id], edge.label))}</ul>}</li>
   }
-  return <figure className="nsg-map" aria-label={block.title}><figcaption>{block.title}</figcaption><ul className="nsg-tree">{(roots.length ? roots : block.nodes).map(node => render(node.id))}</ul></figure>
+  return <figure className={`nsg-map${linesFirst ? ' lf-map wt-map' : ''}`} aria-label={block.title}><figcaption>{block.title}</figcaption><ul className="nsg-tree">{(roots.length ? roots : block.nodes).map(node => render(node.id))}</ul></figure>
 }
 export function NotebookSummary({ entry, renderMap }: { entry: NotebookEntry; renderMap: (block: NotebookStudyDiagramBlock) => ReactNode }) {
   return <section className="nsg-summary" aria-label="One-page summary"><h2>{entry.title}</h2><p className="nsg-summary-intro">Maps, key ideas and defined terms</p><div className="nsg-summary-grid">{entry.sections.filter(section => section.purpose !== 'practice').map(section => {

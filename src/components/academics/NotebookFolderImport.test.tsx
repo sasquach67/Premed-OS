@@ -6,6 +6,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { NotebookImportPanel } from './NotebookImportPanel'
+import { ToastContext } from '@/components/common/toast-context'
 import { activateAccountWorkspace, activateGuestWorkspace, createInitialDataForMode, snapshotData, useStore } from '@/store/store'
 import { exportNotebook, saveNotebookEdits } from '@/lib/academics/notebook/import'
 import { notebookTransaction } from './ExternalNotebookView'
@@ -100,7 +101,7 @@ it('requires an explicit path choice for duplicate basenames', async () => {
 })
 it('requires notebook selection for multiple candidates and rejects material-only folders', async () => {
   await folder([file('b.json', JSON.stringify(pkg)), file('a.json', JSON.stringify(pkg)), file('Checks.json', '{}')])
-  expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeNull(); expect(container.textContent).toContain('2 JSON files found')
+  expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeNull(); expect(container.querySelector('[aria-label="Notebook JSON"]')).toBeTruthy()
   await select('b.json'); await settled(); expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeTruthy()
   await folder([file('lecture.pdf', 'raw'), file('Checks.json', '{}')]); expect(container.textContent).toContain('No notebook JSON found'); expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeNull()
 })
@@ -355,4 +356,34 @@ it('keeps a committed source-account notebook but suppresses navigation if the a
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
   expect(JSON.parse(decodeWorkspaceStorage(localStorage.getItem(key)!)).state.academics.classCenter.lectures).toEqual(committed)
   expect(await repo.journals()).toHaveLength(0)
+})
+
+it('keeps successful validation silent, shows only unresolved choices, and notifies a signed-out save once', async () => {
+  await act(async () => { activateGuestWorkspace(); const data = createInitialDataForMode(false); data.courses = [course]; useStore.getState().replaceAll(data) })
+  sessionStorage.removeItem('premed-os:notebook-device-save-notice:v1')
+  const toast = vi.fn(() => 'device-notice')
+  await act(async () => root.render(<ToastContext.Provider value={{ toast }}><NotebookImportPanel courseId={course.id} onImported={imported} /></ToastContext.Provider>))
+  const files = [file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())]
+  await folder(files)
+  expect(container.querySelector('.nr-checks')?.textContent).not.toContain('Files check out')
+  expect(container.querySelector('.nr-checks')?.textContent).not.toContain('marked read')
+  expect(container.querySelector('.en-import > p[role="status"]')?.textContent ?? '').toBe('')
+  await act(async () => button('Keep in PSYC 101').click())
+  expect(container.querySelector('.nr-checks')?.textContent ?? '').not.toContain('Save in')
+  await act(async () => button('Save notebook').click()); await settled()
+  expect(imported).toHaveBeenCalledTimes(1)
+  expect(toast).toHaveBeenCalledExactlyOnceWith({ title: 'Saved on this device. Sign in to keep it on your other devices.', tone: 'info' })
+  await folder(files); await act(async () => button('Keep in PSYC 101').click())
+  await act(async () => button('Open saved notebook').click()); await settled()
+  expect(toast).toHaveBeenCalledTimes(1)
+  sessionStorage.removeItem('premed-os:notebook-device-save-notice:v1')
+})
+it('does not show the device-only notice after an account save', async () => {
+  await act(async () => activateAccountWorkspace('release-device-notice', snapshotData()))
+  const toast = vi.fn(() => 'device-notice')
+  await act(async () => root.render(<ToastContext.Provider value={{ toast }}><NotebookImportPanel courseId={course.id} onImported={imported} /></ToastContext.Provider>))
+  await folder([file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())])
+  await act(async () => button('Keep in PSYC 101').click())
+  await act(async () => button('Save notebook').click()); await settled()
+  expect(imported).toHaveBeenCalledTimes(1); expect(toast).not.toHaveBeenCalled()
 })

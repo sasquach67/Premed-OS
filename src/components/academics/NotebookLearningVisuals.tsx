@@ -1,4 +1,4 @@
-import { NotebookInlineText, useGuideBlockId } from './NotebookStudyGuide'
+import { NotebookInlineText, useGuideBlockId, useLinesFirstGuide } from './NotebookStudyGuide'
 import { createElement, useId, type ReactNode } from 'react'
 import { learningAxisPositions } from '@/lib/academics/notebook/learningVisuals'
 import type { LearningAnnotation, LearningVisualBlock } from '@/lib/academics/notebook/learningVisualTypes'
@@ -12,7 +12,7 @@ export function NotebookLearningVisual({ block, change, renderFigure }: {
   block: DisplayBlock; change?: LearningTextChange
   renderFigure: (figure: NotebookFigureBlock, annotations?: LearningAnnotation[]) => ReactNode
 }) {
-  const uid = useId()
+  const uid = useId(), linesFirst = useLinesFirstGuide()
   const field = (value: string | null, path: (string | number)[], label: string, tag = 'p', nullable = false) => change
     ? <label className="nbr-learning-editor">{label}<textarea value={value ?? ''} onChange={event => change(path, nullable && !event.target.value ? null : event.target.value)} /></label>
     : value === null ? null : createElement(tag, { className: 'nbr-learning-text' }, <NotebookInlineText text={value} />)
@@ -23,6 +23,7 @@ export function NotebookLearningVisual({ block, change, renderFigure }: {
     <ol className="nbr-annotation-legend" aria-label="Figure annotations">{block.annotations.map((annotation, index) => <li key={annotation.id} data-annotation-id={annotation.id}><span className="nbr-visual-key">{index + 1}</span><div>{field(annotation.label, ['annotations', index, 'label'], `Annotation ${index + 1} label`)}<details><summary>Position evidence</summary>{field(annotation.positionBasis, ['annotations', index, 'positionBasis'], `Annotation ${index + 1} position evidence`)}<small>Normalized image point: {annotation.x}, {annotation.y}</small></details></div></li>)}</ol>
     {change && <small>Image identity and point coordinates stay protected. Review a new proposal to change the source image or its anchors.</small>}
   </section>
+  if (block.type === 'timeline' && linesFirst && !change) return <section aria-label={block.title} data-visual-type="timeline"><h4>{block.title}</h4><ul className="lf-tl">{block.events.map(event => <li key={event.id}><span className="d">{event.timeLabel}</span><strong><NotebookInlineText text={event.label} /></strong>{event.detail && <span> <NotebookInlineText text={event.detail} /></span>}{event.value !== null && !event.timeLabel && <span>{event.value} {block.axis.unit}</span>}</li>)}</ul></section>
   if (block.type === 'timeline' || block.type === 'continuum') {
     const points = block.type === 'timeline' ? block.events : block.points, key = block.type === 'timeline' ? 'events' : 'points'
     const positions = learningAxisPositions(block.axis, points), lanes = Math.max(...positions.map(point => point.lane)) + 1
@@ -52,7 +53,7 @@ export function NotebookLearningVisual({ block, change, renderFigure }: {
   }
   return <figure className="nbr-learning-visual nbr-sequence-strip" aria-label={block.title} data-visual-type={block.type}>
     <figcaption>{title}<small>Ordered steps, not a measured time scale or a causal claim.</small></figcaption>{field(block.orderingBasis, ['orderingBasis'], 'Sequence ordering evidence')}
-    <ol className="nbr-sequence-steps">{block.steps.map((step, index) => <li key={step.id}><span className="nbr-visual-key">{index + 1}</span>{field(step.label, ['steps', index, 'label'], `Sequence step ${index + 1} label`, 'strong')}{field(step.detail, ['steps', index, 'detail'], `Sequence step ${index + 1} detail`)}{step.assetId && renderFigure({ ...step, type: 'figure', assetId: step.assetId, alt: step.alt!, caption: null, context: '', provenance: block.provenance })}{change && step.assetId && field(step.alt, ['steps', index, 'alt'], `Sequence step ${index + 1} image alternative text`)}</li>)}</ol>
+    <ol className="nbr-sequence-steps">{block.steps.map((step, index) => <li key={step.id}><span className="nbr-visual-key">{index + 1}</span>{field(step.label, ['steps', index, 'label'], `Sequence step ${index + 1} label`, 'strong')}{field(step.detail, ['steps', index, 'detail'], `Sequence step ${index + 1} detail`)}{step.assetId && renderFigure({ ...step, type: 'figure', assetId: step.assetId, alt: step.alt!, caption: null, context: '', provenance: block.provenance, detail: block.detail })}{change && step.assetId && field(step.alt, ['steps', index, 'alt'], `Sequence step ${index + 1} image alternative text`)}</li>)}</ol>
   </figure>
 }
 

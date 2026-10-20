@@ -6,7 +6,7 @@ type LearningIdentity = LearningItem & NotebookStudyMetadata & { title: string; 
 export type LearningAxis = { mode: 'ordinal' | 'numeric'; unit: string | null; minimum: number | null; maximum: number | null }
 export type LearningAnnotation = LearningItem & { label: string; x: number; y: number; positionBasis: string }
 export type AnnotatedFigureBlock = LearningIdentity & {
-  type: 'annotated-figure'; assetId: string; caption: string | null; alt: string; context: string; annotations: LearningAnnotation[]
+  type: 'annotated-figure'; lookFor?: string[]; assetId: string; caption: string | null; alt: string; context: string; annotations: LearningAnnotation[]
 }
 export type LearningAxisPoint = LearningItem & { label: string; detail: string; value: number | null }
 export type TimelineBlock = LearningIdentity & {

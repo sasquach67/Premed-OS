@@ -27,6 +27,7 @@ beforeEach(() => {
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
 async function click(label: string) {
+  if (label === 'Practice') label = [...container.querySelectorAll('button')].find(node => node.textContent?.trim().startsWith('Practice set'))?.textContent?.trim() ?? label
   let target=[...document.querySelectorAll<HTMLElement>('button,[role="menuitem"]')].find(node=>node.textContent?.trim()===label)
   if (!target && ['Edit notebook','Download','Version history','Notebook details','My notes'].includes(label)) {
     const trigger=document.querySelector<HTMLButtonElement>('[aria-label="More notebook actions"]')!
@@ -94,7 +95,7 @@ it('shows objective cues without practice link rows while preserving mappings, q
   expect(objectives.querySelector('.nbr-objective-practice')).toBeNull()
   expect(objectives.querySelector('button,a')).toBeNull()
   expect(objectives.textContent).not.toContain('Question 1')
-  expect([...objective.querySelectorAll('h4')].map(node=>node.textContent)).toEqual(["How it's tested",'Be able to do','Understand'])
+  expect([...objective.querySelectorAll('h4')].map(node=>node.textContent)).toEqual(["How it may be tested",'Be able to do','Understand'])
   expect(objective.textContent).not.toMatch(/Try recalling first|Watch for/)
   await act(async () => root.render(<NotebookPackageView pkg={pkg} reader mode="practice" />))
   const questions = pkg.entries[0].sections.flatMap(section => section.blocks).filter(block => block.type === 'practice')
@@ -143,9 +144,14 @@ it('requires a goal and current prompt acknowledgement before opening folder imp
 it('does not save before preview/explicit save and identifies exact malformed field for repair', async () => {
   await renderImport(); await fill('Paste complete JSON', raw.replace('"status":"supported"', '"status":"invalid"')); await click('Validate and preview')
   expect(container.querySelector('[role="alert"]')?.textContent).toContain('$.entries[0].requirements[0].status')
+  const repairCopy = vi.fn().mockResolvedValue(undefined)
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: repairCopy } })
+  await click('Copy repair request and JSON')
+  expect(repairCopy.mock.calls[0][0]).not.toMatch(/draft approval/i)
+  expect(repairCopy.mock.calls[0][0]).toContain('Preserve all other content, source text, IDs, and revisions.')
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
   await fill('Paste complete JSON', raw); await click('Validate and preview')
-  expect(container.textContent).toContain(`Save in ${course.code}`); expect(container.textContent).toContain('Covered:')
+  expect(container.textContent).toContain(`Ready to save in ${course.code}`); expect(container.textContent).toContain('Covered:')
   const excerpt = container.querySelector('.en-notebook-preview')!
   expect(excerpt.textContent).toContain('Preview — not saved yet')
   expect(excerpt.querySelector('.en-notebook-preview-scroll[tabindex="0"]')).toBeTruthy()
@@ -220,7 +226,7 @@ it('keeps answers behind reveal and persists manual edits/response/notes through
   useStore.getState().update(state => { [id] = importNotebook(state.academics.classCenter, course, p) })
   function Harness() { const lecture = useStore(s => s.academics.classCenter.lectures.find(l => l.id === id)!); return <ExternalNotebookView lecture={lecture} courseCode={course.code} /> }
   await act(async () => root.render(<Harness />))
-  await click('Practice')
+  await click('Practice set')
   const answer = container.querySelector<HTMLDetailsElement>('.en-answer')!; expect(answer.open).toBe(false)
   const practice = p.package.entries[0].sections.flatMap(s => s.blocks).find(b => b.type === 'practice')!
   await act(async () => notebookTransaction(state => { state.academics.classCenter.lectures.find(l => l.id === id)!.importedNotebook!.progress[practice.id] = { response: 'My attempted answer', complete: false } }))
@@ -370,7 +376,7 @@ it('preserves response progress even for a valid imported ID matching an object 
   useStore.getState().update(state => { [id] = importNotebook(state.academics.classCenter, course, p) })
   function Harness() { const lecture = useStore(s => s.academics.classCenter.lectures.find(l => l.id === id)!); return <ExternalNotebookView lecture={lecture} courseCode={course.code} /> }
   await act(async () => notebookTransaction(state => { const n = state.academics.classCenter.lectures.find(l => l.id === id)!.importedNotebook!; n.progress = { ...n.progress, ['__proto__']: { response: 'My response stays attached to this exact ID', complete: false } } }))
-  await act(async () => root.render(<Harness />)); await click('Practice')
+  await act(async () => root.render(<Harness />)); await click('Practice set')
   expect(container.querySelector('.en-block-practice textarea')).toBeNull()
   expect(container.querySelector('.nbr-earlier-work')?.textContent).toContain('My response stays attached to this exact ID')
   const disk = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
@@ -409,7 +415,7 @@ it('has no prominent Coverage mode in the saved notebook navigation', async () =
   const lecture = useStore.getState().academics.classCenter.lectures.find(l => l.id === id)!
   await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={course.code} />))
   const labels = [...container.querySelectorAll('button')].map(button => button.textContent?.trim())
-  expect(labels).toContain('Study guide'); expect(labels).toContain('Practice'); expect(labels).toContain('Sources')
+  expect(labels).toContain('Study guide'); expect(labels.some(label => label?.startsWith('Practice set'))).toBe(true); expect(labels.some(label => label?.startsWith('Sources'))).toBe(true)
   expect(labels).not.toContain('Coverage'); expect(container.querySelector<HTMLDetailsElement>('.nbr-coverage-disclosure')!.open).toBe(false)
 })
 
@@ -421,7 +427,7 @@ it('renders practice-prompt data as a safe table while retaining exact JSON, edi
   const prepared = await prepareNotebook(JSON.stringify(pkg)); let id = ''
   useStore.getState().update(state => { [id] = importNotebook(state.academics.classCenter, course, prepared) })
   const lecture = useStore.getState().academics.classCenter.lectures.find(l => l.id === id)!
-  await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={course.code} />)); await click('Practice')
+  await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={course.code} />)); await click('Practice set')
   const table = container.querySelector('.nbr-prompt-table table')!
   expect([...table.querySelectorAll('th')].map(e => e.textContent)).toEqual(['Time, minutes', 'Lotion A', 'Lotion B'])
   expect(table.querySelectorAll('tbody tr')).toHaveLength(3)
@@ -466,7 +472,7 @@ it('relocates provenance into source details without changing saved text, export
   expect(firstSection.compareDocumentPosition(coverage) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   expect(container.querySelector('[aria-label="More notebook actions"]')).toBeTruthy()
   expect(container.querySelector('.nbr-views')?.tagName).toBe('NAV')
-  await click('Practice'); await click('Sources'); await click('Study guide')
+  await click('Practice set'); await click('Sources'); await click('Study guide')
   expect(JSON.stringify(lecture.importedNotebook)).toBe(before)
   expect((['current', 'original', 'backup'] as const).map(kind => exportNotebook(lecture, kind))).toEqual(exports)
 })
@@ -478,7 +484,7 @@ it('keeps earlier work collapsed after answer and explanation inside the corresp
     n.progress[practice.id] = { response: 'Earlier response stays private until Reveal', complete: true }
   })
   const lecture = useStore.getState().academics.classCenter.lectures.find(l => l.id === id)!, before = JSON.stringify(lecture.importedNotebook)
-  await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={course.code} />)); await click('Practice')
+  await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={course.code} />)); await click('Practice set')
   const earlier = [...container.querySelectorAll<HTMLDetailsElement>('.nbr-earlier-work')].find(e => e.textContent?.includes('Earlier response stays private'))!, answer = earlier.closest<HTMLDetailsElement>('.en-answer')!
   expect(answer).toBeTruthy(); expect(answer.open).toBe(false); expect(earlier.open).toBe(false); expect(answer.querySelector('.np-secondary')?.lastElementChild).toBe(earlier)
   await act(async () => answer.querySelector('summary')!.click()); expect(answer.open).toBe(true); expect(earlier.open).toBe(false)
@@ -568,6 +574,7 @@ it('opens the saved notebook under the explicitly selected destination class rou
   expect(container.querySelector('[aria-label="Current notebook route"]')?.textContent).toBe(`/academics/classes/${target.id}/journal/${saved.id}`)
   expect(container.querySelector('h1')?.textContent).toBe(review.entries[0].title)
   expect(container.textContent).not.toContain('Notebook entry not found')
-  expect([...container.querySelectorAll('button')].filter(button=>button.textContent?.trim()==='Flashcards')).toHaveLength(1)
+  expect([...container.querySelectorAll('button')].filter(button=>button.textContent?.trim()==='Flashcards')).toHaveLength(0)
+  expect(container.textContent).toContain('Make flashcards')
   expect([...container.querySelectorAll('button')].some(button=>button.textContent?.trim()==='Create flashcards')).toBe(false)
 })

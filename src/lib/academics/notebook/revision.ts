@@ -1,6 +1,6 @@
 import { notebookVisualPracticeKey, projectNotebookEntry } from './visualProjection'
 import { uid } from '@/lib/id'
-import { canonical } from './package'
+import { canonical, parseNotebookPackage } from './package'
 import { notebookPackageFilename } from './downloadFilename'
 import type { ImportedNotebook, NotebookHistoryVersion, NotebookPackage, NotebookProgress, NotebookUpdateSession } from './types'
 
@@ -25,10 +25,32 @@ export function revisionInput(session: NotebookUpdateSession) {
   const entry = session.baseline.entries[0]
   return JSON.stringify({ mode: 'update-existing-entry', baselineFile: notebookUpdateBaselineFilename(session), entryId: entry.id, revision: entry.revision, baseline: UPDATE_BASELINE_DESCRIPTION })
 }
-export function retainNotebookVersion(n: ImportedNotebook, reason: NotebookHistoryVersion['reason'], now = Date.now()) {
-  const version: NotebookHistoryVersion = { id: uid(), savedAt: now, reason, current: cloneNotebookData(n.current), notes: n.notes, progress: cloneNotebookData(n.progress), ...(n.acceptedRaw ? { acceptedRaw: n.acceptedRaw } : {}) }
-  n.history = [...(n.history ?? []), version]
+export const NOTEBOOK_RECENT_HISTORY_LIMIT = 10
+/** A policy note derived from existing history; no new persisted envelope field. */
+export function notebookHistoryRetentionNote(n: Pick<ImportedNotebook, 'history'>): string | undefined {
+  return (n.history?.length ?? 0) >= NOTEBOOK_RECENT_HISTORY_LIMIT
+    ? 'Version history keeps the original and latest 10 saved versions; older versions are removed.' : undefined
 }
+function keptNotebookAssetIds(n: ImportedNotebook, incoming: NotebookPackage[]): Set<string> {
+  const packages = [...incoming, n.original, n.current, ...(n.history ?? []).map(version => version.current), ...(n.updateSession ? [n.updateSession.baseline] : []),
+    ...[n.originalRaw, n.acceptedRaw, ...(n.history ?? []).map(version => version.acceptedRaw)].filter((raw): raw is string => raw !== undefined).map(raw => parseNotebookPackage(raw))]
+  return new Set(packages.flatMap(pkg => pkg.version === 2 ? [] : pkg.assets.map(asset => asset.id)))
+}
+/** Include incoming content while pruning: callers install it after snapshotting current. */
+export function retainNotebookVersion(n: ImportedNotebook, reason: NotebookHistoryVersion['reason'], now = Date.now(), incoming: NotebookPackage[] = []) {
+  const version: NotebookHistoryVersion = { id: uid(), savedAt: now, reason, current: cloneNotebookData(n.current), notes: n.notes, progress: cloneNotebookData(n.progress), ...(n.acceptedRaw ? { acceptedRaw: n.acceptedRaw } : {}) }
+  const history = [...(n.history ?? []), version]
+  const originalKey = canonical(selectedNotebook(n.original, n.entryId))
+  const original = history.find(item => canonical(selectedNotebook(item.current, n.entryId)) === originalKey)
+  const recent = history.filter(item => item !== original).slice(-NOTEBOOK_RECENT_HISTORY_LIMIT)
+  const kept = original ? [original, ...recent] : recent
+  n.history = kept
+  if (kept.length < history.length && n.assetBindings) {
+    const ids = keptNotebookAssetIds(n, incoming)
+    n.assetBindings = n.assetBindings.filter(binding => ids.has(binding.assetId))
+  }
+}
+
 function learningContent(pkg: NotebookPackage, entryId: string) {
   const { title: _title, revision: _revision, baseRevision: _base, ...entry } = selectedNotebook(pkg, entryId).entries[0]
   return { course: pkg.course, sources: pkg.sources, entry }

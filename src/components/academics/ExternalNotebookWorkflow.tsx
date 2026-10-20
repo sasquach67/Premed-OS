@@ -47,13 +47,14 @@ const GOALS = {
   },
 }
 
-export function ExternalNotebookWorkflow({ courseId, onImported, revision, baselineFresh = true }: { courseId: string; onImported: (id: string, destinationCourseId?: string) => void; revision?: NotebookUpdateSession; baselineFresh?: boolean }) {
+export function ExternalNotebookWorkflow({ courseId, onImported, revision, baselineFresh = true, initialGoal, initialScope, workflowId }: { initialGoal?: NotebookGoal; initialScope?: string; workflowId?: string; courseId: string; onImported: (id: string, destinationCourseId?: string) => void; revision?: NotebookUpdateSession; baselineFresh?: boolean }) {
   const course = useStore(s => s.courses.find(c => c.id === courseId))
   const workspace = useStore(s => s.academics.classCenter.workspaces.find(w => w.courseId === courseId))
   const files = useStore(s => s.academics.classCenter.files)
-  const storageId = revision ? `${courseId}:update:${revision.localId}:${revision.id}` : courseId
+  const storageId = revision ? `${courseId}:update:${revision.localId}:${revision.id}` : workflowId ? `${courseId}:${workflowId}` : courseId
   const [loaded] = useState(() => {
     const loaded = loadNotebookWorkflowDraft(courseId, { preferences: workspace?.externalNotebookPreferences ?? '', term: course?.term ?? '' }, storageId)
+    if (!loaded.restored && initialGoal && !revision) Object.assign(loaded.draft, { goal: initialGoal, goalAccepted: true, stage: GOALS[initialGoal].stages[0], scope: initialScope ?? '' })
     if (revision) {
       const entry = revision.baseline.entries[0]
       if (!loaded.restored) Object.assign(loaded.draft, { scope: entry.scope, preferences: withoutGuideSnapshot(entry.request.classPreferences), stage: entry.request.helpStage ?? '', format: entry.request.assessmentFormat ?? '', term: revision.baseline.course.term ?? '' })

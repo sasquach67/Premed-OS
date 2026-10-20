@@ -95,6 +95,7 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
     const path = `$.entries.${e.id}`
     if ((e.revision === 1 && e.baseRevision !== null) || (e.revision > 1 && e.baseRevision !== e.revision - 1)) fail(path, 'Revision must name its immediately preceding base; first revision has null.')
     const blocks = new Map<string, VisualNotebookBlock>(), sections = new Set(e.sections.map(s => s.id))
+    for (const link of e.argumentChain ?? []) if (!sections.has(link.sectionId)) fail(path, 'Argument-chain targets must reference a section in this entry.')
     for (const s of e.sections) {
       global(s.id, sectionIds, path)
       for (const b of s.blocks) {
@@ -102,6 +103,10 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
         evidence(b, b.type !== 'gap' && ['source', 'clarification', 'generated-practice'].includes(b.provenance))
         for (const id of visualAssetReferences(b)) referenced.add(id)
         if (b.type === 'practice' && (!['source', 'generated-practice'].includes(b.provenance) || !b.sourceIds.length || (!b.excerptIds.length && !visualAssetReferences(b).length))) fail(path, 'Practice requires source or generated-practice provenance and precise evidence.')
+        if (b.type === 'practice') {
+          if ((b.options === undefined) !== (b.correctIndex === undefined)) fail(path, 'Multiple-choice practice needs both options and correctIndex.')
+          if (b.options && (b.correctIndex! < 0 || b.correctIndex! >= b.options.length)) fail(path, 'correctIndex must identify an existing option.')
+        }
         if (b.type === 'table' && b.rows.some(r => r.length !== b.columns.length)) fail(path, 'Table rows must match the column count.')
         validateLearningVisual(b)
         if (b.type !== 'study-diagram') for (const item of learningVisualItems(b)) {

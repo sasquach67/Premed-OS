@@ -42,7 +42,7 @@ export type NotebookDiagramEdge = NotebookDiagramNode & {
 }
 type VisualBlockIdentity = NotebookStudyMetadata & { id: string; provenance: 'source' | 'clarification' | 'background' | 'generated-practice' | 'student-work' }
 export type NotebookFigureBlock = VisualEvidence & VisualBlockIdentity & {
-  type: 'figure'; assetId: string; caption: string | null; alt: string; context: string
+  type: 'figure'; lookFor?: string[]; assetId: string; caption: string | null; alt: string; context: string
 }
 export type NotebookStudyDiagramBlock = VisualEvidence & VisualBlockIdentity & {
   type: 'study-diagram'; kind: 'concept-map' | 'flowchart' | 'decision-tree' | 'hierarchy' | 'causal-chain'; title: string

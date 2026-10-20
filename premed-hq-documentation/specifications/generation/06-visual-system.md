@@ -30,12 +30,12 @@ decoration and must not be emitted.
 
 ## 2. The representation decision
 
-For every major concept the generator makes an explicit choice from this set. **Bullets are not the
-default.**
+For every major concept choose the shape its content needs. **Lines are the
+default for facts.** Short explanation blocks show how those facts connect.
 
 | Representation | Use when |
 |---|---|
-| `prose` | A single idea needing explanation, not decomposition |
+| `prose` | Short connects, why or deeper explanation; at most 3 sentences or about 60 words |
 | `bullets` | A genuinely unordered set of peer items |
 | `numbered_steps` | Ordered steps where order matters but there are no branches |
 | `comparison_table` | ≥2 entities compared across ≥2 shared dimensions |
@@ -61,8 +61,9 @@ default.**
 | "Occurs during phase 3 of 5" | `timeline` | prose |
 | Anatomical parts and their positions | `labeled_diagram` | bullets |
 
-**A process rendered as bullets, a comparison rendered as prose, or a hierarchy rendered as nested
-bullets are all defects**, checkable in the quality pass.
+Number only real ordered processes. Keep parallel conditions in map groups or
+peer lines, dated events in a timeline, and comparisons in a table. Short prose
+explains the because; it does not replace the structure.
 
 ---
 
@@ -261,13 +262,21 @@ The app owns all color rendering; never author CSS or new design tokens.
 Use `targetBlockId` to link a node to the relevant same-section heading or term
 block. Keep the map label and the linked term's name consistent.
 
-Every figure needs numbered “What to look at” explanations. State what it shows
-and why it matters for the topic as an ordinary sentence at the end of the caption
-or in the adjacent explanation. Do not use a literal “Why it matters:” label. Prefer the supplied lecture figure; use `annotated-figure` with
-verified point coordinates under EC-ANNOTATION. If reliable coordinates are
-unavailable, retain the exact source figure and adjacent numbered explanatory
-steps rather than inventing annotation positions. Do not leave an unexplained
-image or make claims based on an unseen figure.
+Each teaching section uses one main inspected figure with a one-line caption
+naming its verified slide and what it shows, plus 2–4 Look for lines in lookFor.
+A natural caption or adjacent explanation states its relevance; never use the
+literal Why it matters: label. Prefer exact lecture pixels. Verified point
+annotations may add location cues under EC-ANNOTATION; do not invent coordinates.
+A missing actual figure is a source gap, never a reason to fabricate pixels.
+
+Every teaching section requires core Why it works and extra Go deeper
+explanations of 2–3 sentences each. How this connects is core, 1–2 sentences,
+and required after the first section. Step reason lines explain real sequence
+steps where needed. No prose block exceeds 3 sentences or about 60 words.
+Argument-led guides have a linked 4–6 item argumentChain at the top and a core
+claim/evidence/soWhat block in each argument section. Timeline events show dates,
+not numbered parallel factors. These explanations and the content-shape table in
+EC-LINES-FIRST supersede any older conditional or prose-default guidance.
 
 Use sparse `callout` blocks with tones `question`, `lecture-example`, `analogy`,
 `mix-up`, `builds-on`, and `one-thing`. The opening question and closing one-thing

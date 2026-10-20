@@ -68,6 +68,7 @@ export function NotebookFigure({ block, onChange, annotations }: { block: Notebo
     {zoomError && <p role="status">{zoomError}</p>}
     <figcaption>{block.caption && <strong><NotebookInlineText text={block.caption} /></strong>}{asset && <small>{asset.sourceId} / {asset.location}</small>}</figcaption>
     <p className="nbr-figure-context"><NotebookInlineText text={block.context} /></p>
+    {block.lookFor?.length ? <section className="lf-look" aria-label="Look for"><h4>Look for</h4><ul>{block.lookFor.map((line, index) => <li key={index}><NotebookInlineText text={line} /></li>)}</ul></section> : null}
     {onChange && <div className="nbr-figure-edit"><label>Figure caption<input value={block.caption ?? ''} onChange={e => onChange({ ...block, caption: e.target.value || null })} /></label><label>Figure alternative text<textarea value={block.alt} onChange={e => onChange({ ...block, alt: e.target.value })} /></label><label>Figure context<textarea value={block.context} onChange={e => onChange({ ...block, context: e.target.value })} /></label><p>Image identity and original bytes stay protected. Use an update with a new asset ID to replace an image.</p></div>}
     <dialog className="nbr-figure-dialog" ref={dialog} aria-label="Enlarged source figure" onClose={finishZoom} onKeyDown={event => {
       if (event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey) return
