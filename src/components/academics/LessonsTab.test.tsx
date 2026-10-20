@@ -73,6 +73,31 @@ describe('LessonsTab', () => {
     expect(container.querySelector('.class-folder-ready')?.textContent).toContain('Documents › PSYC 101 Lecture Material')
   })
 
+  it('lists readings under their exam, joins a book’s parts and names what a class discusses', () => {
+    const reading = (id: string, due: string, week: string, title: string, status: 'read' | 'not-started' = 'not-started') => ({ id, courseId: 'c', week, title, status, dueForDiscussion: due, createdAt: 1, updatedAt: 1, order: 0 })
+    const h = { onToggleReadingPart: vi.fn(), onNewReadingNotebook: vi.fn() }
+    render([], {
+      readings: [
+        reading('a', '2026-09-22', 'Week 5', 'Steinberg, Sizwe’s Test, “Preface”—“Thandeka” (pp. 1-75).', 'read'),
+        reading('b', '2026-09-29', 'Week 6', 'Steinberg, “Garden and Home”—AIDS Needle,” (pp.79-162.)'),
+        reading('c', '2026-10-13', 'Week 8', 'Manderson, Lenore. 1998. “Applying Medical Anthropology”'),
+        reading('d', '2026-10-27', 'Week 10', 'Moore, R. 2022. “Marshallese resilience”'),
+      ],
+      ...h,
+    })
+    expect(container.querySelector('.lessons-subhead')?.textContent).toBe('Readings 2 assigned')
+    expect(text('.lessons-row.is-reading .lessons-main b')).toEqual(['Manderson, “Applying Medical Anthropology”', 'Steinberg, Sizwe’s Test'])
+    expect(container.textContent).toContain('Book · 1 of 2 parts read')
+    expect(container.textContent).toContain('For Oct 27')
+    expect(container.querySelector('.lessons-card .lessons-disc')?.textContent).toBe('Discusses Manderson, “Applying Medical Anthropology”')
+    act(() => (container.querySelector('[aria-label="Expand Steinberg, Sizwe’s Test"]') as HTMLButtonElement).click())
+    act(() => ([...container.querySelectorAll('.lessons-parts button')][1] as HTMLButtonElement).click())
+    expect(h.onToggleReadingPart).toHaveBeenCalledWith('b')
+    expect(container.textContent).toContain('On disk: premedOS › Reading - Steinberg, Sizwe’s Test')
+    act(() => ([...container.querySelectorAll('.lessons-card.is-reading .lessons-tile')][0] as HTMLButtonElement).click())
+    expect(h.onNewReadingNotebook).toHaveBeenCalledWith('steinberg, sizwes test')
+  })
+
   it('keeps the class files in a collapsed section', () => {
     render()
     expect(container.textContent).toContain('Class files')

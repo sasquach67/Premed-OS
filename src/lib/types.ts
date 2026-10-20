@@ -844,6 +844,9 @@ export interface LectureRecord {
   flashcardsMadeAt?: number
   /** When the student said the lesson's practice set was made (Oct 2026). */
   practiceSetMadeAt?: number
+  /** Set on a reading notebook (Oct 2026): the reading it covers, as
+   * `buildReadingItems` keys it. A book in parts shares one key. */
+  readingKey?: string
   /** Syllabus topics connected when the lecture was saved. */
   topicIds?: ID[]
   processingState: LectureProcessingState

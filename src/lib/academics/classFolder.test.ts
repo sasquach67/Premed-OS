@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aiSaveLocation, defaultFolderName, filingPrompt, lessonFolderName } from './classFolder'
+import { aiSaveLocation, defaultFolderName, filingPrompt, lessonFolderName, readingFolderName } from './classFolder'
 import type { ClassFolderSetup } from '@/lib/types'
 
 const ready: ClassFolderSetup = { site: 'canvas', place: 'documents', mover: 'ai', name: 'PSYC 101 Lecture Material', state: 'ready', updatedAt: 1 }
@@ -10,6 +10,7 @@ describe('class folder names', () => {
     expect(lessonFolderName(9, 'Motivation & Emotion')).toBe('Lesson 9 - Motivation & Emotion')
     expect(lessonFolderName(3, 'Cells: structure/function')).toBe('Lesson 3 - Cells structure function')
     expect(lessonFolderName(4)).toBe('Lesson 4')
+    expect(readingFolderName('Hahn & Kleinman, “Belief as Pathogen, Belief as Medicine”')).toBe('Reading - Hahn & Kleinman, Belief as Pathogen, Belief as Medicine')
   })
 })
 

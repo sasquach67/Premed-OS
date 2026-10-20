@@ -21,6 +21,11 @@ export function lessonFolderName(lesson: number | string, title?: string): strin
   return clean ? `Lesson ${lesson} - ${clean}` : `Lesson ${lesson}`
 }
 
+/** "Reading - Steinberg, Sizwe’s Test": a reading notebook's folder in premedOS. */
+export function readingFolderName(title: string): string {
+  return `Reading - ${title.replace(/[“”"]/g, '').replace(/[\\/:*?<>|]+/g, ' ').replace(/\s+/g, ' ').trim()}`
+}
+
 /** The folders a setup makes, as display trails. */
 export function folderTrail(setup: Pick<ClassFolderSetup, 'place' | 'name'>): string[] {
   return [folderRoot(setup.place), setup.name]

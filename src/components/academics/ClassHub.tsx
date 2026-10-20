@@ -288,6 +288,10 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
           onNewNotebook={() => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new`)}
           onFlashcards={lectureId => navigate(`/academics/classes/${encodeURIComponent(course.id)}/resources/flashcards?journal=${encodeURIComponent(lectureId)}`)}
           onPracticeSet={openNotebook}
+          readings={courseReadings}
+          // The new-notebook flow saves `readingKey` from this link once PR #41's AI flow lands (follow-up glue).
+          onNewReadingNotebook={key => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new?reading=${encodeURIComponent(key)}`)}
+          onToggleReadingPart={readingId => update(draft => { const item = draft.academics.classCenter.assignedReadings.find(row => row.id === readingId); if (item) { item.status = item.status === 'read' ? 'not-started' : 'read'; item.updatedAt = Date.now() } })}
           classFilesCount={classFileCount}
           classFolder={workspace.classFolder}
           defaultFolderName={defaultFolderName(course.code)}
