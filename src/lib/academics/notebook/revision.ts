@@ -21,9 +21,9 @@ export function legacyNotebookStateKey(n: ImportedNotebook) {
 export function createNotebookUpdateSession(n: ImportedNotebook, localId: string, now = Date.now()): NotebookUpdateSession {
   return { id: uid(), localId, createdAt: now, baseline: cloneNotebookData(selectedNotebook(n.current, n.entryId)) }
 }
-export function revisionInput(session: NotebookUpdateSession) {
+export function revisionInput(session: NotebookUpdateSession, baselineFile = notebookUpdateBaselineFilename(session)) {
   const entry = session.baseline.entries[0]
-  return JSON.stringify({ mode: 'update-existing-entry', baselineFile: notebookUpdateBaselineFilename(session), entryId: entry.id, revision: entry.revision, baseline: UPDATE_BASELINE_DESCRIPTION })
+  return JSON.stringify({ mode: 'update-existing-entry', baselineFile, entryId: entry.id, revision: entry.revision, baseline: UPDATE_BASELINE_DESCRIPTION })
 }
 export function retainNotebookVersion(n: ImportedNotebook, reason: NotebookHistoryVersion['reason'], now = Date.now()) {
   const version: NotebookHistoryVersion = { id: uid(), savedAt: now, reason, current: cloneNotebookData(n.current), notes: n.notes, progress: cloneNotebookData(n.progress), ...(n.acceptedRaw ? { acceptedRaw: n.acceptedRaw } : {}) }

@@ -4,9 +4,11 @@ import { createRoot, type Root } from 'react-dom/client'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { createInitialDataForMode, STORAGE_KEY, useStore } from '@/store/store'
 import { ExternalNotebookView, notebookTransaction } from './ExternalNotebookView'
+import { readNotebookZip } from '@/lib/academics/notebook/notebookZip'
 import { importNotebook, exportNotebook } from '@/lib/academics/notebook/import'
 import { prepareNotebook } from '@/lib/academics/notebook/package'
 import * as notebookAssetStore from '@/lib/academics/notebook/notebookAssetStore'
+import * as folderExports from '@/lib/academics/notebook/notebookFolderExport'
 import * as notebookBundles from '@/lib/academics/notebook/notebookBundle'
 import { correctedFixture, revisionFixture } from '@/lib/academics/notebook/revision.test-fixtures'
 import type { Course } from '@/lib/types'
@@ -16,7 +18,7 @@ const course: Course = { id: 'update-demo', code: pkg.course.code, title: pkg.co
 const lecture = () => useStore.getState().academics.classCenter.lectures.find(l => l.id === id)!
 function Harness() { const current = useStore(s => s.academics.classCenter.lectures.find(l => l.id === id)!); return <ExternalNotebookView lecture={current} courseCode={course.code} /> }
 beforeEach(async () => {
-  vi.stubGlobal('crypto', webcrypto); Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }); sessionStorage.clear()
+  vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue({})); vi.spyOn(folderExports, 'saveNotebookBundleFolder').mockResolvedValue('Invented classroom task'); vi.stubGlobal('crypto', webcrypto); Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }); sessionStorage.clear()
   const data = createInitialDataForMode(false); data.courses = [course]; useStore.getState().replaceAll(data)
   const prepared = await prepareNotebook(JSON.stringify(pkg))
   notebookTransaction(state => { [id] = importNotebook(state.academics.classCenter, course, prepared); const n = state.academics.classCenter.lectures[0].importedNotebook!; n.notes = 'Protected notes'; n.progress = { 'question-mapping': { response: 'Left', complete: true }, 'question-timing': { response: '100', complete: true } } })
@@ -24,7 +26,7 @@ beforeEach(async () => {
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
   await act(async () => root.render(<Harness />))
 })
-afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
+afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 function button(label: string) { return [...container.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.trim() === label)! }
 async function click(label: string) {
   expect(button(label), label).toBeTruthy(); await act(async () => button(label).click())
@@ -39,7 +41,7 @@ async function check(text: string) { const box = [...container.querySelectorAll(
 async function toImport() {
   await click('Update this notebook'); await click('Next'); await click('Copy update prompt')
   expect(button('Next').disabled).toBe(true)
-  await click('I have the baseline file or full JSON'); await click('Next'); await click('I have my notebook files'); await click('Continue to import')
+  await click('I have the notebook folder'); await click('Next'); await click('I have my notebook files'); await click('Continue to import')
 }
 async function preview() { await toImport(); await fill('Paste complete JSON', JSON.stringify(correctedFixture())); await click('Validate and preview') }
 it('requires saved edits/notes, uses the same goal and names the real saved baseline', async () => {
@@ -51,8 +53,8 @@ it('requires saved edits/notes, uses the same goal and names the real saved base
   const prompt = container.querySelector<HTMLTextAreaElement>('[aria-label="Full customized prompt"]') ?? container.querySelector<HTMLTextAreaElement>('.en-code-body textarea')!
   const request = JSON.parse(/```json\n([\s\S]*?)\n```/.exec(prompt.value)![1])
   expect(JSON.parse(request.revisionInput).entryId).toBe(pkg.entries[0].id)
-  expect(JSON.parse(request.revisionInput).baselineFile).toBe('My saved wording.json')
-  expect(prompt.value).toContain('My saved wording.json: attach this exact saved baseline')
+  expect(JSON.parse(request.revisionInput).baselineFile).toBe('notebook.json')
+  expect(prompt.value).toContain('notebook.json: attach this exact saved baseline')
   expect(request.helpStage).toBeNull()
   const baseline = container.querySelector<HTMLTextAreaElement>('[aria-label="Saved baseline JSON"]')!.value
   expect(JSON.parse(baseline).entries[0].title).toBe('My saved wording')
@@ -145,8 +147,8 @@ it('keeps the update action visible and the complete guide available throughout 
   expect(guide.textContent).toContain('A readable draft is optional.')
   expect(guide.textContent).not.toContain('Create the JSON')
   expect(guide.textContent).toContain('Check the destination and comparison, and explicitly accept the update')
-  expect(guide.textContent).toContain('Download current baseline + images')
-  expect(guide.textContent).toContain('Unzip this app-exported bundle')
+  expect(guide.textContent).toContain('Download notebook folder')
+  expect(guide.textContent).toContain('Download notebook ZIP')
   expect(guide.textContent).toContain('bindings.json')
   expect(guide.textContent).toContain('For a text-only notebook')
   expect(guide.textContent).toContain('including its JSON, new or revised PNG/JPEG images and unchanged originals')
@@ -154,8 +156,8 @@ it('keeps the update action visible and the complete guide available throughout 
   await act(async () => guide.querySelector('summary')!.click())
   await click('Next'); expect(guide.open).toBe(true)
   expect(container.querySelector('.en-code-name')?.textContent).toBe('notebook-update-review-prompt.md')
-  expect(button('Download current notebook JSON')).toBeTruthy()
-  await click('Copy update prompt'); await click('I have the baseline file or full JSON'); await click('Next')
+  expect(button('Download notebook folder')).toBeTruthy()
+  await click('Copy update prompt'); await click('I have the notebook folder'); await click('Next')
   expect(container.textContent).toContain('A new chat is fine')
   expect(container.textContent).toContain('Add the saved notebook JSON, its images, and your new materials')
   expect(container.textContent).toContain('Reopen this saved notebook and choose Update this notebook')
@@ -172,7 +174,7 @@ it('blocks an old handoff after saved edits, then restarts with the latest conte
   await click('Back to AI steps'); await click('Back to prompt')
   expect(button('Copy update prompt').disabled).toBe(true)
   expect(button('Download update prompt').disabled).toBe(true)
-  expect(button('Download current notebook JSON').disabled).toBe(true)
+  expect(button('Download notebook folder').disabled).toBe(true)
   expect(button('Next').disabled).toBe(true)
   expect(container.querySelector<HTMLTextAreaElement>('[aria-label="Saved baseline JSON"]')!.value).toBe('')
   expect(container.querySelector<HTMLTextAreaElement>('.en-code-body textarea')!.value).toBe('')
@@ -187,20 +189,20 @@ it('blocks an old handoff after saved edits, then restarts with the latest conte
   await click('Next')
   expect(JSON.parse(container.querySelector<HTMLTextAreaElement>('[aria-label="Saved baseline JSON"]')!.value)).toEqual({ ...before.current, entries: [before.current.entries[0]] })
   expect(button('Next').disabled).toBe(true)
-  expect(button('I have the baseline file or full JSON').getAttribute('aria-pressed')).toBe('false')
+  expect(button('I have the notebook folder').getAttribute('aria-pressed')).toBe('false')
 })
 it('stops copying and downloading immediately if content changes while the prompt step is open', async () => {
-  await click('Update this notebook'); await click('Next'); await click('Copy update prompt'); await click('I have the baseline file or full JSON')
+  await click('Update this notebook'); await click('Next'); await click('Copy update prompt'); await click('I have the notebook folder')
   expect(button('Next').disabled).toBe(false)
   await act(async () => notebookTransaction(state => { state.academics.classCenter.lectures[0].importedNotebook!.current.entries[0].title = 'Changed while prompt was open' }))
   expect(button('Copy update prompt').disabled).toBe(true)
-  expect(button('Download current notebook JSON').disabled).toBe(true)
+  expect(button('Download notebook folder').disabled).toBe(true)
   expect(button('Download update prompt').disabled).toBe(true)
   expect(button('Next').disabled).toBe(true)
   expect(container.querySelector<HTMLTextAreaElement>('[aria-label="Saved baseline JSON"]')!.value).toBe('')
   expect(container.textContent).toContain('Restart from the latest saved entry')
 })
-it('uses the exact canonical update prompt for preview, clipboard and download with a separate saved JSON', async () => {
+it('uses the exact canonical update prompt and downloads the complete baseline as ZIP, without private study records', async () => {
   const blobs: Blob[] = [], names: string[] = []
   Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: (blob: Blob) => { blobs.push(blob); return 'blob:update-test' } })
   Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() })
@@ -209,14 +211,15 @@ it('uses the exact canonical update prompt for preview, clipboard and download w
   const prompt = container.querySelector<HTMLTextAreaElement>('.en-code-body textarea')!.value
   expect(prompt.startsWith('# Update my Premed OS notebook: review\n\n')).toBe(true)
   expect(prompt).toContain('complete prompt works in a fresh AI chat')
-  await click('Download current notebook JSON'); await click('Copy update prompt')
+  await click('Download notebook ZIP'); await click('Copy update prompt')
   await act(async () => container.querySelector('.en-prompt-detail summary')!.dispatchEvent(new MouseEvent('click', { bubbles: true })))
   await click('Download update prompt')
   expect(navigator.clipboard.writeText).toHaveBeenCalledWith(prompt)
-  expect(names).toEqual(['Invented classroom task.json', 'notebook-update-review-prompt.md'])
+  expect(names).toEqual(['Invented classroom task.zip', 'notebook-update-review-prompt.md'])
   const read = (blob: Blob) => new Promise<string>(resolve => { const reader = new FileReader(); reader.onload = () => resolve(reader.result as string); reader.readAsText(blob) })
   expect(await read(blobs[1])).toBe(prompt)
-  const baseline = await read(blobs[0])
+  const members = await readNotebookZip(blobs[0]); const baseline = new TextDecoder().decode(members.get('notebook.json')!)
+  expect(members.has('bindings.json')).toBe(true)
   expect(JSON.parse(baseline)).toEqual(lecture().importedNotebook!.updateSession!.baseline)
   expect(baseline).not.toContain('Protected notes')
   expect(baseline).not.toContain('"complete"')
@@ -225,7 +228,7 @@ it('does not invalidate the content baseline for independent saved notes or prog
   await click('Update this notebook'); await click('Next')
   await act(async () => notebookTransaction(state => { const n = state.academics.classCenter.lectures[0].importedNotebook!; n.notes = 'New independent note'; n.progress['question-mapping'].response = 'A newer independent response' }))
   expect(button('Copy update prompt').disabled).toBe(false)
-  expect(button('Download current notebook JSON').disabled).toBe(false)
+  expect(button('Download notebook folder').disabled).toBe(false)
   const baseline = container.querySelector<HTMLTextAreaElement>('[aria-label="Saved baseline JSON"]')!.value
   expect(baseline).not.toContain('New independent note')
   expect(baseline).not.toContain('A newer independent response')
@@ -305,4 +308,50 @@ it('reopens an existing update draft without requiring another workspace write',
   expect(container.querySelector('[aria-label="Update saved notebook"]')).toBeTruthy()
   expect(writes).toEqual([])
   expect(JSON.stringify(lecture().importedNotebook!.updateSession)).toBe(draft)
+})
+
+it('opens the folder picker in the click, exports the exact baseline, and requires confirmation separately', async () => {
+  const bundle = new Blob(['verified bundle'])
+  vi.spyOn(notebookAssetStore, 'notebookAssetRepository').mockReturnValue({} as ReturnType<typeof notebookAssetStore.notebookAssetRepository>)
+  const exported = vi.spyOn(notebookBundles, 'exportNotebookPackageBundle').mockResolvedValue(bundle)
+  await click('Update this notebook'); await click('Next')
+  const before = JSON.stringify(lecture().importedNotebook)
+  await click('Download notebook folder')
+  expect(Reflect.get(globalThis, 'showDirectoryPicker')).toHaveBeenCalledWith({ mode: 'readwrite' })
+  expect(exported).toHaveBeenCalledWith(JSON.stringify(lecture().importedNotebook!.updateSession!.baseline, null, 2), [], expect.anything())
+  expect(folderExports.saveNotebookBundleFolder).toHaveBeenCalledWith(bundle, {}, 'Invented classroom task', expect.any(Function))
+  expect(container.textContent).toContain('Saved “Invented classroom task”')
+  expect(button('I have the notebook folder').getAttribute('aria-pressed')).toBe('false')
+  expect(JSON.stringify(lecture().importedNotebook)).toBe(before)
+})
+it('does not write a partial folder or claim success when an image is unavailable', async () => {
+  vi.spyOn(notebookBundles, 'exportNotebookPackageBundle').mockRejectedValue(new Error('Image demo is unavailable on this device.'))
+  await click('Update this notebook'); await click('Next'); await click('Download notebook folder')
+  expect(folderExports.saveNotebookBundleFolder).not.toHaveBeenCalled()
+  expect(container.textContent).toContain('Image demo is unavailable')
+  expect(button('I have the notebook folder').getAttribute('aria-pressed')).toBe('false')
+})
+it('offers only the complete ZIP fallback when folder saving is unsupported, and cancellation changes no notebook', async () => {
+  vi.stubGlobal('showDirectoryPicker', undefined)
+  await click('Update this notebook'); await click('Next')
+  expect(button('Download notebook folder').disabled).toBe(true)
+  expect(button('Download notebook ZIP').disabled).toBe(false)
+  expect(container.textContent).toContain('This browser cannot save folders')
+  expect(button('Download current notebook JSON')).toBeUndefined()
+  vi.stubGlobal('showDirectoryPicker', vi.fn().mockRejectedValue(new DOMException('Cancelled', 'AbortError')))
+  await act(async () => root.render(<Harness />))
+  const before = JSON.stringify(lecture().importedNotebook)
+  await click('Download notebook folder')
+  expect(container.textContent).toContain('Folder saving cancelled')
+  expect(JSON.stringify(lecture().importedNotebook)).toBe(before)
+  expect(folderExports.saveNotebookBundleFolder).not.toHaveBeenCalled()
+})
+it('rejects a changed baseline during image preparation before any folder write', async () => {
+  vi.spyOn(notebookBundles, 'exportNotebookPackageBundle').mockImplementation(async () => {
+    notebookTransaction(state => { state.academics.classCenter.lectures[0].importedNotebook!.current.entries[0].title = 'New saved content' })
+    return new Blob(['old bundle'])
+  })
+  await click('Update this notebook'); await click('Next'); await click('Download notebook folder')
+  expect(folderExports.saveNotebookBundleFolder).not.toHaveBeenCalled()
+  expect(container.textContent).toContain('The notebook changed')
 })
