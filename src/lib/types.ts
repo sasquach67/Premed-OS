@@ -336,6 +336,9 @@ export interface ClassWorkspace {
   externalNotebookPreferences?: string
   /** Student-owned Overview focus and reading shortcut; absent for older workspaces. */
   studyFocus?: string
+  /** Class days checklist (Oct 2026): ISO class date → ids of the items the
+   * student ticked. Absent until the first tick; nothing ticks itself. */
+  classDayChecks?: Record<string, string[]>
   lastOpenedLectureId?: ID
   id: ID
   courseId: ID
@@ -818,6 +821,11 @@ export interface LectureRecord {
   transcriptFileId?: ID
   /** The date this class session occurred. It is student-entered, never inferred. */
   occurredOn?: string
+  /** When the student said the lesson's Anki deck was made (Oct 2026). The deck
+   * itself lives in Anki; the app only keeps that it exists. */
+  flashcardsMadeAt?: number
+  /** When the student said the lesson's practice set was made (Oct 2026). */
+  practiceSetMadeAt?: number
   /** Syllabus topics connected when the lecture was saved. */
   topicIds?: ID[]
   processingState: LectureProcessingState
