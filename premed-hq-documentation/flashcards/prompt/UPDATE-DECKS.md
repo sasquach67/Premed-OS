@@ -91,3 +91,11 @@ This supersedes the long-title breadcrumb rules and wrapping chip text described
 F2 colors/font/padding stay unchanged. Chip text uses nowrap with no ellipsis or clipping; the chip can move below the label as one unit. All sample labels are 1–3 words and ≤22 characters. Counts remain 21 notes / 22 active reviews, and all note GUIDs and retrieval demands are preserved. A native Anki 26.09.3 probe now accepts expected question-chip visibility and can set its actual reviewer viewport to 390px; it checks full one-line chip text as well as sequential reveal. Portable assembly preserves source trailing newlines exactly so a harmless CSS newline cannot change the embedded builder’s style hash.
 
 Continue holding draft PR #36 until Andy explicitly authorizes release.
+
+## 2026-10-20 — whole-structure rebuild preview (2026-10-20a, held)
+
+Rebuild is a new Basic Q&A retrieval demand for a lecture's whole chain, comparison table or argument, graded once. Atomic cards remain. Named sets keep umbrella clozes and labeled structures keep image occlusion; zero rebuilds is valid. Rebuild notes have separate `-rebuild` concept IDs and source evidence, with count/shape validation and explicit build-report entries. They do not satisfy term-definition recall or replace connecting cards.
+
+The Basic/Cloze/IO field lists, permanent IDs and fresh-export update behavior are unchanged. Existing GUIDs and My notes continue through the export-based update pipeline; rebuild notes are new notes. Template styling adds the rebuild accent only. Source remains hidden as in the held October 17 batch.
+
+Review the three-structure feature preview in `~/Documents/Premed OS Academics Audit/2026-10-20-rebuild-preview/` using a new unsynced Anki profile. This revision and the October 17 batch remain held for Andy's review; opening the PR is not permission to merge or deploy.
