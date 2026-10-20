@@ -58,9 +58,13 @@ describe('unit resource generation callers', () => {
       artifact: {
         title: 'Unit 2 mastery', unit: 'Unit 2', standards: [{
           id: 'std-1', title: 'Gene expression', understand: ['DNA is transcribed into RNA.', 'The primary transcript is processed.', 'Mature mRNA is translated into a polypeptide.', 'Template and coding strands relate differently to RNA.', 'Bacterial and eukaryotic cells organize gene expression differently.'],
-          freeRecallCues: ['Without notes, explain transcription and RNA processing from template DNA to mature mRNA.'],
-          beAbleToDo: ['Predict the result of a processing disruption.', 'Trace an unfamiliar sequence from template DNA to mature mRNA.'], watchFor: ['Do not confuse transcription and translation.'], sourceChunkIds: ['chunk-1'],
-          examPractice: [{ prompt: 'In a hypothetical cell, intron removal stops while transcription continues. Predict how the RNA product differs from normally processed mRNA and explain why.', answer: 'The transcript retains its introns.', rationale: 'Transcription still produces RNA, but the blocked removal step leaves introns in that product rather than removing them during processing.', sourceChunkIds: ['chunk-1'] }],
+          // 2e560a7 retired freeRecallCues/watchFor/examPractice for newly authored
+          // outlines (must be empty) and requires howTested + applicationSkills.
+          freeRecallCues: [],
+          beAbleToDo: ['Predict the result of a processing disruption.', 'Trace an unfamiliar sequence from template DNA to mature mRNA.'], watchFor: [], sourceChunkIds: ['chunk-1'],
+          examPractice: [],
+          howTested: { setup: 'The selected material describes the process without sample questions.', questions: [], noQuestionsReason: 'The selected source contains no actual practice questions for this objective.' },
+          applicationSkills: [{ text: 'Predict the result of a processing disruption.', questionIds: [] }, { text: 'Trace an unfamiliar sequence from template DNA to mature mRNA.', questionIds: [] }],
         }],
       }, citations: [],
     } })
@@ -72,19 +76,18 @@ describe('unit resource generation callers', () => {
     const request = mocks.generate.mock.calls[0][0]
     expect(request).toMatchObject({ action: 'generate', specId: 'unit-mastery-outline-v1', chunkIds: ['chunk-1', 'chunk-2'] })
     expect(JSON.stringify(request)).not.toContain(sources[0].content)
-    expect(request.systemPrompt).toContain('UMO-STANDARDS')
-    expect(request.systemPrompt).toContain('UMO-DEPTH')
-    expect(request.systemPrompt).toContain('UMO-PRACTICE-EVIDENCE')
-    expect(request.systemPrompt).toContain('UMO-RECALL')
-    expect(request.systemPrompt).toContain('UMO-EXAM-APPLICATION')
-    expect(request.systemPrompt).toContain('UMO-EXAM-SOLUTION')
-    expect(request.systemPrompt).toContain('UMO-OBJECTIVE-IDENTITY')
-    expect(request.request).toContain('examPractice with 1 or 2')
-    expect(request.systemPrompt).toContain('at least five distinct Understand bullets')
+    // 2e560a7 replaced the UMO rule set (standards/depth/recall/exam-practice) with the
+    // three-part How it is tested / Be able to do / Understand contract.
+    for (const rule of ['UMO-THREE-PARTS', 'UMO-HOW-TESTED', 'UMO-APPLICATION-SKILLS', 'UMO-UNDERSTAND-FACTS', 'UMO-EVIDENCE-AND-GAPS', 'UMO-OBJECTIVE-IDENTITY']) {
+      expect(request.systemPrompt).toContain(rule)
+    }
+    // The five-Understand-bullet quota was dropped: the request now says "without numeric quotas".
     expect(request.systemPrompt).toContain('Reference-question chunk IDs: chunk-1')
+    expect(request.request).toContain('without numeric quotas')
     expect(request.request).toContain('do not summarize a detailed outline')
-    expect(request.request).toContain('free-recall cues')
-    expect(request.request).toContain('marked question passages as task-pattern evidence')
+    expect(request.request).toContain('freeRecallCues, watchFor and examPractice are empty arrays')
+    expect(request.request).toContain('never invent a question')
+    expect(request.request).toContain('Quote the actual relevant marked questions')
   })
 
   it('marks supplied question passages as teaching examples in a study guide', async () => {

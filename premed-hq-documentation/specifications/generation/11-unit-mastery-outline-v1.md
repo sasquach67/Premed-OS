@@ -1,57 +1,87 @@
 # 11 · Unit Mastery Outline — `unit-mastery-outline-v1`
 
-The Unit Mastery Outline is a source-grounded map for one unit. It preserves supplied syllabus learning standards and otherwise derives clearly labeled, source-grounded study objectives without creating syllabus Topics. Each objective has four useful study lenses: what to retrieve from a blank page, what to understand, what to be able to do, and what to watch for.
+The Unit Mastery Outline preserves official objectives and otherwise derives
+clearly labeled source-supported study objectives without creating syllabus Topics.
+Every objective has three study parts: actual course questions, observable
+application skills linked to those questions, and factual understanding.
 
-**Runtime objective:** Turn the supplied course evidence into a detailed mastery map. Preserve every explicit objective relevant to the requested scope and organize its distinct source-supported subpoints into Free-recall cues, Understand, Be able to do, and Watch for. This map is the source contract for later study resources, not a transcript summary.
+**Runtime objective:** Turn the supplied course evidence into a mastery map organized as How it's tested, Be able to do, then Understand. Preserve every relevant official objective and distinct supported subpoint. Show actual course questions before observable application skills and factual answers in formal exam vocabulary.
 
 ## Rules
 
 | Rule | Meaning | Kind |
 | --- | --- | --- |
-| `UMO-INSTRUCTOR-CONNECTION` | Use selected instructor transcripts and personal class notes as the primary teaching structure, with slides and lesson outlines to connect and complete it. Preserve terminology and distinguish supplementary readings. Personal notes establish student focus, not guaranteed correctness or instructor authorship. When no instructor evidence is selected, derive the study scope from the selected readings, notes, and other materials; instructor evidence is optional. Connect application targets and watch-for points to supported instructor examples and distinctions. When a solution relies on both transcript and slide evidence, include the supporting IDs from both within the objective and practice evidence. Preserve pedagogically important sequences and explicitly stated warnings, but do not invent slide numbers, quotes, instructor emphasis or exam predictions. If instructor evidence or a needed example detail is missing, report the limitation rather than claiming complete coverage or fabricating support. | invariant |
-| `UMO-SOURCE` | Every standard and every bullet must be traceable to at least one supplied source chunk. | invariant |
-| `UMO-EXAM-APPLICATION` | Each sufficiently supported objective needs one or two original, self-contained exam-style application questions in examPractice, with an answer, reasoning rationale, and sourceChunkIds supporting the solution. An objective with a concrete evidenceLimit may use an empty examPractice array when the selected evidence cannot support a solved application; never fabricate one. Supply any sequence, values, scenario or other information needed to solve it in the prompt; never refer to an absent diagram. Test application, not definition recall. Label hypothetical scenarios as hypothetical. These are generated practice, not predicted exam questions or instructor-authored questions. Never copy supplied assessment stems or claim a topic will be on the exam. Watch for points should identify concrete tempting errors relevant to solving these tasks. | invariant |
-| `UMO-EXAM-SOLUTION` | Make the unfamiliar scenario necessary to solve the question; a decorative vignette followed by a definition is not application. Include all needed quantities, units, sequence orientations, controls and text representations in the prompt. Answer every requested part, then work through the source-supported rule, the relevant scenario evidence, and the inference or calculation in the rationale. Source IDs must be unique and drawn only from the containing objective. Do not reuse a question across objectives, restate the answer as its rationale, fabricate empirical observations, or invent unsupported facts to fill a question quota. | invariant |
-| `UMO-OBJECTIVE-IDENTITY` | Preserve explicitly labeled instructor learning objectives verbatim when supplied. Do not require formal learning objectives to build a map from readable material. For supported concepts not covered by explicit objectives, derive concrete study objectives from the selected evidence and prefix each such title with "Study objective:". These are generated study aids, never official instructor objectives or exam predictions. Group related supported concepts into coherent objectives; do not turn acknowledgments, incidental instructions, or assessment stems into objectives. Keep instructor emphasis only when the selected evidence states it. | invariant |
-| `UMO-STANDARDS` | Use syllabus standards or explicit objectives as standard identities when available. Otherwise use stable local identities for source-derived study objectives. Generated study objectives belong only to this artifact; never create or modify syllabus Topics or claim instructor approval. Missing formal objectives alone is not a reason to return an empty standards list. | invariant |
-| `UMO-COVERAGE` | Preserve every explicit objective relevant to the requested lecture, unit, or exam scope and every distinct supported subpoint. Do not merge separate objectives or compress a detailed source outline into a summary. | invariant |
-| `UMO-SPLIT` | Separate blank-page retrieval cues, understanding, observable performance, and likely confusion or watch-for points. Do not repeat one sentence across fields. Give each field its own learning job. Free-recall cues name what to retrieve without notes. Understand asks the learner to explain the actual ideas, why/how relationships or a named distinction. Be able to do names a concrete input and action, such as interpreting a stated example, tracing a process or choosing a method for a given question. Watch for identifies a specific plausible mistake and its correction. A general warning about proof must not replace learning a theory or applying it; evaluating evidence remains a main skill when that is the lesson’s actual subject. Do not repeat one sentence across fields. | invariant |
-| `UMO-RECALL` | Give every objective one to three objective-specific, source-grounded free-recall cues phrased as direct student tasks such as Explain, Reconstruct, Draw, Trace, or Compare. Each cue must name what the student should retrieve, not say only “explain this topic,” and at least one cue per objective must explicitly require retrieval without notes. When the source supports a process or mechanism, at least one cue must ask the student to explain or reconstruct it from start to finish without notes. | invariant |
-| `UMO-DEPTH` | Ordinary objectives must contain at least five distinct Understand bullets, two objective-specific Be able to do bullets, and one concrete Watch for bullet. Preserve all distinct supported detail for rich sources. Only when selected evidence genuinely cannot support these floors, provide evidenceLimit explaining the specific missing source support in at least eight words and retain all supported points: at least one Understand point, a concrete recall cue, and exact source IDs remain mandatory; unsupported Be able to do, Watch for, or examPractice arrays may be empty. Never use evidenceLimit to shorten rich material, meet an output budget, avoid work, or excuse unsupported claims. Omit evidenceLimit when the objective is fully supported. | invariant |
-| `UMO-GAPS` | Thin readable evidence produces a visibly evidence-limited objective, not invented depth or an error for the entire map. State precisely what support is missing in evidenceLimit, without treating the limitation as factual course content. Never save an objective with no supported understanding point or no selected evidence. The independent review must verify that any reduced depth is justified by the selected evidence. | invariant |
-| `UMO-CONCISE` | Keep each bullet concise enough to scan before studying; preserve source wording when it carries an official objective, and never reuse a generic application sentence across objectives. Write topic-specific tasks a student can say and carry out: explain what changes and why, compare named alternatives on a stated dimension, or use given information to reach a supported answer. Avoid generic “use these ideas” instructions or abstract study advice. Keep every distinct supported learning task; brevity does not justify one token Understand sentence for a broad objective. Preserve exact official wording and required source labels. | tunable |
-| `UMO-PRACTICE-EVIDENCE` | Use supplied questions as evidence of observable tasks, representations, distinctions, and likely traps. Translate those patterns into concrete Be able to do and Watch for bullets without copying stems or treating distractors as facts. | invariant |
+| `UMO-OBJECTIVE-IDENTITY` | Do not require formal learning objectives when readable materials support derived study objectives. Preserve every supplied official objective verbatim in its requirements ledger, including partial, missing and explicitly excluded objectives. Keep the required “Study objective:” prefix for supported derived objectives. Never turn an assessment stem into a new official objective or infer instructor approval. | invariant |
+| `UMO-THREE-PARTS` | Each supported objective has exactly three displayed parts in order: How it's tested, Be able to do, Understand. No extra recall, caution, twist, trap or try-one sections. | invariant |
+| `UMO-HOW-TESTED` | Begin with one setup line naming the input and exam action. Then quote the actual relevant questions from the class outline, live responses, guided reading questions and lecture, retaining exact wording and required stimulus. Never invent, paraphrase or predict a question to populate this list. Keep source IDs, exact excerpt IDs and needed asset IDs attached to each question for the collapsed Source evidence fold; do not put source tags in question text. Display numbers come from question order. If no real question is supplied, show one honest line explaining that fact and keep questions empty. A missing question alone does not mean the conceptual objective lacks evidence. | invariant |
+| `UMO-APPLICATION-SKILLS` | State observable skills in concrete terms: given a named input, interpret, compare, trace, calculate or predict the supported result. Each skill references the actual question IDs it answers; the reader turns those into Q1 Q3 or Q2–Q4 labels. Do not invent question numbers. If there are no course questions, supported skills may have empty question references. | invariant |
+| `UMO-UNDERSTAND-FACTS` | State the answers and underlying principles as facts in formal exam vocabulary, not tasks beginning “Explain why”. Cover all supported ideas without duplicating one sentence across fields. Preserve the professor's supported answers and meaningful scientific qualifications. If an answer appears wrong or conflicts with the material, resolve and disclose that conflict through the existing evidence/correction rules rather than silently substitute a contradictory answer. | invariant |
+| `UMO-EVIDENCE-AND-GAPS` | Retain exact evidence, source hierarchy, instructor emphasis only where documented, and specific evidence limits when understanding itself is unsupported. A fully unsupported objective stays in coverage without fabricated mastery content. Source fidelity does not permit invented quotes, inaccessible figures or false complete-coverage claims. | invariant |
 
-The runtime artifact spec is `src/lib/generation/artifacts/unitMasteryOutline.v1.ts`. Its structured response has `title`, `unit`, and `standards[]`; each newly generated standard has `id`, `title`, `freeRecallCues`, `understand`, `beAbleToDo`, `watchFor`, `examPractice`, and `sourceChunkIds`, with optional `evidenceLimit` only for specifically justified missing source support.
+Do not require formal learning objectives when readable materials support a
+source-derived objective. Keep “Study objective:” on derived titles and never
+create or modify syllabus Topics. Claims of instructor emphasis require evidence.
 
-## Exam practice and compatibility
+## Built-in runtime fields and compatibility
 
-`examPractice` contains one or two objects for an ordinarily supported objective; an explicitly evidence-limited objective may leave this array empty when support cannot justify a solution. Every included question has exactly these content fields:
+The source-chunk API uses `standards[]`, retaining stable `id`, `title`,
+`sourceChunkIds`, and optional `evidenceLimit`. New standards contain
+`howTested: {setup, questions:[{id,text,sourceChunkIds}], noQuestionsReason?}`,
+`applicationSkills:[{text,questionIds}]`, factual `understand` strings and matching
+`beAbleToDo` strings. Each question must quote actual selected source text.
+Questions have unique IDs within their objective and skill references resolve
+there. Empty questions require a specific noQuestionsReason; populated questions
+omit it. Exact quotes and closed citations are checked locally, while semantic
+coverage and correctness still require source review.
 
-- `prompt`: an original application task with all scenario facts and required inputs. Include units, sequence direction, control conditions, and any relevant table values or text diagram within the prompt. Do not require another slide, attachment, answer key, or unavailable image. Hypothetical data are teaching inputs, not claimed experimental results.
-- `answer`: the complete solution to every requested part; a numerical or sequence answer may be short.
-- `rationale`: the worked chain from course-supported principle through scenario evidence to conclusion, including calculations or sequence transformations when needed. Discuss the relevant tempting error where useful, without merely repeating the answer.
-- `sourceChunkIds`: nonempty, unique, exact IDs from the containing objective's evidence, which itself must be in the selected-source set. These support the solution principles; they do not falsely authenticate hypothetical observations as empirical data.
-
-The persisted type keeps this field optional only for older records. Reading or validating a legacy outline does not generate practice, migrate student work, or invent content. Existing question-bank workflows can continue validating outlines without exam practice. `generateUnitMasteryOutline()` explicitly requires the practice field on both initial and repaired results; only a specifically explained evidence-limited objective may leave its array empty. A single complete repair uses the same scope, source IDs, source hierarchy, specification and private-assessment boundary. An invalid repair returns no artifact; no partial practice is persisted. The lower-level transport recovery remains separately bounded. An empty standards array has no verifiable citations and is rejected by the server before client shape validation; its single transport repair therefore includes the nonempty-objective contract, source-derived objective identity, evidence-limit handling, and exact source-reference requirements. It does not resync valid sources or accept an unverified artifact. The saved generationAuditStatus reflects the final successful response, including a repaired response, rather than an earlier discarded attempt.
-
-Selected reference-question text is checked locally for copied wording and high lexical overlap. Only marked, selected assessment passages participate; source text is not added to repair diagnostics. Short phrases under eight words are excluded from this heuristic to avoid confusing shared terminology with copying. New prompts are checked for an actionable task, obvious absent-visual references, duplicate prompts across objectives, answer-only/placeholder rationale, and invalid or duplicate source IDs. These are deterministic guardrails, **not proof** of originality, self-containment, scenario dependence, scientific correctness, or full coverage. The model and independent audit must still assess those semantic requirements. Unsupported solutions must not be generated; explain the absent support through evidenceLimit and leave examPractice empty when no supported application is possible.
-
-This artifact remains the existing primary-generator path with independent audit/secondary review; it does not change question-bank provider routing. Its practice is labeled generated practice, not an instructor assessment, guaranteed exam topic, or prediction.
-
-Before persistence, `validateMasteryOutline()` rejects shallow or duplicate
-sections, missing or generic free-recall cues, duplicate standard IDs, repeated
-generic application bullets, and citations outside the closed selected-source
-set. A source set that cannot support the ordinary detail floor may produce an explicitly evidence-limited objective with at least one supported Understand point and the same recall/source checks. An absent or vague limitation cannot waive the ordinary floor. Existing saved maps are unchanged; evidenceLimit is an optional additive field displayed with the objective, not a migration or a syllabus entity.
+For newly generated maps, legacy `freeRecallCues` and `watchFor` are empty arrays,
+and `examPractice` is empty: never invent objective questions. Their old optional
+or required schema fields remain accepted for reading stored records and existing
+question-bank consumers. No old stored field is deleted or rewritten. New map
+validation requires useful nonempty factual understanding and application skills,
+closed source evidence and complete question references; it has no numeric detail
+quota. A bounded full-artifact repair uses the same sources and rules; a second
+invalid result is not saved. A successful validation is not proof of learning.
 
 ## Shared source and formatting contract
 
-[19-study-source-and-format-contract.md](19-study-source-and-format-contract.md) is included verbatim in the caller’s assembled instructions, including repair and independent review. Selected `class-notes` files receive primary priority with transcripts while retaining a separate personal-note evidence label. Material types can be corrected explicitly in Notebook Materials; filenames alone do not identify personal notes. Existing records retain their current type. This adds an allowed value to the existing material-type field without changing record shape or rewriting existing data.
+[19-study-source-and-format-contract.md](19-study-source-and-format-contract.md)
+is included directly in runtime instructions. Personal class notes retain their
+student-authored role and do not establish instructor approval or answer keys.
 
 ## Portable objective coverage
 
-The external notebook workflow in `20-external-notebook-workflow.md` adds a requirements ledger separate from the Mastery Map. Preserve every supplied official objective verbatim in that ledger, including partial, missing and explicitly excluded objectives. Populate a mastery objective only for supported understanding; link it to its ledger requirement. A fully unsupported objective stays visible in coverage without invented understanding or practice. For external v3/v4 Review, EC-REVIEW-PRECEDENCE explicitly replaces the numeric depth, cue and generated-practice requirements above. Preserve evidence-backed understanding and a concrete action target, keep distinct useful retrieval/pitfalls, and reuse relevant supplied questions without quotas. Concision is not an evidence limitation. Built-in generation and legacy v2 validation remain unchanged.
+**External Review runtime objective:** Turn the supplied course evidence into a
+mastery map organized as How it's tested, Be able to do, then Understand.
+Preserve every relevant official objective and distinct supported subpoint.
+Show the actual course questions before observable application skills and factual
+answers in formal exam vocabulary. This is a preparation map, not a claim that
+the learner has mastered the material or that a question will appear on an exam.
 
-### Portable task wording
+External Review uses the shared rules above with the field mapping below. Old
+records retain their stored fields; new authoring does not impose recall cues,
+cautions, original question quotas or numeric detail floors.
 
-Use a plain concrete title after the required derived-objective prefix. The prefix belongs only on mastery-objective labels. Section titles and every other heading are plain, concrete titles with no numbers, objective numbers, Review or Practice prefixes or other labels. The prefix and official source wording remain transport/traceability requirements; display cleanup does not authorize changing them in saved JSON. Cover each objective's actual ideas with the Understand tasks it needs, then give the specific application and useful caution. The map should be compact enough to recall from, but complete enough to show what must be understood. For external v3/v4 Review, there is no bullet count to meet, and a source-supported caution may be absent when none is useful; other goal contracts and built-in generation requirements retain their existing scope. Keep explanations in the guide and assessment judgments only where supported; do not confuse an understandable target with evidence that the learner has achieved it.
+### Portable fields and compatibility
+
+For each new external v4 Review objective, use:
+
+- `howTested: {setup, questions, noQuestionsReason?}`. Each question has
+  `{id, text, sourceIds, excerptIds, assetIds?}`. Question IDs are unique within
+  the objective. `questions: []` requires a concrete `noQuestionsReason`; omit
+  that field when questions are present. Quotes and excerpts must match.
+- `applicationSkills: [{text, questionIds}]`. References use question IDs from
+  this same objective. A skill needs at least one reference when actual questions
+  are present. Keep `beAbleToDo` as compatible skill-text strings alongside this
+  structured representation; it is not another displayed part.
+- `understand` holds factual answer statements in exam vocabulary.
+- Required legacy `freeRecallCues` and `watchFor` are empty arrays for new
+  authoring. Never erase these or other stored fields when updating an existing
+  notebook; preserve prior content losslessly while the reader hides retired
+  presentation fields.
+
+Keep `requirementId`, objective identity, exact source/asset links and usable
+Practice references. The class questions in How it's tested are quoted evidence
+of application, not permission to expose practice solutions before reveal.
+Practice remains on its separate tab; the study guide retains the grouped-term
+contract. Neither source tags nor reviewer chrome belongs on the questions.

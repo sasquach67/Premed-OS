@@ -303,6 +303,8 @@ Before building, reconcile the scope/target ledger and inspect semantic overlaps
 
 The builder never overwrites an existing output. Use a fresh output name after changing cards, then rerun verification against that exact file and matching report. Fix failed checks rather than editing a report or weakening the verifier. Inspect generated previews for readable formatting, including Extra and any figures. They show real Anki renderings with embedded media, not a separate approximation of the templates.
 
+Save the finished .apkg in the actual class folder supplied by the student or established from the accessible class materials; fall back to the actual Downloads directory only if that class folder cannot be reached, state that limitation, and say exactly where it was saved.
+
 Deliver the actual downloadable .apkg after checking that it exists. State authored notes AND actual review-card count, source/coverage limitations, and verification results. For biology, state subject, the actual review count, excluded passage practice, and which clozes connecting questions replaced. If any check was skipped, state that clearly. A successful import is package evidence, not proof of mastering the lecture. Do not append the synthetic fixture to the student deck. After the count, coverage, exceptions, and limitations summary, end the delivery message with this note:
 
 “Some of these cards may treat a detail as more important than it really is for your class. That is expected. If a card is not worth your time, suspend it: press @ (Shift+2) while reviewing to suspend that individual card. Press ! to suspend the whole note.”

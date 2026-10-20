@@ -94,7 +94,7 @@ describe('reader evidence and navigation boundaries', () => {
     expect(readerBlocks(entry.sections[0].blocks, 'study').map(b => b.type)).toEqual(['paragraph'])
     expect(readerBlocks(entry.sections[0].blocks, 'practice').map(b => b.type)).toEqual(['practice'])
     for (const mode of ['study', 'practice'] as const) expect(notebookReaderContents(pkg, entry.id, mode, 'reader').some(item => item.title === 'mapping explanation')).toBe(true)
-    expect(notebookReaderContents(pkg, entry.id, 'practice', 'reader')[0].title).toBe('Mastery objectives')
+    expect(notebookReaderContents(pkg, entry.id, 'mastery', 'reader')[0].title).toBe('Mastery objectives')
   })
   it('omits dedicated practice setups from Study and its contents without changing all-content or Practice views', () => {
     const pkg = revisionFixture(), entry = pkg.entries[0], section = entry.sections[1]

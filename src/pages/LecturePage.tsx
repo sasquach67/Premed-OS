@@ -18,9 +18,9 @@ export function LecturePage() {
     : '/academics?tab=class-center'
   const lecture = data.lectures.find((item) => item.id === lectureId && item.courseId === courseId)
 
-  function openLecture(id: string) {
+  function openLecture(id: string, destinationCourseId?: string) {
     if (!course || id === lectureId) return
-    navigate(`/academics/classes/${encodeURIComponent(course.id)}/lectures/${encodeURIComponent(id)}`, { replace: lectureId === 'new' })
+    navigate(`/academics/classes/${encodeURIComponent(destinationCourseId ?? course.id)}/lectures/${encodeURIComponent(id)}`, { replace: lectureId === 'new' })
   }
 
   useLayoutEffect(() => {

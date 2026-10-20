@@ -49,7 +49,8 @@ def prompt_methodology_errors(root,goal,prompt):
         required += [line for line in guide.split('## Runtime briefing mirror',1)[1].split('\n---',1)[0].splitlines() if line.startswith('| `SG-')]
         required.append('## 2. Required structure\n'+guide.split('## 2. Required structure\n',1)[1].split('\n## 3. Study-guide rules',1)[0])
         mastery=(gen/'11-unit-mastery-outline-v1.md').read_text()
-        required += [line for line in mastery.split('## Rules',1)[1].split('\nThe runtime artifact spec',1)[0].splitlines() if line.startswith('| `UMO-')]
+        required.append('## Portable objective coverage\n'+mastery.split('## Portable objective coverage\n',1)[1])
+        required += [line for line in mastery.splitlines() if line.startswith('| `UMO-')]
         visual=(gen/'06-visual-system.md').read_text()
         required += [line for line in visual.splitlines() if line.startswith('| `VIS-')]
     else:
@@ -182,7 +183,7 @@ def run(root,out):
             assert 'Stop at a readable draft only if the student explicitly requested that stage.' in continuation
             assert 'afterward stop at actual readable review before JSON' not in actual
             results.append({'case':'continue-direct-delivery-'+goal+'-'+mode,'expected':'continuation after closed intake delivers directly; only an explicit draft request pauses at content','passed':True})
-    focused_fragments=[('no-duplicate-mastery-surface','Do not also reproduce its full objective/cue/action rows as a second guide table'),('scenario-identify-explain','For a generated application, supply the necessary scenario'),('emphasized-item-coverage','Check explicit instructor priorities against the actual question set'),('discovery-selection-consistency','If inspected PDF page rasters are retained as discovered candidates, use images-found even when every page is skipped for teaching and assets is empty.')]
+    focused_fragments=[('no-duplicate-mastery-surface','Do not also reproduce its full objective/question/skill rows as a second guide table'),('scenario-identify-explain','For a generated application, supply the necessary scenario'),('emphasized-item-coverage','Check explicit instructor priorities against the actual question set'),('discovery-selection-consistency','If inspected PDF page rasters are retained as discovered candidates, use images-found even when every page is skipped for teaching and assets is empty.')]
     for goal in ('review','assessment','assignment'):
         actual=(out/('copy-prompt-'+goal+'.md')).read_text()
         for name,fragment in focused_fragments:

@@ -30,12 +30,12 @@ decoration and must not be emitted.
 
 ## 2. The representation decision
 
-For every major concept the generator makes an explicit choice from this set. **Bullets are not the
-default.**
+For every major concept choose the shape its content needs. **Lines are the
+default for facts.** Short explanation blocks show how those facts connect.
 
 | Representation | Use when |
 |---|---|
-| `prose` | A single idea needing explanation, not decomposition |
+| `prose` | Short connects, why or deeper explanation; at most 3 sentences or about 60 words |
 | `bullets` | A genuinely unordered set of peer items |
 | `numbered_steps` | Ordered steps where order matters but there are no branches |
 | `comparison_table` | ≥2 entities compared across ≥2 shared dimensions |
@@ -61,8 +61,9 @@ default.**
 | "Occurs during phase 3 of 5" | `timeline` | prose |
 | Anatomical parts and their positions | `labeled_diagram` | bullets |
 
-**A process rendered as bullets, a comparison rendered as prose, or a hierarchy rendered as nested
-bullets are all defects**, checkable in the quality pass.
+Number only real ordered processes. Keep parallel conditions in map groups or
+peer lines, dated events in a timeline, and comparisons in a table. Short prose
+explains the because; it does not replace the structure.
 
 ---
 
@@ -243,6 +244,57 @@ its conventions. Attention spent decoding the document is attention not spent on
 
 Deterministic check: within one artifact, the same `concept.kind` must map to the same block type.
 Two comparisons rendered differently in one guide is a defect.
+
+### Grouped-term Review representation
+
+For external Review, use a `study-diagram` of kind `hierarchy` or `concept-map`
+at the start of every teaching section, after its question. Use categories →
+members → connections; details follow the map's branch order. Respect the
+actual diagram limits: use a concept-map rather than distort a larger category
+structure into the constrained hierarchy. Show containment with tree connectors
+and preserve relationship labels rather than imply an unsupported cause.
+
+Node `tone` has one meaning throughout maps, prose explanations and flow chains:
+`stimulatory` = green, positive regulation; `inhibitory` = red, negative
+regulation; `external` = amber, external cues or lecture examples; `checkpoint`
+= purple, checkpoints; `neutral` otherwise. Do not assign colors decoratively.
+The app owns all color rendering; never author CSS or new design tokens.
+Use `targetBlockId` to link a node to the relevant same-section heading or term
+block. Keep the map label and the linked term's name consistent.
+
+Each teaching section uses one main inspected figure with a one-line caption
+naming its verified slide and what it shows, plus 2–4 Look for lines in lookFor.
+A natural caption or adjacent explanation states its relevance; never use the
+literal Why it matters: label. Prefer exact lecture pixels. Verified point
+annotations may add location cues under EC-ANNOTATION; do not invent coordinates.
+A missing actual figure is a source gap, never a reason to fabricate pixels.
+
+Every teaching section requires core Why it works and extra Go deeper
+explanations of 2–3 sentences each. How this connects is core, 1–2 sentences,
+and required after the first section. Step reason lines explain real sequence
+steps where needed. No prose block exceeds 3 sentences or about 60 words.
+Argument-led guides have a linked 4–6 item argumentChain at the top and a core
+claim/evidence/soWhat block in each argument section. Timeline events show dates,
+not numbered parallel factors. These explanations and the content-shape table in
+EC-LINES-FIRST supersede any older conditional or prose-default guidance.
+
+Use sparse `callout` blocks with tones `question`, `lecture-example`, `analogy`,
+`mix-up`, `builds-on`, and `one-thing`. The opening question and closing one-thing
+line frame each section; optional callouts earn their space. Use the lecture's
+analogy first and a well-known analogy second; label it as an aside, never the
+main scientific definition. Use mix-up only for an exact error evidenced in student notes, a supplied
+question or the instructor’s explanation. State the correct fact, at most once
+per section. A builds-on callout identifies the supported earlier lesson and its
+connection. Set `stressed: true` only when transcript or other instructor
+evidence establishes emphasis or a warned misconception. The reader supplies
+lucide icons and the Professor stressed chip; do not insert emoji or rule tags.
+
+Use one level of nested bullets for a parent term and its parts; mechanisms
+remain numbered steps. Supply quick-reference tables for relevant numerical
+facts and shared comparison dimensions, not term/definition rows posing as a
+comparison. The glossary is collected automatically from structured definitions;
+do not duplicate it in authored sections. The app supplies map links, term
+popovers, summary view and eligible section Check yourself links.
 
 ---
 

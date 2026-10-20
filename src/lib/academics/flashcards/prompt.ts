@@ -10,7 +10,7 @@ const textPresent = (value: string | undefined) => Boolean(value?.trim())
 function isGuideContent(block: NotebookBlock): boolean {
   if (block.provenance === 'student-work' || block.type === 'gap' || block.type === 'practice') return false
   if ('text' in block) return textPresent(block.text)
-  if ('items' in block) return block.items.some(textPresent)
+  if ('items' in block) return block.items.some(item => textPresent(typeof item === 'string' ? item : item.text))
   if ('rows' in block) return block.rows.some(row => row.some(textPresent))
   return true // Remaining block variants are supported instructional visuals.
 }
@@ -21,7 +21,7 @@ export function flashcardNotebookEligibility(lecture: LectureRecord): { eligible
     const entry = lecture.importedNotebook.current.entries.find(item => item.id === lecture.importedNotebook?.entryId)
     if (!entry) return { eligible: false, reason: 'This lecture’s saved Journal entry is unavailable. Restore or import it before creating flashcards.' }
     const hasGuide = entry.sections.some(section => section.purpose === 'study-guide' && section.blocks.some(isGuideContent))
-    const hasObjectives = entry.objectives.some(objective => textPresent(objective.title) && [...objective.freeRecallCues, ...objective.understand, ...objective.beAbleToDo].some(textPresent))
+    const hasObjectives = entry.objectives.some(objective => textPresent(objective.title))
     return hasGuide && hasObjectives ? { eligible: true, reason: '' } : { eligible: false, reason: prerequisite }
   }
   const hasLegacyGuide = lecture.studyGuide?.sections.some(section => section.blocks.some(block => textPresent(block.text?.content) || block.items?.some(item => textPresent(item.content))))

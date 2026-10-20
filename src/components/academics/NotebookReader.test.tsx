@@ -66,7 +66,7 @@ it('keeps every practice source panel and answer annotation inside its own close
     block.rationale += ' [The numerical inputs are hypothetical.]'
   }
   await show(pkg, 'practice')
-  expect(container.querySelectorAll('.nbr-objectives')).toHaveLength(1)
+  expect(container.querySelectorAll('.nbr-objectives')).toHaveLength(0)
   expect(container.querySelectorAll('.en-block-practice')).toHaveLength(2)
   expect(container.querySelectorAll('.nbr-srcpanel')).toHaveLength(0)
   expect(container.querySelectorAll('.nbr-srcpanel-practice')).toHaveLength(2)

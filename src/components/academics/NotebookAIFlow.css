@@ -1,0 +1,49 @@
+.notebook-ai-flow { min-width: 0; }
+.nai-steps { list-style: none; margin: 0; padding: 0; }
+.nai-step { display: grid; grid-template-columns: 30px minmax(0,1fr); gap: 14px; padding: 24px 0; border-bottom: 1px solid var(--border); }
+.nai-number { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted-foreground); font-size: 12px; font-weight: 600; background: var(--card); }
+.nai-step-body { min-width: 0; }
+.nai-step-body > h2 { margin: 2px 0 16px; font-size: 17px; font-weight: 650; line-height: 1.4; }
+.nai-actions,.nai-focus { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.nai-expect { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--muted); }
+.nai-expect ol { list-style: decimal; padding-left: 20px; font-size: 13px; line-height: 1.8; }
+.nai-expect p,.nai-hint { margin-top: 10px; color: var(--muted-foreground); font-size: 12px; line-height: 1.6; }
+.nai-files { display: grid; gap: 8px; }
+.nai-file { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--card); }
+.nai-file small { display: block; color: var(--muted-foreground); margin-top: 3px; }
+.nai-help { margin: 20px 0; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; }
+.nai-help summary { cursor: pointer; font-weight: 600; }
+.nai-help p { margin-top: 12px; color: var(--muted-foreground); line-height: 1.6; }
+.nai-goal { border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+.nai-goal h2 { font-size: 17px; font-weight: 650; margin-bottom: 14px; }
+.nai-focus { margin: 16px 0; }
+.nai-focus button { border: 1px solid var(--border); border-radius: 999px; padding: 6px 11px; font-size: 12px; color: var(--muted-foreground); background: var(--card); }
+.nai-focus button[aria-pressed=true] { color: var(--primary); border-color: var(--primary); background: color-mix(in srgb,var(--primary) 8%,var(--card)); }
+.nai-prompt { margin-top: 14px; }
+.nai-prompt textarea { margin-top: 12px; width: 100%; }
+.nai-materials { display: flex; flex-wrap: wrap; gap: 8px; }
+.nai-materials span { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--card); }
+@media(max-width: 520px) { .nai-step { gap: 10px; grid-template-columns: 24px minmax(0,1fr); padding: 20px 0; } .nai-number { width: 24px; height: 24px; } .nai-step-body > h2 { font-size: 16px; } .nai-actions > button { min-height: 40px; } .nai-expect { padding: 12px; } }
+.nai-file input[type=file] { width: 100%; min-width: 0; max-width: 100%; font-size: 12px; }
+
+.nai-step[hidden], .nai-number[hidden], .nai-step-body > h2[hidden], .nai-help[hidden] { display: none; }
+.nai-reviewing .nai-step { display: block; padding: 0; border: 0; }
+.nai-reviewing .nai-step[hidden] { display: none; }
+.nai-files { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.nai-step-body > button { max-width: 100%; height: auto; min-height: 36px; white-space: normal; text-align: left; }
+/* Scoped surfaces and hierarchy from the approved shared-flow reference. */
+.en-flow:not(:has(.nai-reviewing)), .nai-flashcards { max-width: 760px; margin-inline: auto; padding: 26px 28px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); }
+.external-notebook .notebook-ai-flow .nai-step-body > h2, .nai-flashcards .nai-step-body > h2, .external-notebook .nai-goal > h2 { font-size: 17px; font-weight: 800; line-height: 1.4; margin: 2px 0 16px; }
+.nai-step { grid-template-columns: 36px minmax(0, 1fr); position: relative; border-bottom: 0; }
+.nai-number { width: 36px; height: 36px; background: #e3f0f9; border-color: var(--primary); color: #22618c; font: 800 16px var(--font-display); }
+.dark .nai-number { background: #132535; color: #7bbbe4; }
+.nai-step:not(:last-child)::before { content: ''; position: absolute; left: 18px; top: 64px; bottom: -20px; width: 1px; background: var(--border); }
+.nai-file, .nai-materials span { background: var(--muted); }
+.nai-focus button[aria-pressed='true'], .en-flow .en-goal-card:has(input:checked) { background: #e3f0f9; }
+.dark .nai-focus button[aria-pressed='true'], .dark .en-flow .en-goal-card:has(input:checked) { background: #132535; }
+.nai-files { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nai-files > :not(.nai-file) { grid-column: 1 / -1; }
+.nai-files > button { max-width: 100%; white-space: normal; height: auto; min-height: 36px; justify-content: flex-start; }
+@media(max-width: 520px) { .en-flow:not(:has(.nai-reviewing)), .nai-flashcards { padding: 16px; } .nai-files { grid-template-columns: minmax(0, 1fr); } }
+.nai-file, .nai-materials span, .nai-expect { background: #efe5d3; }
+.dark .nai-file, .dark .nai-materials span, .dark .nai-expect { background: #322e28; }

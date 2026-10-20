@@ -63,9 +63,11 @@ describe('mastery learning modes', () => {
     expect(container.textContent).toContain('Closed note')
     expect(container.textContent).toContain('RNA is complementary and antiparallel')
     expect(container.textContent).toContain('Write the RNA product 5′ to 3′')
-    expect(container.textContent).toContain('Do not copy the coding strand unchanged')
-    expect(container.textContent).toContain('What RNA is made from 3′-TAC-5′?')
-    expect(container.querySelector<HTMLDetailsElement>('[data-testid="practice-solution-objective-1-0"]')?.open).toBe(false)
+    expect(container.textContent).not.toContain('Do not copy the coding strand unchanged')
+    expect(container.textContent).not.toContain('Watch for')
+    expect(container.textContent).toContain("How it's tested")
+    expect(container.textContent).not.toContain('What RNA is made from 3′-TAC-5′?')
+    expect(outline.standards[0].examPractice).toHaveLength(1)
     expect(container.querySelector('nav[aria-label="Mastery objectives"]')).toBeTruthy()
   })
 
@@ -77,12 +79,11 @@ describe('mastery learning modes', () => {
     expect(container.textContent).toContain('Practice from memory')
     expect(container.textContent).toContain('Close your notes')
     expect(container.textContent).toContain('Try before you reveal')
-    expect(container.textContent).toContain('Without notes, explain how polymerase uses the template strand.')
+    expect(container.textContent).not.toContain('Without notes, explain how polymerase uses the template strand.')
     const reveal = container.querySelector<HTMLDetailsElement>('[data-testid="recall-reveal-objective-1"]')!
     expect(reveal.open).toBe(false)
     expect(reveal.querySelector('summary')?.textContent).toBe('Reveal after trying')
     expect(reveal.querySelector('button[aria-label^="Mastery state for"]')).toBeTruthy()
-    expect(reveal.querySelector('details details .np-closed-label')?.textContent).toBe('Reveal answer')
     expect(reveal.querySelector('[data-source-chunk-id="chunk-1"]')).toBeTruthy()
     expect(container.querySelector('button[aria-label^="Mastery state for"]')?.closest('[data-testid="recall-reveal-objective-1"]')).toBe(reveal)
 
@@ -112,7 +113,7 @@ describe('mastery learning modes', () => {
     await act(async () => root.render(<MasteryMapView outline={limited} chunks={chunks} lecture={lecture} />))
     expect(container.textContent).toContain('Limited source support:')
     expect(container.textContent).toContain(limited.standards[0].evidenceLimit)
-    expect(container.textContent).toContain('No application question was generated because')
+    expect(container.textContent).toContain('This saved map has no quoted course questions.')
     expect(container.textContent).not.toContain('This earlier saved map')
   })
 
@@ -121,4 +122,22 @@ describe('mastery learning modes', () => {
     expect(container.textContent).toContain(generationAuditStatus === 'unavailable' ? 'Independent review was unavailable' : 'Independent review was not run')
   })
 
+})
+
+it('renders actual class questions and skill references without source tags or generated practice', async () => {
+  const { renderToStaticMarkup } = await import('react-dom/server')
+  const standard = {
+    id: 'new-objective', title: 'Predict enzyme effects', understand: ['Inhibition reduces the reaction rate.'], beAbleToDo: ['Predict the consequence.'], watchFor: ['Legacy warning'], freeRecallCues: ['Legacy cue'], sourceChunkIds: [],
+    howTested: { setup: 'An enzyme is inhibited.', questions: [{ id: 'inhibit', text: 'What happens when the enzyme is inhibited?', sourceChunkIds: ['source-question'] }] },
+    applicationSkills: [{ text: 'Predict the immediate consequence.', questionIds: ['inhibit'] }],
+  }
+  const outline: GeneratedMasteryOutline = { id: 'new-outline', title: 'Enzymes', standards: [standard], sourceChunkIds: [], courseId: 'course', lectureId: 'lecture', unit: 'Enzymes', specId: 'unit-mastery-outline-v1', specHash: 'test', createdAt: 1, updatedAt: 1, order: 0 }
+  const lecture: LectureRecord = { id: 'lecture', courseId: 'course', title: 'Enzymes', inputPath: 'pasted', processingState: 'ready', workspaceState: 'complete', createdAt: 1, updatedAt: 1, order: 0 }
+  const html = renderToStaticMarkup(<MasteryMapView outline={outline} lecture={lecture} chunks={[]} />)
+  expect(html).toContain('What happens when the enzyme is inhibited?')
+  expect(html).toContain('Q1')
+  expect(html).not.toContain('source-question')
+  expect(html).not.toContain('Legacy warning')
+  expect(html).not.toContain('Legacy cue')
+  expect(html).not.toContain('Apply the objective')
 })

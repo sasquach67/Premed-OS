@@ -501,8 +501,11 @@ describe('ClassHub approved Overview', () => {
       .find((button) => button.classList.contains('overview-entry-tile'))
     expect(addToday).toBeTruthy()
     await act(async () => addToday!.click())
-    expect(document.body.textContent).toContain('Choose your goal')
-    expect([...document.body.querySelectorAll('button')].some(button => button.textContent?.trim() === 'Next')).toBe(true)
+    expect(document.body.textContent).toContain('Gather your files')
+    expect(document.body.textContent).toContain('Review a lesson')
+    expect(document.body.textContent).toContain('Prepare for an exam')
+    expect([...document.body.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Copy prompt')?.disabled).toBe(true)
+    expect(document.body.textContent).toContain('Choose a goal to prepare your prompt.')
 
   })
 
@@ -695,7 +698,8 @@ describe('ClassHub approved Overview', () => {
     expect(container.querySelector('.lecture-overview-composition')).toBeNull()
     const addLecture = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.classList.contains('overview-entry-tile'))!
     await act(async () => addLecture.click())
-    expect([...document.body.querySelectorAll('button')].some(button => button.textContent?.trim() === 'Next')).toBe(true)
+    expect([...document.body.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Copy prompt')?.disabled).toBe(true)
+    expect(document.body.textContent).toContain('Choose a goal to prepare your prompt.')
 
   })
 
@@ -931,9 +935,12 @@ describe('ClassHub approved Overview', () => {
       )
     })
 
-    expect(document.body.textContent).toContain('Choose your goal')
-    expect(document.body.querySelector('[aria-label="Notebook workflow progress"]')?.textContent).toContain('Choose goal')
-    expect(document.body.textContent).toContain('Use your AI')
+    expect(document.body.textContent).toContain('Gather your files')
+    expect(document.body.textContent).toContain('Review a lesson')
+    expect(document.body.textContent).toContain('Prepare for an exam')
+    expect(document.body.textContent).toContain('Copy the prompt into a new AI chat')
+    expect(document.body.textContent).toContain('Bring it back')
+    expect(document.body.querySelector('[aria-label="Notebook workflow progress"]')).toBeNull()
 
   })
 

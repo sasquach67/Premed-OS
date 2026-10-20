@@ -68,7 +68,7 @@ function legacySaveNotebookEdits(lecture: LectureRecord, next: NotebookPackage, 
   if (canonical(validated.entries.filter(e => e.id !== imported.entryId)) !== canonical(imported.current.entries.filter(e => e.id !== imported.entryId))) throw new Error('Edit only the selected entry; other entries must stay unchanged.')
   if (canonical(validated) !== canonical(imported.current)) {
     const progress = retainedPractice(imported.current, validated, imported.entryId, imported.progress)
-    retainNotebookVersion(imported, 'edit', now)
+    retainNotebookVersion(imported, 'edit', now, [validated])
     imported.progress = progress
   }
   imported.current = validated; imported.notes = notes; imported.editedAt = now
@@ -104,7 +104,7 @@ function legacyAcceptNotebookUpdate(center: ClassCenterData, course: { id: strin
   if (!plan.alreadyApplied) {
     const next = selectedNotebook(parsed, n.entryId)
     const progress = retainedPractice(n.current, next, n.entryId, n.progress)
-    retainNotebookVersion(n, 'update', now)
+    retainNotebookVersion(n, 'update', now, [next])
     n.current = next; n.progress = progress; n.acceptedRaw = prepared.raw; n.editedAt = now
     target.title = plan.incoming.title; target.notebookRequest = plan.incoming.scope; target.updatedAt = now
   }
@@ -131,7 +131,7 @@ function legacyRestoreNotebookVersion(lecture: LectureRecord, versionId: string,
   const entry = validated.entries.find(e => e.id === n.entryId)
   if (!entry || canonical(validated.course) !== canonical(n.current.course) || entry.goal !== n.current.entries.find(e => e.id === n.entryId)?.goal) throw new Error('The saved version identity or course does not match this notebook.')
   const current = cloneNotebookData(validated), notes = version.notes, progress = cloneNotebookData(version.progress), acceptedRaw = version.acceptedRaw
-  retainNotebookVersion(n, 'restore', now)
+  retainNotebookVersion(n, 'restore', now, [current])
   n.current = current; n.notes = notes; n.progress = progress; n.acceptedRaw = acceptedRaw; n.editedAt = now
   delete n.updateSession
   lecture.title = entry.title; lecture.notebookRequest = entry.scope; lecture.updatedAt = now

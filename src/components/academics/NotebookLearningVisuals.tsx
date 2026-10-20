@@ -1,3 +1,4 @@
+import { NotebookInlineText, useGuideBlockId, useLinesFirstGuide } from './NotebookStudyGuide'
 import { createElement, useId, type ReactNode } from 'react'
 import { learningAxisPositions } from '@/lib/academics/notebook/learningVisuals'
 import type { LearningAnnotation, LearningVisualBlock } from '@/lib/academics/notebook/learningVisualTypes'
@@ -11,10 +12,10 @@ export function NotebookLearningVisual({ block, change, renderFigure }: {
   block: DisplayBlock; change?: LearningTextChange
   renderFigure: (figure: NotebookFigureBlock, annotations?: LearningAnnotation[]) => ReactNode
 }) {
-  const uid = useId()
+  const uid = useId(), linesFirst = useLinesFirstGuide()
   const field = (value: string | null, path: (string | number)[], label: string, tag = 'p', nullable = false) => change
     ? <label className="nbr-learning-editor">{label}<textarea value={value ?? ''} onChange={event => change(path, nullable && !event.target.value ? null : event.target.value)} /></label>
-    : value === null ? null : createElement(tag, { className: 'nbr-learning-text' }, value)
+    : value === null ? null : createElement(tag, { className: 'nbr-learning-text' }, <NotebookInlineText text={value} />)
   const title = field(block.title, ['title'], 'Visual title', 'strong')
   if (block.type === 'annotated-figure') return <section className="nbr-learning-visual nbr-annotated-figure" aria-label={block.title} data-visual-type={block.type}>
     <h4>{title}</h4>{renderFigure({ ...block, type: 'figure' }, block.annotations)}
@@ -22,6 +23,7 @@ export function NotebookLearningVisual({ block, change, renderFigure }: {
     <ol className="nbr-annotation-legend" aria-label="Figure annotations">{block.annotations.map((annotation, index) => <li key={annotation.id} data-annotation-id={annotation.id}><span className="nbr-visual-key">{index + 1}</span><div>{field(annotation.label, ['annotations', index, 'label'], `Annotation ${index + 1} label`)}<details><summary>Position evidence</summary>{field(annotation.positionBasis, ['annotations', index, 'positionBasis'], `Annotation ${index + 1} position evidence`)}<small>Normalized image point: {annotation.x}, {annotation.y}</small></details></div></li>)}</ol>
     {change && <small>Image identity and point coordinates stay protected. Review a new proposal to change the source image or its anchors.</small>}
   </section>
+  if (block.type === 'timeline' && linesFirst && !change) return <section aria-label={block.title} data-visual-type="timeline"><h4>{block.title}</h4><ul className="lf-tl">{block.events.map(event => <li key={event.id}><span className="d">{event.timeLabel}</span><strong><NotebookInlineText text={event.label} /></strong>{event.detail && <span> <NotebookInlineText text={event.detail} /></span>}{event.value !== null && !event.timeLabel && <span>{event.value} {block.axis.unit}</span>}</li>)}</ul></section>
   if (block.type === 'timeline' || block.type === 'continuum') {
     const points = block.type === 'timeline' ? block.events : block.points, key = block.type === 'timeline' ? 'events' : 'points'
     const positions = learningAxisPositions(block.axis, points), lanes = Math.max(...positions.map(point => point.lane)) + 1
@@ -51,11 +53,12 @@ export function NotebookLearningVisual({ block, change, renderFigure }: {
   }
   return <figure className="nbr-learning-visual nbr-sequence-strip" aria-label={block.title} data-visual-type={block.type}>
     <figcaption>{title}<small>Ordered steps, not a measured time scale or a causal claim.</small></figcaption>{field(block.orderingBasis, ['orderingBasis'], 'Sequence ordering evidence')}
-    <ol className="nbr-sequence-steps">{block.steps.map((step, index) => <li key={step.id}><span className="nbr-visual-key">{index + 1}</span>{field(step.label, ['steps', index, 'label'], `Sequence step ${index + 1} label`, 'strong')}{field(step.detail, ['steps', index, 'detail'], `Sequence step ${index + 1} detail`)}{step.assetId && renderFigure({ ...step, type: 'figure', assetId: step.assetId, alt: step.alt!, caption: null, context: '', provenance: block.provenance })}{change && step.assetId && field(step.alt, ['steps', index, 'alt'], `Sequence step ${index + 1} image alternative text`)}</li>)}</ol>
+    <ol className="nbr-sequence-steps">{block.steps.map((step, index) => <li key={step.id}><span className="nbr-visual-key">{index + 1}</span>{field(step.label, ['steps', index, 'label'], `Sequence step ${index + 1} label`, 'strong')}{field(step.detail, ['steps', index, 'detail'], `Sequence step ${index + 1} detail`)}{step.assetId && renderFigure({ ...step, type: 'figure', assetId: step.assetId, alt: step.alt!, caption: null, context: '', provenance: block.provenance, detail: block.detail })}{change && step.assetId && field(step.alt, ['steps', index, 'alt'], `Sequence step ${index + 1} image alternative text`)}</li>)}</ol>
   </figure>
 }
 
 export function NotebookConstrainedDiagram({ block, onChange }: { block: NotebookStudyDiagramBlock; onChange?: (block: NotebookStudyDiagramBlock) => void }) {
+  const targetPrefix = useGuideBlockId('')
   const incoming = new Set(block.edges.map(edge => edge.to)), root = block.nodes.find(node => !incoming.has(node.id))
   const nodes = new Map(block.nodes.map((node, index) => [node.id, { node, index }]))
   const render = (id: string, parentEdge?: typeof block.edges[number], ancestors: string[] = []): ReactNode => {
@@ -66,7 +69,7 @@ export function NotebookConstrainedDiagram({ block, onChange }: { block: Noteboo
       <svg viewBox="0 0 24 30" width="24" height="30" aria-hidden="true"><path d="M12 0V23" />{block.kind === 'causal-chain' && <path d={parentEdge.relation === 'inhibits' ? 'M4 23H20' : 'M6 17L12 24L18 17'} />}</svg>
       {onChange ? <label>Relationship {block.edges.indexOf(parentEdge) + 1}<textarea value={parentEdge.label} onChange={event => onChange({ ...block, edges: block.edges.map(edge => edge.id === parentEdge.id ? { ...edge, label: event.target.value } : edge) })} /></label> : <span>{parentEdge.label}</span>}
       {parentEdge.relation === 'inhibits' && <small>Inhibitory relationship</small>}
-    </div>}<div className="nbr-tree-node">{onChange ? <label>Diagram node {index + 1}<textarea value={node.label} onChange={event => onChange({ ...block, nodes: block.nodes.map(item => item.id === id ? { ...item, label: event.target.value } : item) })} /></label> : <p>{node.label}</p>}</div>
+    </div>}<div className="nbr-tree-node" data-tone={node.tone}>{onChange ? <label>Diagram node {index + 1}<textarea value={node.label} onChange={event => onChange({ ...block, nodes: block.nodes.map(item => item.id === id ? { ...item, label: event.target.value } : item) })} /></label> : node.targetBlockId ? <a href={`#${targetPrefix}${node.targetBlockId}`} onClick={event => { const target = event.currentTarget.ownerDocument.getElementById(`${targetPrefix}${node.targetBlockId}`); if (target) { event.preventDefault(); target.scrollIntoView({ block: 'start' }); target.focus({ preventScroll: true }) } }}>{node.label}</a> : <p>{node.label}</p>}</div>
       {children.length > 0 && <ul className="nbr-tree-children" style={{ gridTemplateColumns: `repeat(${children.length}, minmax(0, 1fr))` }}>{children.map(edge => render(edge.to, edge, [...ancestors, id]))}</ul>}
     </li>
   }
