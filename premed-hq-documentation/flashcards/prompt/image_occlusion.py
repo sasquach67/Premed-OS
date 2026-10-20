@@ -13,7 +13,6 @@ IO_MODEL_ID = 895232792405
 IO_MODEL_NAME = 'premedOS Image Occlusion (prompt v1)'
 
 TOPIC = '{{#Topic}}<span class="topic-chip">{{Topic}}</span>{{/Topic}}'
-SOURCE = '{{#Source}}<details class="source"><summary>Source</summary><div>{{Source}}</div></details>{{/Source}}'
 MY_NOTES = '{{#My notes}}<div class="my-notes">{{My notes}}</div>{{/My notes}}'
 IO_BODY = '''{{#Header}}<div class="io-header">{{Header}}</div>{{/Header}}
 <div style="display: none">{{cloze:Occlusion}}</div>
@@ -34,7 +33,7 @@ IO_Q = '<div class="pm m-say">' + IO_LABEL + IO_BODY + '</div>'
 IO_A = ('<div class="pm m-say">' + IO_LABEL + IO_BODY
         + '<div><button id="toggle">Toggle Masks</button></div>'
         + '{{#Back Extra}}<div class="extra">{{Back Extra}}</div>{{/Back Extra}}'
-        + MY_NOTES + SOURCE + '</div>')
+        + MY_NOTES + '</div>')
 IO_TEMPLATES = [{'name': 'Image Occlusion', 'qfmt': IO_Q, 'afmt': IO_A}]
 IO_CSS = '''
 #image-occlusion-container { position: relative; margin: 0 auto; max-height: calc(95vh - 40px); }

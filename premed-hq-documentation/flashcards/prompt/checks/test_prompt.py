@@ -408,6 +408,25 @@ class PromptChecks(unittest.TestCase):
         data['cards'][0]['explanation']='Beta: keep the input.'
         with self.assertRaisesRegex(ValueError,'term-1: named term Beta loses its required meaning'):validate(data)
 
+    def test_self_explanatory_components_are_covered_by_umbrella_without_term_targets(self):
+        data=self.concept_fixture()
+        card=data['cards'][0]
+        card.update(type='process',front='',back='',clozePattern='enumerated-list',listOrdered=False,
+            cloze='Two emotion components, in any order, are {{c1::subjective feelings}} and {{c1::accompanying thoughts}}.',
+            explanation='Subjective feelings: fear.\nAccompanying thoughts: I might be in danger.',example=None)
+        data['targets'][0]['statement']='Recall these emotion components.'
+        self.assertFalse(any(t['statement'].startswith('Term: ') for t in data['targets']))
+        built,verified=self.pipeline_fixture(data)
+        self.assertEqual(built['reviewCards'],1)
+        self.assertTrue(verified['passed'])
+        # An opaque term still needs recalled meaning, not just a visible definition.
+        data['targets'][0].update(statement='Term: Overjustification effect',
+            reason='Meaning: rewards reduce existing interest')
+        card.update(type='cloze',clozePattern='single',listOrdered=None,
+            cloze='{{c1::Overjustification effect}} means rewards reduce existing interest.',explanation='')
+        with self.assertRaisesRegex(ValueError,'term has no definition-recall card'):
+            validate(data)
+
     def test_single_meaning_blank_builds_but_name_only_does_not_cover_a_definition(self):
         data=self.combined_fixture(1)
         data['cards'][0].update(type='cloze',front='',back='',axis='',clozePattern='single',
