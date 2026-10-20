@@ -47,6 +47,7 @@ describe('examScopeFromSyllabus', () => {
     const unit: SyllabusItem = { id: 'u', kind: 'units', label: 'Lesson 10', value: '2026-09-24', lesson: 10, dates: ['2026-09-24'], objectives: ['Predict how mutations affect cell cycle progression'], confidence: 'high', evidence }
     expect(lessonFields(unit)).toEqual({ lesson: 10, dates: ['2026-09-24'], objectives: ['Predict how mutations affect cell cycle progression'] })
     expect(lessonFields({ ...unit, lesson: undefined, dates: undefined, objectives: undefined })).toEqual({})
+    expect(lessonFields({ ...unit, unit: 'Unit 2: How cells control division and differentiation' }).unit).toBe('Unit 2: How cells control division and differentiation')
   })
 
   it('writes nothing when the syllabus says nothing about scope', () => {

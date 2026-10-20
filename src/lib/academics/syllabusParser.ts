@@ -20,6 +20,8 @@ export interface SyllabusItem {
   dates?: string[]
   /** Units only: the learning objectives the schedule lists for this lesson. */
   objectives?: string[]
+  /** Units only: the syllabus heading the lesson sits under ("Unit 2: How cells control division"). */
+  unit?: string
 }
 export interface SyllabusProposal {
   sourceName: string
@@ -1737,6 +1739,34 @@ function groupSessionsIntoLessons(items: SyllabusItem[]): SyllabusItem[] {
   return items.filter((item) => !removed.has(item))
 }
 
+/** A heading that groups lessons: `Unit 2: How cells control division`, `Module 3 — Immunity`. */
+const UNIT_HEADING = /^(?:unit|module|part|theme|section)\s+(?:\d+|[ivx]+)\s*[:.\-–—]\s*\S/i
+
+/** BIOL 103 writes its schedule as unit headings with that unit's lessons
+ *  under each. The line scan finds the headings as undated items; here each
+ *  dated lesson takes the last heading above it in the file, and the headings
+ *  stop being rows of their own. Only when headings really sit between
+ *  lessons: a course description that lists the units elsewhere is left
+ *  alone. */
+function attachUnitHeadings(items: SyllabusItem[]): SyllabusItem[] {
+  const firstLine = (item: SyllabusItem) => Number(item.evidence.location.match(/^lines? (\d+)/)?.[1] ?? NaN)
+  const headings = items.filter((item) => item.kind === 'units' && !item.value && UNIT_HEADING.test(item.label) && Number.isFinite(firstLine(item)))
+    .sort((a, b) => firstLine(a) - firstLine(b))
+  const lessons = items.filter((item) => item.kind === 'units' && item.value && Number.isFinite(firstLine(item)))
+  if (headings.length < 2 || lessons.length < 2) return items
+  const under = new Map<SyllabusItem, SyllabusItem[]>()
+  for (const lesson of lessons) {
+    const heading = [...headings].reverse().find((h) => firstLine(h) < firstLine(lesson))
+    if (heading) under.set(heading, [...(under.get(heading) ?? []), lesson])
+  }
+  // Every heading but possibly the last must head lessons, and at least two must.
+  const used = headings.filter((h) => under.has(h))
+  if (used.length < 2 || headings.slice(0, -1).some((h) => !under.has(h))) return items
+  for (const [heading, group] of under) group.forEach((lesson) => { lesson.unit = heading.label.replace(/\s+/g, ' ').trim() })
+  const drop = new Set(used)
+  return items.filter((item) => !drop.has(item))
+}
+
 /** Last-pass corrections that need the whole proposal (audit F8, F12). */
 function tidyItems(items: SyllabusItem[]): SyllabusItem[] {
   const lineSpan = (location: string): number[] => {
@@ -1948,7 +1978,7 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
   // Deliberately conservative: a one-page syllabus with just office hours still counts
   // as a syllabus, and the student can override this either way.
   const documentKind: DocumentKind = !scanDetected && structureFound.length === 0 ? 'unrecognized' : 'syllabus'
-  return { sourceName, sourceKind, text, items: tidyItems(groupSessionsIntoLessons(pruneRedundantLogistics(items))), searched, scanDetected, documentKind, structureFound, numberedItems }
+  return { sourceName, sourceKind, text, items: tidyItems(attachUnitHeadings(groupSessionsIntoLessons(pruneRedundantLogistics(items)))), searched, scanDetected, documentKind, structureFound, numberedItems }
 }
 
 const SYLLABUS_KINDS: SyllabusKind[] = ['identity', 'standards', 'exams', 'weights', 'units', 'readings', 'deadlines', 'policies', 'logistics']
