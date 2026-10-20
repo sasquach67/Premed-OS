@@ -4,7 +4,7 @@ import { NotebookReadGuard } from './NotebookReadGuard'
 import { workspacePersistence } from '@/store/workspacePersistence'
 import { commitWorkspaceMutation } from '@/store/workspaceTransaction'
 import { NotebookImportAdjustments } from './NotebookImportAdjustments'
-import { useId, useRef, useState, type RefObject } from 'react'
+import { useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { Ellipsis, Layers, RefreshCw, Pencil, Download, History, Info, StickyNote } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -268,6 +268,15 @@ function ValidatedExternalNotebookView({ lecture, courseCode, onNavigateEntry }:
       setUpdating(true); setMessage('')
     } catch (error) { setMessage((error as Error).message) }
   }
+  // Class days' Update link (#/…/journal/<id>?update=1): a lesson's later class goes straight
+  // into this notebook's update. Read once from the hash URL, then dropped from it.
+  useEffect(() => {
+    const hash = typeof window === 'undefined' ? '' : window.location.hash
+    if (!/[?&]update=1\b/.test(hash)) return
+    window.history.replaceState(window.history.state, '', hash.replace(/([?&])update=1&?/, '$1').replace(/[?&]$/, ''))
+    void startUpdate()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   async function restoreVersion() {
     if (!restore) return
     if (draft || notes !== n.notes) { setMessage('Save or cancel unsaved edits and notes before restoring.'); return }

@@ -5,6 +5,7 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Download, NotebookText, X } from 'lucide-react'
 import { NotebookAIFlow, NotebookAICopy } from './NotebookAIFlow'
+import { lessonTarget, saveLocationSection } from '@/lib/academics/lessonContext'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useStore } from '@/store/store'
@@ -34,6 +35,8 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
 }) {
   const navigate = useNavigate()
   const lectures = useStore(state => state.academics.classCenter.lectures)
+  const workspace = useStore(state => state.academics.classCenter.workspaces.find(item => item.courseId === courseId))
+  const update = useStore(state => state.update)
   const classLectures = sortNotebookLectures(lectures, courseId)
   const [chosenId, setChosenId] = useState('')
   const [feedback, setFeedback] = useState<{ prompt: string; text: string; fallback?: boolean }>()
@@ -48,7 +51,14 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
   const lecture = classLectures.find(item => item.id === selection)
   const eligibility = lecture ? flashcardNotebookEligibility(lecture) : { eligible: false, reason: lectureId ? 'This lecture’s Class Journal is unavailable in this class.' : 'Create and save a completed Class Journal for this lecture first.' }
   const guide = useStudentGuide({ courseId, lessonIds: lecture ? [lecture.id] : [] })
-  const prompt = lecture && eligibility.eligible ? buildFlashcardPrompt({ courseLabel, lecture, guideDirections: guide.directions }) : ''
+  // The deck saves beside its lesson's notebook, in the lesson's premedOS folder (else Downloads).
+  const prompt = lecture && eligibility.eligible ? buildFlashcardPrompt({ courseLabel, lecture, guideDirections: guide.directions })
+    + saveLocationSection(workspace?.classFolder, lecture.lesson !== undefined ? lessonTarget(workspace?.syllabusSchedule, lecture.lesson) : undefined, 'deck') : ''
+  const deckMade = Boolean(lecture?.flashcardsMadeAt)
+  function markDeckMade() {
+    if (!lecture) return
+    update(draft => { const saved = draft.academics.classCenter.lectures.find(item => item.id === lecture.id); if (saved) saved.flashcardsMadeAt = Date.now() })
+  }
   const currentFeedback = feedback?.prompt === prompt ? feedback : undefined
   // Legacy Journals have no notebook file; their study guide travels inside the prompt.
   const hasNotebookFile = Boolean(lecture?.importedNotebook)
@@ -140,6 +150,9 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
       </NotebookAICopy>} bringTitle="Bring the deck back" bring={<>
         <label className="nai-file cursor-pointer"><span><b>Choose the .apkg your AI made</b><small>Usually in your class folder, or Downloads</small></span><input aria-label="Choose the .apkg your AI made" type="file" accept=".apkg" onChange={event => { const file=event.target.files?.[0]; setDeckName(file?.name.endsWith('.apkg') ? file.name : ''); }} /></label>
         {deckName && <p role="status" className="nai-hint">{deckName} selected. Open this file from its saved folder in Anki to import the deck.</p>}
+        {/* The app never sees the deck; this records that it exists, for the Lessons tab. */}
+        {deckMade ? <p role="status" className="nai-hint"><Check aria-hidden="true" className="inline size-4" /> Deck added to Anki.</p>
+          : <Button variant="outline" disabled={!deckName} onClick={markDeckMade}><Check aria-hidden="true" />I added it to Anki</Button>}
         <p className="nai-hint">The finished .apkg goes directly into Anki. Premed OS does not import or save Anki decks.</p>
       </>} help={<><p>Tip: Missed a practice or mock-exam question? Paste it into the same chat along with this prompt. The deck adds a card or two on the concept you missed, not a copy of the question.</p><p><b>The AI cannot create a file:</b> use a chat that can run code and create downloadable files.</p><p><b>You are updating a deck:</b> attach the current exported .apkg and check the AI’s result in Anki before replacing or deleting existing cards.</p><p>If the AI cannot reach your class folder, it should save the .apkg to Downloads and tell you where.</p></>} />
     </>}

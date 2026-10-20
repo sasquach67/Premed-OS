@@ -286,11 +286,10 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
           lectures={data.lectures.filter(item => item.courseId === course.id)}
           titleOf={lecture => completedLectureTitle(0, lecture)}
           onOpenNotebook={openNotebook}
-          onNewNotebook={() => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new`)}
+          onNewNotebook={lesson => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new${lesson !== undefined ? `?lesson=${lesson}` : ''}`)}
           onFlashcards={lectureId => navigate(`/academics/classes/${encodeURIComponent(course.id)}/resources/flashcards?journal=${encodeURIComponent(lectureId)}`)}
           onPracticeSet={openNotebook}
           readings={courseReadings}
-          // The new-notebook flow saves `readingKey` from this link once PR #41's AI flow lands (follow-up glue).
           onNewReadingNotebook={key => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new?reading=${encodeURIComponent(key)}`)}
           onToggleReadingPart={readingId => update(draft => { const item = draft.academics.classCenter.assignedReadings.find(row => row.id === readingId); if (item) { item.status = item.status === 'read' ? 'not-started' : 'read'; item.updatedAt = Date.now() } })}
           classFilesCount={classFileCount}
@@ -378,9 +377,9 @@ function Overview({ course, workspace, data, assignments, onTab }: {
         trackedFrom={isoDay(new Date(workspace.createdAt))}
         overrides={workspace.classDayOverrides}
         titleFor={(lesson, days) => { const notebook = lessonNotebook(lesson, days); return notebook ? lessonlessTitle(completedLectureTitle(lectureNumber(notebook.id), notebook)) : undefined }}
-        // Update opens the lesson's notebook, where "Update this notebook" adds the new class (a direct deep link follows PR #41).
-        notebookFor={(lesson, days) => { const notebook = lessonNotebook(lesson, days); return notebook ? { open: () => openLecture(notebook.id), update: () => openLecture(notebook.id) } : undefined }}
-        onNewNotebook={() => startEntry()}
+        // Update goes straight into the lesson's notebook's "Update this notebook" flow.
+        notebookFor={(lesson, days) => { const notebook = lessonNotebook(lesson, days); return notebook ? { open: () => openLecture(notebook.id), update: () => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(notebook.id)}?update=1`) } : undefined }}
+        onNewNotebook={lesson => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new${lesson !== undefined ? `?lesson=${lesson}` : ''}`)}
         onToggle={toggleClassDayCheck}
         onOverride={setClassDayOverride}
       />

@@ -13,6 +13,7 @@ import { downloadNotebookText, notebookTransaction } from './ExternalNotebookVie
 import { NotebookAIFlow, NotebookAICopy } from './NotebookAIFlow'
 import { exportNotebookPackageBundle } from '@/lib/academics/notebook/notebookBundle'
 import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
+import { lessonTarget, saveLocationSection, type NotebookTarget } from '@/lib/academics/lessonContext'
 
 const GOALS = {
   review: {
@@ -47,10 +48,13 @@ const GOALS = {
   },
 }
 
-export function ExternalNotebookWorkflow({ courseId, onImported, revision, baselineFresh = true, initialGoal, initialScope, workflowId }: { initialGoal?: NotebookGoal; initialScope?: string; workflowId?: string; courseId: string; onImported: (id: string, destinationCourseId?: string) => void; revision?: NotebookUpdateSession; baselineFresh?: boolean }) {
+export function ExternalNotebookWorkflow({ courseId, onImported, revision, baselineFresh = true, initialGoal, initialScope, workflowId, target }: { initialGoal?: NotebookGoal; initialScope?: string; workflowId?: string; courseId: string; onImported: (id: string, destinationCourseId?: string) => void; revision?: NotebookUpdateSession; baselineFresh?: boolean; /** The lesson or reading this notebook is for, when started from one. */ target?: NotebookTarget }) {
   const course = useStore(s => s.courses.find(c => c.id === courseId))
   const workspace = useStore(s => s.academics.classCenter.workspaces.find(w => w.courseId === courseId))
   const files = useStore(s => s.academics.classCenter.files)
+  // An update keeps the notebook's own lesson, so it saves beside the first version.
+  const revisedLesson = useStore(s => revision ? s.academics.classCenter.lectures.find(l => l.id === revision.localId)?.lesson : undefined)
+  const saveTarget = target ?? (revisedLesson !== undefined ? lessonTarget(workspace?.syllabusSchedule, revisedLesson) : undefined)
   const storageId = revision ? `${courseId}:update:${revision.localId}:${revision.id}` : workflowId ? `${courseId}:${workflowId}` : courseId
   const [loaded] = useState(() => {
     const loaded = loadNotebookWorkflowDraft(courseId, { preferences: workspace?.externalNotebookPreferences ?? '', term: course?.term ?? '' }, storageId)
@@ -77,7 +81,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision, basel
   const classFiles = files.filter(file => file.courseId === courseId)
   const guideSelection = useStudentGuide({ courseId, lessonIds: classFiles.filter(file => selected.includes(file.id)).map(file => file.lectureId).filter((id): id is string => Boolean(id)), choice: { target: draft.guideTarget ?? '', excludedIds: draft.excludedGuideIds ?? [] }, onChange: choice => setDraft(previous => ({ ...previous, guideTarget: choice.target, excludedGuideIds: choice.excludedIds, confirmedPrompt: null, acknowledgedBy: null, jsonReady: false })) })
   const values: PromptValues = { COURSE_CODE: revision?.baseline.course.code ?? course?.code ?? '', COURSE_TITLE: revision?.baseline.course.title ?? course?.title ?? '', TERM: revision ? revision.baseline.course.term : term || null, SCOPE: scope.trim() ? `${scope}\nScope authority: ${scopeSource || 'Not supplied; label provisional scope.'}` : null, MATERIALS: [revision ? `${notebookUpdateBaselineFilename(revision)}: attach this exact saved baseline plus the new material; retained excerpts do not imply complete original files.` : '', ...classFiles.filter(f => selected.includes(f.id)).map(f => `${f.title} (${f.type}; attach the actual original file in the AI conversation)`), materials].filter(Boolean).join('\n'), DEPTH: depth, CLASS_PREFERENCES: preferencesWithGuide(preferences, guideSelection.directions, goal === 'assessment' ? 'assessment' : 'notebook'), HELP_STAGE: revision ? stage || null : stage, ASSESSMENT_FORMAT: goal === 'assessment' ? format || null : null, USER_REQUEST: request, REVISION_INPUT: revision ? revisionInput(revision) : null }
-  const fullPrompt = goal ? composeNotebookPrompt(goal, values, revision ? 'update' : 'new') : ''
+  const fullPrompt = goal ? composeNotebookPrompt(goal, values, revision ? 'update' : 'new') + saveLocationSection(workspace?.classFolder, saveTarget, 'notebook') : ''
   useLayoutEffect(() => { latestPrompt.current = fullPrompt }, [fullPrompt])
   const copyReady = hasCurrentPromptAcknowledgment(draft, fullPrompt)
   const baselineBlocked = Boolean(revision && !baselineFresh)

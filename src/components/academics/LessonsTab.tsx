@@ -16,7 +16,9 @@ type Filter = 'all' | 'needs' | 'none'
 interface MadeState { notebook?: LectureRecord; flashcards: boolean; practice: boolean }
 interface LessonState extends MadeState { taught: boolean }
 
-const madeFrom = (notebook?: LectureRecord): MadeState => ({ notebook, flashcards: Boolean(notebook?.flashcardsMadeAt), practice: Boolean(notebook?.practiceSetMadeAt) })
+// Practice sets live inside the notebook since PR #41: made when it has practice questions.
+const hasPractice = (notebook?: LectureRecord) => Boolean(notebook?.importedNotebook?.current.entries.some((entry) => entry.sections.some((section) => section.blocks.some((block) => block.type === 'practice'))))
+const madeFrom = (notebook?: LectureRecord): MadeState => ({ notebook, flashcards: Boolean(notebook?.flashcardsMadeAt), practice: Boolean(notebook?.practiceSetMadeAt) || hasPractice(notebook) })
 const shortDate = (iso: string) => dateOf(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
 /**
@@ -36,7 +38,8 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
   today?: string
   titleOf: (lecture: LectureRecord) => string
   onOpenNotebook: (id: string) => void
-  onNewNotebook: () => void
+  /** Start a notebook, for a lesson when given (one notebook per lesson). */
+  onNewNotebook: (lesson?: number) => void
   /** Start a notebook for a reading (or a whole book), by its reading key. */
   onNewReadingNotebook?: (readingKey: string) => void
   /** Mark one assigned reading (a book part) read or not read. */
@@ -104,7 +107,7 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
   return <div className="lessons-tab">
     <div className="lessons-head">
       <div><h2>Lessons</h2><p>{lessons.length ? `${taught.length} lesson${taught.length === 1 ? '' : 's'} so far${groups.length > 1 ? ' · grouped by exam' : ''}` : 'No lessons yet'}</p></div>
-      <Button size="sm" variant={askFolder ? 'outline' : 'default'} onClick={onNewNotebook}><Plus aria-hidden="true" /> New notebook</Button>
+      <Button size="sm" variant={askFolder ? 'outline' : 'default'} onClick={() => onNewNotebook()}><Plus aria-hidden="true" /> New notebook</Button>
     </div>
     {askFolder && <section className="class-folder-card" aria-labelledby="class-folder-card-title">
       <div className="flex items-start gap-4">
@@ -154,8 +157,8 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
               const discusses = readingsDiscussedOn(readingItems, row.dates)
               const meta = <>{row.dates.length ? row.dates.map(shortDate).join(' · ') : state.notebook ? 'Notebook saved' : 'No notebook yet'}{discusses.length > 0 && <> · <span className="lessons-disc"><BookOpen aria-hidden="true" />Discusses {discusses.join('; ')}</span></>}</>
               return itemOpen(key)
-                ? <MaterialCard key={key} label={`Lesson ${row.lesson}`} kicker={row.unit ?? `Lesson ${row.lesson}`} title={title} meta={meta} state={state} onCollapse={() => toggleItem(key)} {...actionsFor(onNewNotebook)} />
-                : <MaterialLine key={key} label={`Lesson ${row.lesson}`} num={row.lesson} title={title} state={state} current={row.lesson === current} onExpand={() => toggleItem(key)} {...actionsFor(onNewNotebook)} />
+                ? <MaterialCard key={key} label={`Lesson ${row.lesson}`} kicker={row.unit ?? `Lesson ${row.lesson}`} title={title} meta={meta} state={state} onCollapse={() => toggleItem(key)} {...actionsFor(() => onNewNotebook(row.lesson))} />
+                : <MaterialLine key={key} label={`Lesson ${row.lesson}`} num={row.lesson} title={title} state={state} current={row.lesson === current} onExpand={() => toggleItem(key)} {...actionsFor(() => onNewNotebook(row.lesson))} />
             })}
             {!rows.length && groupTaught.length > 0 && <p className="lessons-empty">Nothing here matches this filter.</p>}
             {groupReadings.length > 0 && <>
@@ -178,7 +181,7 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
           </div>}
         </section>
       })}
-    </> : <div className="lessons-first"><NotebookText aria-hidden="true" /><p className="h">Make your first notebook</p><p>Your AI turns the lesson’s slides, outline and transcript into a study guide.</p><Button onClick={onNewNotebook}><Plus aria-hidden="true" /> New notebook</Button></div>}
+    </> : <div className="lessons-first"><NotebookText aria-hidden="true" /><p className="h">Make your first notebook</p><p>Your AI turns the lesson’s slides, outline and transcript into a study guide.</p><Button onClick={() => onNewNotebook()}><Plus aria-hidden="true" /> New notebook</Button></div>}
     <div className="lessons-files"><Collapsible title="Class files" badge={classFilesCount ? <span className="lessons-files-count" aria-label={`${classFilesCount} files`}>{classFilesCount}</span> : undefined} defaultOpen={classFilesOpen}>{classFolder && <p className="class-folder-line"><Folder aria-hidden="true" /><span>{classFolder.state === 'ready' ? <>Class folder · {folderTrail(classFolder).join(' › ')}</> : <>No class folder · your AI saves to Downloads</>}</span><button type="button" onClick={onSetUpFolder}>{classFolder.state === 'ready' ? 'Change' : 'Set it up'}</button></p>}{classFiles}</Collapsible></div>
   </div>
 }
