@@ -22,7 +22,7 @@ BASIC_FIELDS = LEGACY_BASIC_FIELDS + ['Topic', 'Source', 'My notes']
 CLOZE_FIELDS = LEGACY_CLOZE_FIELDS + ['Topic', 'Source', 'My notes']
 TOPIC = '{{#Topic}}<span class="topic-chip">{{Topic}}</span>{{/Topic}}'
 TYPE = '<div class="type card-meta">{{Type}}' + TOPIC + '</div>'
-FOOTER = '{{#My notes}}<div class="my-notes">{{My notes}}</div>{{/My notes}}{{#Source}}<details class="source"><summary>Source</summary>{{Source}}</details>{{/Source}}'
+FOOTER = '{{#My notes}}<div class="my-notes">{{My notes}}</div>{{/My notes}}'
 EXTRA = '{{#Extra}}<div class="extra">{{Extra}}</div>{{/Extra}}'
 BASIC_Q = '<div class="pm pm-question {{Mindset}}">' + TYPE + '{{Front}}</div>'
 BASIC_A = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + FOOTER + '</div>'

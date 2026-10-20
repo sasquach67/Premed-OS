@@ -41,6 +41,7 @@ import { ClassHub } from '@/components/academics/ClassHub'
 import { SyllabusImportMode, type PastDueImportDecision, type ReimportDecision } from '@/components/academics/SyllabusImportMode'
 import { SyllabusImportDialog } from '@/components/academics/SyllabusImportDialog'
 import type { SyllabusItem, SyllabusProposal } from '@/lib/academics/syllabusParser'
+import { examScopeFromSyllabus, lessonFields } from '@/lib/academics/examScope'
 import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
 import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
 import {
@@ -528,10 +529,11 @@ function applyAcceptedReimport(center: ClassCenterData, courseId: string, propos
       existing.syllabusSourceKey = key
       if (sourceFileId && !existing.linkedFileIds.includes(sourceFileId)) existing.linkedFileIds.push(sourceFileId)
       existing.notes = `Source: ${item.evidence.location} — “${item.evidence.quote}”`
+      Object.assign(existing, examScopeFromSyllabus(center, courseId, proposal, item))
       existing.updatedAt = now
       return
     }
-    center.assignments.push({ id: uid(), courseId, title: item.label, syllabusSourceKey: key, type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: sourceFileId ? [sourceFileId] : [], notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: center.assignments.filter((assignment) => assignment.courseId === courseId).length })
+    center.assignments.push({ id: uid(), courseId, title: item.label, syllabusSourceKey: key, type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: sourceFileId ? [sourceFileId] : [], notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: center.assignments.filter((assignment) => assignment.courseId === courseId).length, ...examScopeFromSyllabus(center, courseId, proposal, item) })
   })
   proposal.items.filter((item) => item.kind === 'weights').forEach((item) => {
     const key = syllabusCategorySourceKey(item.label)
@@ -571,10 +573,10 @@ function applyAcceptedReimport(center: ClassCenterData, courseId: string, propos
     if (!wants('schedule', key)) return
     const existing = workspace.syllabusSchedule?.find((entry) => syllabusScheduleSourceKey(entry.label, entry.week, entry.startDate) === key)
     if (existing) {
-      Object.assign(existing, { week, label: item.label, startDate: item.value, source: `${item.evidence.location} — “${item.evidence.quote}”` })
+      Object.assign(existing, { week, label: item.label, startDate: item.value, source: `${item.evidence.location} — “${item.evidence.quote}”`, ...lessonFields(item) })
       return
     }
-    workspace.syllabusSchedule = [...(workspace.syllabusSchedule ?? []), { id: uid(), week, label: item.label, startDate: item.value, source: `${item.evidence.location} — “${item.evidence.quote}”`, order: workspace.syllabusSchedule?.length ?? 0 }]
+    workspace.syllabusSchedule = [...(workspace.syllabusSchedule ?? []), { id: uid(), week, label: item.label, startDate: item.value, source: `${item.evidence.location} — “${item.evidence.quote}”`, order: workspace.syllabusSchedule?.length ?? 0, ...lessonFields(item) }]
   })
   const confirmedItems = proposal.items.filter((item) => {
     if (item.kind === 'standards') return true // Retain objectives as source evidence only.
@@ -626,7 +628,7 @@ function reorderClasses(draft: ClassCenterData, orderedVisibleIds: string[]) {
   draft.workspaces = reordered
 }
 
-export function ClassCenter({ archiveOnly = false, onFirstSyllabusClassCreated }: { archiveOnly?: boolean; onFirstSyllabusClassCreated?: () => void }) {
+export function ClassCenter({ archiveOnly = false }: { archiveOnly?: boolean }) {
   const params = useParams()
   const data = useStore((s) => s.academics.classCenter)
   const courses = useStore((s) => s.courses)
@@ -674,13 +676,12 @@ export function ClassCenter({ archiveOnly = false, onFirstSyllabusClassCreated }
       mutate={mutate}
       updateAll={update}
       archiveOnly={archiveOnly}
-      onFirstSyllabusClassCreated={onFirstSyllabusClassCreated}
     />
   )
 }
 
 function ClassCenterDashboard({
-  data, persons, recommendations, currentTerm, terms, courses, mutate, updateAll, archiveOnly, onFirstSyllabusClassCreated,
+  data, persons, recommendations, currentTerm, terms, courses, mutate, updateAll, archiveOnly,
 }: {
   data: ClassCenterViewData
   persons: Person[]
@@ -691,7 +692,6 @@ function ClassCenterDashboard({
   mutate: (fn: (draft: ClassCenterData) => void) => void
   updateAll: (fn: (draft: import('@/lib/types').AppData) => void) => void
   archiveOnly: boolean
-  onFirstSyllabusClassCreated?: () => void
 }) {
   const navigate = useNavigate()
   // A first-run profile has no confirmed term yet. The store uses this same
@@ -768,7 +768,6 @@ function ClassCenterDashboard({
   const activeClasses = data.classes.filter((row) => row.status === 'active')
   const hasSearch = Boolean(query.trim())
   async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal, existingCourseId?: string, reimportDecisions?: ReimportDecision[], replaceSyllabusFileId?: string, pastDueDecisions?: PastDueImportDecision[]) {
-    const isFirstSyllabusClass = !existingCourseId && data.classes.length === 0
     const now = Date.now()
     const courseId = existingCourseId ?? uid()
     // A shared candidate is extracted structure only, never a remote source
@@ -822,6 +821,7 @@ function ClassCenterDashboard({
         evidenceByFile.forEach((items, fileId) => persistConfirmedSyllabusEvidence(center, courseId, fileId, items, now))
         proposal.items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines').forEach((item, index) => center.assignments.push({
           id: uid(), courseId, title: item.label, syllabusSourceKey: syllabusAssignmentSourceKey(item.label, item.value), type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: linkedFileIdsForItem(item), notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
+          ...(proposal ? examScopeFromSyllabus(center, courseId, proposal, item) : {}),
         }))
         proposal.items.filter((item) => item.kind === 'weights').forEach((item, index) => center.gradeCategories.push({
           id: uid(), courseId, name: item.label || 'Untitled category', syllabusSourceKey: syllabusCategorySourceKey(item.label), weight: Number(item.value?.replace('%', '')) || 0,
@@ -839,7 +839,7 @@ function ClassCenterDashboard({
         const workspace = center.workspaces.find((item) => item.courseId === courseId)
         if (workspace) workspace.syllabusSchedule = proposal.items.filter((item) => item.kind === 'units').map((item, index) => ({
           id: uid(), week: item.context ?? 'Unscheduled', label: item.label, startDate: item.value,
-          source: `${item.evidence.location} — “${item.evidence.quote}”`, order: index,
+          source: `${item.evidence.location} — “${item.evidence.quote}”`, order: index, ...lessonFields(item),
         }))
         if (workspace && proposal.items.some((item) => item.kind === 'readings')) workspace.readingListState = 'complete'
         // Preserve document order and prefer the first credible header fact.
@@ -864,7 +864,6 @@ function ClassCenterDashboard({
       if (pastDueDecisions?.length && proposal) applyPastSyllabusWorkDecisions(center, courseId, proposal, pastDueDecisions, now)
     })
     setSyllabusImportOpen(false)
-    if (isFirstSyllabusClass) onFirstSyllabusClassCreated?.()
     if (existingCourseId) { const next = new URLSearchParams(searchParams); next.delete('importFor'); next.delete('reimport'); next.delete('reimportFile'); setSearchParams(next, { replace: true }) }
   }
 

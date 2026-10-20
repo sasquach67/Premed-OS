@@ -317,6 +317,14 @@ export interface SyllabusScheduleEntry {
   startDate?: string
   source?: string
   order: number
+  /** The lesson number the syllabus gives this entry, when its schedule is per lesson. */
+  lesson?: number
+  /** Every class date in the lesson, when it meets more than once. */
+  dates?: string[]
+  /** The learning objectives the syllabus lists for this lesson. */
+  objectives?: string[]
+  /** The syllabus heading this lesson sits under, e.g. "Unit 2: How cells control division". */
+  unit?: string
 }
 
 /** Operational extension for one canonical Course. It exists only for the
@@ -574,6 +582,10 @@ export interface ClassAssignment {
   examStudyFileIds?: ID[]
   notes?: string
   coveredTopicIds?: ID[]
+  /** The syllabus's own statement of what the exam covers: its lessons as
+   *  schedule labels (`Lesson 9`), and whether it is cumulative. Absent means
+   *  the syllabus said nothing; never inferred here. */
+  examScope?: { lessons?: string[]; cumulative?: boolean }
   /** When graded work came back. Absent means unknown — never inferred. */
   returnedAt?: string
   /** The instructor's dispute deadline. Absent is `unknown`, never `expired`. */

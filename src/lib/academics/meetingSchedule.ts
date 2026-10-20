@@ -137,8 +137,16 @@ export function isPlausibleClassMeetingTime(value?: string): boolean {
     if (match[3]?.toUpperCase() === 'PM') hour += 12
     return hour * 60 + Number(match[2] ?? 0)
   }
-  let duration = minutes(parts[1]) - minutes(parts[0])
-  if (duration <= 0) duration += 24 * 60
+  const span = (start: number, end: number) => { const raw = end - start; return raw <= 0 ? raw + 24 * 60 : raw }
+  const end = minutes(parts[1])
+  // `1:25–2:15 PM`: the start carries no meridiem of its own. Read it with the
+  // meridiem that gives the shorter positive class, as a person would (audit F10).
+  // `8 AM–9:15 PM` names both, so it is still flagged.
+  const startHasMeridiem = /(?:am|pm)\s*$/i.test(parts[0].trim())
+  const endHasMeridiem = /(?:am|pm)\s*$/i.test(parts[1].trim())
+  const duration = !startHasMeridiem && endHasMeridiem
+    ? Math.min(span(minutes(parts[0]), end), span(minutes(`${parts[0]} PM`), end))
+    : span(minutes(parts[0]), end)
   return duration <= 6 * 60
 }
 

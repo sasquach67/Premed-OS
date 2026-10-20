@@ -13,10 +13,10 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the pending October 16l prompt revision and preserves source access rules', () => {
+  it('copies the held October 17a prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-16m — no card-count target for any subject; biology concepts and mechanisms only with no passage drills; PSYC lecture examples retained.')
-    expect(prompt).toContain('A standalone headline term or theory, one the instructor defines and builds the lecture around, gets a two-blank note')
+    expect(prompt).toContain('Prompt revision: 2026-10-17a — clearer explanations and lecture examples, fewer tautologies; Source hidden without note-type changes.')
+    expect(prompt).toContain('A standalone headline term or theory whose meaning needs learning gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
     expect(prompt).toContain('The completed Journal is the required input.')
@@ -54,24 +54,24 @@ describe('flashcard prompt handoff', () => {
       'what was skipped',
       'One fact per card.',
       'Cut a trailing second fact',
-      'A short causal explanation needed to understand the same fact stays.',
-      'EVERY pair starts with TWO separate meaning notes',
+      'A short causal explanation needed to understand the same fact stays:',
+      'For two non-self-explanatory terms, start with TWO separate meaning notes',
     ]) expect(prompt).toContain(phrase)
   })
 
   it('recalls each meaning alone and adds only the approved headline names contrast', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'EVERY in-scope term the lecture defines keeps its OWN card',
+      'Each such term keeps its OWN meaning-recall card',
       'Never group parallel term meanings on one review card',
       'Do not author grouped-meanings cards.',
-      'Positive regulators {{c1::promote cell-cycle progression}}.',
-      'Negative regulators {{c1::restrain cell-cycle progression}}.',
+      'Self-explanatory component names such as accompanying thoughts',
+      'subjective feelings or positive regulator are covered by their umbrella card',
       'Headline pair, opposite or non-opposite: add ONE contrast note',
       'both meanings visible and both names hidden together under the same c1',
       'Simple pair: keep only the TWO individual meaning notes.',
       'Intrinsic motivation is {{c1::doing an activity because it is enjoyable or satisfying}}.',
-      'Extrinsic motivation is {{c1::doing an activity for an outside reward or to avoid a consequence}}.',
+      'Extrinsic motivation is {{c1::doing something for an outside reward or to avoid punishment}}.',
       'Never blank one opposite name while leaving its partner name visible.',
       'Category hints can name the answer kind but never list candidates.',
       '{{c2::inactivates::effect on Rb}}',
@@ -108,6 +108,34 @@ describe('flashcard prompt handoff', () => {
     expect(prompt).not.toContain('rather than asked as a why question')
   })
 
+  it('uses the deck-review rewrites without adding a checklist or exposing Source', () => {
+    const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
+    for (const phrase of [
+      "a classmate spilled a drink on their homework",
+      'an unmet bodily need creates an unpleasant tension, called a drive',
+      'a brief, strong reaction to something that matters to you',
+      'In the marshmallow test, where children could eat one treat now or wait for two',
+      'Would someone who only knows the term',
+      'skip the separate meaning card and do not record a `Term: … / Meaning: …` target',
+      'overjustification effect, encoding specificity and retroactive interference',
+      'doing something for an outside reward or to avoid punishment',
+      'Walking alone in a parking garage at night',
+      'Seeing a shadow in an empty garage',
+      'Arousal plus that interpretation produces fear',
+      "a culture's unwritten rules about when, where and how to show emotions",
+      'the wants or needs that push behavior toward a goal',
+      'each with its own facial expression and bodily response',
+      'you notice the reaction and feel afraid',
+      'you look at the situation to explain it',
+      'At most one short parenthesis per card',
+      'Source and premedos_source stay off the card face',
+      'these six checks:',
+    ]) expect(prompt).toContain(phrase)
+    expect(prompt).not.toContain('<details class="source">')
+    expect(prompt).not.toContain('collapsed Source control')
+    expect(prompt).not.toContain('sees a dog that seems dangerous')
+  })
+
   it('requires clarity, available examples, definition recall and short notebook-derived chips', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
@@ -117,7 +145,7 @@ describe('flashcard prompt handoff', () => {
       'Required cold-read review before building.',
       'Report how many cards were rewritten',
       'Never invent terms.',
-      'Definition recall is never cut.',
+      'Definition recall is retained when the meaning must be learned beyond the name.',
       'term has no definition-recall card',
       'Breadcrumb chips are short topic LABELS, never paragraphs.',
       'Use 1–4 words and aim for at most about 32 characters',
@@ -143,13 +171,13 @@ describe('flashcard prompt handoff', () => {
   it('uses fixed card shapes, two-blank definition notes, and reference-deck cloze', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of [
-      'A standalone headline term retains its two-blank note',
+      'Standalone headline terms retain the two-blank definition shape',
       '| Standalone headline term or theory | One sentence: “{{c1::term::hint}} is {{c2::meaning}}” or “The {{c1::theory::hint}} states that {{c2::claim}}” | No separate Back; two review cards |',
       '| Cloze fact | One sentence, one fact; blank the term, name, number, date, or who/where | No separate Back |',
       '| Cloze list or steps | One sentence or one short list; blank the items together | No separate Back |',
-      '| Scenario (instructor\'s example) | One or two sentences of situation, then one short plain question about one term | The term alone; the explanation, if any, goes in Extra |',
+      '| Scenario (instructor\'s example) | One or two sentences of situation, then one short plain question about one term | The term alone; Extra explains why the scenario fits |',
       '| Example | `Example of <term>` | The instructor\'s example |',
-      '| Simple pair | Two separate notes, each term visible and its meaning under c1',
+      '| Simple pair needing definitions | Two separate notes, each term visible and its meaning under c1',
       '| Headline pair, opposite or non-opposite | Two individual meaning notes, then one contrast with meanings visible and both names under c1',
       '| Umbrella | “The N parts of X are {{c1::a}}, {{c1::b}} …”, placed before its members | No separate Back; one review card |',
       'Bold the cue.',
@@ -164,11 +192,11 @@ describe('flashcard prompt handoff', () => {
       'One-time migration:',
       'with --previous on both commands',
       'A member of an umbrella group never gets an extra name blank',
-      'If the lecture defines that sub-term, give it a target and a meaning blank in its own note',
+      'If the lecture defines an unfamiliar sub-term, retain its own meaning card.',
       'Biology concept formats',
-      'Each defined member gets its OWN meaning card',
+      'Each member whose meaning needs learning gets its own meaning card',
       'Umbrella first.',
-      'Every other defined term gets its OWN note with one blank on its meaning and the term visible',
+      'Every other non-self-explanatory defined term gets its OWN note with one blank on its meaning and the term visible',
       'use a famous standard one only if the lecture has none',
       'a one-word card label (recall, list, application, example, compare, why)',
       '| Why / how | One direct question | One sentence |',
@@ -205,16 +233,16 @@ describe('flashcard prompt handoff', () => {
       'Do not group parallel meanings, even if the terms contrast or belong together',
       'lecture example cards stay',
       'Question fronts follow the reference decks too',
-      'Every defined term\'s complete meaning stays on its OWN meaning-recall card',
+      'Every retained non-self-explanatory term recalls its meaning on its own card',
       'Scenario answers are concrete',
-      'carry the meaning only',
+      'Definitions carry the meaning, including the causal links needed to understand a mechanism',
       'Keep a caution only when the instructor tests it',
       'One answer per card.',
       'Never let the question give away its answer.',
       'No essay or policy questions.',
       'simplify by explaining, not by cutting words',
       'Explain-it test',
-      'Keep personal pronouns (you, we, our, us) to a minimum',
+      'Keep personal pronouns to a minimum',
       'Both directions are never automatic.',
       'Do not add a separate mirror note.',
       'No card may have an answer that merely repeats another card\'s answer on the same idea.',
@@ -309,7 +337,7 @@ describe('flashcard prompt handoff', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'Demo', lecture: lecture() })
     for (const addition of [
       "Use the Journal's mastery objectives as the checklist of learning targets. Take the facts from the original materials: terms, numbers, conditions, cautious words such as “may”, the instructor's examples, what the instructor stressed, and any phrase the instructor said belongs in an answer, because the study guide is intentionally concise and may leave out card-worthy detail. Write each Required answer yourself in the wording this prompt sets below; do not copy a textbook or slide definition as the Required answer.",
-      'Keep a target for every in-scope Journal objective (topic), every in-scope Understand item and every in-scope new or lecture-defined term;',
+      'Keep a target for every in-scope Journal objective (topic), every in-scope Understand item and every in-scope term whose meaning needs learning;',
       'or “the lecture\'s example” and “what class identified”; name the concept or example instead.',
       'If the student supplies missed practice or exam questions, add one or two cards, within the limit per idea, on the concept each miss tested, such as the misconception, condition, or distinction, rather than a copy of the question.',
     ]) expect(prompt).toContain(addition)
