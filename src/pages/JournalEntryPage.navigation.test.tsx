@@ -50,6 +50,12 @@ async function click(label:string) {
   if(label==='Flashcards') { const start=container.querySelector<HTMLButtonElement>('[aria-label="Start making flashcards"]'); expect(start,label).toBeTruthy(); await act(async()=>start!.click()); return }
   await act(async()=>button(label==='Practice'?'Practice set':label).click())
 }
+// The notebook is reopened from the Lessons tab (Oct 2026: Class days replaced the Overview notebook list).
+async function openFromLessons() {
+  const tab = [...container.querySelectorAll<HTMLButtonElement>('[role=tab]')].find(b => b.textContent?.startsWith('Lessons'))!
+  await act(async () => { tab.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); tab.click() })
+  return container.querySelector<HTMLButtonElement>('.lessons-tile')!
+}
 function study() { expect(button('Study guide').getAttribute('aria-pressed')).toBe('true'); expect(container.querySelector('[aria-label="Update saved notebook"]')).toBeNull(); expect(container.textContent).not.toContain('Editing your copy') }
 
 it.each(['Update', 'Edit notebook', 'Practice', 'Sources'])('opens Study guide after %s, actual Class Center, and same notebook re-entry', async action => {
@@ -59,12 +65,13 @@ it.each(['Update', 'Edit notebook', 'Practice', 'Sources'])('opens Study guide a
   expect(container.querySelector('[data-location]')!.textContent).toBe('/academics')
   await click('Open')
   expect(container.querySelector('[data-location]')!.textContent).toBe(`/academics/classes/${course.id}`)
-  const row = container.querySelector<HTMLButtonElement>('.imported-notebook-link')!
-  expect(row.textContent).toContain(pkg.entries[0].title)
-  await act(async () => row.click()); study(); expect(JSON.stringify(notebook())).toBe(retained)
+  await openFromLessons()
+  expect(container.querySelector('.lessons-card h3')?.textContent).toContain(pkg.entries[0].title)
+  await act(async () => container.querySelector<HTMLButtonElement>('.lessons-tile')!.click()); study(); expect(JSON.stringify(notebook())).toBe(retained)
   await click('Browser back'); await click('Browser forward'); study(); expect(JSON.stringify(notebook())).toBe(retained)
   await click('Lecture alias'); study(); await click('Practice'); await click('Class route')
-  await act(async () => container.querySelector<HTMLButtonElement>('.imported-notebook-link')!.click()); study()
+  const tile = container.querySelector<HTMLButtonElement>('.lessons-tile') ?? await openFromLessons()
+  await act(async () => tile.click()); study()
   expect(JSON.stringify(notebook())).toBe(retained)
 })
 

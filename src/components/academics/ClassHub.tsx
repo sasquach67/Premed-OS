@@ -10,7 +10,7 @@ import { preferredScrollBehavior } from '@/lib/scroll'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  ArrowLeft, ArrowRight, CalendarDays, MessageSquare, Maximize2, BookOpen, Brain, Check, ChevronDown, FileStack,
+  ArrowLeft, ArrowRight, CalendarDays, BookOpen, Brain, Check, ChevronDown, FileStack,
   FileText, FolderOpen, HelpCircle, Mail, MoreHorizontal, NotebookText, Plus,
 } from 'lucide-react'
 import type {
@@ -25,7 +25,6 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
 import { InfoTip } from '@/components/common/InfoTip'
 import { Collapsible } from '@/components/common/Collapsible'
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -51,10 +50,11 @@ import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
 import { SyncOriginalFilesButton } from '@/components/academics/SyncOriginalFilesButton'
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
-import { LectureCapturePanel } from '@/components/academics/LectureCapturePanel'
-import { NotebookSortableList } from '@/components/academics/NotebookSortableList'
-import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
-import { LecturePreview } from '@/components/academics/LecturePreview'
+import { ClassDays } from '@/components/academics/ClassDays'
+import { LessonsTab } from '@/components/academics/LessonsTab'
+import { defaultFolderName } from '@/lib/academics/classFolder'
+import { isoDay, lessonDates, lessonlessTitle, type ClassDay, type ClassDayOverride } from '@/lib/academics/classDays'
+import { findLessonNotebook } from '@/lib/academics/lessonGroups'
 import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
@@ -65,7 +65,7 @@ import { readingDebt, READING_LIST_STATE_COPY, recurringFeedbackThemes } from '@
 import { normalizeMeetingDays } from '@/lib/academics/meetingSchedule'
 import { QuestionBankPdfButton } from '@/components/academics/QuestionBankPdfButton'
 import { completedLectureTitle } from '@/lib/academics/lectureLabels'
-import { sortNotebookLectures, isNotebookManualOrder, setNotebookManualOrder, resetNotebookOrder, notebookCatalogDate, notebookAddedDate } from '@/lib/academics/notebook/catalogDate'
+import { sortNotebookLectures } from '@/lib/academics/notebook/catalogDate'
 import {
   acceptGuideProposal, buildSyllabusGuideProposals, dismissGuideProposal, editGuideProposal,
   ensureSyllabusGuideProposals, guideProposalsForCourse, isGuideSourceValid,
@@ -127,10 +127,11 @@ function classHubAccentStyle(color: AcademicTagColor): CSSProperties {
 
 export function ClassHub({ course, workspace, data }: ClassHubProps) {
   const navigate = useNavigate()
+  const update = useStore(state => state.update)
   const [params, setParams] = useSearchParams()
   const requestedTab = params.get('classTab')
   // Keep old notes and details links on the single Guide surface.
-  const canonicalRequestedTab = (requestedTab === 'notes' || requestedTab === 'details') ? 'guide' : (requestedTab === 'readings' || requestedTab === 'topics') ? 'materials' : requestedTab
+  const canonicalRequestedTab = (requestedTab === 'notes' || requestedTab === 'details') ? 'guide' : (requestedTab === 'readings' || requestedTab === 'topics' || requestedTab === 'lessons') ? 'materials' : requestedTab
   const classType: ClassWorkspaceType = workspace.type ?? (course.bcpm ? 'stem' : 'general')
   const courseColor = classHubColor(workspace.color)
   // A class has one stable shell. Writing-specific tools live inside
@@ -145,10 +146,11 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   // Read old topic placement only to keep existing materials in their saved week/unit.
   const courseTopics = ordered(data.topics.filter((item) => item.courseId === course.id))
   const courseFiles = ordered(data.files.filter((item) => item.courseId === course.id))
-  const libraryFiles = courseFiles.filter(isPrimaryMaterial)
   const courseNotes = [...data.notes.filter((item) => item.courseId === course.id)].sort((a, b) => b.updatedAt - a.updatedAt)
-  const courseMaterialNotes = courseNotes.filter(isMaterialNote)
   const courseGuideNotes = courseNotes.filter(isGuideNote)
+  // The class's files: shown as the Class files count on the Lessons tab.
+  const classFileCount = courseFiles.filter(isPrimaryMaterial).length + courseNotes.filter(isMaterialNote).length
+    + (workspace.materialFolder?.items.filter(item => item.kind === 'file' && !item.trashed).length ?? 0)
   const courseAssignments = ordered(data.assignments.filter((item) => item.courseId === course.id))
   const courseContacts = ordered(data.contacts.filter((item) => item.courseId === course.id))
   const courseDrafts = ordered(data.paperDrafts.filter((item) => item.courseId === course.id))
@@ -203,9 +205,15 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
     return <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" className="class-hub-primary-action" aria-label="Create study resources"><FileStack className="size-4" /> Create <span className="class-hub-primary-action-optional">study </span>resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems classType={classType} onChoose={(artifact) => navigate(`/academics/classes/${encodeURIComponent(course.id)}/resources/${artifact}`)} /></DropdownMenuContent></DropdownMenu>
   }
 
-  const connectedFileCount = workspace.materialFolder?.items.filter(item => item.kind === 'file' && !item.trashed).length ?? 0
+  /** Open a notebook where it lives: imported ones in the journal reader, built ones in the lecture workspace. */
+  function openNotebook(id: string) {
+    const lecture = data.lectures.find(item => item.id === id)
+    const base = `/academics/classes/${encodeURIComponent(course.id)}`
+    navigate(lecture?.importedNotebook || lecture?.workspaceState !== 'complete' ? `${base}/journal/${encodeURIComponent(id)}` : `${base}/lectures/${encodeURIComponent(id)}`)
+  }
   const counts = {
-    materials: libraryFiles.length + courseMaterialNotes.length + connectedFileCount,
+    // The Lessons tab counts notebooks; the class's files sit in its Class files section.
+    materials: data.lectures.filter(item => item.courseId === course.id).length,
     readings: courseReadings.length,
     assignments: courseAssignments.filter((item) => !isComplete(item)).length,
     notes: courseGuideNotes.length,
@@ -265,14 +273,33 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
           </div>
           <TabsList className="class-hub-tabs h-auto w-full justify-start overflow-x-auto rounded-none border-0 bg-transparent p-0">
             <HubTabTrigger value="overview" label="Overview" />
-            <HubTabTrigger value="materials" label="Materials" count={counts.materials} />
+            <HubTabTrigger value="materials" label="Lessons" count={counts.materials} />
             <HubTabTrigger value="assignments" label="Assignments" count={counts.assignments} />
             <HubTabTrigger value="guide" label="Guide" count={courseGuideNotes.length} />
           </TabsList>
         </section>
 
         <TabsContent value="overview" className="class-hub-tab"><Overview course={course} workspace={workspace} data={data} assignments={courseAssignments} notes={courseNotes} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
-        <TabsContent value="materials" className="class-hub-tab"><Materials course={course} workspace={workspace} classType={classType} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} writingTools={classType === 'writing' ? <WritingTools courseId={course.id} readingListState={readingListState} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /> : undefined} /></TabsContent>
+        <TabsContent value="materials" className="class-hub-tab"><LessonsTab
+          schedule={workspace.syllabusSchedule}
+          exams={courseAssignments.filter(item => item.type === 'exam').map(item => ({ id: item.id, title: item.title, date: item.dueDate?.slice(0,10), scope: item.examScope }))}
+          lectures={data.lectures.filter(item => item.courseId === course.id)}
+          titleOf={lecture => completedLectureTitle(0, lecture)}
+          onOpenNotebook={openNotebook}
+          onNewNotebook={lesson => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new${lesson !== undefined ? `?lesson=${lesson}` : ''}`)}
+          onFlashcards={lectureId => navigate(`/academics/classes/${encodeURIComponent(course.id)}/resources/flashcards?journal=${encodeURIComponent(lectureId)}`)}
+          onPracticeSet={openNotebook}
+          readings={courseReadings}
+          onNewReadingNotebook={key => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new?reading=${encodeURIComponent(key)}`)}
+          onToggleReadingPart={readingId => update(draft => { const item = draft.academics.classCenter.assignedReadings.find(row => row.id === readingId); if (item) { item.status = item.status === 'read' ? 'not-started' : 'read'; item.updatedAt = Date.now() } })}
+          classFilesCount={classFileCount}
+          classFolder={workspace.classFolder}
+          defaultFolderName={defaultFolderName(course.code)}
+          onSetUpFolder={() => navigate(`/academics/classes/${encodeURIComponent(course.id)}/folder`)}
+          onSkipFolder={() => update(draft => { const item = draft.academics.classCenter.workspaces.find(row => row.courseId === course.id); if (item) item.classFolder = { site: 'canvas', place: 'documents', mover: 'me', name: defaultFolderName(course.code), state: 'skipped', updatedAt: Date.now() } })}
+          classFilesOpen={canonicalRequestedTab === 'materials' && requestedTab !== 'lessons'}
+          classFiles={<Materials course={course} workspace={workspace} classType={classType} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} writingTools={classType === 'writing' ? <WritingTools courseId={course.id} readingListState={readingListState} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /> : undefined} />}
+        /></TabsContent>
         <TabsContent value="assignments" className="class-hub-tab"><Assignments courseId={course.id} assignments={courseAssignments} categories={data.gradeCategories.filter((item) => item.courseId === course.id)} focusWhatIf={params.get('whatIf') === '1'} /></TabsContent>
         <TabsContent value="guide" className="class-hub-tab"><StudentGuide key={course.id} courseId={course.id} data={data} /><GuideReference courseId={course.id} workspace={workspace} notes={courseNotes} assignments={courseAssignments} contacts={courseContacts} data={data} onOpenMaterials={() => changeTab('materials')} /></TabsContent>
       </Tabs>
@@ -288,8 +315,6 @@ function Overview({ course, workspace, data, assignments, onTab }: {
   const update = useStore(state => state.update)
   const [focusOpen, setFocusOpen] = useState(false)
   const [focusDraft, setFocusDraft] = useState('')
-  const [selectedLectureId, setSelectedLectureId] = useState<string>()
-  const [orderAnnouncement, setOrderAnnouncement] = useState('')
   const today = new Date(); today.setHours(0,0,0,0)
   const weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate() + 7)
   const dated = assignments.filter(item => !isComplete(item) && item.dueDate).sort((a,b) => String(a.dueDate).localeCompare(String(b.dueDate)))
@@ -297,41 +322,44 @@ function Overview({ course, workspace, data, assignments, onTab }: {
   const nextAssignment = upcoming.find(item => item.type !== 'exam')
   const exam = upcoming.find(item => item.type === 'exam')
   const weekItems = upcoming.filter(item => new Date(`${item.dueDate!.slice(0,10)}T00:00:00`) < weekEnd).slice(0,3)
+  const classDayExams = useMemo(() => assignments.filter(item => item.type === 'exam' && item.dueDate).map(item => ({ id: item.id, title: item.title, date: item.dueDate!.slice(0,10) })), [assignments])
   const lectures = sortNotebookLectures(data.lectures, course.id)
   const chronologicalLectures = sortNotebookLectures(lectures)
   const lectureNumber = (id: string) => chronologicalLectures.findIndex(item => item.id === id)+1
-  const activeLecture = lectures.find(item => item.id === selectedLectureId)
-  const activeLectureSources = activeLecture ? data.files.filter(file => activeLecture.selectedSourceFileIds?.includes(file.id) || file.id === activeLecture.transcriptFileId) : []
   const resumeLecture = lectures.find(item => item.id === workspace.lastOpenedLectureId) ?? lectures.find(item => item.workspaceState === 'complete')
-  const feedback = data.feedbackNotes.filter(item => item.courseId === course.id).sort((a,b) => b.updatedAt-a.updatedAt)[0]
-  const feedbackAssignment = assignments.find(item => item.id === feedback?.assignmentId)
   const startEntry = () => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new`)
   useEffect(() => {
     if (overviewParams.get('captureLecture') === '1') navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new`, {replace:true})
   }, [overviewParams, navigate, course.id])
-  function selectLecture(id?: string) {
-    setSelectedLectureId(id)
-    if (id) update(draft => { const item = draft.academics.classCenter.workspaces.find(row => row.courseId === course.id); if(item) item.lastOpenedLectureId=id })
-
-  }
   function openLecture(id?: string) {
     if (!id) { startEntry(); return }
     const lecture = lectures.find(item => item.id === id)
+    update(draft => { const item = draft.academics.classCenter.workspaces.find(row => row.courseId === course.id); if(item) item.lastOpenedLectureId=id })
     if (lecture?.importedNotebook || lecture?.workspaceState !== 'complete') { navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(id)}`); return }
-    selectLecture(id)
     navigate(`/academics/classes/${encodeURIComponent(course.id)}/lectures/${encodeURIComponent(id)}`)
   }
-  function moveNotebook(id: string, targetId: string) {
-    const ids = lectures.map(item => item.id)
-    const from = ids.indexOf(id), to = ids.indexOf(targetId)
-    if (from < 0 || to < 0 || from === to) return
-    ids.splice(to, 0, ids.splice(from, 1)[0])
-    update(draft => setNotebookManualOrder(draft.academics.classCenter.lectures, course.id, ids))
-    setOrderAnnouncement(`${lectures[from].title} moved to position ${to + 1} of ${ids.length}.`)
+  /** A lesson's one notebook, wherever its classes fall (pencil edits included). */
+  const lessonNotebook = (lesson: number, days: ClassDay[]) => findLessonNotebook(lectures, lesson, lessonDates(days, lesson))
+  function setClassDayOverride(date: string, change: ClassDayOverride | undefined) {
+    update(draft => {
+      const item = draft.academics.classCenter.workspaces.find(row => row.courseId === course.id)
+      if (!item) return
+      const overrides = { ...(item.classDayOverrides ?? {}) }
+      if (change) overrides[date] = change
+      else delete overrides[date]
+      item.classDayOverrides = Object.keys(overrides).length ? overrides : undefined
+    })
   }
-  function resetOrder() {
-    update(draft => resetNotebookOrder(draft.academics.classCenter.lectures, course.id))
-    setOrderAnnouncement('Notebooks sorted by class date, oldest first. Undated entries are last.')
+  function toggleClassDayCheck(date: string, itemId: string) {
+    update(draft => {
+      const item = draft.academics.classCenter.workspaces.find(row => row.courseId === course.id)
+      if (!item) return
+      const checks = { ...(item.classDayChecks ?? {}) }
+      const current = checks[date] ?? []
+      checks[date] = current.includes(itemId) ? current.filter(id => id !== itemId) : [...current, itemId]
+      if (!checks[date].length) delete checks[date]
+      item.classDayChecks = checks
+    })
   }
   return <div className="class-hub-overview overview-approved">
     <section className="class-hub-course-pulse" aria-label="Your class at a glance">
@@ -341,41 +369,23 @@ function Overview({ course, workspace, data, assignments, onTab }: {
       <button type="button" className="course-pulse-item overview-focus" onClick={() => {setFocusDraft(workspace.studyFocus ?? '');setFocusOpen(true)}}><span>Your focus</span><b>{workspace.studyFocus || 'Choose a focus for this class'}</b><i>{workspace.studyFocus ? 'Set by you · Edit focus' : 'What would you like to work on?'} →</i></button>
     </section>
     <div className="overview-approved-columns">
-      <section className="lecture-journal" aria-labelledby="lecture-ledger-title">
-        <div className="lecture-journal-heading notebook-order-heading"><div><h2 id="lecture-ledger-title">Class notebook</h2>{lectures.length > 0 && <p className="text-xs text-muted-foreground">{isNotebookManualOrder(lectures) ? 'Your order' : 'Class date · Oldest first'}</p>}</div>{isNotebookManualOrder(lectures) && <Button variant="ghost" size="sm" className="min-h-11" onClick={resetOrder}>Sort by class date</Button>}</div>
-        <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">{orderAnnouncement}</p>
-        <Button variant="outline" className="overview-entry-tile" onClick={startEntry}><Plus aria-hidden="true"/><span><strong>Add to notebook</strong></span><ArrowRight aria-hidden="true"/></Button>
-        {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => selectLecture(value || undefined)} className="lecture-journal-list" aria-label="Notebook entries">
-          <NotebookSortableList lectures={lectures} onMove={moveNotebook}>{(lecture, index) => {
-            const isActive = activeLecture?.id === lecture.id
-            const classDate = notebookCatalogDate(lecture)
-            const date = classDate ?? notebookAddedDate(lecture)
-            const dateLabel = date ? `${classDate ? '' : 'Added '}${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : 'Added date unavailable'
-            const dateStamp = <span className={cn('overview-date-stamp', !classDate && 'notebook-added-stamp')} aria-hidden="true">{classDate ? date?.toLocaleDateString(undefined, { month: 'short' }) : 'Added'}<strong>{date?.getDate() ?? '—'}</strong></span>
-            const dateText = date ? <time dateTime={classDate ? lecture.occurredOn?.slice(0, 10) : date.toISOString()} title={`${classDate ? 'Class date' : 'Added'} ${date.toLocaleDateString()}`} className={!classDate ? 'notebook-added-date' : undefined}>{dateLabel}</time> : <span>{dateLabel}</span>
-            const moveActions = { reorderable: true, onMoveUp: index > 0 ? () => moveNotebook(lecture.id, lectures[index - 1].id) : undefined, onMoveDown: index < lectures.length - 1 ? () => moveNotebook(lecture.id, lectures[index + 1].id) : undefined }
-            if (lecture.importedNotebook) {
-              const openImported = () => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(lecture.id)}`)
-              return <div className="lecture-journal-imported-item"><LectureRecordMenu lecture={lecture} {...moveActions} onOpen={openImported} onOpenFullScreen={openImported} onDeleted={lectureId => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail><button type="button" className="lecture-rail-entry imported-notebook-link" onClick={openImported}>{dateStamp}<span className="lecture-journal-row-text"><b>{lecture.title}</b>{dateText}</span><ArrowRight aria-hidden="true" /></button></LectureRecordMenu></div>
-            }
-            return <AccordionItem key={lecture.id} value={lecture.id} className="lecture-journal-item">
-              <LectureRecordMenu lecture={lecture} {...moveActions} onOpen={() => setSelectedLectureId(lecture.id)} onOpenFullScreen={() => openLecture(lecture.id)} onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail>
-                <AccordionTrigger className={cn('lecture-rail-entry', isActive && 'is-active')}>
-                  {dateStamp}<span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b>{dateText}</span>
-                </AccordionTrigger>
-              </LectureRecordMenu>
-              <AccordionContent className="lecture-journal-detail">
-                <div className="lecture-saved-actions"><span className="text-sm font-bold text-muted-foreground">Notebook preview</span><Button size="default" variant="default" onClick={() => openLecture(lecture.id)}>{lecture.workspaceState === 'complete' ? <><Maximize2 className="size-4" /> Full Screen</> : 'Continue entry'}</Button></div>
-                {lecture.workspaceState === 'complete' ? <div className="lecture-journal-workspace"><LectureCapturePanel key={lecture.id} courseId={course.id} course={course} data={data} initialLectureId={lecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div> : <LecturePreview lecture={lecture} sourceCount={isActive ? activeLectureSources.length : 0} />}
-              </AccordionContent>
-            </AccordionItem>
-          }}</NotebookSortableList>
-        </Accordion> : <p className="lecture-journal-empty">Bring your class materials and tell us what would help. No transcript required.</p>}
-      </section>
+      <ClassDays
+        schedule={workspace.syllabusSchedule}
+        meetingDays={workspace.meetingDays}
+        exams={classDayExams}
+        checks={workspace.classDayChecks ?? {}}
+        trackedFrom={isoDay(new Date(workspace.createdAt))}
+        overrides={workspace.classDayOverrides}
+        titleFor={(lesson, days) => { const notebook = lessonNotebook(lesson, days); return notebook ? lessonlessTitle(completedLectureTitle(lectureNumber(notebook.id), notebook)) : undefined }}
+        // Update goes straight into the lesson's notebook's "Update this notebook" flow.
+        notebookFor={(lesson, days) => { const notebook = lessonNotebook(lesson, days); return notebook ? { open: () => openLecture(notebook.id), update: () => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(notebook.id)}?update=1`) } : undefined }}
+        onNewNotebook={lesson => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new${lesson !== undefined ? `?lesson=${lesson}` : ''}`)}
+        onToggle={toggleClassDayCheck}
+        onOverride={setClassDayOverride}
+      />
       <aside className="overview-side" aria-label="Class overview highlights">
         <Card className="overview-side-card overview-reading"><CardHeader><CardTitle><BookOpen aria-hidden="true"/>Continue studying</CardTitle></CardHeader><CardContent>{resumeLecture ? <><h3>{completedLectureTitle(lectureNumber(resumeLecture.id), resumeLecture)}</h3><p>{resumeLecture.notebookOutput === 'tailored-page' ? 'Notebook page' : resumeLecture.studyIntent?.purpose === 'exam-prep' ? 'Exam preparation' : 'Study guide'}</p><Button variant="outline" onClick={() => openLecture(resumeLecture.id)}>Continue reading <ArrowRight aria-hidden="true"/></Button></> : <p>Your first notebook page will appear here once it is ready.</p>}</CardContent></Card>
-        <Card className="overview-side-card"><CardHeader><CardTitle><CalendarDays aria-hidden="true"/>This week</CardTitle></CardHeader><CardContent>{weekItems.length ? <ul className="overview-week">{weekItems.map(item => <li key={item.id}><time dateTime={item.dueDate}>{new Date(`${item.dueDate!.slice(0,10)}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'})}</time><div><b>{item.title}</b><small>{assignmentDateLabel(item)}</small></div></li>)}</ul> : <p>No dated work due in the next seven days.</p>}<Button variant="link" onClick={() => onTab('assignments')}>View class work <ArrowRight aria-hidden="true"/></Button></CardContent></Card>
-        <Card className="overview-side-card overview-feedback"><CardHeader><CardTitle><MessageSquare aria-hidden="true"/>Recent feedback</CardTitle></CardHeader><CardContent>{feedback ? <><b>{feedbackAssignment?.title ?? feedback.theme}</b><p>Saved feedback · {fmtEventDate(new Date(feedback.updatedAt).toISOString().slice(0,10))}</p><blockquote>{feedback.quote || feedback.theme}</blockquote><>{feedbackAssignment && <Button variant="link" onClick={() => navigate(`/academics/classes/${encodeURIComponent(course.id)}?classTab=assignments&assignment=${encodeURIComponent(feedbackAssignment.id)}`)}>Open returned work <ArrowRight aria-hidden="true"/></Button>}</></> : <p>No feedback saved yet. Returned-work notes will appear here.</p>}</CardContent></Card>
+        <Card className="overview-side-card overview-week-card"><CardHeader><CardTitle><CalendarDays aria-hidden="true"/>This week</CardTitle></CardHeader><CardContent>{weekItems.length ? <ul className="overview-week">{weekItems.map(item => <li key={item.id}><time dateTime={item.dueDate}>{new Date(`${item.dueDate!.slice(0,10)}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'})}</time><div><b>{item.title}</b><small>{assignmentDateLabel(item)}</small></div></li>)}</ul> : <p>No dated work due in the next seven days.</p>}<Button variant="link" onClick={() => onTab('assignments')}>View class work <ArrowRight aria-hidden="true"/></Button></CardContent></Card>
       </aside>
 
     </div>
