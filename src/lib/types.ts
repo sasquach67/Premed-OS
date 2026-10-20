@@ -323,6 +323,8 @@ export interface SyllabusScheduleEntry {
   dates?: string[]
   /** The learning objectives the syllabus lists for this lesson. */
   objectives?: string[]
+  /** The syllabus heading this lesson sits under, e.g. "Unit 2: How cells control division". */
+  unit?: string
 }
 
 /** Operational extension for one canonical Course. It exists only for the

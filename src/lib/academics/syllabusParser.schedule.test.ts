@@ -206,6 +206,35 @@ Mon 8/31 Trade Networks`)
   })
 })
 
+describe('unit headings over their lessons (BIOL 103)', () => {
+  const schedule = (head: string) => `BIOL 103 How Cells Function
+Fall 2026
+${head}Class Schedule
+Date Lesson Learning Objectives Assignments
+Unit 1: Central Dogma, Molecular Techniques & Genetic Diseases
+Tue 8/18 Lesson 1 Identify the independent and dependent variables Before class: GRQ-1
+Thu 8/20 Lesson 2 Describe the structure of DNA Before class: GRQ-2
+Tue 8/25 Lesson 3 Explain transcription Before class: GRQ-3
+Unit 2: How cells control division and differentiation
+Thu 8/27 Lesson 4 Describe the cell cycle Before class: GRQ-4
+Tue 9/1 Lesson 5 Explain checkpoints Before class: GRQ-5
+Thu 9/3 Lesson 6 Compare mitosis and meiosis Before class: GRQ-6
+`
+  it('gives each lesson the unit above it and drops the headings as rows', () => {
+    const items = parseSyllabusText(schedule(''), 'BIOL103.pdf', 'pdf').items.filter((item) => item.kind === 'units')
+    const unitOn = (date: string) => items.find((item) => item.value === date)?.unit
+    expect(['2026-08-18', '2026-08-20', '2026-08-25'].map(unitOn)).toEqual(Array(3).fill('Unit 1: Central Dogma, Molecular Techniques & Genetic Diseases'))
+    expect(['2026-08-27', '2026-09-01', '2026-09-03'].map(unitOn)).toEqual(Array(3).fill('Unit 2: How cells control division and differentiation'))
+    expect(items.filter((item) => !item.value)).toEqual([])
+  })
+
+  it('leaves units alone when they are only listed in the course description', () => {
+    const text = schedule('Course units\nUnit 1: Molecules\nUnit 2: Cells\nUnit 3: Immunity\n\n').replace(/^Unit \d: .*\n(?=Tue|Thu)/gm, '')
+    const units = parseSyllabusText(text, 'BIOL103.pdf', 'pdf').items.filter((item) => item.kind === 'units')
+    expect(units.some((item) => item.unit)).toBe(false)
+  })
+})
+
 describe('a document\'s own sentences about cumulative exams', () => {
   it('marks every exam not cumulative when the syllabus says so in prose', () => {
     const parsed = parseSyllabusText(`PSYC 101 — Introduction to Psychology

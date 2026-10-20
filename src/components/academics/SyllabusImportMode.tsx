@@ -10,7 +10,7 @@ import { preferredScrollBehavior } from '@/lib/scroll'
  * Decisions: academics-syllabus-import.md — behaviour AND appearance.
  * Pattern: components/academics/ExamPrepMode.tsx, the same temporary mode.
  */
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, FileText, Upload, X } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { MascotNote } from '@/components/common/MascotNote'
@@ -612,8 +612,13 @@ function ReviewGroup({ kind, items, searched, confirmedItemIds, onPatch, onRemov
       </div>
       {open && (
         <div className="border-t border-border/70">
-          {items.map((item) => (
-            <div key={item.id} className="border-b border-border/60 py-3 pl-5 pr-4 last:border-b-0">
+          {items.map((item, index) => (
+            <Fragment key={item.id}>
+            {/* A unit heading over its lessons (BIOL 103: "Unit 2: How cells control division"). */}
+            {kind === 'units' && item.unit && item.unit !== items[index - 1]?.unit && (
+              <p className="border-b border-border/60 bg-muted/45 px-5 py-2 font-display text-sm font-extrabold text-foreground">{item.unit}</p>
+            )}
+            <div className="border-b border-border/60 py-3 pl-5 pr-4 last:border-b-0">
               {item.context && <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">{item.context}</p>}
               <div className={cn('grid min-w-0 items-start gap-2', (needsValue || item.value !== undefined) ? 'sm:grid-cols-[minmax(0,1.35fr)_minmax(160px,.65fr)_32px]' : 'grid-cols-[minmax(0,1fr)_32px]')}>
                 <Input aria-label={`${GROUP_LABEL[kind]} label`} value={item.label} onChange={(event) => onPatch(item.id, { label: event.target.value })}
@@ -660,6 +665,7 @@ function ReviewGroup({ kind, items, searched, confirmedItemIds, onPatch, onRemov
                 )}
               </div>
             </div>
+            </Fragment>
           ))}
           <button type="button" onClick={onAddManual} className="m-4 ml-5 text-xs font-bold text-primary underline underline-offset-4">Add manually</button>
         </div>

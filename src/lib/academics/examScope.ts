@@ -2,8 +2,9 @@ import type { SyllabusItem, SyllabusProposal } from '@/lib/academics/syllabusPar
 import type { ClassAssignment, ClassCenterData, SyllabusScheduleEntry } from '@/lib/types'
 
 /** The per-lesson facts a schedule unit carries into `syllabusSchedule`. */
-export function lessonFields(item: SyllabusItem): Pick<SyllabusScheduleEntry, 'lesson' | 'dates' | 'objectives'> {
+export function lessonFields(item: SyllabusItem): Pick<SyllabusScheduleEntry, 'lesson' | 'dates' | 'objectives' | 'unit'> {
   return {
+    ...(item.unit ? { unit: item.unit } : {}),
     ...(item.lesson != null ? { lesson: item.lesson } : {}),
     ...(item.dates?.length ? { dates: item.dates } : {}),
     ...(item.objectives?.length ? { objectives: item.objectives } : {}),
