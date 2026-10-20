@@ -21,9 +21,9 @@ let root: Root
 beforeEach(() => { container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(() => { act(() => root.unmount()); container.remove() })
 
-function render(lectures: LectureRecord[] = []) {
-  const handlers = { onOpenNotebook: vi.fn(), onNewNotebook: vi.fn(), onFlashcards: vi.fn(), onPracticeSet: vi.fn() }
-  act(() => root.render(<LessonsTab schedule={schedule} exams={[{ id: 'x1', title: 'Exam 1', date: '2026-09-17' }, { id: 'x2', title: 'Exam 2', date: '2026-11-03' }]} lectures={lectures} today="2026-10-20" titleOf={(l) => l.title} classFiles={<p>Class files content</p>} {...handlers} />))
+function render(lectures: LectureRecord[] = [], extra: Partial<Parameters<typeof LessonsTab>[0]> = {}) {
+  const handlers = { onOpenNotebook: vi.fn(), onNewNotebook: vi.fn(), onFlashcards: vi.fn(), onPracticeSet: vi.fn(), onSetUpFolder: vi.fn(), onSkipFolder: vi.fn() }
+  act(() => root.render(<LessonsTab schedule={schedule} exams={[{ id: 'x1', title: 'Exam 1', date: '2026-09-17' }, { id: 'x2', title: 'Exam 2', date: '2026-11-03' }]} lectures={lectures} today="2026-10-20" titleOf={(l) => l.title} defaultFolderName="PSYC 101 Lecture Material" {...extra} classFiles={<p>Class files content</p>} {...handlers} />))
   return handlers
 }
 const text = (sel: string) => [...container.querySelectorAll(sel)].map((e) => e.textContent)
@@ -55,6 +55,22 @@ describe('LessonsTab', () => {
     act(() => ([...container.querySelectorAll('button')].find((b) => b.textContent === 'No notebook')!).click())
     expect(text('.lessons-main b')).toEqual(['Lesson 11', 'Lesson 8 — Cognition and Intelligence', 'Lesson 7 — Human Memory'])
     expect(container.querySelector('.lessons-card')).toBeNull()
+  })
+
+  it('asks for the class folder until it is set up or skipped', () => {
+    const h = render()
+    expect(container.textContent).toContain('Set up your class folder')
+    expect(container.textContent).toContain('Before your first notebook')
+    act(() => ([...container.querySelectorAll('button')].find((b) => b.textContent === 'Skip for now. Files go to Downloads.')!).click())
+    expect(h.onSkipFolder).toHaveBeenCalled()
+    act(() => ([...container.querySelectorAll('button')].find((b) => b.textContent === 'Set it up · 5 min')!).click())
+    expect(h.onSetUpFolder).toHaveBeenCalled()
+  })
+
+  it('shows a ready class folder before the first notebook', () => {
+    render([], { classFolder: { site: 'canvas', place: 'documents', mover: 'me', name: 'PSYC 101 Lecture Material', state: 'ready', updatedAt: 1 } })
+    expect(container.textContent).not.toContain('Set up your class folder')
+    expect(container.querySelector('.class-folder-ready')?.textContent).toContain('Documents › PSYC 101 Lecture Material')
   })
 
   it('keeps the class files in a collapsed section', () => {

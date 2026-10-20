@@ -52,6 +52,7 @@ import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialo
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { ClassDays } from '@/components/academics/ClassDays'
 import { LessonsTab } from '@/components/academics/LessonsTab'
+import { defaultFolderName } from '@/lib/academics/classFolder'
 import { isoDay, lessonlessTitle, type ClassDay } from '@/lib/academics/classDays'
 import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
@@ -125,6 +126,7 @@ function classHubAccentStyle(color: AcademicTagColor): CSSProperties {
 
 export function ClassHub({ course, workspace, data }: ClassHubProps) {
   const navigate = useNavigate()
+  const update = useStore(state => state.update)
   const [params, setParams] = useSearchParams()
   const requestedTab = params.get('classTab')
   // Keep old notes and details links on the single Guide surface.
@@ -287,6 +289,10 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
           onFlashcards={lectureId => navigate(`/academics/classes/${encodeURIComponent(course.id)}/resources/flashcards?journal=${encodeURIComponent(lectureId)}`)}
           onPracticeSet={openNotebook}
           classFilesCount={classFileCount}
+          classFolder={workspace.classFolder}
+          defaultFolderName={defaultFolderName(course.code)}
+          onSetUpFolder={() => navigate(`/academics/classes/${encodeURIComponent(course.id)}/folder`)}
+          onSkipFolder={() => update(draft => { const item = draft.academics.classCenter.workspaces.find(row => row.courseId === course.id); if (item) item.classFolder = { site: 'canvas', place: 'documents', mover: 'me', name: defaultFolderName(course.code), state: 'skipped', updatedAt: Date.now() } })}
           classFilesOpen={canonicalRequestedTab === 'materials' && requestedTab !== 'lessons'}
           classFiles={<Materials course={course} workspace={workspace} classType={classType} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} writingTools={classType === 'writing' ? <WritingTools courseId={course.id} readingListState={readingListState} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /> : undefined} />}
         /></TabsContent>

@@ -1,11 +1,13 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { BookOpenCheck, CalendarDays, Check, ChevronDown, ChevronRight, Layers, ListChecks, NotebookText, Plus } from 'lucide-react'
+import { BookOpenCheck, CalendarDays, Check, ChevronDown, ChevronRight, Folder, Layers, ListChecks, NotebookText, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Collapsible } from '@/components/common/Collapsible'
 import { cn } from '@/lib/utils'
 import { dateOf, isoDay } from '@/lib/academics/classDays'
 import { buildLessons, groupLessonsByExam, type LessonExam, type LessonRow } from '@/lib/academics/lessonGroups'
-import type { LectureRecord, SyllabusScheduleEntry } from '@/lib/types'
+import { folderTrail } from '@/lib/academics/classFolder'
+import type { ClassFolderSetup, LectureRecord, SyllabusScheduleEntry } from '@/lib/types'
+import './classFolder.css'
 import './lessonsTab.css'
 
 type Filter = 'all' | 'needs' | 'none'
@@ -18,7 +20,7 @@ interface LessonState { notebook?: LectureRecord; flashcards: boolean; practice:
  * flashcards and practice set. The class's files sit in a collapsed section
  * at the bottom, so nothing the Materials tab held is lost.
  */
-export function LessonsTab({ schedule, exams, lectures, today = isoDay(new Date()), titleOf, onOpenNotebook, onNewNotebook, onFlashcards, onPracticeSet, classFiles, classFilesCount, classFilesOpen = false }: {
+export function LessonsTab({ schedule, exams, lectures, today = isoDay(new Date()), titleOf, onOpenNotebook, onNewNotebook, onFlashcards, onPracticeSet, classFiles, classFilesCount, classFilesOpen = false, classFolder, defaultFolderName, onSetUpFolder, onSkipFolder }: {
   schedule?: SyllabusScheduleEntry[]
   exams: LessonExam[]
   /** This class's notebooks. */
@@ -33,6 +35,11 @@ export function LessonsTab({ schedule, exams, lectures, today = isoDay(new Date(
   classFilesCount?: number
   /** Open when a link asked for the class's files (old Materials links). */
   classFilesOpen?: boolean
+  /** The class folder setup, absent until set up or skipped. */
+  classFolder?: ClassFolderSetup
+  defaultFolderName: string
+  onSetUpFolder: () => void
+  onSkipFolder: () => void
 }) {
   const lessons = useMemo(() => {
     const fromSyllabus = buildLessons(schedule)
@@ -64,11 +71,29 @@ export function LessonsTab({ schedule, exams, lectures, today = isoDay(new Date(
   const needs = (l: LessonRow) => { const s = stateOf(l); return s.taught && !(s.notebook && s.flashcards && s.practice) }
   const shown = (l: LessonRow) => filter === 'all' || (filter === 'needs' ? needs(l) : !stateOf(l).notebook)
 
+  const askFolder = !classFolder
+  const noNotebooks = lectures.length === 0
   return <div className="lessons-tab">
     <div className="lessons-head">
       <div><h2>Lessons</h2><p>{lessons.length ? `${taught.length} lesson${taught.length === 1 ? '' : 's'} so far${groups.length > 1 ? ' · grouped by exam' : ''}` : 'No lessons yet'}</p></div>
-      <Button size="sm" onClick={onNewNotebook}><Plus aria-hidden="true" /> New notebook</Button>
+      <Button size="sm" variant={askFolder ? 'outline' : 'default'} onClick={onNewNotebook}><Plus aria-hidden="true" /> New notebook</Button>
     </div>
+    {askFolder && <section className="class-folder-card" aria-labelledby="class-folder-card-title">
+      <div className="flex items-start gap-4">
+        <span className="icon"><Folder aria-hidden="true" /></span>
+        <div className="min-w-0">
+          <p className="class-folder-kicker">{noNotebooks ? 'Before your first notebook' : 'Class folder'}</p>
+          <h3 id="class-folder-card-title">Set up your class folder</h3>
+          <p className="sub">So your AI knows where to save notebooks and flashcards.</p>
+          <div className="class-folder-chips"><span className="chip"><Folder aria-hidden="true" />{defaultFolderName}</span><span aria-hidden="true">›</span><span className="chip"><Folder aria-hidden="true" />Lesson 1</span><span>+</span><span className="chip is-ai"><Folder aria-hidden="true" />premedOS</span></div>
+        </div>
+      </div>
+      <div className="class-folder-card-actions"><Button onClick={onSetUpFolder}>Set it up · 5 min</Button><button type="button" className="skip" onClick={onSkipFolder}>Skip for now. Files go to Downloads.</button></div>
+    </section>}
+    {classFolder && noNotebooks && <div className="class-folder-ready">
+      <div><Folder aria-hidden="true" /><div><b>{classFolder.state === 'ready' ? 'Class folder set up' : 'No class folder'}</b><small>{classFolder.state === 'ready' ? `${folderTrail(classFolder).join(' › ')} · new files land in each lesson’s folders` : 'Your AI saves files to Downloads'}</small></div></div>
+      <div className="flex items-center gap-3">{classFolder.state === 'ready' && <span className="ok"><Check aria-hidden="true" /> Ready</span>}<button type="button" className="change" onClick={onSetUpFolder}>{classFolder.state === 'ready' ? 'Change' : 'Set it up'}</button></div>
+    </div>}
     {lessons.length ? <>
       <div className="class-hub-material-filters" role="group" aria-label="Lesson filters">
         {([['all', `All ${taught.length}`], ['needs', 'Needs work'], ['none', 'No notebook']] as const).map(([key, label]) =>
@@ -100,7 +125,7 @@ export function LessonsTab({ schedule, exams, lectures, today = isoDay(new Date(
         </section>
       })}
     </> : <div className="lessons-first"><NotebookText aria-hidden="true" /><p className="h">Make your first notebook</p><p>Your AI turns the lesson’s slides, outline and transcript into a study guide.</p><Button onClick={onNewNotebook}><Plus aria-hidden="true" /> New notebook</Button></div>}
-    <div className="lessons-files"><Collapsible title="Class files" badge={classFilesCount ? <span className="lessons-files-count" aria-label={`${classFilesCount} files`}>{classFilesCount}</span> : undefined} defaultOpen={classFilesOpen}>{classFiles}</Collapsible></div>
+    <div className="lessons-files"><Collapsible title="Class files" badge={classFilesCount ? <span className="lessons-files-count" aria-label={`${classFilesCount} files`}>{classFilesCount}</span> : undefined} defaultOpen={classFilesOpen}>{classFolder && <p className="class-folder-line"><Folder aria-hidden="true" /><span>{classFolder.state === 'ready' ? <>Class folder · {folderTrail(classFolder).join(' › ')}</> : <>No class folder · your AI saves to Downloads</>}</span><button type="button" onClick={onSetUpFolder}>{classFolder.state === 'ready' ? 'Change' : 'Set it up'}</button></p>}{classFiles}</Collapsible></div>
   </div>
 }
 

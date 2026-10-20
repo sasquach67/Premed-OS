@@ -327,6 +327,20 @@ export interface SyllabusScheduleEntry {
   unit?: string
 }
 
+/** The three folder questions and their outcome. `skipped` means files go to Downloads. */
+export interface ClassFolderSetup {
+  /** Where the class posts files. */
+  site: 'canvas' | 'other'
+  /** Where the student keeps schoolwork. */
+  place: 'documents' | 'cloud'
+  /** Who moves the files into the folders. */
+  mover: 'me' | 'ai'
+  /** The class folder's name on disk, e.g. "PSYC 101 Lecture Material". */
+  name: string
+  state: 'ready' | 'skipped'
+  updatedAt: number
+}
+
 /** Operational extension for one canonical Course. It exists only for the
  * profile's current term and never repeats course code/title/term. */
 export interface ClassWorkspace {
@@ -339,6 +353,10 @@ export interface ClassWorkspace {
   /** Class days checklist (Oct 2026): ISO class date → ids of the items the
    * student ticked. Absent until the first tick; nothing ticks itself. */
   classDayChecks?: Record<string, string[]>
+  /** Class folder setup (Oct 2026): where the class's files live on the
+   * student's computer, so every AI prompt can name the save location.
+   * Absent until the student sets it up or skips it. */
+  classFolder?: ClassFolderSetup
   lastOpenedLectureId?: ID
   id: ID
   courseId: ID

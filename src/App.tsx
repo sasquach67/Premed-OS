@@ -15,6 +15,7 @@ const OverviewTasksPage = lazy(() => import('@/pages/OverviewTasksPage').then((m
 const OverviewQuarterlyGoalsPage = lazy(() => import('@/pages/OverviewQuarterlyGoalsPage').then((m) => ({ default: m.OverviewQuarterlyGoalsPage })))
 const ReviewItemPage = lazy(() => import('@/pages/ReviewItemPage').then((m) => ({ default: m.ReviewItemPage })))
 const ResourceCreationPage = lazy(() => import('@/pages/ResourceCreationPage').then(m => ({ default: m.ResourceCreationPage })))
+const ClassFolderPage = lazy(() => import('@/pages/ClassFolderPage').then(m => ({ default: m.ClassFolderPage })))
 const JournalEntryPage = lazy(() => import('@/pages/JournalEntryPage').then(m => ({ default: m.JournalEntryPage })))
 const Academics = lazy(() => import('@/pages/Academics').then((m) => ({ default: m.Academics })))
 const LecturePage = lazy(() => import('@/pages/LecturePage').then((m) => ({ default: m.LecturePage })))
@@ -89,6 +90,7 @@ function App() {
             <Route path="academics" element={<Academics />} />
             <Route path="academics/classes/:courseId" element={<Academics />} />
             <Route path="academics/classes/:courseId/resources/:resource" element={<ResourceCreationPage />} />
+            <Route path="academics/classes/:courseId/folder" element={<ClassFolderPage />} />
             <Route path="academics/classes/:courseId/journal/:entryId" element={<JournalEntryPage />} />
             <Route path="academics/classes/:courseId/lectures/:lectureId" element={<LecturePage />} />
 
