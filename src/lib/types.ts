@@ -353,6 +353,10 @@ export interface ClassWorkspace {
   /** Class days checklist (Oct 2026): ISO class date → ids of the items the
    * student ticked. Absent until the first tick; nothing ticks itself. */
   classDayChecks?: Record<string, string[]>
+  /** Class days the student changed with the pencil (Oct 2026): ISO date →
+   * the lessons that class covered, or that it was cancelled. The syllabus
+   * schedule is never rewritten. */
+  classDayOverrides?: Record<string, { lessons?: number[]; cancelled?: boolean }>
   /** Class folder setup (Oct 2026): where the class's files live on the
    * student's computer, so every AI prompt can name the save location.
    * Absent until the student sets it up or skips it. */
@@ -839,6 +843,10 @@ export interface LectureRecord {
   transcriptFileId?: ID
   /** The date this class session occurred. It is student-entered, never inferred. */
   occurredOn?: string
+  /** The syllabus lesson this notebook covers (Oct 2026). One notebook per
+   * lesson: every class day of the lesson links here and updates it. Older
+   * notebooks without it are matched by class date or title. */
+  lesson?: number
   /** When the student said the lesson's Anki deck was made (Oct 2026). The deck
    * itself lives in Anki; the app only keeps that it exists. */
   flashcardsMadeAt?: number

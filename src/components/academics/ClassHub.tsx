@@ -53,7 +53,8 @@ import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidence
 import { ClassDays } from '@/components/academics/ClassDays'
 import { LessonsTab } from '@/components/academics/LessonsTab'
 import { defaultFolderName } from '@/lib/academics/classFolder'
-import { isoDay, lessonlessTitle, type ClassDay } from '@/lib/academics/classDays'
+import { isoDay, lessonDates, lessonlessTitle, type ClassDay, type ClassDayOverride } from '@/lib/academics/classDays'
+import { findLessonNotebook } from '@/lib/academics/lessonGroups'
 import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
@@ -338,12 +339,17 @@ function Overview({ course, workspace, data, assignments, onTab }: {
     if (lecture?.importedNotebook || lecture?.workspaceState !== 'complete') { navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(id)}`); return }
     navigate(`/academics/classes/${encodeURIComponent(course.id)}/lectures/${encodeURIComponent(id)}`)
   }
-  /** A class day's notebook: one dated on that day, or on another day of the same lesson. */
-  function notebookFor(day: ClassDay) {
-    if (day.kind !== 'class') return undefined
-    const entry = day.lesson !== undefined ? workspace.syllabusSchedule?.find(item => item.lesson === day.lesson) : undefined
-    const dates = entry?.dates?.length ? entry.dates.map(date => date.slice(0,10)) : [day.date]
-    return lectures.find(item => item.occurredOn && dates.includes(item.occurredOn.slice(0,10)))
+  /** A lesson's one notebook, wherever its classes fall (pencil edits included). */
+  const lessonNotebook = (lesson: number, days: ClassDay[]) => findLessonNotebook(lectures, lesson, lessonDates(days, lesson))
+  function setClassDayOverride(date: string, change: ClassDayOverride | undefined) {
+    update(draft => {
+      const item = draft.academics.classCenter.workspaces.find(row => row.courseId === course.id)
+      if (!item) return
+      const overrides = { ...(item.classDayOverrides ?? {}) }
+      if (change) overrides[date] = change
+      else delete overrides[date]
+      item.classDayOverrides = Object.keys(overrides).length ? overrides : undefined
+    })
   }
   function toggleClassDayCheck(date: string, itemId: string) {
     update(draft => {
@@ -370,9 +376,13 @@ function Overview({ course, workspace, data, assignments, onTab }: {
         exams={classDayExams}
         checks={workspace.classDayChecks ?? {}}
         trackedFrom={isoDay(new Date(workspace.createdAt))}
-        titleFor={day => { const notebook = notebookFor(day); return notebook ? lessonlessTitle(completedLectureTitle(lectureNumber(notebook.id), notebook)) : undefined }}
-        linksFor={day => { const notebook = notebookFor(day); return { openNotebook: notebook ? () => openLecture(notebook.id) : undefined, newNotebook: startEntry } }}
+        overrides={workspace.classDayOverrides}
+        titleFor={(lesson, days) => { const notebook = lessonNotebook(lesson, days); return notebook ? lessonlessTitle(completedLectureTitle(lectureNumber(notebook.id), notebook)) : undefined }}
+        // Update opens the lesson's notebook, where "Update this notebook" adds the new class (a direct deep link follows PR #41).
+        notebookFor={(lesson, days) => { const notebook = lessonNotebook(lesson, days); return notebook ? { open: () => openLecture(notebook.id), update: () => openLecture(notebook.id) } : undefined }}
+        onNewNotebook={() => startEntry()}
         onToggle={toggleClassDayCheck}
+        onOverride={setClassDayOverride}
       />
       <aside className="overview-side" aria-label="Class overview highlights">
         <Card className="overview-side-card overview-reading"><CardHeader><CardTitle><BookOpen aria-hidden="true"/>Continue studying</CardTitle></CardHeader><CardContent>{resumeLecture ? <><h3>{completedLectureTitle(lectureNumber(resumeLecture.id), resumeLecture)}</h3><p>{resumeLecture.notebookOutput === 'tailored-page' ? 'Notebook page' : resumeLecture.studyIntent?.purpose === 'exam-prep' ? 'Exam preparation' : 'Study guide'}</p><Button variant="outline" onClick={() => openLecture(resumeLecture.id)}>Continue reading <ArrowRight aria-hidden="true"/></Button></> : <p>Your first notebook page will appear here once it is ready.</p>}</CardContent></Card>

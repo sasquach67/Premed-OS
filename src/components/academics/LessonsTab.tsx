@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Collapsible } from '@/components/common/Collapsible'
 import { cn } from '@/lib/utils'
 import { dateOf, isoDay } from '@/lib/academics/classDays'
-import { buildLessons, groupLessonsByExam, type LessonExam, type LessonRow } from '@/lib/academics/lessonGroups'
+import { buildLessons, findLessonNotebook, groupLessonsByExam, type LessonExam, type LessonRow } from '@/lib/academics/lessonGroups'
 import { buildReadingItems, readingExamKey, readingsDiscussedOn, type ReadingItem } from '@/lib/academics/readingGroups'
 import { folderTrail, readingFolderName } from '@/lib/academics/classFolder'
 import type { AssignedReading, ClassFolderSetup, LectureRecord, SyllabusScheduleEntry } from '@/lib/types'
@@ -67,7 +67,7 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
     const sortedNotebooks = [...lessonNotebooks].sort((a, b) => (a.occurredOn ?? '9').localeCompare(b.occurredOn ?? '9') || a.createdAt - b.createdAt)
     return (row: LessonRow): LessonState => {
       const notebook = syllabusLessons
-        ? lessonNotebooks.find((l) => l.occurredOn && row.dates.includes(l.occurredOn.slice(0, 10))) ?? lessonNotebooks.find((l) => new RegExp(`\\blesson\\s*${row.lesson}\\b`, 'i').test(l.title))
+        ? findLessonNotebook(lessonNotebooks, row.lesson, row.dates)
         : sortedNotebooks[row.lesson - 1]
       return { ...madeFrom(notebook), taught: Boolean(notebook) || (row.dates.length > 0 && row.dates[0] <= today) }
     }

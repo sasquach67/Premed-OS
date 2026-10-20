@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildClassDays, meetingWeekdays, stageStates, type ClassDay } from './classDays'
+import { buildClassDays, lessonDates, meetingWeekdays, stageStates, type ClassDay } from './classDays'
 import type { SyllabusScheduleEntry } from '@/lib/types'
 
 const entry = (order: number, label: string, extra: Partial<SyllabusScheduleEntry>): SyllabusScheduleEntry => ({ id: `e${order}`, week: '', label, order, ...extra })
@@ -51,6 +51,21 @@ describe('buildClassDays', () => {
       ['2026-08-25', 3, 'Week 2: Healing systems'],
       ['2026-08-27', 4, 'Week 2: Healing systems'],
     ])
+  })
+
+  it('applies the student’s changes to one class without rewriting the syllabus', () => {
+    const schedule = [
+      entry(1, 'Chapter 9 Motivation and Emotion', { lesson: 9, dates: ['2026-10-13', '2026-10-15'], startDate: '2026-10-13' }),
+      entry(2, 'Chapter 10 Human Development', { lesson: 10, dates: ['2026-10-20', '2026-10-22'], startDate: '2026-10-20' }),
+    ]
+    const days = buildClassDays({ schedule, overrides: { '2026-10-15': { lessons: [9, 10] }, '2026-10-20': { cancelled: true } } })
+    expect(days.map((d) => [d.date, d.lessons, d.syllabusLesson, d.cancelled, d.continued])).toEqual([
+      ['2026-10-13', [9], undefined, undefined, undefined],
+      ['2026-10-15', [9, 10], 9, undefined, undefined],
+      ['2026-10-20', undefined, 10, true, undefined],
+      ['2026-10-22', [10], undefined, undefined, true],
+    ])
+    expect(lessonDates(days, 10)).toEqual(['2026-10-15', '2026-10-22'])
   })
 
   it('returns nothing when the syllabus gives no dates', () => {

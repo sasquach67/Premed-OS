@@ -25,7 +25,16 @@ export interface ClassDay {
   week: number
   /** True on a lesson's second (or later) class day. */
   continued?: boolean
+  /** Every lesson this class covers; usually one, two when a class covers two. */
+  lessons?: number[]
+  /** The lesson the syllabus set for this class, when the student changed it. */
+  syllabusLesson?: number
+  /** The student marked this class cancelled. */
+  cancelled?: boolean
 }
+
+/** What the student changed on one class (Oct 2026): which lessons it covered, or that it was cancelled. */
+export interface ClassDayOverride { lessons?: number[]; cancelled?: boolean }
 
 export interface ClassDayExam { id: string; title: string; date: string }
 
@@ -73,10 +82,12 @@ function entryDates(entry: SyllabusScheduleEntry): string[] {
  * Build the class days. Returns [] when nothing is dated, so the caller can
  * show its empty state.
  */
-export function buildClassDays({ schedule = [], meetingDays, exams = [] }: {
+export function buildClassDays({ schedule = [], meetingDays, exams = [], overrides = {} }: {
   schedule?: SyllabusScheduleEntry[]
   meetingDays?: string
   exams?: ClassDayExam[]
+  /** Per-date changes the student made with the pencil; the syllabus is never rewritten. */
+  overrides?: Record<string, ClassDayOverride>
 }): ClassDay[] {
   const weekdays = meetingWeekdays(meetingDays)
   const dated = schedule.filter((e) => entryDates(e).length).sort((a, b) => entryDates(a)[0].localeCompare(entryDates(b)[0]) || a.order - b.order)
@@ -108,11 +119,31 @@ export function buildClassDays({ schedule = [], meetingDays, exams = [] }: {
     const exam = examOn.get(date)
     if (exam) return { date, kind: 'exam', examTitle: exam.title, examId: exam.id, week }
     const info = days.get(date) ?? {}
+    const change = overrides[date]
     lecture += 1
-    const continued = info.lesson !== undefined && seenLesson.has(info.lesson)
-    if (info.lesson !== undefined) seenLesson.add(info.lesson)
-    return { date, kind: 'class', lecture, lesson: info.lesson, topic: info.topic, week, ...(continued ? { continued } : {}) }
+    if (change?.cancelled) return { date, kind: 'class', lecture, week, cancelled: true, topic: info.topic, ...(info.lesson !== undefined ? { syllabusLesson: info.lesson } : {}) }
+    const lessons = change?.lessons?.length ? [...new Set(change.lessons)].sort((x, y) => x - y) : info.lesson !== undefined ? [info.lesson] : []
+    const changed = Boolean(change?.lessons?.length) && lessons.join() !== String(info.lesson ?? '')
+    const continued = lessons.length === 1 && seenLesson.has(lessons[0])
+    lessons.forEach((l) => seenLesson.add(l))
+    return {
+      date, kind: 'class', lecture, week, lesson: lessons[0], lessons,
+      // A changed class shows its own lessons, so the syllabus topic would mislead.
+      topic: changed ? undefined : info.topic,
+      ...(continued ? { continued } : {}),
+      ...(changed && info.lesson !== undefined ? { syllabusLesson: info.lesson } : {}),
+    }
   })
+}
+
+/** Lessons whose class dates are known, for the pencil's choices. */
+export function lessonNumbers(days: ClassDay[]): number[] {
+  return [...new Set(days.flatMap((d) => d.kind === 'class' ? [...(d.lessons ?? []), ...(d.syllabusLesson !== undefined ? [d.syllabusLesson] : [])] : []))].sort((a, b) => a - b)
+}
+
+/** Every class date a lesson is taught on, after the student's changes. */
+export function lessonDates(days: ClassDay[], lesson: number): string[] {
+  return days.filter((d) => d.kind === 'class' && !d.cancelled && d.lessons?.includes(lesson)).map((d) => d.date)
 }
 
 export interface ChecklistStage { name: string; when: string; items: readonly { id: string; label: string }[] }
@@ -138,8 +169,14 @@ export function lessonlessTitle(title: string): string {
 
 export type StageState = 'done' | 'part' | 'late' | 'open' | 'locked'
 
-export function stagesFor(day: ClassDay) {
-  return day.kind === 'exam' ? EXAM_DAY_STAGES : CLASS_DAY_STAGES
+export function stagesFor(day: ClassDay): readonly ChecklistStage[] {
+  if (day.kind === 'exam') return EXAM_DAY_STAGES
+  if ((day.lessons?.length ?? 0) < 2) return CLASS_DAY_STAGES
+  // A class that covers two lessons works through each lesson's notebook.
+  return CLASS_DAY_STAGES.map((stage) => stage.name !== 'Learn' ? stage : {
+    ...stage,
+    items: [stage.items[0], ...day.lessons!.map((l) => ({ id: `notebook-${l}`, label: `Work through the Lesson ${l} notebook` }))],
+  })
 }
 
 /**

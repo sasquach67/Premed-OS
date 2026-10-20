@@ -1,4 +1,4 @@
-import type { SyllabusScheduleEntry } from '@/lib/types'
+import type { LectureRecord, SyllabusScheduleEntry } from '@/lib/types'
 import { topicOf } from './classDays'
 
 /**
@@ -86,4 +86,15 @@ export function groupLessonsByExam(lessons: LessonRow[], exams: LessonExam[]): L
     groups[at].lessons.push(row)
   }
   return groups.filter((group) => group.lessons.length)
+}
+
+/**
+ * A lesson's notebook (one per lesson, Andy Oct 20 2026): the notebook saved
+ * for that lesson; else, for older notebooks, one dated on any of the
+ * lesson's class days (after the student's changes) or titled "Lesson N".
+ */
+export function findLessonNotebook<T extends Pick<LectureRecord, 'lesson' | 'occurredOn' | 'title'>>(notebooks: T[], lesson: number, dates: string[]): T | undefined {
+  return notebooks.find((n) => n.lesson === lesson)
+    ?? notebooks.find((n) => n.lesson === undefined && n.occurredOn && dates.includes(n.occurredOn.slice(0, 10)))
+    ?? notebooks.find((n) => n.lesson === undefined && new RegExp(`\\blesson\\s*${lesson}\\b`, 'i').test(n.title))
 }

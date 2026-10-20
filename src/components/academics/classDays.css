@@ -79,6 +79,33 @@
 .class-day-check .go { flex:none; min-height:2.75rem; padding:0 .75rem; font-size:.8125rem; font-weight:800; color:var(--primary); white-space:nowrap; }
 .class-day-check button:focus-visible { outline:2px solid var(--ring); outline-offset:-2px; border-radius:10px; }
 
+/* The pencil: change one class (Oct 20 2026) */
+.class-day-edit { display:grid; flex:none; place-items:center; width:2rem; height:2rem; margin-left:.25rem; border-radius:.5rem; color:var(--muted-foreground); }
+.class-day-edit svg { width:.875rem; height:.875rem; }
+.class-day-edit:hover { background:var(--card); color:var(--foreground); }
+.class-day-edit:focus-visible { outline:2px solid var(--ring); outline-offset:1px; }
+.class-day-syllabus { margin-top:3px; font-size:12px; font-weight:700; color:var(--muted-foreground); text-decoration:line-through; text-decoration-color:color-mix(in srgb,var(--muted-foreground) 55%,transparent); }
+.class-days-dots i.changed { background:var(--primary); }
+.class-days-changed { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin-top:.75rem; font-size:.8125rem; font-weight:600; color:var(--muted-foreground); }
+.class-days-changed svg { width:.875rem; height:.875rem; color:var(--primary); }
+.class-days-changed button { min-height:2rem; font-size:.75rem; font-weight:800; color:var(--primary); }
+.class-day.is-cancelled { background:transparent; border:1px dashed var(--border); }
+.class-day.is-cancelled h3 { color:var(--warning); }
+.class-day-restore { align-self:flex-start; min-height:2.25rem; padding:0 .875rem; border:1px solid var(--border); border-radius:.75rem; font-size:.8125rem; font-weight:700; }
+.class-day-restore:hover { background:var(--muted); }
+.class-day-cover .sub { margin-top:2px; }
+.class-day-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.class-day-chips button, .class-day-chip-cancel { display:inline-flex; align-items:center; gap:6px; min-height:2.25rem; padding:0 .75rem; border:1px solid var(--border); border-radius:99px; background:var(--card); font-size:.8125rem; font-weight:700; color:var(--muted-foreground); }
+.class-day-chips button svg, .class-day-chip-cancel svg { width:.875rem; height:.875rem; }
+.class-day-chips button.is-on { border-color:var(--primary); background:color-mix(in srgb,var(--primary) 12%,var(--card)); color:var(--foreground); }
+.class-day-chip-cancel { align-self:flex-start; }
+.class-day-chip-cancel.is-on { border-color:var(--warning); background:color-mix(in srgb,var(--warning) 12%,var(--card)); color:var(--foreground); }
+.class-day-chips button:focus-visible, .class-day-chip-cancel:focus-visible, .class-day-cover-actions button:focus-visible { outline:2px solid var(--ring); outline-offset:2px; }
+.class-day-cover-actions { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-top:auto; padding-top:.5rem; }
+.class-day-cover-actions .quiet { min-height:2.25rem; font-size:.8125rem; font-weight:700; color:var(--muted-foreground); }
+.class-day-cover-actions .quiet:disabled { opacity:.4; }
+.class-day-cover-actions .done { min-height:2.25rem; padding:0 1rem; border-radius:99px; background:var(--primary); font-size:.8125rem; font-weight:800; color:var(--primary-foreground); }
+
 /* Overview layout with Class days: the calendar and This week end on one line. */
 .overview-approved-columns:has(> .class-days) { align-items:stretch; }
 .overview-approved-columns:has(> .class-days) > .overview-side { display:flex; flex-direction:column; }

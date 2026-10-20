@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildLessons, groupLessonsByExam, scopeLessonNumbers, type LessonRow } from './lessonGroups'
+import { buildLessons, findLessonNotebook, groupLessonsByExam, scopeLessonNumbers, type LessonRow } from './lessonGroups'
 
 const row = (lesson: number, date: string): LessonRow => ({ lesson, dates: [date] })
 
@@ -30,6 +30,18 @@ describe('buildLessons', () => {
       { id: 'a', week: '1', label: 'Week 1: Introduction', order: 0, startDate: '2026-08-17' },
       { id: 'b', week: '2', label: 'Week 2: Healing systems', order: 1, startDate: '2026-08-24' },
     ]).map((r) => [r.lesson, r.title])).toEqual([[1, 'Week 1: Introduction'], [2, 'Week 2: Healing systems']])
+  })
+})
+
+describe('findLessonNotebook', () => {
+  const nb = (id: string, extra: { lesson?: number; occurredOn?: string; title?: string }) => ({ id, title: 'Notebook', ...extra })
+  it('finds the lesson’s notebook first, then one dated on any of its classes, then by title', () => {
+    // Lesson 9 meets Oct 8 and, after Fall Break, Oct 13: one notebook for both.
+    expect(findLessonNotebook([nb('a', { occurredOn: '2026-10-08' })], 9, ['2026-10-08', '2026-10-13'])?.id).toBe('a')
+    expect(findLessonNotebook([nb('a', { occurredOn: '2026-10-08' }), nb('b', { lesson: 9 })], 9, ['2026-10-08'])?.id).toBe('b')
+    expect(findLessonNotebook([nb('c', { title: 'Lesson 9 — Motivation' })], 9, [])?.id).toBe('c')
+    // A notebook saved for another lesson is never borrowed by date.
+    expect(findLessonNotebook([nb('d', { lesson: 10, occurredOn: '2026-10-13' })], 9, ['2026-10-13'])).toBeUndefined()
   })
 })
 
