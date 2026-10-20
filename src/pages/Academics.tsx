@@ -195,7 +195,7 @@ export function Academics() {
   }
 
   if (courseId) {
-    return <div className="academics-surface"><ClassCenter onFirstSyllabusClassCreated={() => setStudyGuideOpen(true)} /></div>
+    return <div className="academics-surface"><ClassCenter /></div>
   }
 
   function changeMode(nextMode: 'daily' | 'planning') {
@@ -300,7 +300,7 @@ export function Academics() {
             exit="exit"
           >
             {/* ---- Class Center (daily academic workflow) ---- */}
-            <TabsContent value="class-center"><ClassCenter onFirstSyllabusClassCreated={() => setStudyGuideOpen(true)} /></TabsContent>
+            <TabsContent value="class-center"><ClassCenter /></TabsContent>
 
         {/* ---- Assignments + Calendar (main dashboard) ---- */}
         <TabsContent value="assignments">

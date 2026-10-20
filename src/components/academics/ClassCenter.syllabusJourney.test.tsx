@@ -144,9 +144,9 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     vi.useRealTimers()
   })
 
-  async function render(entry: string, onFirstSyllabusClassCreated?: () => void) {
+  async function render(entry: string) {
     await act(async () => {
-      root.render(<MemoryRouter initialEntries={[entry]}><ToastProvider><ClassCenter onFirstSyllabusClassCreated={onFirstSyllabusClassCreated} /></ToastProvider></MemoryRouter>)
+      root.render(<MemoryRouter initialEntries={[entry]}><ToastProvider><ClassCenter /></ToastProvider></MemoryRouter>)
     })
   }
 
@@ -160,8 +160,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
   }
 
   it('creates one class only after review, persists all parsed course records, and retains the source locally', async () => {
-    const onFirstSyllabusClassCreated = vi.fn()
-    await render('/academics?tab=class-center', onFirstSyllabusClassCreated)
+    await render('/academics?tab=class-center')
     await act(async () => button(container, 'Import a syllabus').click())
     expect(snapshotData().courses).toHaveLength(0)
 
@@ -179,7 +178,8 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(document.body.querySelector('#syllabus-group-standards button')?.getAttribute('aria-expanded')).toBe('false')
     await act(async () => button(document.body, 'Add reviewed syllabus to CHEM 262').click())
 
-    expect(onFirstSyllabusClassCreated).toHaveBeenCalledTimes(1)
+    // The first-lecture capture guide no longer opens after a syllabus import (Andy, Oct 20).
+    expect(document.body.textContent).not.toContain('First lecture setup')
 
     const created = snapshotData()
     expect(created.courses).toHaveLength(1)

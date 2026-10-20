@@ -628,7 +628,7 @@ function reorderClasses(draft: ClassCenterData, orderedVisibleIds: string[]) {
   draft.workspaces = reordered
 }
 
-export function ClassCenter({ archiveOnly = false, onFirstSyllabusClassCreated }: { archiveOnly?: boolean; onFirstSyllabusClassCreated?: () => void }) {
+export function ClassCenter({ archiveOnly = false }: { archiveOnly?: boolean }) {
   const params = useParams()
   const data = useStore((s) => s.academics.classCenter)
   const courses = useStore((s) => s.courses)
@@ -676,13 +676,12 @@ export function ClassCenter({ archiveOnly = false, onFirstSyllabusClassCreated }
       mutate={mutate}
       updateAll={update}
       archiveOnly={archiveOnly}
-      onFirstSyllabusClassCreated={onFirstSyllabusClassCreated}
     />
   )
 }
 
 function ClassCenterDashboard({
-  data, persons, recommendations, currentTerm, terms, courses, mutate, updateAll, archiveOnly, onFirstSyllabusClassCreated,
+  data, persons, recommendations, currentTerm, terms, courses, mutate, updateAll, archiveOnly,
 }: {
   data: ClassCenterViewData
   persons: Person[]
@@ -693,7 +692,6 @@ function ClassCenterDashboard({
   mutate: (fn: (draft: ClassCenterData) => void) => void
   updateAll: (fn: (draft: import('@/lib/types').AppData) => void) => void
   archiveOnly: boolean
-  onFirstSyllabusClassCreated?: () => void
 }) {
   const navigate = useNavigate()
   // A first-run profile has no confirmed term yet. The store uses this same
@@ -770,7 +768,6 @@ function ClassCenterDashboard({
   const activeClasses = data.classes.filter((row) => row.status === 'active')
   const hasSearch = Boolean(query.trim())
   async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal, existingCourseId?: string, reimportDecisions?: ReimportDecision[], replaceSyllabusFileId?: string, pastDueDecisions?: PastDueImportDecision[]) {
-    const isFirstSyllabusClass = !existingCourseId && data.classes.length === 0
     const now = Date.now()
     const courseId = existingCourseId ?? uid()
     // A shared candidate is extracted structure only, never a remote source
@@ -867,7 +864,6 @@ function ClassCenterDashboard({
       if (pastDueDecisions?.length && proposal) applyPastSyllabusWorkDecisions(center, courseId, proposal, pastDueDecisions, now)
     })
     setSyllabusImportOpen(false)
-    if (isFirstSyllabusClass) onFirstSyllabusClassCreated?.()
     if (existingCourseId) { const next = new URLSearchParams(searchParams); next.delete('importFor'); next.delete('reimport'); next.delete('reimportFile'); setSearchParams(next, { replace: true }) }
   }
 
