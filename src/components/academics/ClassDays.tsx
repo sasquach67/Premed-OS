@@ -123,7 +123,12 @@ function DayCard({ day, today, isNext, checked, trackedFrom, title, links, onTog
   const states = stageStates(day, checked, today, trackedFrom)
   const items = stages.flatMap((s) => s.items)
   const done = items.filter((i) => checked.includes(i.id)).length
-  const heading = day.kind === 'exam' ? day.examTitle ?? 'Exam' : `Lecture ${day.lecture}${title || day.topic ? ` — ${title || day.topic}` : ''}`
+  // Named by lesson, like the Lessons tab and the notebooks (Andy, Oct 20: the
+  // running lecture count adds nothing). A week schedule has no lesson numbers,
+  // so its day is named by the syllabus topic ("Week 3: Healing systems").
+  const topic = title || day.topic
+  const heading = day.kind === 'exam' ? day.examTitle ?? 'Exam'
+    : day.lesson !== undefined ? `Lesson ${day.lesson}${topic ? ` — ${topic}` : ''}` : topic ?? 'Class'
   const link = (id: string): [string, () => void] | undefined => {
     if (day.kind !== 'class') return undefined
     if (id === 'notebook') return links.openNotebook ? ['Open', links.openNotebook] : ['Import', links.newNotebook]

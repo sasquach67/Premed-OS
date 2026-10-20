@@ -24,12 +24,12 @@ function render(props: Partial<Parameters<typeof ClassDays>[0]> = {}) {
 const buttons = (text: string) => [...container.querySelectorAll('button')].filter((b) => b.textContent?.includes(text))
 
 describe('ClassDays', () => {
-  it('shows this week’s class days as numbered lectures with the syllabus topic', () => {
+  it('names this week’s class days by lesson, marking a lesson’s second day', () => {
     render()
     expect(container.querySelector('.class-days-title')?.textContent).toBe('Week 2Oct 19–23')
     expect([...container.querySelectorAll('.class-day h3')].map((h) => h.textContent)).toEqual([
-      'Lecture 3 — Human Development Across the Lifespan',
-      'Lecture 4 — Human Development Across the Lifespan',
+      'Lesson 10 — Human Development Across the Lifespan',
+      'Lesson 10 — Human Development Across the Lifespan',
     ])
     expect(container.textContent).toContain('Continued')
   })
@@ -54,10 +54,10 @@ describe('ClassDays', () => {
   it('moves between weeks and jumps from the term strip', () => {
     render()
     act(() => (container.querySelector('[aria-label="Previous week"]') as HTMLButtonElement).click())
-    expect(container.querySelector('.class-day h3')?.textContent).toBe('Lecture 1 — Motivation and Emotion')
+    expect(container.querySelector('.class-day h3')?.textContent).toBe('Lesson 9 — Motivation and Emotion')
     expect(buttons('Today').length).toBe(1)
     act(() => (container.querySelector('[aria-label="Week 2"]') as HTMLButtonElement).click())
-    expect(container.querySelector('.class-day h3')?.textContent).toContain('Lecture 3')
+    expect(container.querySelector('.class-day h3')?.textContent).toContain('Lesson 10')
   })
 
   it('explains itself when the syllabus has no dates', () => {
