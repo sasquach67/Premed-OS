@@ -13,6 +13,18 @@ describe('buildLessons', () => {
       { lesson: 10, title: undefined, dates: ['2026-10-20'] },
     ])
   })
+  it('skips undated unit headings and keeps each lesson’s unit (BIOL 103)', () => {
+    const rows = buildLessons([
+      { id: 'u1', week: '', label: 'Unit 1: Central Dogma, Molecular Techniques & Genetic Diseases', order: 0 },
+      { id: 'l8', week: '', label: 'Lesson 8', order: 1, lesson: 8, startDate: '2026-09-15', unit: 'Unit 1: Central Dogma, Molecular Techniques & Genetic Diseases' },
+      { id: 'u2', week: '', label: 'Unit 2: How cells control division and differentiation', order: 2 },
+      { id: 'l9', week: '', label: 'Lesson 9', order: 3, lesson: 9, startDate: '2026-09-22', unit: 'Unit 2: How cells control division and differentiation' },
+    ])
+    expect(rows.map((r) => [r.lesson, r.unit])).toEqual([
+      [8, 'Unit 1: Central Dogma, Molecular Techniques & Genetic Diseases'],
+      [9, 'Unit 2: How cells control division and differentiation'],
+    ])
+  })
   it('numbers a week schedule in order', () => {
     expect(buildLessons([
       { id: 'a', week: '1', label: 'Week 1: Introduction', order: 0, startDate: '2026-08-17' },

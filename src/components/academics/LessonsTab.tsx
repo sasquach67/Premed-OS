@@ -154,7 +154,7 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
               const discusses = readingsDiscussedOn(readingItems, row.dates)
               const meta = <>{row.dates.length ? row.dates.map(shortDate).join(' · ') : state.notebook ? 'Notebook saved' : 'No notebook yet'}{discusses.length > 0 && <> · <span className="lessons-disc"><BookOpen aria-hidden="true" />Discusses {discusses.join('; ')}</span></>}</>
               return itemOpen(key)
-                ? <MaterialCard key={key} label={`Lesson ${row.lesson}`} kicker={`Lesson ${row.lesson}`} title={title} meta={meta} state={state} onCollapse={() => toggleItem(key)} {...actionsFor(onNewNotebook)} />
+                ? <MaterialCard key={key} label={`Lesson ${row.lesson}`} kicker={row.unit ?? `Lesson ${row.lesson}`} title={title} meta={meta} state={state} onCollapse={() => toggleItem(key)} {...actionsFor(onNewNotebook)} />
                 : <MaterialLine key={key} label={`Lesson ${row.lesson}`} num={row.lesson} title={title} state={state} current={row.lesson === current} onExpand={() => toggleItem(key)} {...actionsFor(onNewNotebook)} />
             })}
             {!rows.length && groupTaught.length > 0 && <p className="lessons-empty">Nothing here matches this filter.</p>}

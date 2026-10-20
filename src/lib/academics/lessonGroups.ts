@@ -11,6 +11,8 @@ export interface LessonRow {
   title?: string
   /** Every class date of the lesson, ISO yyyy-mm-dd, oldest first. */
   dates: string[]
+  /** The syllabus unit the lesson sits under, e.g. "Unit 2: How cells control division". */
+  unit?: string
 }
 
 export interface LessonExam {
@@ -32,7 +34,11 @@ export interface LessonGroup {
 /** Lessons from the syllabus schedule. Rows without a lesson number are numbered in order. */
 export function buildLessons(schedule: SyllabusScheduleEntry[] = []): LessonRow[] {
   const rows = new Map<number, LessonRow>()
-  const ordered = [...schedule].sort((a, b) => (a.startDate ?? '9').localeCompare(b.startDate ?? '9') || a.order - b.order)
+  // When the syllabus numbers or dates its lessons, an entry with neither is a
+  // heading or note (an undated "Unit 1: …" line), not a lesson.
+  const structured = schedule.some((e) => e.lesson !== undefined || e.startDate || e.dates?.length)
+  const entries = structured ? schedule.filter((e) => e.lesson !== undefined || e.startDate || e.dates?.length) : schedule
+  const ordered = [...entries].sort((a, b) => (a.startDate ?? '9').localeCompare(b.startDate ?? '9') || a.order - b.order)
   let next = 1
   for (const entry of ordered) {
     const lesson = entry.lesson ?? next
@@ -40,6 +46,7 @@ export function buildLessons(schedule: SyllabusScheduleEntry[] = []): LessonRow[
     const dates = (entry.dates?.length ? entry.dates : entry.startDate ? [entry.startDate] : []).map((d) => d.slice(0, 10))
     const row = rows.get(lesson) ?? { lesson, dates: [] }
     row.title ??= topicOf(entry.label)
+    row.unit ??= entry.unit
     row.dates = [...new Set([...row.dates, ...dates])].sort()
     rows.set(lesson, row)
   }
