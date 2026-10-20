@@ -11,12 +11,12 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS = Path('premed-hq-documentation/specifications/generation/portable-notebooks')
 APP = Path('src/lib/academics/notebook')
-# Approved October 17 grouped-term authoring scope. Frozen full-template hashes
+# Approved October 19 direct-language and v4 legacy-array scope. Frozen full-template hashes
 # detect unreviewed rule/schema changes; generated assets separately require parity.
-APPROVED_PROMPT_HASHES = {'review': '6fcad2770eb8b25716b720b8950c33bcce3da98d1948cd9039d269adfc1932d9', 'assessment': 'b0852c9002c8008be25699b9fc080a6382c9f50901c28417c27e59aeefcae13b', 'assignment': 'abb47b1a8b85a27592147fcdfa0450c012356582d529f2b2160e80c099441595'}
+APPROVED_PROMPT_HASHES = {'review': '40688ca0661270752c52a5fbfbe31a04ff75af8f3286f87e6cbbca209f7fad85', 'assessment': 'c7d77d4bee8dd361b798f24649a550f08127dac53cd6f75d62d2e7c5635ad5f1', 'assignment': '6bf0827bc2712041b164682d430db022c9339ac505024478dff33b72d20adbd4'}
 PIN = 'notebook-prompt-v4.schema.json'
-PIN_HASH = 'e3123ef927dd754b575ad0932842b9486f3b6ea65285a2a54ae9b849c4fcf5eb'
-READER_HASH = 'e3123ef927dd754b575ad0932842b9486f3b6ea65285a2a54ae9b849c4fcf5eb'
+PIN_HASH = 'e42d1187daa8ef31f8d6abee7ec0fc710e98bc63c610275b2b7b26f07a9e967e'
+READER_HASH = 'e42d1187daa8ef31f8d6abee7ec0fc710e98bc63c610275b2b7b26f07a9e967e'
 PREFIX = 'The prefix belongs only on mastery-objective labels. Section titles and every other heading are plain, concrete titles with no numbers, objective numbers, Review or Practice prefixes or other labels.'
 GAP = 'A gap or source-limit section gets a plain student-facing title such as "Figures not supplied" or "Not covered yet", never "unfinished tasks"; administrative narration stays in the companion message.'
 DETAIL = '- `EC-READING-DETAIL`: For guide teaching in new and update notebooks, author two coherent reading layers using the existing `more` field on `paragraph`, `bullets` and `illustration` blocks. The field is optional on paragraphs and bullets and required on illustrations. Full detail is the default: the visible block plus its `more` text must retain the real explanation in compact wording, including relevant definitions, mechanisms, reasoning steps, distinctions and useful examples. Do not remove substantive teaching to meet a word count or percentage. Condensed hides `more`: the visible block must still name the concept, state its central relationship and define terms needed to understand that statement. Put additional explanation in `more` next to the idea it develops, without repeating the visible text. Both layers remove fluff and repetition; source narration belongs in neither layer. Use plain prose for `more`, at most 1200 characters per field, never an empty or whitespace-only string. When no useful explanation is needed, omit `more` or use null on paragraphs and bullets; illustrations must include `more: null`. Distribute longer explanations among relevant supported blocks without truncating the teaching or padding the guide to force a switch. Steps, tables and other block types do not accept `more`; keep their content intact and use an adjacent paragraph or bullets block for a needed explanation. Do not put practice answers or worked solutions in `more`; retain their existing reveal behavior and the requested assignment help stage. The app supplies the guide-wide switch; do not write duplicate Full detail/Condensed sections or interface instructions into the notebook.'
@@ -88,7 +88,7 @@ class PromptSchemaTests(unittest.TestCase):
         self.assertEqual(prompt.count(VISUAL_REVIEW), 1)
         self.assertEqual(prompt.count(COMPANION_VISUAL), 1)
         self.assertNotIn(OLD_VISUAL, prompt)
-        self.assertIn('notebook-instructions-beta-30', prompt)
+        self.assertIn('notebook-instructions-beta-31', prompt)
         self.assertIn('- `EC-GROUPED-GUIDE`:', prompt)
         if goal == 'review':
             self.assertIn('Practice belongs exclusively in Practice.', prompt)
@@ -106,7 +106,7 @@ class PromptSchemaTests(unittest.TestCase):
             self.assertNotIn('one or two original, self-contained exam-style', prompt)
             self.assertNotIn('at least one cue per objective', prompt)
         self.assertEqual(sha(prompt.encode()), APPROVED_PROMPT_HASHES[goal],
-                         'Template differs from the approved mastery and class-folder beta30 scope')
+                         'Template differs from the approved direct-language and empty-legacy-fields beta31 scope')
 
     def test_default_pin_and_bounded_prose_schema_scope(self):
         self.assertEqual(sha((self.out/PIN).read_bytes()), PIN_HASH)

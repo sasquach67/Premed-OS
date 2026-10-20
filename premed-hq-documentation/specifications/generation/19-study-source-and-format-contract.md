@@ -36,3 +36,19 @@ available, author that sentence using the same definition rule; do not claim a
 word-for-word comparison was performed. Never change the flashcard prompt or
 builder to achieve this agreement. Attribute Professor stressed markers only to
 actual instructor evidence, and retain official class-outline objective wording.
+
+
+For external Review, find the governing argument in instructor discussion
+questions, slide titles and transcript framing. Each section develops one step;
+history and biography provide evidence within it. Reference facts belong in
+existing timeline or table blocks. Keep corrections secondary unless they change
+the argument, following EC-RESOLVE. The opening question and “Tie it together”
+use the course's own terms for that argument.
+
+For authored text in all three external goals, follow EC-LEARNING-LANGUAGE:
+state claims directly, one idea per sentence (about 25 words at most), and give
+one plain-sentence entry summary without a parenthetical topic list. Keep
+necessary scientific qualifiers. An evidenced mix-up receives the correct fact
+once in the existing callout, at most one per section; ordinary teaching has no
+unprompted guards, hedge-only non-conclusions, reader instructions or course meta.
+Source excerpts, quotations, official objectives and supplied tasks stay exact.

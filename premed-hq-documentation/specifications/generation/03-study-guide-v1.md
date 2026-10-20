@@ -247,6 +247,33 @@ explained figures in branch order → adjacent lecture examples → If you remem
 one thing.** The question uses exam register. The map categorizes every defined
 term and shows categories, members and their relationships before the details.
 Name a term's group at its first definition. One paragraph develops one idea.
+One idea per sentence, about 25 words at most. Split a run of facts into two or
+three sentences or bullets. Keep relevant causal steps and scientific qualifiers.
+The entry summary (`entry.scope`) is one plain sentence naming the lecture's
+main idea, with no parenthetical topic list.
+
+State each claim directly. Teach a distinction with two parallel statements,
+a short list or a table. Avoid a correct claim followed by an unprompted guard:
+“X, not Y”, “does not mean”, “should not be confused with”, “is different from”,
+“Keep … separate” or “Distinguish … from …”. A caution needs evidence of that
+exact mix-up in the student's notes, a supplied question or the instructor's
+explanation. State the correct fact in a `mix-up` callout, at most one per section.
+Cut hedge tails such as “without establishing…”, “which cannot be…” and
+“is not a claim that…”. Preserve cautious words such as “may contribute” when
+scientifically necessary. Never use “nothing can be concluded” or “X is not
+established” as teaching content; genuine missing evidence stays in the existing
+limit records. Teaching text has no reader-directed instructions or course meta.
+Note corrections state the correct fact once, without arguing against the error.
+Exact source excerpts, quotations and official objective wording stay unchanged.
+
+Find the governing argument first from instructor discussion questions, slide
+titles and framing statements in the transcript. Each section is one step of
+that argument. History, biography and dates serve as evidence inside that step;
+reference dates, officeholders and legal milestones go into existing timeline
+or table blocks for quick reference. Corrections of fact stay secondary under
+EC-RESOLVE unless they change the argument. The opening question and final
+“Tie it together” state the governing argument in the course's own terms.
+
 
 Keep the course's formal vocabulary: loss-of-function, gain-of-function,
 phosphorylates, hydrophobic, proliferation, constitutively active, homozygous

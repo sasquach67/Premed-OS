@@ -261,8 +261,9 @@ The app owns all color rendering; never author CSS or new design tokens.
 Use `targetBlockId` to link a node to the relevant same-section heading or term
 block. Keep the map label and the linked term's name consistent.
 
-Every figure needs numbered “What to look at” explanations and a “Why it matters”
-line beside it. Prefer the supplied lecture figure; use `annotated-figure` with
+Every figure needs numbered “What to look at” explanations. State what it shows
+and why it matters for the topic as an ordinary sentence at the end of the caption
+or in the adjacent explanation. Do not use a literal “Why it matters:” label. Prefer the supplied lecture figure; use `annotated-figure` with
 verified point coordinates under EC-ANNOTATION. If reliable coordinates are
 unavailable, retain the exact source figure and adjacent numbered explanatory
 steps rather than inventing annotation positions. Do not leave an unexplained
@@ -272,8 +273,9 @@ Use sparse `callout` blocks with tones `question`, `lecture-example`, `analogy`,
 `mix-up`, `builds-on`, and `one-thing`. The opening question and closing one-thing
 line frame each section; optional callouts earn their space. Use the lecture's
 analogy first and a well-known analogy second; label it as an aside, never the
-main scientific definition. Use mix-up only for pairs actually contrasted by
-the course. A builds-on callout identifies the supported earlier lesson and its
+main scientific definition. Use mix-up only for an exact error evidenced in student notes, a supplied
+question or the instructor’s explanation. State the correct fact, at most once
+per section. A builds-on callout identifies the supported earlier lesson and its
 connection. Set `stressed: true` only when transcript or other instructor
 evidence establishes emphasis or a warned misconception. The reader supplies
 lucide icons and the Professor stressed chip; do not insert emoji or rule tags.

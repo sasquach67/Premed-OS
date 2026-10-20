@@ -1,7 +1,7 @@
 # Reader and prompt schema contracts
 
-The October 17 study-guide redesign intentionally advances authoring to
-`notebook-instructions-beta-30`. Its pinned v4 authoring schema and installed
+The October 19 language brief advances authoring to
+`notebook-instructions-beta-31`. Its pinned v4 authoring schema and installed
 v4 reader schema have identical bytes. The additive fields are optional:
 block `definedTerms` and `stressed`, bullets `nestedItems`, section
 `learningObjectiveIds`, diagram-node `tone` and `targetBlockId`, plus the new
@@ -29,8 +29,8 @@ requires that input's bytes to match the committed pin.
 
 Current SHA256 receipts:
 
-- Raw v4 prompt pin and reader: `e3123ef927dd754b575ad0932842b9486f3b6ea65285a2a54ae9b849c4fcf5eb`.
-- Compact embedded v4 schema: `a4aa0a89ef228003cf681b1fc62aaacdb6ed48eb10765508f586171f3cf76974`.
+- Raw v4 prompt pin and reader: `e42d1187daa8ef31f8d6abee7ec0fc710e98bc63c610275b2b7b26f07a9e967e`.
+- Compact embedded v4 schema: `53183e6a2c3bf8c8a3cdf72542143913c08168d17cf5bb23599b76ba9138b924`.
 - Frozen v2 reader: `41d6f3e5adaebb55ee80cb567354fb7698e252dafca1c0009ea15f81910c7b43`.
 - Frozen v3 reader: `20e46dd155928f0c004c5515d8d80980849303a14a2194d7ce45e194b1ad7233`.
 
@@ -51,8 +51,8 @@ before any destination writes.
 
 Run `python3 scripts/notebook/test_prompt_schema.py` for nine temporary-directory
 tests covering generation, exact pin/reader agreement, successful sync, complete
-beta30 template hashes, and rejection of prose/schema/receipt tampering. The
-frozen full-template hashes record this intentionally expanded beta30 scope;
+beta31 template hashes, and rejection of prose/schema/receipt tampering. The
+frozen full-template hashes record this approved beta31 language and v4 empty-array scope;
 they replace the earlier beta25/beta27 normalization guard. The same suite runs
 through `promptSchemaTooling.test.ts` in `npm test`. It does not run a model.
 
@@ -64,3 +64,5 @@ copy in `src/lib/academics/notebook/prompts/`. The
 separately checks that each template retains its applicable canonical rules.
 Structural and byte checks do not establish provider execution, learning quality,
 app import/save, or observed reader behavior.
+
+Beta31 permits empty legacy `freeRecallCues` and `watchFor` arrays in v4 objectives. Stored non-empty arrays remain valid. Canonical authoring now uses direct claims, evidenced mix-up callouts, one idea per sentence, a short entry summary, ordinary figure-purpose sentences and argument-led Review sections. The flashcard prompt/builder and reader UI are unchanged. Fresh provider runs remain a separate check.
