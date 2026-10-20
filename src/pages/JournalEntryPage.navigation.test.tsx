@@ -47,7 +47,8 @@ async function click(label:string) {
     const item=[...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(item=>item.textContent?.trim()===label)!
     expect(item).toBeTruthy();await act(async()=>item.click());return
   }
-  await act(async()=>button(label).click())
+  if(label==='Flashcards') { const start=container.querySelector<HTMLButtonElement>('[aria-label="Start making flashcards"]'); expect(start,label).toBeTruthy(); await act(async()=>start!.click()); return }
+  await act(async()=>button(label==='Practice'?'Practice set':label).click())
 }
 function study() { expect(button('Study guide').getAttribute('aria-pressed')).toBe('true'); expect(container.querySelector('[aria-label="Update saved notebook"]')).toBeNull(); expect(container.textContent).not.toContain('Editing your copy') }
 
