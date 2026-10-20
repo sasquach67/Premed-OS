@@ -138,7 +138,7 @@ export function SyllabusImportDialog({ open, semester, onOpenChange, onParsed, o
             <SyllabusSelectedFiles files={files} disabled={parsing} onRemove={(index) => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} />
             <div className="rounded-xl border border-border bg-muted/45 p-4">
               <p className="font-display text-sm font-extrabold">Or paste the text instead</p>
-              <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Copying from Canvas works just as well.</p>
+              <details className="mt-0.5 text-xs font-semibold text-muted-foreground"><summary className="cursor-pointer">Learn more</summary><p>Copying from Canvas works just as well.</p></details>
               <Textarea
                 className="mt-2 min-h-28"
                 value={pastedText}

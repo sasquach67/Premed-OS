@@ -27,7 +27,7 @@ export function GuideImport({ courseId, data }: { courseId: string; data: ClassC
   }
   return <details className="mb-5 rounded-xl border border-border p-4">
     <summary className="cursor-pointer text-sm font-semibold">Import a compiled Guide</summary>
-    <p className="my-3 text-sm text-muted-foreground">Open or paste a compiled Guide to review its study guidance and reference notes together. Your existing notes stay saved.</p>
+    <p className="my-3 text-sm text-muted-foreground">Review imported guidance and reference notes; your existing notes stay saved.</p>
     <label className="mb-3 block text-sm font-semibold">Open Guide file<input type="file" accept=".json,application/json" className="mt-2 block max-w-full text-sm" onChange={event => {
       const file = event.target.files?.[0]
       if (!file) return

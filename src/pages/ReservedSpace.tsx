@@ -1,4 +1,3 @@
-import { Sparkles } from 'lucide-react'
 import { ROUTE_MAP } from '@/app/routes'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -30,9 +29,6 @@ export function ReservedSpace({ routeId }: { routeId: keyof typeof RESERVED_COPY
           <p className="mt-5 text-xs font-extrabold uppercase tracking-[0.18em] text-primary">Reserved space</p>
           <h1 className="mt-2 font-display text-3xl font-extrabold">{route.label} is coming soon</h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">{RESERVED_COPY[routeId]}</p>
-          <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-bold text-muted-foreground">
-            <Sparkles className="size-3.5 text-primary" /> Your existing data stays ready for it
-          </div>
         </CardContent>
       </Card>
     </div>

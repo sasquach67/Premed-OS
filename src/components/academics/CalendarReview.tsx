@@ -67,9 +67,7 @@ export function CalendarReview({ assignments }: { assignments: ClassAssignment[]
         <div className={STEP}>
           <Link2 className="size-4 text-[var(--cat-gpa)]" />
           <b className="mt-1.5 block font-display text-[12.5px] font-extrabold">Canvas → Google Calendar</b>
-          <p className="mt-0.5 text-[11px] font-bold text-muted-foreground">
-            Canvas publishes its dates and remains the coursework owner.
-          </p>
+          <details className="mt-0.5 text-[11px] font-bold text-muted-foreground"><summary className="cursor-pointer">Calendar details</summary><p>Canvas publishes its dates and remains the coursework owner.</p></details>
         </div>
 
         <div className={cn(STEP, proposals.length && 'border-amber-500/45 bg-amber-500/5')}>
@@ -80,9 +78,7 @@ export function CalendarReview({ assignments }: { assignments: ClassAssignment[]
               : 'No differences to review'}
           </b>
           <p className="mt-0.5 text-[11px] font-bold text-muted-foreground">
-            {proposals.length
-              ? 'Each one names both dates. Nothing changes until you accept it.'
-              : 'Where a date matches your record, there is nothing to decide.'}
+            {proposals.length ? 'Each one names both dates. Nothing changes until you accept it.' : ''}
           </p>
         </div>
 

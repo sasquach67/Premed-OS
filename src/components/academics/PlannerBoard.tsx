@@ -275,7 +275,7 @@ export function PlannerBoard({ onComparePlans, openRequirements = false }: {
       </div>
 
       <section className="planning-context-bar" aria-label="Planning context">
-        <div className="planning-context-label"><b>Your planning context</b><span>These choices set the requirement map.</span></div>
+        <div className="planning-context-label"><b>Your planning context</b></div>
         <div className="planning-context-field planning-context-program"><small>Major / program</small><PlannerSelect label="Major or program" value={selectedProgramId ?? ''} onValueChange={(value) => updateProgram(value || undefined)} className="planning-context-select" options={[{ value: '', label: 'Choose a major' }, ...SORTED_PLANNING_PROGRAMS.map((program) => ({ value: program.id, label: planningProgramLabel(program) }))]} /></div>
         <div className="planning-context-field"><small>Catalog + cohort</small><b>{selectedProgram ? `${selectedProgram.catalogYear} · ${planningContext.matriculationTerm ?? 'cohort not recorded'}` : 'Set by major selection'}</b></div>
         <div className="planning-context-field"><small>Premed / MCAT</small><b>{mcatDate ? `MCAT ${mcatDate}` : 'Date not recorded'}</b></div>
@@ -339,7 +339,7 @@ export function PlannerBoard({ onComparePlans, openRequirements = false }: {
             })()}
 
             <section className="planning-tray" aria-label="Unplaced planning work">
-              <header className="planning-tray-header"><div><span className="planning-tray-title">Unplaced</span> <span className="planning-tray-copy">requirements and courses with no term yet</span></div></header>
+              <header className="planning-tray-header"><div><span className="planning-tray-title">Unplaced</span></div></header>
               {unplaced.length ? <div className="planning-tray-items">{unplaced.map((item) => <div key={item.id} className="planning-tray-chip"><b>{item.label}</b><span>{item.verificationStatus === 'needs-verification' ? 'Manual review' : 'Source recorded'} · no term selected</span></div>)}</div> : <p className="planning-tray-copy">No uncaptured planning nodes are shown locally.</p>}
             </section>
             <PlannerCourseDiscovery
@@ -405,7 +405,7 @@ function PlanCoverage({ selectedProgram, coverage, expanded, onToggle }: {
   const notScheduled = coverage.filter((item) => item.state === 'not-scheduled').length
   const manualReview = coverage.filter((item) => item.state === 'manual-review').length
   return <section className="planning-card planning-coverage" data-expanded={expanded || undefined}>
-    <header className="planning-card-header"><div><p className="planning-eyebrow">Major requirements</p><h3 className="planning-card-title">Plan coverage</h3><p className="planning-card-subtitle">courses matched to the selected major</p></div><button type="button" className="planning-control" aria-expanded={expanded} onClick={onToggle}>{expanded ? 'Show less' : 'Show all'}</button></header>
+    <header className="planning-card-header"><div><p className="planning-eyebrow">Major requirements</p><h3 className="planning-card-title">Plan coverage</h3></div><button type="button" className="planning-control" aria-expanded={expanded} onClick={onToggle}>{expanded ? 'Show less' : 'Show all'}</button></header>
     <div className="planning-card-body">
       <div className="planning-coverage-identity"><div><b>{selectedProgram ? planningProgramLabel(selectedProgram) : 'No program selected'}</b><span>{selectedProgram ? `${selectedProgram.catalogYear} · retrieved ${selectedProgram.retrievedAt}` : 'Choose an exact program before reading requirement effects.'}</span></div>{selectedProgram && <span className="planning-eyebrow">Local source record</span>}</div>
       <div className="planning-coverage-counts" aria-label="Local planning evidence"><div className="planning-coverage-count" data-tone="sage"><b>{complete}</b><span>On record</span></div><div className="planning-coverage-count" data-tone="blue"><b>{planned}</b><span>Placed</span></div><div className="planning-coverage-count" data-tone="amber"><b>{notScheduled}</b><span>Unplaced</span></div><div className="planning-coverage-count" data-tone="violet"><b>{manualReview}</b><span>Manual review</span></div></div>
@@ -583,7 +583,7 @@ export function PlannerCourseDiscovery({ destinations, selectedProgramId, reques
   }
 
   return <section ref={sectionRef} className="planning-catalog-dock" data-entry-active={Boolean(entryDestination) || undefined} aria-label="UNC course catalog">
-    <header className="planning-catalog-head"><div><p className="planning-eyebrow">Official UNC course catalog</p><h3>Find a course that fits the plan.</h3><p>{candidates.length.toLocaleString()} published courses · major suggestions first, full catalog always available.</p></div><div className="planning-catalog-head-actions"><span className="planning-source-chip">{UNC_CATALOG_INTEGRATION.catalogYear} · retrieved {UNC_CATALOG_INTEGRATION.retrievedAt}</span><button type="button" className="planning-control" onClick={() => setManualDestinationKey(destinationKey(entryDestination ?? requestedDestination))}>Enter manually</button></div></header>
+    <header className="planning-catalog-head"><div><p className="planning-eyebrow">Official UNC course catalog</p><h3>Find a course that fits the plan.</h3><p>{candidates.length.toLocaleString()} published courses</p></div><div className="planning-catalog-head-actions"><span className="planning-source-chip">{UNC_CATALOG_INTEGRATION.catalogYear} · retrieved {UNC_CATALOG_INTEGRATION.retrievedAt}</span><button type="button" className="planning-control" onClick={() => setManualDestinationKey(destinationKey(entryDestination ?? requestedDestination))}>Enter manually</button></div></header>
     {entryDestination && <div className="planning-catalog-entry" role="status"><span><b>{entryDestination.term}</b> is the destination semester.</span><button type="button" onClick={() => onClose?.()}>Cancel</button></div>}
     <div className="planning-catalog-toolbar planning-catalog-toolbar-search">
       <label className="planning-search-wrap"><Search className="size-3" /><input ref={searchRef} className="planning-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search course code, title, topic, or attribute" aria-label="Search UNC course catalog" /></label>
@@ -779,7 +779,7 @@ function OutcomeRail({ mcatDate, selectedProgramId, hasCourseDestination, onAddC
         <Stat label="Science (BCPM)" value={fmtGpa(projection.science)} />
       </div>
       <div className="planning-runway" aria-label="Projected planning sequence"><div data-state="done"><small>Recorded</small><b>{projection.gradedCredits} graded credits</b></div><div data-state={open.length ? 'gap' : 'done'}><small>Open requirement</small><b>{open[0]?.label ?? 'No local gap named'}</b></div><div data-state="milestone"><small>{mcatDate || 'Date not recorded'}</small><b>MCAT</b><span>{late.length ? `${late.length} course${late.length === 1 ? '' : 's'} at or after target` : mcatDate ? 'Recorded sequence precedes target' : 'Manual review'}</span></div><div><small>Plan</small><b>{projection.plannedCredits} planned credits</b></div></div>
-      <div className="planning-trajectory-actions"><button type="button" onClick={onReviewRequirements}><span>1</span><div><b>{open[0] ? `Review ${open[0].label}` : 'Review requirement evidence'}</b><small>{selectedProgram ? 'Selected major map' : 'Choose a major first'}</small></div><i>→</i></button><button type="button" onClick={onAddCourse}><span>2</span><div><b>{hasCourseDestination ? 'Add course to the next open term' : 'Add an editable term first'}</b><small>{hasCourseDestination ? 'Uses the inline UNC catalog' : 'Create a term before choosing a course'}</small></div><i>→</i></button></div>
+      <div className="planning-trajectory-actions"><button type="button" onClick={onReviewRequirements}><span>1</span><div><b>{open[0] ? `Review ${open[0].label}` : 'Review requirement evidence'}</b><small>{selectedProgram ? 'Selected major map' : 'Choose a major first'}</small></div><i>→</i></button><button type="button" onClick={onAddCourse}><span>2</span><div><b>{hasCourseDestination ? 'Add course to the next open term' : 'Add an editable term first'}</b><small className={hasCourseDestination ? 'sr-only' : undefined}>{hasCourseDestination ? 'Uses the inline UNC catalog' : 'Create a term before choosing a course'}</small></div><i>→</i></button></div>
       <p className="planning-trajectory-note">Local projection from placed courses · official completion and enrollment remain in ConnectCarolina.</p></div>
     </aside>
   )

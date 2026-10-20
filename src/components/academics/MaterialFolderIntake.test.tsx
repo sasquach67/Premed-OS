@@ -35,6 +35,17 @@ describe('MaterialFolderIntake', () => {
 
   afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 
+  it('keeps preview, consent and source-file protection visible before choosing a folder', () => {
+    for (const text of [
+      'Preview placement first. Premed OS never edits, moves, or silently imports a source file.',
+      'A folder creates a review preview only. You decide the exact course, week, and category before anything appears in Materials.',
+    ]) {
+      const paragraph = [...container.querySelectorAll('p, div')].find(node => node.textContent === text)
+      expect(paragraph, text).toBeTruthy()
+      expect(paragraph?.closest('details:not([open]), [hidden], .sr-only')).toBeNull()
+    }
+  })
+
   it('keeps a chosen local folder as a review proposal until the student accepts it', async () => {
     const initialFiles = useStore.getState().academics.classCenter.files.length
     const choose = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('Choose local folder'))!

@@ -25,7 +25,6 @@ export function ResourceCreationPage() {
       <header className="en-header en-flow-header"><div>
         <p className="en-eyebrow">{course.code} / {resource === 'flashcards' ? 'Flashcards' : 'Revised notes'}</p>
         <h1>{title}</h1>
-        <p className="en-flow-lead">{resource === 'flashcards' ? 'Choose a completed Journal, copy your prompt, and create your Anki deck with your AI.' : 'Choose a saved notebook, copy your prompt, and revise your own notes with your AI.'}</p>
       </div></header>
       <div className="en-stage-content">
         {resource === 'flashcards'

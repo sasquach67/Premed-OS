@@ -40,7 +40,9 @@ describe('Class Center zero-class empty state', () => {
     const panel = container.querySelector('[aria-label="What this sets up"]')
     expect(panel).toBeTruthy()
     expect(panel!.textContent).toContain('What this sets up')
-    expect(panel!.textContent).toContain('one import, then you stay in control')
+    expect(panel!.textContent).not.toContain('one import, then you stay in control')
+    expect([...panel!.querySelectorAll('details')].every(details => !details.open)).toBe(true)
+    expect(panel!.querySelectorAll('summary')).toHaveLength(3)
   })
 
   it('uses the Premed OS mascot for the first-class prompt', () => {
