@@ -245,23 +245,26 @@ choose the structure from the content, explain the connections simply, tie each
 section to its predecessor, and end on the knowledge the learner will need.
 EC-LINES-FIRST supplies the content-to-structure table and sole approved example.
 
-Use plain topic headings. One idea per line: terms are one-line bullets, real
-sequences are numbered steps with short reasons, dated events use timelines,
-comparisons use tables and parallel factors use map groups. Argument sections
-use a core claim/evidence/soWhat block right after their map. Prose appears only
-in the short connects, why and deeper explanation blocks, never more than
-3 sentences or about 60 words per block. Every teaching section requires a
-2–3 sentence core Why it works and 2–3 sentence extra Go deeper. A core How
-this connects block of 1–2 sentences opens each section after the first. These
-requirements supersede earlier conditional explanation wording. The question is
-under 20 words; the map has 3–5 labeled groups and brief inline members.
-Then teach terms and the content-matched structure in branch order, explain
-why it works, show one inspected main figure with a one-line caption and 2–4
-Look for lines, add the useful extras, and finish with one sentence to remember.
+Use plain topic headings. Teach first, then give the reference. Each teaching
+section opens with an exam-register question under 20 words and a 1–2 sentence
+lede that gives the whole answer in short and says when it builds on the section
+before. A walkthrough of 3–6 points then teaches it: each point is one bold
+sentence followed by 1–2 short paragraphs giving the because, the how or a
+lecture example, with parallel items as small labeled cards and the main figure
+inside the point it explains. An optional one-sentence so-what line and a
+one-sentence key idea follow. Keep it straight holds the reference: the map with
+3–5 labeled groups, one-line terms, any content-matched structure the
+walkthrough does not attach (numbered steps with short reasons, timelines,
+tables), and an argument's claim/evidence/soWhat block when it adds something.
+Prose never exceeds 3 sentences or about 60 words per block. These requirements
+supersede earlier conditional explanation wording and the beta-32 Why it works,
+Go deeper and How this connects blocks. Every taught point, term, example, figure
+and warm-up stays (EC-COVERAGE), and each fact is stated in full once
+(EC-SAY-ONCE).
 One idea per sentence, about 25 words at most. Keep complete causal steps and
 scientific qualifiers. The entry summary (`entry.scope`) is one plain sentence
 naming the main idea, with no parenthetical topic list. Mark blocks core or
-extra; Condensed hides extras, including Go deeper, while Full shows everything.
+extra; Condensed shows the question, lede, walkthrough point sentences, key idea and map, while Full shows everything.
 An argument-led guide opens with 4–6 linked argumentChain items, one line per
 logical step. A mechanism-led guide opens with its whole overview map.
 
