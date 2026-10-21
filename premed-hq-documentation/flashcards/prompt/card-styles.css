@@ -19,11 +19,13 @@
   color: #26211b; padding: 30px 22px;
 }
 .pm { max-width: 620px; margin: 0 auto; --ac: #2563b0; }
+/* Six accent bands, including the legacy blurt band. */
 .m-say     { --ac: #2563b0; }
 .m-explain { --ac: #157a6e; }
 .m-connect { --ac: #7952b3; }
 .m-use     { --ac: #3e7d4f; }
 .m-blurt   { --ac: #b3641f; }
+.m-rebuild { --ac: #b3641f; }
 
 .type {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -71,6 +73,7 @@ ol.blurt li::before {
 .nightMode .m-connect, .night_mode .m-connect { --ac: #b79df5; }
 .nightMode .m-use, .night_mode .m-use         { --ac: #6fbf85; }
 .nightMode .m-blurt, .night_mode .m-blurt     { --ac: #e8a15c; }
+.nightMode .m-rebuild, .night_mode .m-rebuild { --ac: #e8a15c; }
 .nightMode .tname, .night_mode .tname { color: #8d847a; }
 .nightMode hr#answer, .night_mode hr#answer { border-top-color: #3a342b; }
 .nightMode .extra, .night_mode .extra { border-left-color: #3a342b; color: #a39a89; }

@@ -157,6 +157,18 @@
       ],
       "reason": "",
       "kind": "understand"
+    },
+    {
+      "id": "rebuild",
+      "topic": "Synthetic",
+      "statement": "Reproduce the sample pathway.",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "rebuild"
+      ],
+      "reason": "",
+      "kind": "understand"
     }
   ],
   "cards": [
@@ -553,6 +565,38 @@
           }
         }
       ],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "rebuild",
+      "conceptId": "sample-pathway-rebuild",
+      "targetIds": [
+        "rebuild"
+      ],
+      "type": "rebuild",
+      "front": "What are the 3 steps of the sample pathway, from signal to response?",
+      "back": "Signal arrives → receptor activates → cell responds",
+      "cloze": "",
+      "clozePattern": null,
+      "listOrdered": null,
+      "recallItems": [],
+      "axis": "",
+      "exampleDirection": null,
+      "examplePairId": "",
+      "explanation": "",
+      "example": null,
+      "reinforcementReason": "Synthetic fixture figure shows the complete sample pathway.",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
       "extraImages": [],
       "tags": [
         "synthetic-fixture"

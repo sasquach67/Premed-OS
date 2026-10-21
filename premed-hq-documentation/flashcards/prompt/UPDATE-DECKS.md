@@ -91,3 +91,16 @@ This supersedes the long-title breadcrumb rules and wrapping chip text described
 F2 colors/font/padding stay unchanged. Chip text uses nowrap with no ellipsis or clipping; the chip can move below the label as one unit. All sample labels are 1–3 words and ≤22 characters. Counts remain 21 notes / 22 active reviews, and all note GUIDs and retrieval demands are preserved. A native Anki 26.09.3 probe now accepts expected question-chip visibility and can set its actual reviewer viewport to 390px; it checks full one-line chip text as well as sequential reveal. Portable assembly preserves source trailing newlines exactly so a harmless CSS newline cannot change the embedded builder’s style hash.
 
 Continue holding draft PR #36 until Andy explicitly authorizes release.
+
+## 2026-10-20 — whole-structure rebuild preview (2026-10-20a, held)
+
+Rebuild is a new Basic Q&A retrieval demand for a lecture's whole chain, comparison table or argument, graded once. Atomic cards remain. Named sets keep umbrella clozes and labeled structures keep image occlusion; zero rebuilds is valid. Rebuild notes have separate `-rebuild` concept IDs and source evidence, with count/shape validation and explicit build-report entries. They do not satisfy term-definition recall or replace connecting cards.
+
+The Basic/Cloze/IO field lists, permanent IDs and fresh-export update behavior are unchanged. Existing GUIDs and My notes continue through the export-based update pipeline; rebuild notes are new notes. Template styling adds the rebuild accent only. Source remains hidden as in the held October 17 batch.
+
+Review the feature preview in `~/Documents/Premed OS Academics Audit/2026-10-20-rebuild-preview-v2/` using a new unsynced Anki profile. It adds biology rebuilds from Andy's own BIOL 103 Lesson 11–13 sources (Ras–ERK chain, DNA-damage checkpoint chain, two-row oncogene versus tumor-suppressor table) to the earlier three-structure preview. A comparison table may have two rows when every row is written `Item: value; value` with at least two axes; chains and arguments still need three or more steps. The October 17 batch is merged; this revision remains held for Andy's review, and opening the PR is not permission to merge or deploy.
+
+## 2026-10-21 — quick predict cards and names-only chains (2026-10-21a, held)
+
+Definition cards stay one per term. Predict is a new Basic Q&A retrieval demand: one change, one outcome, Back written "outcome: reason" with the reason under about ten words, only for reasoning the course's exams reuse and the lecture teaches, never repeating another card's question. Predict notes have separate `-predict` concept IDs and source evidence, never satisfy definition recall, and are listed in the build report under `predictCards`. Rebuild chain Backs are names only, with actions and details in Extra; the builder warns on a chain step over four words and on any cloze that blanks a direction word, since a direction blank is answered from the sentence rather than the meaning. Field lists, permanent IDs and update behavior are unchanged; predict notes are new notes.
+

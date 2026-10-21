@@ -20,6 +20,177 @@ class PromptChecks(unittest.TestCase):
         warnings = validate(self.data)
         self.assertTrue(warnings)
         self.assertTrue(all("no direct term card detected" in warning for warning in warnings))
+    def rebuild_fixture(self):
+        data=self.concept_fixture()
+        data['cards'][0].update(type='rebuild', conceptId='sample-pathway-rebuild',
+            front='What are the 3 steps of the sample pathway, from signal to response?',
+            back='Signal arrives → receptor activates → cell responds',
+            reinforcementReason='Slide 4 shows the whole sample pathway.')
+        return data
+
+    def test_rebuild_builds_as_one_basic_review_and_reports_structure(self):
+        data=self.rebuild_fixture()
+        self.assertEqual(validate(data), [])
+        built,verified=self.pipeline_fixture(data)
+        row=built['records'][0]
+        self.assertEqual(row['fields']['Type'], '<span class="verb">rebuild</span>')
+        self.assertEqual(row['fields']['Mindset'], 'm-rebuild')
+        from test_updates import build
+        from read_previous import read_previous
+        with tempfile.TemporaryDirectory() as temp:
+            package=Path(temp)/'rebuild.apkg'; build(data, package)
+            snapshot=read_previous(package)
+            self.assertEqual(snapshot['notes'][0]['modelId'], 646888316168)
+            self.assertIn('premedos::type::rebuild', snapshot['notes'][0]['tags'])
+        self.assertEqual(built['activeReviewCards'], 1)
+        self.assertEqual(built['rebuildCards'], {'count':1,'structures':[{
+            'id':'idea-0','conceptId':'sample-pathway-rebuild',
+            'structure':data['cards'][0]['front']}]})
+        self.assertTrue(verified['passed'])
+
+    def test_rebuild_accepts_count_words_and_line_shapes(self):
+        for front,back in [
+            ('Compare the three theories on timing and interpretation.', 'First: before; none.\nSecond: together; none.\nThird: before; required.'),
+            ('Rebuild the argument in 3 parts: claim, case, what it answers.', 'Claim: flows differ.\nCase: a supplied example.\nAnswers: one shared experience.')]:
+            with self.subTest(front=front):
+                data=self.rebuild_fixture(); data['cards'][0].update(front=front,back=back)
+                self.assertEqual(validate(data), [])
+
+    def test_rebuild_accepts_two_row_comparison_with_two_axes(self):
+        data=self.rebuild_fixture(); data['cards'][0].update(
+            front='Compare the 2 gene classes on mutation effect and alleles needed.',
+            back='Oncogene: gain of function; one allele.\nTumor suppressor: loss of function; both alleles.')
+        self.assertEqual(validate(data), [])
+
+    def test_rebuild_rejects_comparison_row_with_one_axis(self):
+        data=self.rebuild_fixture(); data['cards'][0].update(
+            front='Compare the 2 gene classes on mutation effect.',
+            back='Oncogene: gain of function.\nTumor suppressor: loss of function.')
+        with self.assertRaisesRegex(ValueError,'at least 2 axes'): validate(data)
+
+    def test_rebuild_rejects_one_row_comparison(self):
+        data=self.rebuild_fixture(); data['cards'][0].update(
+            front='Compare the 1 gene class on mutation effect and alleles needed.',
+            back='Oncogene: gain of function; one allele.')
+        with self.assertRaisesRegex(ValueError,'at least 2 rows'): validate(data)
+
+    def test_rebuild_rejects_fewer_than_three_steps(self):
+        data=self.rebuild_fixture(); data['cards'][0]['back']='Signal → response'
+        with self.assertRaisesRegex(ValueError,'at least 3'): validate(data)
+
+    def test_rebuild_rejects_count_mismatch(self):
+        data=self.rebuild_fixture(); data['cards'][0]['front']='What are the 4 steps of the sample pathway?'
+        with self.assertRaisesRegex(ValueError,'Front count must equal'): validate(data)
+
+    def test_rebuild_rejects_a_cloze(self):
+        data=self.rebuild_fixture(); data['cards'][0].update(clozePattern='single',cloze='{{c1::signal}}',front='',back='')
+        with self.assertRaisesRegex(ValueError,'never a cloze'): validate(data)
+
+    def test_rebuild_rejects_missing_source_reason(self):
+        data=self.rebuild_fixture(); data['cards'][0]['reinforcementReason']=''
+        with self.assertRaisesRegex(ValueError,'reinforcementReason'): validate(data)
+
+    def test_rebuild_rejects_unreserved_or_shared_concept(self):
+        data=self.rebuild_fixture(); data['cards'][0]['conceptId']='sample-pathway'
+        with self.assertRaisesRegex(ValueError,'ending in -rebuild'): validate(data)
+        data=self.rebuild_fixture(); other=copy.deepcopy(data['cards'][0])
+        other.update(id='second',front='What are the 3 stages of this pathway?', back='One → two → three')
+        data['cards'].append(other); data['targets'][0]['cardIds'].append('second')
+        with self.assertRaisesRegex(ValueError,'exactly one card'): validate(data)
+
+    def rebuild_defined_terms_fixture(self):
+        data=self.rebuild_fixture()
+        for term,meaning in [('Signal','an incoming message'),('Response','a change in cell behavior')]:
+            key=term.lower(); target=copy.deepcopy(data['targets'][0]); card=copy.deepcopy(data['cards'][0])
+            target.update(id=key,statement='Term: '+term,reason='Meaning: '+meaning,cardIds=[key,'idea-0'])
+            card.update(id=key,conceptId=key,type='basic',front=term,back=meaning,targetIds=[key],reinforcementReason='')
+            data['targets'].append(target); data['cards'].append(card)
+            data['cards'][0]['targetIds'].append(key)
+        data['cards'][0]['back']='Signal: an incoming message → receptor activates → Response: a change in cell behavior'
+        return data
+
+    def test_rebuild_may_name_defined_terms_without_parallel_meaning_failure(self):
+        # The fixture spells out meanings on purpose; only the names-only style cue may appear.
+        self.assertEqual([w for w in validate(self.rebuild_defined_terms_fixture()) if 'chain step' not in w], [])
+
+    def test_rebuild_cannot_replace_separate_definition_recall(self):
+        data=self.rebuild_defined_terms_fixture(); data['cards']=data['cards'][:1]
+        for target in data['targets'][1:]: target['cardIds']=['idea-0']
+        with self.assertRaisesRegex(ValueError,'no definition-recall card'): validate(data)
+
+    def test_rebuild_chain_steps_stay_names(self):
+        data=self.rebuild_fixture(); data['cards'][0]['back']='Growth factor → RTK → Ras-GTP → Raf → MEK1/2'
+        data['cards'][0]['front']='What are the 5 steps of the sample pathway?'
+        self.assertFalse(any('step longer' in w or 'required answer' in w for w in validate(data)))
+        data['cards'][0]['back']='Growth factor binds the receptor tyrosine kinase → RTK → Ras-GTP → Raf → MEK1/2'
+        self.assertEqual(sum('chain step longer than 4 words' in w for w in validate(data)), 1)
+
+    def test_rebuild_table_and_argument_lines_allow_twelve_words(self):
+        data=self.rebuild_fixture(); data['cards'][0].update(
+            front='Compare the 2 gene classes on normal role and mutation type.',
+            back='Proto-oncogene: promotes growth when appropriate; gain of function.\nTumor suppressor: restrains inappropriate growth; loss of function.')
+        self.assertFalse(any('step longer' in w for w in validate(data)))
+        data['cards'][0]['back']+=' '+' '.join(['word']*10)
+        self.assertEqual(sum('step longer than 12 words' in w for w in validate(data)), 1)
+
+    def predict_fixture(self):
+        data=self.concept_fixture()
+        data['cards'][0].update(type='predict', conceptId='mek-raf-predict',
+            front='Does lowering MEK activity change Raf activity?',
+            back='No: MEK is downstream of Raf.',
+            reinforcementReason='Slide 16 teaches that MEK is downstream of Raf.')
+        return data
+
+    def test_predict_builds_as_one_basic_review(self):
+        data=self.predict_fixture()
+        self.assertEqual(validate(data), [])
+        built,verified=self.pipeline_fixture(data)
+        row=built['records'][0]
+        self.assertEqual(row['fields']['Type'], '<span class="verb">predict</span>')
+        self.assertEqual(row['fields']['Mindset'], 'm-explain')
+        self.assertEqual(built['activeReviewCards'], 1)
+        self.assertEqual(built['predictCards'], {'count':1,'questions':[{'id':'idea-0','question':data['cards'][0]['front']}]})
+        self.assertTrue(verified['passed'])
+
+    def test_predict_rejects_cloze_missing_reason_and_two_questions(self):
+        data=self.predict_fixture(); data['cards'][0].update(clozePattern='single',cloze='Lower MEK {{c1::does not change}} Raf.',front='',back='')
+        with self.assertRaisesRegex(ValueError,'never a cloze'): validate(data)
+        data=self.predict_fixture(); data['cards'][0]['back']='No change.'
+        with self.assertRaisesRegex(ValueError,'outcome: reason'): validate(data)
+        data=self.predict_fixture(); data['cards'][0]['front']='Does MEK change Raf? What about ERK?'
+        with self.assertRaisesRegex(ValueError,'exactly one question'): validate(data)
+        data=self.predict_fixture(); data['cards'][0]['reinforcementReason']=''
+        with self.assertRaisesRegex(ValueError,'reinforcementReason'): validate(data)
+        data=self.predict_fixture(); data['cards'][0]['conceptId']='mek-raf'
+        with self.assertRaisesRegex(ValueError,'ending in -predict'): validate(data)
+
+    def test_predict_warns_on_long_reason(self):
+        data=self.predict_fixture(); data['cards'][0]['back']='No: MEK sits downstream of Raf in the relay, so lowering it cannot reach back up.'
+        self.assertEqual(sum('predict reason longer' in w for w in validate(data)), 1)
+
+    def test_direction_word_blank_warns(self):
+        data=self.concept_fixture()
+        data['cards'][0].update(type='cloze', clozePattern='single', front='', back='',
+            cloze='A MEK inhibitor {{c1::lowers}} ERK phosphorylation.')
+        self.assertTrue(any('direction-word blank' in w for w in validate(data)))
+        data['cards'][0].update(clozePattern='independent', cloze='DNA damage → {{c1::p53}} → {{c1::p21}} → cyclin–Cdk {{c2::inhibited}} → arrest.')
+        self.assertTrue(any('direction-word blank' in w for w in validate(data)))
+
+    def test_duplicate_rebuild_warning_is_once_per_deck(self):
+        data=self.rebuild_fixture()
+        for index in range(2):
+            other=copy.deepcopy(data['cards'][0]); other.update(id=f'rebuild-{index}',conceptId=f'other-{index}-rebuild',front=f'What are the 3 steps of sample pathway {index}?')
+            data['cards'].append(other); data['targets'][0]['cardIds'].append(other['id'])
+        self.assertEqual(sum('Repeated rebuild Backs' in w for w in validate(data)), 1)
+
+    def test_zero_rebuild_review_cue_is_optional_and_once(self):
+        data=self.concept_fixture(); data['targets'][0]['statement']='Explain the pathway and compare its stages.'
+        self.assertEqual(sum('Review cue:' in w for w in validate(data)), 1)
+        data['targets'][0]['statement']='Define the shape.'
+        self.assertFalse(any('Review cue:' in w for w in validate(data)))
+        data['targets'][0]['topic']='Signaling'
+        self.assertEqual(sum('Review cue:' in w for w in validate(data)), 1)
+
     def test_rejects_preset_deck_hierarchy(self):
         self.data['deckName']='University::Semester::Class::Lecture'
         with self.assertRaisesRegex(ValueError,'standalone deck'):validate(self.data)
@@ -150,7 +321,7 @@ class PromptChecks(unittest.TestCase):
         from build_deck import escape, LABELS
         self.assertEqual(escape('when **new** learning'),'when <b>new</b> learning')
         self.assertEqual(escape('a*b and **'),'a*b and **')
-        self.assertEqual(set(LABELS.values()),{'recall','list','why','compare','example','application'})
+        self.assertEqual(set(LABELS.values()),{'recall','list','why','compare','example','application','rebuild','predict'})
 
     def test_bold_inside_a_blank_warns(self):
         data=self.concept_fixture()

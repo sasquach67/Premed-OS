@@ -149,6 +149,8 @@
             "application",
             "exemplar",
             "free-recall",
+            "rebuild",
+            "predict",
             "cloze",
             "image-occlusion"
           ]
