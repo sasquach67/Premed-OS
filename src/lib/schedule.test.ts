@@ -92,6 +92,14 @@ describe('the derived day never invents a class', () => {
     expect(classScheduleEvents(workspaces, [], tuesday)).toEqual([])
   })
 
+  it('gives each meeting of a twice-weekly class its own id', () => {
+    const thursday = new Date(tuesday.getFullYear(), tuesday.getMonth(), tuesday.getDate() + 2, 8, 0, 0)
+    const week = [...classScheduleEvents(workspaces, courses, tuesday), ...classScheduleEvents(workspaces, courses, thursday)]
+    const chem = week.filter((event) => event.title.startsWith('CHEM'))
+    expect(chem).toHaveLength(2)
+    expect(new Set(chem.map((event) => event.id)).size).toBe(2)
+  })
+
   it('returns an empty day rather than filling it', () => {
     const sunday = new Date(2026, 8, 13, 8, 0, 0)
     expect(classScheduleEvents(workspaces, courses, sunday)).toEqual([])

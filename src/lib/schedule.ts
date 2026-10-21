@@ -26,6 +26,10 @@ function pad(n: number) {
   return String(n).padStart(2, '0')
 }
 
+function localDateKey(date: Date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
 function localIsoFor(date: Date, hour: number, minute = 0) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute).toISOString()
 }
@@ -135,7 +139,9 @@ export function classScheduleEvents(
     if (!course) continue
 
     events.push({
-      id: `class-${workspace.courseId}`,
+      // One id per occurrence, not per course: a Tue/Thu class merged across
+      // several days would otherwise repeat the same React key.
+      id: `class-${workspace.courseId}-${localDateKey(date)}-${pad(Math.floor(time.start / 60))}${pad(time.start % 60)}`,
       title: `${course.code} ${course.title}`.trim(),
       start: localIsoFor(date, Math.floor(time.start / 60), time.start % 60),
       end: localIsoFor(date, Math.floor(time.end / 60), time.end % 60),
