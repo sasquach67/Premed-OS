@@ -13,7 +13,7 @@ SCHEMAS = Path('premed-hq-documentation/specifications/generation/portable-noteb
 APP = Path('src/lib/academics/notebook')
 # Approved October 20 beta-33 teach-first walkthrough, exam profile and forecast scope. Frozen full-template hashes
 # detect unreviewed rule/schema changes; generated assets separately require parity.
-APPROVED_PROMPT_HASHES = {'review': 'b038130a487437ec701179ef95e3330810d8334fe4c17630b1df5f84a4948f1e', 'assessment': '94455494b9187e2d3063ec3e3f986b0fd071972f4c91dd90f6fb01d79aced477', 'assignment': 'f471ef9cb221ba77f1f13fbbdc1ce96365c14fd4051f25f5f380e5aae1f2f13d'}
+APPROVED_PROMPT_HASHES = {'review': '69d836b9c1676f1cde4bafb8e2b60ef2f71e25b59f532e7eb553473c4ceaf7dc', 'assessment': '212e02870ab7c607777272ca436cb63b7a6ebcba26123fb9b7e0f9558eb60d9b', 'assignment': '17fd2702d7c7d2d2235bad4e2e7427b2133f3b1e5dc1e09900a92ea76ad3f5b4'}
 PIN = 'notebook-prompt-v4.schema.json'
 PIN_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'
 READER_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'

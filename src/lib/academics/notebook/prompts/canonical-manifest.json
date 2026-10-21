@@ -1,7 +1,7 @@
 {
   "instructionsVersion": "notebook-workflows-draft-4",
   "promptBuild": "notebook-instructions-beta-33",
-  "canonicalHeadAtBuild": "83c4e47de7513683a059a0e37c438ca064e84e7b",
+  "canonicalHeadAtBuild": "c38da7bcfdb2731e20dbe6443359cffd0ee25907",
   "canonicalRootAtBuild": "/private/tmp/claude-501/b33-merge",
   "sources": {
     "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
@@ -28,9 +28,9 @@
       }
     },
     "premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md": {
-      "sha256": "d92aa3052e56f1030d2df0d5b8873973265e41acc9bd7a3ef267118f6623de2e",
+      "sha256": "b8fee3b3920a2c88f8d7cba9b16bf4360a2c7403bac9f6721958b82f6c653222",
       "sections": {
-        "full": "d92aa3052e56f1030d2df0d5b8873973265e41acc9bd7a3ef267118f6623de2e"
+        "full": "b8fee3b3920a2c88f8d7cba9b16bf4360a2c7403bac9f6721958b82f6c653222"
       }
     },
     "premed-hq-documentation/specifications/generation/03-study-guide-v1.md": {
@@ -116,40 +116,40 @@
   },
   "outputs": {
     "copy-prompt-review.md": {
-      "sha256": "b038130a487437ec701179ef95e3330810d8334fe4c17630b1df5f84a4948f1e",
-      "bytes": 230091,
-      "words": 27080,
+      "sha256": "69d836b9c1676f1cde4bafb8e2b60ef2f71e25b59f532e7eb553473c4ceaf7dc",
+      "bytes": 230997,
+      "words": 27206,
       "componentBytes": {
         "request": 7061,
         "commonLearningRules": 18175,
         "goalLearningRules": 33309,
-        "externalWorkflow": 126260,
+        "externalWorkflow": 127166,
         "schema": 44176,
         "assembly": 1110
       }
     },
     "copy-prompt-assessment.md": {
-      "sha256": "94455494b9187e2d3063ec3e3f986b0fd071972f4c91dd90f6fb01d79aced477",
-      "bytes": 212845,
-      "words": 24284,
+      "sha256": "212e02870ab7c607777272ca436cb63b7a6ebcba26123fb9b7e0f9558eb60d9b",
+      "bytes": 213751,
+      "words": 24410,
       "componentBytes": {
         "request": 7069,
         "commonLearningRules": 18175,
         "goalLearningRules": 16047,
-        "externalWorkflow": 126260,
+        "externalWorkflow": 127166,
         "schema": 44176,
         "assembly": 1118
       }
     },
     "copy-prompt-assignment.md": {
-      "sha256": "f471ef9cb221ba77f1f13fbbdc1ce96365c14fd4051f25f5f380e5aae1f2f13d",
-      "bytes": 205188,
-      "words": 23247,
+      "sha256": "17fd2702d7c7d2d2235bad4e2e7427b2133f3b1e5dc1e09900a92ea76ad3f5b4",
+      "bytes": 206094,
+      "words": 23373,
       "componentBytes": {
         "request": 7069,
         "commonLearningRules": 18175,
         "goalLearningRules": 8390,
-        "externalWorkflow": 126260,
+        "externalWorkflow": 127166,
         "schema": 44176,
         "assembly": 1118
       }
