@@ -269,9 +269,10 @@ literal Why it matters: label. Prefer exact lecture pixels. Verified point
 annotations may add location cues under EC-ANNOTATION; do not invent coordinates.
 A missing actual figure is a source gap, never a reason to fabricate pixels.
 
-Every teaching section requires core Why it works and extra Go deeper
-explanations of 2–3 sentences each. How this connects is core, 1–2 sentences,
-and required after the first section. Step reason lines explain real sequence
+Every teaching section teaches through a 3–6 point walkthrough after its
+question and 1–2 sentence lede (EC-WALKTHROUGH); the walkthrough replaces the
+beta-32 Why it works, Go deeper and How this connects blocks. The main figure
+sits inside the point it explains. Step reason lines explain real sequence
 steps where needed. No prose block exceeds 3 sentences or about 60 words.
 Argument-led guides have a linked 4–6 item argumentChain at the top and a core
 claim/evidence/soWhat block in each argument section. Timeline events show dates,
@@ -280,7 +281,7 @@ EC-LINES-FIRST supersede any older conditional or prose-default guidance.
 
 Use sparse `callout` blocks with tones `question`, `lecture-example`, `analogy`,
 `mix-up`, `builds-on`, and `one-thing`. The opening question and closing one-thing
-line frame each section; optional callouts earn their space. Use the lecture's
+line (reader label Key idea) frame each section; optional callouts earn their space. Use the lecture's
 analogy first and a well-known analogy second; label it as an aside, never the
 main scientific definition. Use mix-up only for an exact error evidenced in student notes, a supplied
 question or the instructor’s explanation. State the correct fact, at most once

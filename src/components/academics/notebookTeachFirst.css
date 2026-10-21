@@ -1,0 +1,129 @@
+/* Beta-33 study-guide reader (brief §4). Ported from the exemplar's data-sg and data-explained
+   CSS (mockup-lab/01-academics/academics-notebooks-final.html); measured by design-audit.js. */
+
+/* reading column and rhythm */
+.sg article > .lf-sec { max-width: 46rem; margin-inline: auto; padding-bottom: 3.4rem; }
+.sg article > .lf-sec + .lf-sec { margin-top: 0; padding-top: 3.4rem; border-top: 1px solid var(--border); }
+.sg .lf-sec > * + * { margin-top: 1.6rem; }
+.sg .lf-sec { font-size: 1.0625rem; line-height: 1.75; scroll-margin-top: 60px; }
+.sg .lf-sec > h3 { font-family: var(--font-display); font-size: 1.95rem; line-height: 1.2; font-weight: 700; letter-spacing: -.005em; margin: 0; }
+.sg .lf-sec p { margin: 0; }
+
+/* the question: a pull-quote, not a box */
+.sg [data-q] { border-left: 3px solid var(--primary); padding: .15rem 0 .15rem 1rem; }
+.sg [data-q] p { font-size: 1.25rem; line-height: 1.5; font-weight: 600; }
+
+/* lede */
+.sg .sg-lede-big { max-width: 40rem; font-size: 1.2rem; line-height: 1.65; font-weight: 500; }
+
+/* walkthrough */
+.sg .sg-walk { list-style: none; counter-reset: w; padding: 0; margin-bottom: 0; }
+.sg .sg-walk > li { counter-increment: w; position: relative; padding-left: 3rem; }
+.sg .sg-walk > li + li { margin-top: 2.1rem; }
+.sg .sg-walk[data-condensed] > li + li { margin-top: 1rem; }
+.sg .sg-walk > li::before { content: counter(w); position: absolute; left: 0; top: -.22rem; width: 2rem; height: 2rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .95rem; color: var(--primary); background: color-mix(in oklab, var(--primary) 16%, transparent); }
+.sg .sg-walk h4 { font-size: 1.22rem; line-height: 1.4; font-weight: 800; margin: 0 0 .5rem; letter-spacing: 0; text-transform: none; color: var(--foreground); }
+.sg .sg-walk p { max-width: 38rem; color: color-mix(in oklab, var(--foreground) 88%, transparent); }
+.sg .sg-walk p + p { margin-top: .75rem; }
+.sg .sg-cond { display: grid; gap: .7rem; margin-top: 1rem; }
+.sg .sg-cond > div { border: 1px solid var(--border); border-radius: 1rem; padding: .9rem 1.1rem; background: var(--card); }
+.sg .sg-cond > div > b:first-child { display: block; margin-bottom: .15rem; }
+.sg .sg-walkfig, .sg .sg-tbl { margin-top: 1.1rem; }
+.sg .sg-walkfig .en-block, .sg .sg-tbl .en-block, .sg .sg-rest .en-block { padding: 0; }
+.sg .sg-walkfig figure, .sg .sg-walkfig img { max-width: 30rem; }
+.sg .sg-walkfig img { display: block; width: 100%; height: auto; background: #fff; border: 1px solid var(--border); border-radius: .9rem; }
+.sg .sg-walkfig figcaption { max-width: 30rem; text-align: left; font-size: .86rem; color: var(--muted-foreground); font-style: italic; }
+
+/* labeled boxes (brief §2.6) */
+.sg .sg-k { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: .25rem !important; }
+.sg .sg-note { margin-top: 1rem; border: 1px solid var(--border); background: var(--muted); border-radius: 1rem; padding: 1rem 1.2rem; font-size: .95rem; line-height: 1.6; }
+.sg .sg-note[data-tone=lecture-example] { border-color: oklab(.769 .0640531 .176752 / .45); background: oklab(.769 .0640531 .176752 / .08); }
+.sg .sg-take { border: 1px solid color-mix(in oklab, var(--success) 30%, transparent); background: color-mix(in oklab, var(--success) 10%, transparent); border-radius: 1.1rem; padding: 1.25rem 1.5rem; }
+.sg .sg-take .sg-k { color: var(--success); }
+.sg .sg-take p:last-child { font-size: 1.12rem; line-height: 1.6; font-weight: 700; }
+.sg .lf-why { border-left: 3px solid color-mix(in oklab, var(--primary) 55%, transparent); padding: .3rem 0 .3rem 1.3rem; }
+
+/* Keep it straight */
+.sg .sg-ref { display: flex; align-items: center; gap: .8rem; margin-top: 2.8rem !important; color: var(--muted-foreground); font-size: .8rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.sg .sg-ref::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* map: a two-column outline. Root on top; one guide line drops from under it;
+   each row = tick + chip | text, and every row's text starts at the same x. */
+.sg .wt-node { display: inline-block; border-radius: 999px; padding: 1px 10px; font-weight: 800; font-size: 13px; border: 1px solid var(--border); background: var(--card); }
+.sg .wt-go { color: var(--success); border-color: color-mix(in srgb, var(--success) 40%, transparent); background: color-mix(in srgb, var(--success) 10%, var(--card)); }
+.sg .wt-stop { color: var(--destructive); border-color: color-mix(in srgb, var(--destructive) 40%, transparent); background: color-mix(in srgb, var(--destructive) 10%, var(--card)); }
+.sg .wt-ext { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 40%, transparent); background: color-mix(in srgb, var(--warning) 10%, var(--card)); }
+.sg .wt-map { margin: 0; background: var(--muted); padding: 1.4rem 1.6rem 1.5rem; border-radius: 1.1rem; font-size: .875rem; line-height: 1.43; }
+.sg .wt-map ul { list-style: none; margin: 0; padding: 0; }
+.sg .wt-map li { padding: 0; margin: 0; }
+.sg .wt-map > ul > li > .wt-node { display: block; background: none; border: 0; padding: 0; border-radius: 0; font-size: 1.02rem; font-weight: 800; line-height: 1.4; margin: 0 0 .95rem; }
+.sg .wt-map > ul > li > ul { position: relative; overflow: hidden; margin-left: .45rem; padding-left: 1.5rem; display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 1rem; row-gap: .9rem; align-items: start; }
+.sg .wt-map > ul > li > ul::before { content: ''; position: absolute; left: 0; top: -.95rem; bottom: 0; width: 2px; background: var(--border); }
+.sg .wt-map > ul > li > ul > li { display: contents; }
+.sg .wt-map > ul > li > ul > li > .wt-node { position: relative; justify-self: start; font-size: .84rem; font-weight: 700; line-height: 1.4; padding: .22rem .7rem; border-radius: 999px; }
+.sg .wt-map > ul > li > ul > li > .wt-node::before { content: ''; position: absolute; left: calc(-1.5rem - 1px); top: 50%; width: 1.2rem; height: 2px; background: var(--border); }
+.sg .wt-map > ul > li > ul > li:last-child > .wt-node::after { content: ''; position: absolute; left: calc(-1.5rem - 1px); top: calc(50% + 2px); width: 3px; height: 40rem; background: var(--muted); }
+.sg .wt-map .sg-mem { color: var(--muted-foreground); font-size: .98rem; line-height: 1.5; padding-top: .2rem; }
+.sg .wt-map .sg-mem:empty { display: none; }
+
+/* terms: a glossary card per term */
+.sg .lf-terms { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+.sg .lf-tg { border: 1px solid var(--border); border-radius: 1rem; padding: 1.1rem 1.25rem; }
+.sg .lf-tg ul { list-style: none; padding: 0; margin: 0; }
+.sg .lf-tg li { padding: 0; margin: 0; color: var(--muted-foreground); font-size: .95rem; line-height: 1.55; }
+.sg .lf-tg li b { display: block; font-weight: 700; margin-bottom: .1rem; color: var(--foreground); }
+.sg .lf-tg li span { display: block; }
+
+/* reference blocks rendered by the shared block view */
+.sg .sg-rest .en-block { padding: 0; }
+.sg .sg-gap { font-size: .92rem; color: var(--muted-foreground); border: 1px dashed var(--border); border-radius: .8rem; padding: .7rem 1rem; }
+.sg .lf-sec .en-table-scroll table { font-size: .95rem; }
+.sg .lf-sec .en-table-scroll td, .sg .lf-sec .en-table-scroll th { padding: .55rem .75rem; }
+.sg .lf-sec .nbr-illustration, .sg .lf-sec .lf-mono { font-size: .82rem; overflow-x: auto; }
+
+/* mastery: exam forecast (brief §2.9) */
+.sg .mq-pane { display: grid; gap: 1.6rem; max-width: 50rem; margin-inline: auto; }
+.sg .mq-card { background: var(--card); border: 1px solid var(--border); border-radius: 1.1rem; padding: 1.6rem 1.75rem; }
+.sg .mq-card > * + * { margin-top: 1rem; }
+.sg .mq-kick, .sg .mq-boxkick, .sg .mq-colkick { font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin: 0; }
+.sg .mq-kick, .sg .mq-boxkick { color: var(--primary); }
+.sg .mq-colkick { color: var(--muted-foreground); margin-bottom: .5rem; }
+.sg .mq-title { font-family: var(--font-display); font-size: 1.3rem; line-height: 1.3; font-weight: 800; margin: .35rem 0 0; }
+.sg .mq-box { border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent); background: color-mix(in oklab, var(--primary) 8%, transparent); border-radius: 1rem; padding: 1.25rem 1.4rem; }
+.sg .mq-box .mq-setup { font-size: 1.06rem; font-weight: 700; line-height: 1.5; margin: .45rem 0 0; }
+.sg .mq-fcl { list-style: none; padding: 0; margin: .9rem 0 0; display: grid; gap: .75rem; }
+.sg .mq-fcl > li { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); column-gap: .9rem; align-items: baseline; font-size: 1rem; line-height: 1.6; }
+.sg .mq-fmt { font-size: .72rem; font-weight: 800; letter-spacing: .04em; color: var(--primary); background: color-mix(in oklab, var(--primary) 14%, transparent); border-radius: 999px; padding: .15rem .6rem; justify-self: start; line-height: 1.4; }
+.sg .mq-foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 1.1rem; padding-top: .9rem; border-top: 1px solid color-mix(in oklab, var(--primary) 22%, transparent); }
+.sg .mq-basis { font-size: .82rem; color: var(--muted-foreground); line-height: 1.4; }
+.sg .mq-go { font-size: .85rem; font-weight: 700; border-radius: 999px; padding: .4rem .95rem; background: var(--primary); color: var(--primary-foreground); border: 0; cursor: pointer; }
+.sg .mq-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.sg .mq-col { background: var(--muted); border-radius: 1rem; padding: 1.1rem 1.25rem; }
+.sg .mq-col ul { list-style: none; margin: 0; padding: 0; font-size: .98rem; line-height: 1.6; }
+.sg .mq-col li { position: relative; padding-left: 1.35rem; }
+.sg .mq-col li + li { margin-top: .75rem; }
+.sg .mq-col li::before { content: ''; position: absolute; left: .25rem; top: calc(.5lh - .2rem); width: .4rem; height: .4rem; border-radius: 999px; background: color-mix(in oklab, var(--primary) 60%, transparent); }
+
+/* practice: structured class questions (brief §2.9) */
+.sg .mq-src { margin-left: .4rem; font-size: .8rem; font-weight: 600; color: var(--muted-foreground); white-space: nowrap; }
+.sg .mq-opts { margin-top: .35rem; display: grid; gap: .3rem; }
+.sg .mq-opts > p, .sg .mq-match p { display: flex; gap: .55rem; margin: 0; font-size: .95rem; line-height: 1.5; }
+.sg .mq-l { flex: 0 0 1.4rem; height: 1.4rem; border-radius: .4rem; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: .72rem; font-weight: 800; color: var(--muted-foreground); margin-top: .05rem; }
+.sg .mq-match { margin-top: .35rem; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 1.2rem; }
+.sg .mq-match > div { display: grid; gap: .3rem; align-content: start; }
+.sg .mq-tbl { margin-top: .45rem; overflow-x: auto; }
+.sg .mq-tbl table { border-collapse: collapse; width: 100%; background: var(--card); }
+.sg .mq-tbl th, .sg .mq-tbl td { border: 1px solid var(--border); padding: .45rem .7rem; font-size: .92rem; text-align: left; }
+.sg .mq-tbl th { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
+.sg .mq-tbl td:empty { min-width: 8rem; height: 2rem; }
+
+@media (max-width: 640px) {
+  .sg .lf-sec > h3 { font-size: 1.4rem; }
+  .sg .wt-map > ul > li > ul { grid-template-columns: minmax(0, 1fr); row-gap: .35rem; }
+  .sg .wt-map .sg-mem { padding: 0 0 .6rem .2rem; }
+  .sg .mq-card { padding: 1.15rem 1.1rem; }
+  .sg .mq-cols { grid-template-columns: 1fr; }
+  .sg .mq-fcl > li { grid-template-columns: 1fr; row-gap: .3rem; }
+  .sg .mq-box { padding: 1rem 1.05rem; }
+  .sg .mq-match { grid-template-columns: 1fr; gap: .6rem; }
+}

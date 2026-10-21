@@ -116,8 +116,11 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
         }
         if (b.type === 'study-diagram') {
           const nodes = identify(b.nodes, path); identify(b.edges, path)
+          const incoming = new Set(b.edges.map(edge => edge.to))
           for (const item of [...b.nodes, ...b.edges]) {
-            evidence(item, true)
+            // A map's root restates its title; with no evidence of its own it inherits the block's (beta-33 §5).
+            const inheritsRoot = !('from' in item) && !incoming.has(item.id) && !item.sourceIds.length && !item.excerptIds.length && !visualAssetReferences(item).length && b.sourceIds.length > 0
+            if (!inheritsRoot) evidence(item, true)
             if (item.sourceIds.some(id => !b.sourceIds.includes(id)) || item.excerptIds.some(id => !b.excerptIds.includes(id)) || visualAssetReferences(item).some(id => !visualAssetReferences(b).includes(id))) fail(path, 'Every diagram node and edge must fit its block evidence envelope.')
             for (const id of visualAssetReferences(item)) referenced.add(id)
           }
@@ -137,6 +140,17 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
         if (block.type === 'bullets') {
           unique((block.nestedItems ?? []).map(item => String(item.parentIndex)), path)
           for (const item of block.nestedItems ?? []) if (item.parentIndex >= block.items.length) fail(path, 'Nested bullets must reference an existing parent item.')
+        }
+        if (block.type === 'walkthrough') {
+          const attached = new Set<string>()
+          for (const item of block.items) for (const id of [item.figureBlockId, ...(item.attachedBlockIds ?? [])]) {
+            if (id === undefined) continue
+            const target = section.blocks.find(b => b.id === id)
+            if (!target || target.id === block.id || target.type === 'walkthrough' || target.type === 'practice') fail(path, 'Walkthrough figures and attached blocks must reference a teaching block in the same section.')
+            if (id === item.figureBlockId && !['figure', 'annotated-figure'].includes(target!.type)) fail(path, 'A walkthrough figureBlockId must reference a figure or annotated figure.')
+            if (attached.has(id)) fail(path, 'Attach each block to one walkthrough point only.')
+            attached.add(id)
+          }
         }
         if (block.type === 'study-diagram') for (const node of block.nodes) if (node.targetBlockId && !section.blocks.some(b => b.id === node.targetBlockId)) fail(path, 'Map targets must reference a block in the same section.')
       }

@@ -2,9 +2,11 @@ import type { ReactNode } from 'react'
 import type { NotebookEntry, NotebookObjective } from '@/lib/academics/notebook/types'
 import { NotebookInlineText } from './NotebookStudyGuide'
 import './notebookMasteryObjectives.css'
+import './notebookTeachFirst.css'
 
 type TextRenderer = (value: string, path: (string | number)[], label: string) => ReactNode
-export function NotebookMasteryObjectives({ entry, entryIndex = 0, headingId, renderEvidence, renderText }: {
+export function NotebookMasteryObjectives({ entry, entryIndex = 0, headingId, renderEvidence, renderText, onPractice }: {
+  onPractice?: (practiceBlockIds: string[]) => void
   entry: NotebookEntry
   entryIndex?: number
   headingId?: string
@@ -12,6 +14,27 @@ export function NotebookMasteryObjectives({ entry, entryIndex = 0, headingId, re
   renderText?: TextRenderer
 }) {
   const text: TextRenderer = renderText ?? (value => <p className="en-text"><NotebookInlineText text={value} /></p>)
+  // Beta-33: How it may be tested is an exam forecast, shown as the exemplar's mq-* cards (brief §2.9).
+  if (!renderText && entry.objectives.some(objective => objective.howTested?.forecast?.length)) return <section className="nbr-objectives nmo-objectives sg" aria-label="Mastery objectives">
+    <h2 id={headingId} tabIndex={headingId ? -1 : undefined} className="sr-only">Mastery objectives</h2>
+    <div className="mq-pane">{entry.objectives.map((objective, index) => {
+      const title = objective.origin === 'derived' ? objective.title.replace(/^Study objective:\s*/, '') || objective.title : objective.title
+      const tested = objective.howTested
+      return <article key={objective.id} className="mq-card" aria-label={title}>
+        <p className="mq-kick">Objective {index + 1} · {objective.origin === 'official' ? 'Course objective' : 'Study objective'}</p>
+        <h3 className="mq-title">{title}</h3>
+        <section className="mq-box" aria-label="How it may be tested"><p className="mq-boxkick">How it may be tested</p>
+          {tested && <p className="mq-setup"><NotebookInlineText text={tested.setup} /></p>}
+          {tested?.forecast?.length ? <ul className="mq-fcl">{tested.forecast.map((row, ri) => <li key={ri}><span className="mq-fmt">{row.format}</span><span className="mq-fc"><NotebookInlineText text={row.text} /></span></li>)}</ul> : <p className="en-text">This objective has no forecast yet. Its class questions are in Practice.</p>}
+          <div className="mq-foot"><span className="mq-basis">{tested?.basis ?? 'Based on the class questions for this objective.'}</span>{onPractice && objective.practiceBlockIds.length > 0 && <button type="button" className="mq-go" onClick={() => onPractice(objective.practiceBlockIds)}>Practice these</button>}</div>
+        </section>
+        <div className="mq-cols"><section className="mq-col" aria-label="Be able to do"><p className="mq-colkick">Be able to do</p><ul>{(objective.applicationSkills?.map(skill => skill.text) ?? objective.beAbleToDo).map((skill, si) => <li key={si}><NotebookInlineText text={skill} /></li>)}</ul></section>
+          <section className="mq-col" aria-label="Understand"><p className="mq-colkick">Understand</p><ul>{objective.understand.map((fact, fi) => <li key={fi}><NotebookInlineText text={fact} /></li>)}</ul></section></div>
+        {objective.evidenceLimit && <p className="nmo-limit">{objective.evidenceLimit}</p>}
+        {renderEvidence(objective)}
+      </article>
+    })}</div>
+  </section>
   return <section className="nbr-objectives nmo-objectives" aria-label="Mastery objectives">
     <h2 id={headingId} tabIndex={headingId ? -1 : undefined}>Mastery objectives</h2>
     <ol className="nmo-list">{entry.objectives.map((objective, index) => {
