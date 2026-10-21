@@ -77,6 +77,13 @@ def rebuild_steps(card):
     return ([step.strip() for step in card['back'].split('→')] if '→' in card['back']
             else [line.strip() for line in card['back'].splitlines() if line.strip()])
 
+def is_comparison_rebuild(card):
+    return card['front'].lstrip().casefold().startswith('compare ') and '→' not in card['back']
+
+def comparison_axes(row):
+    _, sep, values = row.partition(':')
+    return [value.strip() for value in values.split(';') if value.strip()] if sep else []
+
 def extra_text(card):
     # Preserve authored content without mandatory prose or decorative labels.
     return '\n'.join(part for part in [card['example']['text'].strip() if card['example'] else '', card['explanation'].strip()] if part)
@@ -213,7 +220,12 @@ def validate(data, updating=False):
             require(c['conceptId'].endswith('-rebuild'), f'{cid}: rebuild needs its own conceptId ending in -rebuild.')
             require(c['reinforcementReason'].strip(), f'{cid}: rebuild reinforcementReason must name the slide, figure or objective showing the whole structure.')
             steps = rebuild_steps(c)
-            require(len(steps) >= 3 and all(steps), f'{cid}: rebuild needs at least 3 nonempty steps or lines.')
+            if is_comparison_rebuild(c):
+                # A table may have two rows when every row still spans two or more axes.
+                require(len(steps) >= 2 and all(steps), f'{cid}: comparison rebuild needs at least 2 rows.')
+                require(all(len(comparison_axes(step)) >= 2 for step in steps), f'{cid}: each comparison row needs "Item: value; value" with at least 2 axes.')
+            else:
+                require(len(steps) >= 3 and all(steps), f'{cid}: rebuild needs at least 3 nonempty steps or lines.')
             count = len(steps)
             require(re.search(r'\b' + str(count) + r'\b', c['front']) or re.search(r'\b' + number_words.get(count, str(count)) + r'\b', c['front'], re.IGNORECASE), f'{cid}: rebuild Front count must equal the {count} steps or lines.')
         if cp:

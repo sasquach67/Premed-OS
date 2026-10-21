@@ -56,6 +56,24 @@ class PromptChecks(unittest.TestCase):
                 data=self.rebuild_fixture(); data['cards'][0].update(front=front,back=back)
                 self.assertEqual(validate(data), [])
 
+    def test_rebuild_accepts_two_row_comparison_with_two_axes(self):
+        data=self.rebuild_fixture(); data['cards'][0].update(
+            front='Compare the 2 gene classes on mutation effect and alleles needed.',
+            back='Oncogene: gain of function; one allele.\nTumor suppressor: loss of function; both alleles.')
+        self.assertEqual(validate(data), [])
+
+    def test_rebuild_rejects_comparison_row_with_one_axis(self):
+        data=self.rebuild_fixture(); data['cards'][0].update(
+            front='Compare the 2 gene classes on mutation effect.',
+            back='Oncogene: gain of function.\nTumor suppressor: loss of function.')
+        with self.assertRaisesRegex(ValueError,'at least 2 axes'): validate(data)
+
+    def test_rebuild_rejects_one_row_comparison(self):
+        data=self.rebuild_fixture(); data['cards'][0].update(
+            front='Compare the 1 gene class on mutation effect and alleles needed.',
+            back='Oncogene: gain of function; one allele.')
+        with self.assertRaisesRegex(ValueError,'at least 2 rows'): validate(data)
+
     def test_rebuild_rejects_fewer_than_three_steps(self):
         data=self.rebuild_fixture(); data['cards'][0]['back']='Signal → response'
         with self.assertRaisesRegex(ValueError,'at least 3'): validate(data)

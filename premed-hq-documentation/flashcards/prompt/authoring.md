@@ -90,11 +90,11 @@ KEEP every existing one-fact recall card. Add whole structures the instructor wo
 | named set or tree | Parent with N members; existing umbrella list cloze, no rebuild |
 | labeled structure | Diagram students label; existing image occlusion, no rebuild |
 
-Require a whole figure, slide, objective or instructor start-to-end explanation; never assemble scattered facts. Chains need three or more steps; shorter chains keep their arrow cloze. Zero rebuild cards is normal; no quota. Preserve member meanings, atomic 2–4-step arrows and connecting why cards.
+Require a whole figure, slide, objective or instructor start-to-end explanation; never assemble scattered facts. Chains and arguments need three or more steps; shorter chains keep their arrow cloze. A comparison table may have two rows, such as oncogene versus tumor suppressor, when every row covers at least two axes. Zero rebuild cards is normal; no quota. Preserve member meanings, atomic 2–4-step arrows and connecting why cards.
 
 Use Basic type rebuild, no cloze, empty recallItems, null listOrdered and empty axis. Grade ONE Q&A once as a whole. Front states the count: “What are the N steps of ⟨structure⟩, from ⟨start⟩ to ⟨end⟩?”; “Compare the N ⟨things⟩ on ⟨axis⟩ and ⟨axis⟩.”; or “Rebuild ⟨Author⟩'s argument on ⟨topic⟩ in 3 parts: claim, case, what it answers.” Axes name one comparison.
 
-Back: chain on one arrow line, outcome last; table one line per item with axes in identical order; argument three lines headed Claim:, Case:, Answers:. Steps name entities and actions, not definitions. Register: Technical for BIOL, plain PSYC, author and actual case for ANTH/GEOG; at most one short parenthesis. Extra: at most three lines plus the lecture figure; biology may add one taught “where it breaks” line.
+Back: chain on one arrow line, outcome last; table one line per item, written “Item: value; value” with axes in identical order; argument three lines headed Claim:, Case:, Answers:. Steps name entities and actions, not definitions. Register: Technical for BIOL, plain PSYC, author and actual case for ANTH/GEOG; at most one short parenthesis. Extra: at most three lines plus the lecture figure; biology may add one taught “where it breaks” line.
 
 Start where this lecture's figure starts, extending upstream only through shown steps: if it begins at Ras, begin at Ras. Extra may locate earlier steps: “Steps 1–3: Lesson 11”. The completing lesson hosts the full chain; earlier shorter chains remain distinct demands, never reused or retired.
 
