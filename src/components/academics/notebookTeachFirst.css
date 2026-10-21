@@ -4,10 +4,10 @@
 /* reading column and rhythm */
 .sg article > .lf-sec { max-width: 46rem; margin-inline: auto; padding-bottom: 3.4rem; }
 .sg article > .lf-sec + .lf-sec { margin-top: 0; padding-top: 3.4rem; border-top: 1px solid var(--border); }
-.sg .lf-sec > * + * { margin-top: 1.6rem; }
+.sg .lf-sec.sg-x > * + * { margin-top: 1.6rem; }
 .sg .lf-sec { font-size: 1.0625rem; line-height: 1.75; scroll-margin-top: 60px; }
 .sg .lf-sec > h3 { font-family: var(--font-display); font-size: 1.95rem; line-height: 1.2; font-weight: 700; letter-spacing: -.005em; margin: 0; }
-.sg .lf-sec p { margin: 0; }
+.sg .lf-sec :where(p) { margin: 0; }
 
 /* the question: a pull-quote, not a box */
 .sg [data-q] { border-left: 3px solid var(--primary); padding: .15rem 0 .15rem 1rem; }
@@ -22,7 +22,7 @@
 .sg .sg-walk > li + li { margin-top: 2.1rem; }
 .sg .sg-walk[data-condensed] > li + li { margin-top: 1rem; }
 .sg .sg-walk > li::before { content: counter(w); position: absolute; left: 0; top: -.22rem; width: 2rem; height: 2rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .95rem; color: var(--primary); background: color-mix(in oklab, var(--primary) 16%, transparent); }
-.sg .sg-walk h4 { font-size: 1.22rem; line-height: 1.4; font-weight: 800; margin: 0 0 .5rem; letter-spacing: 0; text-transform: none; color: var(--foreground); }
+.sg .lf-sec.sg-x .sg-walk h4 { font-size: 1.22rem; line-height: 1.4; font-weight: 800; margin: 0 0 .5rem; letter-spacing: 0; text-transform: none; color: var(--foreground); }
 .sg .sg-walk p { max-width: 38rem; color: color-mix(in oklab, var(--foreground) 88%, transparent); }
 .sg .sg-walk p + p { margin-top: .75rem; }
 .sg .sg-cond { display: grid; gap: .7rem; margin-top: 1rem; }
@@ -127,3 +127,8 @@
   .sg .mq-box { padding: 1rem 1.05rem; }
   .sg .mq-match { grid-template-columns: 1fr; gap: .6rem; }
 }
+
+/* the app's per-section Sources fold keeps the block rhythm (rule R1) */
+.sg .lf-sec.sg-x > .nbr-sources-panel { padding: 0; }
+.sg .lf-sec.sg-x > .nbr-sources-panel > summary { margin: 0; padding: 0; }
+.sg .lf-sec.sg-x > .nsg-check { margin-bottom: 0; }

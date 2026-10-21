@@ -18,7 +18,7 @@
 .np-open-label,.np-reveal[open] .np-closed-label{display:none}
 .np-reveal[open] .np-open-label{display:inline}
 .np-solution{margin-top:.85rem}
-.np-answer,.np-why{display:grid;grid-template-columns:3.3rem minmax(0,1fr);gap:.8rem;margin:.65rem 0}
+.np-answer,.np-why{display:grid;grid-template-columns:3.8rem minmax(0,1fr);gap:.8rem;margin:.65rem 0}
 .np-answer h4,.np-why h4{margin:.2rem 0 0;font-family:var(--font-sans);font-size:.7rem;line-height:1.4;text-transform:uppercase;letter-spacing:.08em;color:var(--muted-foreground)}
 .external-notebook .np-answer .en-text,.external-notebook .np-why .en-text{margin:0;font-size:1rem;line-height:1.65}
 .external-notebook .np-answer .en-text{font-weight:600}
