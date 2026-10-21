@@ -28,8 +28,8 @@ BASIC_Q = '<div class="pm pm-question {{Mindset}}">' + TYPE + '{{Front}}</div>'
 BASIC_A = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + FOOTER + '</div>'
 CLOZE_Q = '<div id="pm-list-question" class="pm pm-question {{Mindset}}">' + TYPE + '{{cloze:Text}}</div><script>' + (HERE / 'list-reveal.js').read_text() + '</script>'
 CLOZE_A = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}' + EXTRA + FOOTER + '</div>'
-LABELS = {'basic': 'recall', 'cloze': 'recall', 'process': 'list', 'conceptual': 'why', 'comparison': 'compare', 'exemplar': 'example', 'application': 'application', 'free-recall': 'list', 'image-occlusion':'recall', 'rebuild':'rebuild'}
-MINDSETS = {'basic': ('say', 'say it'), 'cloze': ('say', 'say it'), 'process': ('say', 'say it'), 'conceptual': ('explain', 'explain it'), 'comparison': ('connect', 'connect it'), 'exemplar': ('connect', 'connect it'), 'application': ('use', 'use it'), 'free-recall': ('blurt', 'blurt it'), 'image-occlusion':('say','say it'), 'rebuild':('rebuild','rebuild it')}
+LABELS = {'basic': 'recall', 'cloze': 'recall', 'process': 'list', 'conceptual': 'why', 'comparison': 'compare', 'exemplar': 'example', 'application': 'application', 'free-recall': 'list', 'image-occlusion':'recall', 'rebuild':'rebuild', 'predict':'predict'}
+MINDSETS = {'basic': ('say', 'say it'), 'cloze': ('say', 'say it'), 'process': ('say', 'say it'), 'conceptual': ('explain', 'explain it'), 'comparison': ('connect', 'connect it'), 'exemplar': ('connect', 'connect it'), 'application': ('use', 'use it'), 'free-recall': ('blurt', 'blurt it'), 'image-occlusion':('say','say it'), 'rebuild':('rebuild','rebuild it'), 'predict':('explain','explain it')}
 
 def escape(value):
     # **word** marks a bold cue word; everything else stays plain text.
@@ -72,6 +72,12 @@ def word_count(value):
     return len(value.split())
 
 number_words = {2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',8:'eight',9:'nine',10:'ten'}
+
+WHOLE_QA = ('rebuild', 'predict')
+DIRECTION_WORDS = {'increase', 'increases', 'increased', 'decrease', 'decreases', 'decreased', 'raises', 'lowers', 'up', 'down', 'no change', 'unchanged', 'inhibited', 'activated', 'stimulated', 'blocked'}
+
+def is_argument_rebuild(card):
+    return card['back'].lstrip().casefold().startswith('claim:')
 
 def rebuild_steps(card):
     return ([step.strip() for step in card['back'].split('→')] if '→' in card['back']
@@ -228,9 +234,18 @@ def validate(data, updating=False):
                 require(len(steps) >= 3 and all(steps), f'{cid}: rebuild needs at least 3 nonempty steps or lines.')
             count = len(steps)
             require(re.search(r'\b' + str(count) + r'\b', c['front']) or re.search(r'\b' + number_words.get(count, str(count)) + r'\b', c['front'], re.IGNORECASE), f'{cid}: rebuild Front count must equal the {count} steps or lines.')
+        if c['type'] == 'predict':
+            require(not cp, f'{cid}: predict uses Basic Q&A, never a cloze.')
+            require(c['conceptId'].endswith('-predict'), f'{cid}: predict needs its own conceptId ending in -predict.')
+            require(c['reinforcementReason'].strip(), f'{cid}: predict reinforcementReason must name the slide or Journal block teaching the rule.')
+            require(c['front'].count('?') == 1, f'{cid}: predict asks exactly one question.')
+            outcome, sep, reason = c['back'].partition(':')
+            require(sep and outcome.strip() and reason.strip(), f'{cid}: predict Back is "outcome: reason".')
         if cp:
             require(c['type'] != 'free-recall' and c['cloze'] and not c['front'] and not c['back'] and not c['recallItems'], f'{cid}: mixed cloze and answer fields.')
             spans = list(re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', c['cloze']))
+            if any(span.group(2).split('::')[0].strip().casefold() in DIRECTION_WORDS for span in spans):
+                warnings.append(f'{cid}: direction-word blank is answered from the sentence; test the outcome with a predict card instead.')
             remaining = re.sub(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', '', c['cloze'])
             require(spans and '{{' not in remaining and '}}' not in remaining, f'{cid}: malformed cloze.')
             require(all(len(m[2].split('::')) <= 2 and all(part.strip() for part in m[2].split('::')) for m in spans), f'{cid}: use a nonempty answer and at most one nonempty hint.')
@@ -289,8 +304,14 @@ def validate(data, updating=False):
             if len(lines) > 3 or any(word_count(line) > 20 for line in lines):
                 warnings.append(f'{cid}: Extra exceeds three short lines (about 20 words each); retain useful example, plain restatement and evidence only.')
         if c['type'] == 'rebuild':
-            if any(word_count(step) > 12 for step in rebuild_steps(c)):
-                warnings.append(f'{cid}: rebuild step longer than 12 words; inspect names and actions without definitions.')
+            if is_comparison_rebuild(c) or is_argument_rebuild(c):
+                if any(word_count(step) > 12 for step in rebuild_steps(c)):
+                    warnings.append(f'{cid}: rebuild step longer than 12 words; inspect names and actions without definitions.')
+            elif any(word_count(step) > 4 for step in rebuild_steps(c)):
+                warnings.append(f'{cid}: rebuild chain step longer than 4 words; keep steps to names and move actions to Extra.')
+        elif c['type'] == 'predict':
+            if word_count(c['back'].partition(':')[2]) > 12:
+                warnings.append(f'{cid}: predict reason longer than about ten words; keep the card quick.')
         elif word_count(c['back']) > 45 or any(word_count(i) > 35 for i in c['recallItems']): warnings.append(f'{cid}: long required answer; inspect grading burden.')
         warnings.extend(card_language_warnings(c))
         warnings.extend(clarity_warnings(c, targets, data.get('notebookTitles', [])))
@@ -336,7 +357,7 @@ def validate(data, updating=False):
             witnesses = []
             for cid in own:
                 card = cards[cid]
-                if card['type'] == 'rebuild': continue  # Whole-structure recall never replaces a term's meaning card.
+                if card['type'] in WHOLE_QA: continue  # Rebuild and predict never replace a term's meaning card.
                 direct = direct_card_candidate(card) or (card['type'] == 'comparison' and not card['clozePattern']) or (card['clozePattern'] == 'enumerated-list' and card['listOrdered'] is True)
                 required = coverage_text(card['back'] or card['cloze'])
                 visible = coverage_text(card['front'] + ' ' + (card['back'] or card['cloze']))
@@ -353,7 +374,7 @@ def validate(data, updating=False):
             for cid in witnesses: term_witnesses[cid].add(t['id'])
     defined_terms = [tid for tid, target in targets.items() if term_spec(target)]
     for cid, card in cards.items():
-        if card['type'] == 'rebuild': continue
+        if card['type'] in WHOLE_QA: continue
         parallel = parallel_meaning_terms(card, targets, defined_terms)
         require(len(parallel) <= 1,
                 f'{cid}: parallel meaning group has {len(parallel)} terms; recall each term meaning alone on separate cards.')
@@ -365,8 +386,8 @@ def validate(data, updating=False):
     require(len(exceptions) == len(data['coverageExceptions']), 'Duplicate coverage exception for an idea.')
     require(all(concept in groups for concept in exceptions), 'Coverage exception names an unknown idea.')
     for concept, group in groups.items():
-        if any(c['type'] == 'rebuild' for c in group):
-            require(len(group) == 1, f'{concept}: a rebuild conceptId must contain exactly one card.')
+        if any(c['type'] in WHOLE_QA for c in group):
+            require(len(group) == 1, f'{concept}: a rebuild or predict conceptId must contain exactly one card.')
         validate_pair_group(group, targets)
         reviews = sum(len(indices(c)) for c in group)
         exception = exceptions.get(concept)
@@ -388,7 +409,7 @@ def validate(data, updating=False):
             warnings.append(f'{concept}: coverage exception keeps {reviews} review cards. {exception["reason"]}')
         else:
             require(reviews <= 3 or pair_allowance, f'{concept}: more than three review cards for one idea; only the exact headline pair set plus instructor example earns four.')
-        if not any(c['type'] == 'rebuild' or direct_card_candidate(c) or len(term_witnesses[c['id']]) >= 2 for c in group):
+        if not any(c['type'] in WHOLE_QA or direct_card_candidate(c) or len(term_witnesses[c['id']]) >= 2 for c in group):
             warnings.append(f'{concept}: no direct term card detected; inspect this concept.')
         if len(group) >= 2:
             require(group[1]['reinforcementReason'].strip() or exception, f'{group[1]["id"]}: explain the additional retrieval purpose; no automatic mirrors.')
@@ -538,7 +559,7 @@ def build(data, out, input_dir, previous=None):
         require(archive.testzip() is None, 'Package CRC check failed.')
     concept_reviews = Counter()
     for card in data['cards']: concept_reviews[card['conceptId']] += len(indices(card))
-    report = {'mode':'update' if previous is not None else 'new', 'activeNotes':len(data['cards']), 'activeReviewCards':sum(len(indices(c)) for c in data['cards']), 'newNotes':sum(n['status'] == 'new' for n in manifest), 'updatedNotes':sum(n['status'] == 'updated' for n in manifest), 'retiredNotes':sum(n['status'] == 'retired' for n in manifest), 'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'conceptReviewCards':dict(concept_reviews), 'rebuildCards':{'count':sum(c['type'] == 'rebuild' for c in data['cards']), 'structures':[{'id':c['id'], 'conceptId':c['conceptId'], 'structure':c['front']} for c in data['cards'] if c['type'] == 'rebuild']}, 'media':sorted(all_media), 'targets':data['targets'], 'coverageExceptions':data['coverageExceptions'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
+    report = {'mode':'update' if previous is not None else 'new', 'activeNotes':len(data['cards']), 'activeReviewCards':sum(len(indices(c)) for c in data['cards']), 'newNotes':sum(n['status'] == 'new' for n in manifest), 'updatedNotes':sum(n['status'] == 'updated' for n in manifest), 'retiredNotes':sum(n['status'] == 'retired' for n in manifest), 'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'conceptReviewCards':dict(concept_reviews), 'predictCards':{'count':sum(c['type'] == 'predict' for c in data['cards']), 'questions':[{'id':c['id'], 'question':c['front']} for c in data['cards'] if c['type'] == 'predict']}, 'rebuildCards':{'count':sum(c['type'] == 'rebuild' for c in data['cards']), 'structures':[{'id':c['id'], 'conceptId':c['conceptId'], 'structure':c['front']} for c in data['cards'] if c['type'] == 'rebuild']}, 'media':sorted(all_media), 'targets':data['targets'], 'coverageExceptions':data['coverageExceptions'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
     report_path = out.with_suffix('.build-report.json')
     require(not report_path.exists(), 'Build report already exists; choose a fresh output name.')
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n')

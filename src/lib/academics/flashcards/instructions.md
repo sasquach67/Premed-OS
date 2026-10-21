@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-20a — rebuild cards for whole recall structures; free-recall retired.
+Prompt revision: 2026-10-21a — rebuild cards for whole recall structures and quick predict cards; free-recall retired.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -41,7 +41,7 @@ Keep concepts distinct from illustrative names: a primer's role in providing a 3
 
 Picture cards are ONLY for structures or processes students are asked to draw or label, such as mitosis stages or telomere-extension steps. Use supplied relevant structure/process pictures when helpful; never make a biology picture card for reading experimental data, gels, blots, lanes or histograms. Data-figure practice stays in Premed OS. A source data figure is evidence, not a mandatory image for every card.
 
-Add only a few connecting why/how cards: usually up to three, NEVER more than five per biology lecture, and none merely to fill a quota. Each links two taught concepts, has one checkable one-sentence answer, and is grounded in supplied material: for example, telomerase and continued cancer-cell division, senescence versus apoptosis, or expression versus enzyme activity. A connecting card REPLACES a plain cloze testing the same fact; it never duplicates that cloze. Do not invent causal certainty or an oversimplified decision rule when the source does not support it. Keep individual meaning recall for non-self-explanatory concepts; a connection card cannot substitute for two terms' separate definitions. Rebuild cards sit outside the five-card why/how limit and never replace a connecting card or arrow cloze. Report each connection card and any same-fact cloze it replaced; when the connection is a distinct taught relationship, explain why it is not a definition repeat.
+Add only a few connecting why/how cards: usually up to three, NEVER more than five per biology lecture, and none merely to fill a quota. Each links two taught concepts, has one checkable one-sentence answer, and is grounded in supplied material: for example, telomerase and continued cancer-cell division, senescence versus apoptosis, or expression versus enzyme activity. A connecting card REPLACES a plain cloze testing the same fact; it never duplicates that cloze. Do not invent causal certainty or an oversimplified decision rule when the source does not support it. Keep individual meaning recall for non-self-explanatory concepts; a connection card cannot substitute for two terms' separate definitions. Rebuild and predict cards sit outside the five-card why/how limit and never replace a connecting card or arrow cloze; a predict card never asks what a why card already asks. Report each connection card and any same-fact cloze it replaced; when the connection is a distinct taught relationship, explain why it is not a definition repeat.
 
 
 Apply this subject scope BEFORE building targets. Keep conceptual objectives, conceptual Understand items and in-scope defined concepts in the tested target map, with the independent definition-recall guard for meanings not already conveyed by their names. Record excluded passage-only objectives, experiment/data tasks and illustrative names as explicit entries in cards.json limitations (copied into the build report), including their original titles or IDs and why they remain practice in Premed OS. This is the separate exclusion ledger, not tested coverage. Do not create named-term targets for excluded assay or example labels. Do not label passage omissions as hedge-only, force them into core=false Understand targets, silently discard them, or claim tested coverage. For a mixed objective, test its conceptual component and explicitly record that the passage skill itself is excluded. Coverage claims apply only to the stated conceptual scope, not the full practice passage.
@@ -94,7 +94,7 @@ Require a whole figure, slide, objective or instructor start-to-end explanation;
 
 Use Basic type rebuild, no cloze, empty recallItems, null listOrdered and empty axis. Grade ONE Q&A once as a whole. Front states the count: “What are the N steps of ⟨structure⟩, from ⟨start⟩ to ⟨end⟩?”; “Compare the N ⟨things⟩ on ⟨axis⟩ and ⟨axis⟩.”; or “Rebuild ⟨Author⟩'s argument on ⟨topic⟩ in 3 parts: claim, case, what it answers.” Axes name one comparison.
 
-Back: chain on one arrow line, outcome last; table one line per item, written “Item: value; value” with axes in identical order; argument three lines headed Claim:, Case:, Answers:. Steps name entities and actions, not definitions. Register: Technical for BIOL, plain PSYC, author and actual case for ANTH/GEOG; at most one short parenthesis. Extra: at most three lines plus the lecture figure; biology may add one taught “where it breaks” line.
+Back: chain on one arrow line of names only, outcome last: the protein, molecule, event or stage at each step, never what it does, so the card stays quick; put actions and details in Extra; table one line per item, written “Item: value; value” with axes in identical order; argument three lines headed Claim:, Case:, Answers:. Steps are names, not definitions. Register: Technical for BIOL, plain PSYC, author and actual case for ANTH/GEOG; at most one short parenthesis. Extra: at most three lines plus the lecture figure; biology may add one taught “where it breaks” line.
 
 Start where this lecture's figure starts, extending upstream only through shown steps: if it begins at Ras, begin at Ras. Extra may locate earlier steps: “Steps 1–3: Lesson 11”. The completing lesson hosts the full chain; earlier shorter chains remain distinct demands, never reused or retired.
 
@@ -105,9 +105,22 @@ Wozniak's 20 rules: minimum information for ordinary cards; enumerations via clo
 Deck precedent: JackSparrow's phototransduction cascade uses a whole-chain Basic Q&A plus picture, graded once.
 
 Examples, only when shown whole in supplied material:
-- BIOL: “What are the 8 steps of the growth-factor pathway, from growth factor to cell-cycle entry?” → “Growth factor binds RTK → RTK activates → Ras switches to Ras-GTP → Raf → MEK → ERK → transcription factors turn on cyclin D → cyclin D–CDK drives G1 progression”. Extra: figure; “Hyperactive Ras: stuck in the GTP form, so the chain runs with no growth factor.”
+- BIOL: “What are the 10 steps of the Ras–ERK pathway, from growth factor to cyclin D1?” → “Growth factor → RTK → Grb2/SOS → Ras-GTP → Raf → MEK1/2 → ERK1/2 → RSK → CREB → cyclin D1”. Extra: figure; “SOS swaps Ras GDP for GTP; each kinase phosphorylates the next; cyclin D1 drives G1-to-S.”
 - PSYC: “What are the 5 steps of drive theory, from a bodily need to homeostasis?” → “The body lacks water → thirst, an unpleasant tension called a drive → the person drinks → the need is met → tension drops and the body is back in balance, homeostasis”.
 - GEOG: “Rebuild Massey's power-geometry argument in 3 parts: claim, case, what it answers.” → three lines: Claim: unequal control over flows; Case: the supplied lecture's actual named case; Answers: the taught view of compression as a shared experience. Never invent the case or an opponent's claim.
+
+### Quick predict cards
+
+Definitions stay; predict cards add the understanding the exam tests. A predict card asks what happens when one part changes, and the student answers with the outcome and why. Use them only for reasoning the course's exams reuse and the lecture actually teaches: upstream versus downstream, losing a link, expression versus activation, one allele versus both with gain or loss of function, a stimulatory versus inhibitory pathway, and ligand solubility deciding receptor location.
+
+Use Basic type predict. The Front gives one change and asks about ONE outcome: “Does lowering MEK activity change Raf activity?” The Back is the outcome, a colon, and a reason under about ten words: “No: MEK is downstream of Raf.” Ask “why” when the question already states the outcome. Keep every predict card quick; never ask for several outcomes at once.
+
+Never test this with a cloze. A blank such as “lowers ERK {{c1::phosphorylation}}” or “{{c1::increases}}” is answered by remembering the sentence, which is association, not understanding. The student must work out the meaning.
+
+Never repeat a question an existing card already asks, including a why card, a list card or a definition that already states the relationship. Give each predict card its own conceptId ending in -predict, exactly one card per group, and a reinforcementReason naming the slide or Journal block that teaches the rule. Place it right after the card it builds on.
+
+- “A Raf nonsense mutation: what happens to ERK activity?” → “Decreases: nothing activates MEK, so ERK stays off.”
+- “A MEK inhibitor is added. Does the amount of ERK protein change?” → “No: only ERK's phosphorylation, its activity, drops.”
 
 Compare the final combined set, especially when using older decks for reference. A revision replaces an older question testing the same thing unless both add distinct, useful practice. Do not blindly append old and revised decks. Report authored notes and actual review cards separately.
 
@@ -176,7 +189,7 @@ Biology concept formats (subject to the concepts-only scope above):
 - Figures: use only supplied structure/process diagrams the students are asked to draw or label. Never create picture questions for reading a gel, blot, histogram, experiment or other data figure.
 - Stages: after the ordered umbrella list tests the stage names, give each stage its own event-recall card, “In **anaphase**, {{c1::sister chromatids separate to opposite poles}}.” Keep the stage visible; do not add a redundant stage-name blank when the list already tests that name. The list card's Extra key gives each stage its main event in a few words, plus a standard acronym when one exists (“Prophase: chromosomes condense / Prometaphase: envelope breaks down, fibers attach to kinetochores / Metaphase: line up at the middle / Anaphase: sisters pull apart / Telophase: nuclei re-form”), with the lecture's figure of the stages when it has one.
 - Directions: regulation blanks the direction without listing answer choices, “Cyclin–Cdk phosphorylates {{c1::Rb::protein}}, which {{c2::inactivates::effect on Rb}} it.” Retain intrinsic mechanistic directions, not a drill tied to one experiment panel.
-- Pathways: a signaling or checkpoint chain is an arrow cloze with the proteins blanked, “DNA damage → {{c1::p53}} → {{c1::p21}} → cyclin–Cdk {{c2::inhibited}} → arrest.”; when the lecture shows the whole chain, add its rebuild card.
+- Pathways: a signaling or checkpoint chain is an arrow cloze with the proteins blanked, “DNA damage → {{c1::p53}} → {{c1::p21}} → cyclin–Cdk inhibited → arrest.” Blank the proteins, never a direction word; test what happens when a step changes with a predict card. When the lecture shows the whole chain, add its rebuild card.
 - Numbers: counts, amounts and units are blanks with a hint naming the quantity, “After S phase, a diploid cell has {{c1::4C::DNA content}} of DNA but is still {{c2::2n::ploidy}}.” Test only concept-essential numbers, not experimental lane values, cell-line values or figure-specific measurements.
 - Wording: biology lectures default to the Technical emphasis; suggest it as described below unless the student's Guide says otherwise. Under Technical, the Back retains the course's exact terms. Numbers and units stay exact.
 - Reasons: keep a short causal link in the concept sentence when that is enough; use the few supported connecting why/how cards above when linking concepts improves understanding, replacing a same-fact cloze rather than repeating it.
@@ -252,6 +265,7 @@ In every case: keep the instructor's examples, what the instructor stressed, phr
 - application: the scenario shape, with necessary conditions and one question; do not invent factual evidence.
 - exemplar: the example shape, or a source-based recognition scenario. Set the appropriate exampleDirection; a partner is never required.
 - rebuild: the whole-structure Q&A shape on the Basic model, Type rebuild. free-recall is retired.
+- predict: the quick outcome-and-reason Q&A on the Basic model, Type predict.
 - cloze: the two-blank term or theory note, the fact shape, or the list/steps shape. For a fact, blank the term, name or number and keep the rest visible.
 
 When clozePattern is set, front/back/recallItems are empty and cloze carries the sentence or short list. Use {{c1::answer}}, with an optional short hint as {{c1::answer::hint}} only when the blank would otherwise be ambiguous, for example {{c1::hippocampus::brain structure}}. Hints must name a kind or category without giving away the answer. Never list candidate answers as either/or options, including slash-, pipe-, comma- or semicolon-separated alternatives or “A or B”. Use a plain category such as “type of motivation” or “effect on Rb” instead. The builder emits a warning when a slash-separated word-choice hint contains the answer as one of its options, and still rejects option-list hints. No nested cloze. Keep one fact per sentence; do not hide unrelated facts together.
@@ -278,7 +292,7 @@ When the original slide is a PDF with a text layer, use prepare_occlusion.py to 
 
 ## Design and exact build contract
 
-Keep the supplied serif question/answer design, a one-word card label (recall, list, application, example, compare, why, rebuild), six accents by card type, answer divider, and smaller sans-serif Extra. The builder renders up to three useful Extra lines, with the example first, and any supplied source picture. Anki supplies the background; embedded CSS supports light and dark presentation. Do not replace the CSS with an approximation or add invented layouts.
+Keep the supplied serif question/answer design, a one-word card label (recall, list, application, example, compare, why, rebuild, predict), six accents by card type with predict sharing why's, answer divider, and smaller sans-serif Extra. The builder renders up to three useful Extra lines, with the example first, and any supplied source picture. Anki supplies the background; embedded CSS supports light and dark presentation. Do not replace the CSS with an approximation or add invented layouts.
 
 Final Basic fields, in order: Front, Back, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec, Topic, Source, My notes. Final Cloze fields: Text, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec, Topic, Source, My notes. Native Image Occlusion fields: Occlusion, Image, Header, Back Extra, Comments, Topic, Source, My notes, premedos_concept_id, premedos_source, premedos_spec. Metadata travels with the note but stays off the recall face. The embedded templates and builder, not prose interpretation, determine the final layout and field order. The supplied final note-type IDs are fixed, independent of CSS or template text. Topic, Source and My notes append to the already-released Basic/Cloze fields; the documented merge import upgrades those notes in place. Never change field order or identities for a design edit.
 
@@ -329,7 +343,7 @@ Use the environment's equivalent Python path on other operating systems. The Ank
 
 Never invent terms. Use the course's exact named terms. Descriptive wording stays descriptive: “the efficiency of our thought processes” is not a named “thought process efficiency” term. Do not manufacture jargon or compress an explanation into an invented noun phrase.
 
-Required cold-read review before building. Re-read every card as a student who missed the lecture, card by card, and rewrite any that fails these seven checks: (1) the non-blank text names what the card is about; (2) the answer is understood on first read; (3) no phrase is awkward, compressed or invented; (4) applicable lecture/Journal examples belong in Extra, with biology restricted to at most one optional passage example/evidence line; (5) one fact per card, with the approved grouped formats retained; (6) each non-self-explanatory term has independent meaning recall; self-explanatory labels stay with their umbrella or parent example; grouped recall uses names contrasts, lists/umbrellas, sequences and the whole-structure rebuild exception, never grouped definition drills; (7) each rebuild structure is shown whole in the lecture, its count matches, and steps are names and actions, not definitions. Headline contrasts hide both names together with meanings visible; no opposite half or hint gives away a name. Check headline pairs without cutting a non-self-explanatory term's last meaning recall. Report how many cards were rewritten in this pass, using actual card IDs. Report every background term moved into a lecture card. Builder warnings for context-poor clozes and definitions missing an available example are review cues, not semantic proof; investigate and record their dispositions.
+Required cold-read review before building. Re-read every card as a student who missed the lecture, card by card, and rewrite any that fails these eight checks: (1) the non-blank text names what the card is about; (2) the answer is understood on first read; (3) no phrase is awkward, compressed or invented; (4) applicable lecture/Journal examples belong in Extra, with biology restricted to at most one optional passage example/evidence line; (5) one fact per card, with the approved grouped formats retained; (6) each non-self-explanatory term has independent meaning recall; self-explanatory labels stay with their umbrella or parent example; grouped recall uses names contrasts, lists/umbrellas, sequences and the whole-structure rebuild exception, never grouped definition drills; (7) each rebuild structure is shown whole in the lecture, its count matches, and its steps are names; (8) each predict card asks one outcome, its reason is under about ten words, and no other card asks the same thing. Headline contrasts hide both names together with meanings visible; no opposite half or hint gives away a name. Check headline pairs without cutting a non-self-explanatory term's last meaning recall. Report how many cards were rewritten in this pass, using actual card IDs. Report every background term moved into a lecture card. Builder warnings for context-poor clozes and definitions missing an available example are review cues, not semantic proof; investigate and record their dispositions.
 
 Before building, reconcile the scope/target ledger and inspect semantic overlaps; structural validation cannot establish factual accuracy or educational quality. Keep conceptual objectives and non-self-explanatory meaning recall. Record biology passage exclusions, background moves, skipped recordings, hedge/skill dispositions and any justified coverage exception. Name where every removed or combined card's meaning now lives. Investigate warnings without gaming the checks. Run the friend test on every card, including its Required answer, before building.
 
@@ -337,7 +351,7 @@ The builder never overwrites an existing output. Use a fresh output name after c
 
 Save the finished .apkg in the actual class folder supplied by the student or established from the accessible class materials; fall back to the actual Downloads directory only if that class folder cannot be reached, state that limitation, and say exactly where it was saved.
 
-Deliver the actual downloadable .apkg after checking that it exists. State authored notes AND actual review-card count, rebuild cards with their structures, source/coverage limitations, and verification results. For biology, state subject, the actual review count, excluded passage practice, and which clozes connecting questions replaced. If any check was skipped, state that clearly. A successful import is package evidence, not proof of mastering the lecture. Do not append the synthetic fixture to the student deck. After the count, coverage, exceptions, and limitations summary, end the delivery message with this note:
+Deliver the actual downloadable .apkg after checking that it exists. State authored notes AND actual review-card count, rebuild cards with their structures, predict cards with their questions, source/coverage limitations, and verification results. For biology, state subject, the actual review count, excluded passage practice, and which clozes connecting questions replaced. If any check was skipped, state that clearly. A successful import is package evidence, not proof of mastering the lecture. Do not append the synthetic fixture to the student deck. After the count, coverage, exceptions, and limitations summary, end the delivery message with this note:
 
 “Some of these cards may treat a detail as more important than it really is for your class. That is expected. If a card is not worth your time, suspend it: press @ (Shift+2) while reviewing to suspend that individual card. Press ! to suspend the whole note.”
 
@@ -500,6 +514,7 @@ Save each following fenced block under the exact filename shown. The block conte
             "exemplar",
             "free-recall",
             "rebuild",
+            "predict",
             "cloze",
             "image-occlusion"
           ]
@@ -1648,8 +1663,8 @@ BASIC_Q = '<div class="pm pm-question {{Mindset}}">' + TYPE + '{{Front}}</div>'
 BASIC_A = '<div class="pm {{Mindset}}">' + TYPE + '{{Front}}<hr id="answer"><div class="answer">{{Back}}</div>' + EXTRA + FOOTER + '</div>'
 CLOZE_Q = '<div id="pm-list-question" class="pm pm-question {{Mindset}}">' + TYPE + '{{cloze:Text}}</div><script>' + (HERE / 'list-reveal.js').read_text() + '</script>'
 CLOZE_A = '<div class="pm {{Mindset}}">' + TYPE + '{{cloze:Text}}' + EXTRA + FOOTER + '</div>'
-LABELS = {'basic': 'recall', 'cloze': 'recall', 'process': 'list', 'conceptual': 'why', 'comparison': 'compare', 'exemplar': 'example', 'application': 'application', 'free-recall': 'list', 'image-occlusion':'recall', 'rebuild':'rebuild'}
-MINDSETS = {'basic': ('say', 'say it'), 'cloze': ('say', 'say it'), 'process': ('say', 'say it'), 'conceptual': ('explain', 'explain it'), 'comparison': ('connect', 'connect it'), 'exemplar': ('connect', 'connect it'), 'application': ('use', 'use it'), 'free-recall': ('blurt', 'blurt it'), 'image-occlusion':('say','say it'), 'rebuild':('rebuild','rebuild it')}
+LABELS = {'basic': 'recall', 'cloze': 'recall', 'process': 'list', 'conceptual': 'why', 'comparison': 'compare', 'exemplar': 'example', 'application': 'application', 'free-recall': 'list', 'image-occlusion':'recall', 'rebuild':'rebuild', 'predict':'predict'}
+MINDSETS = {'basic': ('say', 'say it'), 'cloze': ('say', 'say it'), 'process': ('say', 'say it'), 'conceptual': ('explain', 'explain it'), 'comparison': ('connect', 'connect it'), 'exemplar': ('connect', 'connect it'), 'application': ('use', 'use it'), 'free-recall': ('blurt', 'blurt it'), 'image-occlusion':('say','say it'), 'rebuild':('rebuild','rebuild it'), 'predict':('explain','explain it')}
 
 def escape(value):
     # **word** marks a bold cue word; everything else stays plain text.
@@ -1692,6 +1707,12 @@ def word_count(value):
     return len(value.split())
 
 number_words = {2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',8:'eight',9:'nine',10:'ten'}
+
+WHOLE_QA = ('rebuild', 'predict')
+DIRECTION_WORDS = {'increase', 'increases', 'increased', 'decrease', 'decreases', 'decreased', 'raises', 'lowers', 'up', 'down', 'no change', 'unchanged', 'inhibited', 'activated', 'stimulated', 'blocked'}
+
+def is_argument_rebuild(card):
+    return card['back'].lstrip().casefold().startswith('claim:')
 
 def rebuild_steps(card):
     return ([step.strip() for step in card['back'].split('→')] if '→' in card['back']
@@ -1848,9 +1869,18 @@ def validate(data, updating=False):
                 require(len(steps) >= 3 and all(steps), f'{cid}: rebuild needs at least 3 nonempty steps or lines.')
             count = len(steps)
             require(re.search(r'\b' + str(count) + r'\b', c['front']) or re.search(r'\b' + number_words.get(count, str(count)) + r'\b', c['front'], re.IGNORECASE), f'{cid}: rebuild Front count must equal the {count} steps or lines.')
+        if c['type'] == 'predict':
+            require(not cp, f'{cid}: predict uses Basic Q&A, never a cloze.')
+            require(c['conceptId'].endswith('-predict'), f'{cid}: predict needs its own conceptId ending in -predict.')
+            require(c['reinforcementReason'].strip(), f'{cid}: predict reinforcementReason must name the slide or Journal block teaching the rule.')
+            require(c['front'].count('?') == 1, f'{cid}: predict asks exactly one question.')
+            outcome, sep, reason = c['back'].partition(':')
+            require(sep and outcome.strip() and reason.strip(), f'{cid}: predict Back is "outcome: reason".')
         if cp:
             require(c['type'] != 'free-recall' and c['cloze'] and not c['front'] and not c['back'] and not c['recallItems'], f'{cid}: mixed cloze and answer fields.')
             spans = list(re.finditer(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', c['cloze']))
+            if any(span.group(2).split('::')[0].strip().casefold() in DIRECTION_WORDS for span in spans):
+                warnings.append(f'{cid}: direction-word blank is answered from the sentence; test the outcome with a predict card instead.')
             remaining = re.sub(r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}', '', c['cloze'])
             require(spans and '{{' not in remaining and '}}' not in remaining, f'{cid}: malformed cloze.')
             require(all(len(m[2].split('::')) <= 2 and all(part.strip() for part in m[2].split('::')) for m in spans), f'{cid}: use a nonempty answer and at most one nonempty hint.')
@@ -1909,8 +1939,14 @@ def validate(data, updating=False):
             if len(lines) > 3 or any(word_count(line) > 20 for line in lines):
                 warnings.append(f'{cid}: Extra exceeds three short lines (about 20 words each); retain useful example, plain restatement and evidence only.')
         if c['type'] == 'rebuild':
-            if any(word_count(step) > 12 for step in rebuild_steps(c)):
-                warnings.append(f'{cid}: rebuild step longer than 12 words; inspect names and actions without definitions.')
+            if is_comparison_rebuild(c) or is_argument_rebuild(c):
+                if any(word_count(step) > 12 for step in rebuild_steps(c)):
+                    warnings.append(f'{cid}: rebuild step longer than 12 words; inspect names and actions without definitions.')
+            elif any(word_count(step) > 4 for step in rebuild_steps(c)):
+                warnings.append(f'{cid}: rebuild chain step longer than 4 words; keep steps to names and move actions to Extra.')
+        elif c['type'] == 'predict':
+            if word_count(c['back'].partition(':')[2]) > 12:
+                warnings.append(f'{cid}: predict reason longer than about ten words; keep the card quick.')
         elif word_count(c['back']) > 45 or any(word_count(i) > 35 for i in c['recallItems']): warnings.append(f'{cid}: long required answer; inspect grading burden.')
         warnings.extend(card_language_warnings(c))
         warnings.extend(clarity_warnings(c, targets, data.get('notebookTitles', [])))
@@ -1956,7 +1992,7 @@ def validate(data, updating=False):
             witnesses = []
             for cid in own:
                 card = cards[cid]
-                if card['type'] == 'rebuild': continue  # Whole-structure recall never replaces a term's meaning card.
+                if card['type'] in WHOLE_QA: continue  # Rebuild and predict never replace a term's meaning card.
                 direct = direct_card_candidate(card) or (card['type'] == 'comparison' and not card['clozePattern']) or (card['clozePattern'] == 'enumerated-list' and card['listOrdered'] is True)
                 required = coverage_text(card['back'] or card['cloze'])
                 visible = coverage_text(card['front'] + ' ' + (card['back'] or card['cloze']))
@@ -1973,7 +2009,7 @@ def validate(data, updating=False):
             for cid in witnesses: term_witnesses[cid].add(t['id'])
     defined_terms = [tid for tid, target in targets.items() if term_spec(target)]
     for cid, card in cards.items():
-        if card['type'] == 'rebuild': continue
+        if card['type'] in WHOLE_QA: continue
         parallel = parallel_meaning_terms(card, targets, defined_terms)
         require(len(parallel) <= 1,
                 f'{cid}: parallel meaning group has {len(parallel)} terms; recall each term meaning alone on separate cards.')
@@ -1985,8 +2021,8 @@ def validate(data, updating=False):
     require(len(exceptions) == len(data['coverageExceptions']), 'Duplicate coverage exception for an idea.')
     require(all(concept in groups for concept in exceptions), 'Coverage exception names an unknown idea.')
     for concept, group in groups.items():
-        if any(c['type'] == 'rebuild' for c in group):
-            require(len(group) == 1, f'{concept}: a rebuild conceptId must contain exactly one card.')
+        if any(c['type'] in WHOLE_QA for c in group):
+            require(len(group) == 1, f'{concept}: a rebuild or predict conceptId must contain exactly one card.')
         validate_pair_group(group, targets)
         reviews = sum(len(indices(c)) for c in group)
         exception = exceptions.get(concept)
@@ -2008,7 +2044,7 @@ def validate(data, updating=False):
             warnings.append(f'{concept}: coverage exception keeps {reviews} review cards. {exception["reason"]}')
         else:
             require(reviews <= 3 or pair_allowance, f'{concept}: more than three review cards for one idea; only the exact headline pair set plus instructor example earns four.')
-        if not any(c['type'] == 'rebuild' or direct_card_candidate(c) or len(term_witnesses[c['id']]) >= 2 for c in group):
+        if not any(c['type'] in WHOLE_QA or direct_card_candidate(c) or len(term_witnesses[c['id']]) >= 2 for c in group):
             warnings.append(f'{concept}: no direct term card detected; inspect this concept.')
         if len(group) >= 2:
             require(group[1]['reinforcementReason'].strip() or exception, f'{group[1]["id"]}: explain the additional retrieval purpose; no automatic mirrors.')
@@ -2158,7 +2194,7 @@ def build(data, out, input_dir, previous=None):
         require(archive.testzip() is None, 'Package CRC check failed.')
     concept_reviews = Counter()
     for card in data['cards']: concept_reviews[card['conceptId']] += len(indices(card))
-    report = {'mode':'update' if previous is not None else 'new', 'activeNotes':len(data['cards']), 'activeReviewCards':sum(len(indices(c)) for c in data['cards']), 'newNotes':sum(n['status'] == 'new' for n in manifest), 'updatedNotes':sum(n['status'] == 'updated' for n in manifest), 'retiredNotes':sum(n['status'] == 'retired' for n in manifest), 'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'conceptReviewCards':dict(concept_reviews), 'rebuildCards':{'count':sum(c['type'] == 'rebuild' for c in data['cards']), 'structures':[{'id':c['id'], 'conceptId':c['conceptId'], 'structure':c['front']} for c in data['cards'] if c['type'] == 'rebuild']}, 'media':sorted(all_media), 'targets':data['targets'], 'coverageExceptions':data['coverageExceptions'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
+    report = {'mode':'update' if previous is not None else 'new', 'activeNotes':len(data['cards']), 'activeReviewCards':sum(len(indices(c)) for c in data['cards']), 'newNotes':sum(n['status'] == 'new' for n in manifest), 'updatedNotes':sum(n['status'] == 'updated' for n in manifest), 'retiredNotes':sum(n['status'] == 'retired' for n in manifest), 'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'conceptReviewCards':dict(concept_reviews), 'predictCards':{'count':sum(c['type'] == 'predict' for c in data['cards']), 'questions':[{'id':c['id'], 'question':c['front']} for c in data['cards'] if c['type'] == 'predict']}, 'rebuildCards':{'count':sum(c['type'] == 'rebuild' for c in data['cards']), 'structures':[{'id':c['id'], 'conceptId':c['conceptId'], 'structure':c['front']} for c in data['cards'] if c['type'] == 'rebuild']}, 'media':sorted(all_media), 'targets':data['targets'], 'coverageExceptions':data['coverageExceptions'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
     report_path = out.with_suffix('.build-report.json')
     require(not report_path.exists(), 'Build report already exists; choose a fresh output name.')
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n')

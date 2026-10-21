@@ -13,9 +13,9 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the held October 20a prompt revision and preserves source access rules', () => {
+  it('copies the held October 21a prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-20a — rebuild cards for whole recall structures; free-recall retired.')
+    expect(prompt).toContain('Prompt revision: 2026-10-21a — rebuild cards for whole recall structures and quick predict cards; free-recall retired.')
     expect(prompt).toContain('A standalone headline term or theory whose meaning needs learning gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -40,6 +40,12 @@ describe('flashcard prompt handoff', () => {
   it('adds whole-structure rebuilds without replacing atomic recall', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
     for (const phrase of ['Rebuild the whole structure', 'comparison table', 'author and actual case', 'own conceptId ending in -rebuild', 'What are the N steps of ⟨structure⟩, from ⟨start⟩ to ⟨end⟩?', 'KEEP every existing one-fact recall card', 'Zero rebuild cards is normal']) expect(prompt).toContain(phrase)
+  })
+
+  it('adds quick predict cards that need the meaning, not the sentence', () => {
+    const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
+    for (const phrase of ['Quick predict cards', 'Use Basic type predict.', 'a reason under about ten words', 'which is association, not understanding', 'own conceptId ending in -predict', 'Blank the proteins, never a direction word', 'arrow line of names only']) expect(prompt).toContain(phrase)
+    expect(prompt).not.toContain('cyclin–Cdk {{c2::inhibited}}')
   })
 
   it('limits new cards to lecture retention and checks recordings only for gaps', () => {
@@ -134,7 +140,7 @@ describe('flashcard prompt handoff', () => {
       'you look at the situation to explain it',
       'At most one short parenthesis per card',
       'Source and premedos_source stay off the card face',
-      'these seven checks:',
+      'these eight checks:',
     ]) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('<details class="source">')
     expect(prompt).not.toContain('collapsed Source control')
@@ -203,7 +209,7 @@ describe('flashcard prompt handoff', () => {
       'Umbrella first.',
       'Every other non-self-explanatory defined term gets its OWN note with one blank on its meaning and the term visible',
       'use a famous standard one only if the lecture has none',
-      'a one-word card label (recall, list, application, example, compare, why, rebuild)',
+      'a one-word card label (recall, list, application, example, compare, why, rebuild, predict)',
       '| Why / how | One direct question | One sentence |',
       'One question per card.',
       'Cloze: {{c1::Scientific management::management approach}} (Taylorism)',
