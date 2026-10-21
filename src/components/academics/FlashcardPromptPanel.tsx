@@ -3,8 +3,9 @@ import { SelectField } from '@/components/ui/select-field'
 import { useStudentGuide } from './UsingStudentGuide'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Copy, Download, NotebookText, Paperclip, X } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Check, Download, NotebookText, X } from 'lucide-react'
+import { NotebookAIFlow, NotebookAICopy } from './NotebookAIFlow'
+import { lessonTarget, saveLocationSection } from '@/lib/academics/lessonContext'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useStore } from '@/store/store'
@@ -34,9 +35,13 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
 }) {
   const navigate = useNavigate()
   const lectures = useStore(state => state.academics.classCenter.lectures)
+  const workspace = useStore(state => state.academics.classCenter.workspaces.find(item => item.courseId === courseId))
+  const update = useStore(state => state.update)
   const classLectures = sortNotebookLectures(lectures, courseId)
   const [chosenId, setChosenId] = useState('')
   const [feedback, setFeedback] = useState<{ prompt: string; text: string; fallback?: boolean }>()
+  const [promptOpen, setPromptOpen] = useState(false)
+  const [deckName, setDeckName] = useState('')
   const [copyBusy, setCopyBusy] = useState(false)
   const [notebookBusy, setNotebookBusy] = useState(false)
   const [haveNotebookFor, setHaveNotebookFor] = useState('')
@@ -46,7 +51,14 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
   const lecture = classLectures.find(item => item.id === selection)
   const eligibility = lecture ? flashcardNotebookEligibility(lecture) : { eligible: false, reason: lectureId ? 'This lecture’s Class Journal is unavailable in this class.' : 'Create and save a completed Class Journal for this lecture first.' }
   const guide = useStudentGuide({ courseId, lessonIds: lecture ? [lecture.id] : [] })
-  const prompt = lecture && eligibility.eligible ? buildFlashcardPrompt({ courseLabel, lecture, guideDirections: guide.directions }) : ''
+  // The deck saves beside its lesson's notebook, in the lesson's premedOS folder (else Downloads).
+  const prompt = lecture && eligibility.eligible ? buildFlashcardPrompt({ courseLabel, lecture, guideDirections: guide.directions })
+    + saveLocationSection(workspace?.classFolder, lecture.lesson !== undefined ? lessonTarget(workspace?.syllabusSchedule, lecture.lesson) : undefined, 'deck') : ''
+  const deckMade = Boolean(lecture?.flashcardsMadeAt)
+  function markDeckMade() {
+    if (!lecture) return
+    update(draft => { const saved = draft.academics.classCenter.lectures.find(item => item.id === lecture.id); if (saved) saved.flashcardsMadeAt = Date.now() })
+  }
   const currentFeedback = feedback?.prompt === prompt ? feedback : undefined
   // Legacy Journals have no notebook file; their study guide travels inside the prompt.
   const hasNotebookFile = Boolean(lecture?.importedNotebook)
@@ -109,22 +121,14 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
     }
   }
 
-  return <section className="space-y-5" aria-label="Flashcard prompt">
+  return <section className="space-y-5 nai-flashcards" aria-label="Flashcard prompt">
     {showHeader && <header className="flex items-start justify-between gap-4">
       <div><h2 className="font-display text-xl font-bold">Create flashcards</h2><p className="mt-1 text-sm text-muted-foreground">{courseLabel} · From your completed Class Journal</p></div>
       <Button type="button" variant="ghost" size="icon" aria-label="Close flashcard prompt" onClick={onClose}><X className="size-4" /></Button>
     </header>}
-    <div className="space-y-2">
-      <p className="text-xs font-semibold text-muted-foreground">Attach in your AI chat</p>
-      <ul aria-label="What to attach in your AI chat" className="grid gap-2 sm:grid-cols-2">
-        <li className="flex items-center justify-between gap-3 rounded-lg border border-primary/60 bg-card p-3 sm:p-4"><span className="flex items-center gap-2 text-base font-semibold"><NotebookText aria-hidden="true" className="size-5 text-primary" />Notebook</span><Badge className="shrink-0 whitespace-nowrap px-2.5 py-1 text-xs sm:px-3 sm:text-sm">{hasNotebookFile || !eligibility.eligible ? 'Required' : 'In your prompt'}</Badge></li>
-        <li className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 sm:p-4"><span className="flex items-center gap-2 text-base font-semibold"><Paperclip aria-hidden="true" className="size-5 text-muted-foreground" />Lecture materials</span><Badge variant="outline" className="shrink-0 whitespace-nowrap px-2.5 py-1 text-xs sm:px-3 sm:text-sm">Recommended</Badge></li>
-      </ul>
-      <p className="text-xs text-muted-foreground">Updating a deck? Export its current .apkg from Anki and attach it in your AI chat.</p>
-    </div>
     {lectureId ? <div className="rounded-lg border p-3"><p className="text-xs font-semibold text-muted-foreground">Selected Class Journal</p><p className="mt-1 font-semibold">{lecture?.title ?? 'Journal unavailable'}</p></div> : <label className="block space-y-2 text-sm font-semibold">
       <span>Class Journal</span>
-      <SelectField aria-label="Class Journal" className="field-solid min-h-11 w-full" value={selection ?? ''} disabled={copyBusy} onValueChange={setChosenId} options={[
+      <SelectField aria-label="Class Journal" className="field-solid min-h-11 w-full" value={selection ?? ''} disabled={copyBusy} onValueChange={id => { setChosenId(id); setDeckName('') }} options={[
         ...(!selection ? [{ value: '', label: 'No completed Class Journal available' }] : []),
         ...classLectures.map(item => { const result = flashcardNotebookEligibility(item); return { value: item.id, disabled: !result.eligible, label: `${item.title}${result.eligible ? '' : ` — ${result.reason}`}` } }),
       ]} />
@@ -134,32 +138,23 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
       <p role="status" className="text-sm">{eligibility.reason}</p>
       <Button variant="outline" onClick={() => { onClose(); navigate(`/academics/classes/${encodeURIComponent(courseId)}/journal/new`) }}><NotebookText className="size-4" />Create or import Class Journal</Button>
     </div> : <>
-      <ol className="list-decimal space-y-3 pl-5 text-sm leading-6">
-        {hasNotebookFile && <li>
-          <strong>Get your notebook.</strong>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" disabled={notebookBusy} onClick={() => void downloadNotebook()}><Download className="size-4" />{notebookBusy ? 'Preparing…' : 'Download notebook'}</Button>
-            <Button variant="outline" size="sm" aria-pressed={haveNotebook} onClick={() => setHaveNotebookFor(selection ?? '')}>{haveNotebook && <Check className="size-4" />}I already have it</Button>
-          </div>
-          {currentNotebookNote && <p role="status" className="mt-2 text-muted-foreground">{currentNotebookNote}</p>}
-        </li>}
-        <li><strong>{hasNotebookFile ? 'Open a new AI chat and attach it.' : 'Open a new AI chat.'}</strong> Add your lecture files if you have them.</li>
-        <li><strong>Copy the prompt and paste it into that chat.</strong> Use an AI that can run code and create downloadable files. Download the finished <code>.apkg</code> file and import it into Anki.</li>
-      </ol>
-      <p className="text-sm text-muted-foreground">Tip: Missed a practice or mock-exam question? Paste it into the same chat along with this prompt. The deck adds a card or two on the concept you missed, not a copy of the question.</p>
-      <p className="text-sm text-muted-foreground">Premed OS supplies the prompt and stops here. The finished deck goes directly into Anki as one standalone deck. Rename it or move it under your own decks after importing.</p>
-      <div className="flex flex-wrap gap-2">
-        <Button disabled={copyBusy || !notebookReady} title={notebookReady ? undefined : 'Get your notebook first'} onClick={() => void copyPrompt()}><Copy className="size-4" />{copyBusy ? 'Copying…' : 'Copy complete prompt'}</Button>
-        <Button variant="outline" disabled={!notebookReady} title={notebookReady ? undefined : 'Get your notebook first'} onClick={downloadPrompt}><Download className="size-4" />Download prompt</Button>
-      </div>
-      {currentFeedback && <p role="status" className="text-sm">{currentFeedback.text}</p>}
-      <details key={`${selection}-${currentFeedback?.fallback ? 'fallback' : 'preview'}`} open={currentFeedback?.fallback || undefined} className="rounded-lg border p-3">
-        <summary className="cursor-pointer text-sm font-semibold">View complete prompt / copy manually</summary>
-        <div className="mt-3 space-y-2">
-          <Button variant="outline" size="sm" onClick={() => { fallback.current?.focus(); fallback.current?.select() }}>Select all prompt text</Button>
-          <Textarea ref={fallback} aria-label="Complete flashcard prompt" readOnly value={prompt} className="h-64 font-mono text-xs" />
-        </div>
-      </details>
+      <NotebookAIFlow gather={<>
+        <div className="nai-files" aria-label="What to attach in your AI chat"><div className="nai-file"><span><b>Notebook</b><small>{hasNotebookFile ? 'JSON + images' : 'Included in your prompt'}</small></span>{hasNotebookFile && <Button variant="outline" disabled={notebookBusy} onClick={() => void downloadNotebook()}><Download aria-hidden="true" />{notebookBusy ? 'Preparing…' : 'Download'}</Button>}</div><div className="nai-file"><span><b>Lecture materials</b></span><span>Recommended</span></div><div className="nai-file"><span><b>Current deck</b><small>Only when updating a deck</small></span><span>Optional</span></div></div>
+        {hasNotebookFile && <Button variant="ghost" aria-pressed={haveNotebook} onClick={() => setHaveNotebookFor(selection ?? '')}>{haveNotebook && <Check aria-hidden="true" />}I already have it</Button>}
+        {currentNotebookNote && <p role="status" className="nai-hint">{currentNotebookNote}</p>}
+        <p className="nai-hint">To update a deck, export it from Anki as .apkg first. Your notes, practice answers and checkmarks stay in Premed OS.</p>
+      </>} copy={<NotebookAICopy flashcards copyBusy={copyBusy} disabled={!notebookReady} onCopy={() => void copyPrompt()} onDownload={downloadPrompt} onView={() => setPromptOpen(value => !value)}>
+        {!notebookReady && <p className="nai-hint">Get your notebook first.</p>}
+        {currentFeedback && <p role="status" className="nai-hint">{currentFeedback.text}</p>}
+        <details key={`${selection}-${currentFeedback?.fallback ? 'fallback' : 'preview'}`} open={promptOpen || currentFeedback?.fallback || undefined} onToggle={event => setPromptOpen(event.currentTarget.open)} className="nai-prompt"><summary>View complete prompt / copy manually</summary><div className="mt-3 space-y-2"><Button variant="outline" size="sm" onClick={() => { fallback.current?.focus(); fallback.current?.select() }}>Select all prompt text</Button><Textarea ref={fallback} aria-label="Complete flashcard prompt" readOnly value={prompt} className="h-64 font-mono text-xs" /></div></details>
+      </NotebookAICopy>} bringTitle="Bring the deck back" bring={<>
+        <label className="nai-file cursor-pointer"><span><b>Choose the .apkg your AI made</b><small>Usually in your class folder, or Downloads</small></span><input aria-label="Choose the .apkg your AI made" type="file" accept=".apkg" onChange={event => { const file=event.target.files?.[0]; setDeckName(file?.name.endsWith('.apkg') ? file.name : ''); }} /></label>
+        {deckName && <p role="status" className="nai-hint">{deckName} selected. Open this file from its saved folder in Anki to import the deck.</p>}
+        {/* The app never sees the deck; this records that it exists, for the Lessons tab. */}
+        {deckMade ? <p role="status" className="nai-hint"><Check aria-hidden="true" className="inline size-4" /> Deck added to Anki.</p>
+          : <Button variant="outline" disabled={!deckName} onClick={markDeckMade}><Check aria-hidden="true" />I added it to Anki</Button>}
+        <p className="nai-hint">The finished .apkg goes directly into Anki. Premed OS does not import or save Anki decks.</p>
+      </>} help={<><p>Tip: Missed a practice or mock-exam question? Paste it into the same chat along with this prompt. The deck adds a card or two on the concept you missed, not a copy of the question.</p><p><b>The AI cannot create a file:</b> use a chat that can run code and create downloadable files.</p><p><b>You are updating a deck:</b> attach the current exported .apkg and check the AI’s result in Anki before replacing or deleting existing cards.</p><p>If the AI cannot reach your class folder, it should save the .apkg to Downloads and tell you where.</p></>} />
     </>}
   </section>
 }

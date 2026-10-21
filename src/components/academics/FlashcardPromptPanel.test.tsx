@@ -47,7 +47,7 @@ async function click(label: string) { await act(async () => button(label).click(
 it('requires a completed Journal and routes to the existing notebook workflow', async () => {
   seed([journal('draft', 'course', false)]); await render()
   expect(container.textContent).toContain('Create and save a completed Class Journal')
-  expect(container.textContent).not.toContain('Copy complete prompt')
+  expect(container.textContent).not.toContain('Copy prompt')
   expect(buildFlashcardPrompt).not.toHaveBeenCalled()
   await click('Create or import Class Journal')
   expect(container.querySelector('output')?.textContent).toBe('/academics/classes/course/journal/new')
@@ -62,20 +62,20 @@ it('only offers Journals from the current class and disables unfinished entries'
   expect(options.some(item => item.textContent?.includes('other-class'))).toBe(false)
   expect(options.find(item => item.textContent?.includes('Journal unfinished'))?.getAttribute('aria-disabled')).toBe('true')
   await act(async () => document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
-  await click('Copy complete prompt')
+  await click('Copy prompt')
   expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Complete prompt for ready'))
 })
 it.each(['missing', 'other-class', 'unfinished'])('never substitutes a different Journal for the scoped %s lecture', async id => {
   seed([journal('other-class', 'other'), journal('unfinished', 'course', false), journal('ready')]); await render(id)
   expect(container.querySelector('[role="combobox"][aria-label="Class Journal"]')).toBeNull()
-  expect(container.textContent).not.toContain('Copy complete prompt')
+  expect(container.textContent).not.toContain('Copy prompt')
   expect(buildFlashcardPrompt).not.toHaveBeenCalled()
 })
 it('copies the whole prompt and preserves all saved content', async () => {
   seed([journal('ready')]); const before = JSON.stringify(useStore.getState().academics.classCenter); await render('ready')
   const fullPrompt = container.querySelector('textarea')!.value
   expect(fullPrompt).toContain('exact card CSS'); expect(fullPrompt).toContain('verify_deck.py')
-  await click('Copy complete prompt')
+  await click('Copy prompt')
   expect(writeText).toHaveBeenCalledExactlyOnceWith(fullPrompt)
   expect(container.textContent).toContain('Complete prompt copied')
   const inputs = container.querySelector('[aria-label="What to attach in your AI chat"]')!
@@ -83,24 +83,24 @@ it('copies the whole prompt and preserves all saved content', async () => {
   expect(inputs.textContent).toContain('Recommended')
   expect(container.textContent).not.toContain('Downloads, notes and history')
   // A legacy Journal has no notebook file, so there is nothing to download and nothing to gate.
-  expect(inputs.textContent).toContain('In your prompt')
+  expect(inputs.textContent).toContain('Included in your prompt')
   expect(container.textContent).not.toContain('Download notebook')
-  expect(container.querySelector('ol')?.textContent).toContain('Open a new AI chat.')
-  expect(container.querySelector('ol')?.textContent).toContain('Add your lecture files if you have them.')
-  expect(container.querySelector('ol')?.textContent).toContain('Copy the prompt and paste it into that chat.')
+  expect(container.textContent).toContain('Open a new chat in ChatGPT, Claude or another AI.')
+  expect(container.textContent).toContain('Paste the prompt and attach your files.')
+  expect(container.textContent).toContain('When it finishes, it gives you an .apkg file.')
   expect(container.textContent).not.toContain('Try to find the chat where you uploaded')
   expect(container.textContent).not.toContain('return to the original chat')
-  expect(container.textContent).toContain('finished deck goes directly into Anki')
+  expect(container.textContent).toContain('finished .apkg goes directly into Anki')
   expect(JSON.stringify(useStore.getState().academics.classCenter)).toBe(before)
 })
 it('shows the missed-question concept-card tip with the complete prompt actions', async () => {
   seed([journal('ready')]); await render('ready')
   expect(container.textContent).toContain('Tip: Missed a practice or mock-exam question? Paste it into the same chat along with this prompt. The deck adds a card or two on the concept you missed, not a copy of the question.')
-  expect(button('Copy complete prompt').disabled).toBe(false)
+  expect(button('Copy prompt').disabled).toBe(false)
 })
 it('opens a read-only complete fallback when clipboard access fails', async () => {
   seed([journal('ready')]); writeText.mockRejectedValue(new Error('Denied')); await render()
-  await click('Copy complete prompt')
+  await click('Copy prompt')
   expect(container.textContent).toContain('Clipboard access was unavailable')
   expect(container.querySelector('textarea')?.closest('details')?.open).toBe(true)
   const textarea = container.querySelector('textarea')!
@@ -110,10 +110,10 @@ it('opens a read-only complete fallback when clipboard access fails', async () =
   expect(textarea.selectionStart).toBe(0); expect(textarea.selectionEnd).toBe(textarea.value.length)
 })
 it('clears the old copy acknowledgment when a different Journal is selected', async () => {
-  seed([journal('first'), journal('second')]); await render(); await click('Copy complete prompt')
+  seed([journal('first'), journal('second')]); await render(); await click('Copy prompt')
   await chooseOption('[role="combobox"][aria-label="Class Journal"]', 'Journal second')
   expect(container.textContent).not.toContain('Complete prompt copied')
-  await click('Copy complete prompt')
+  await click('Copy prompt')
   expect(writeText).toHaveBeenLastCalledWith(expect.stringContaining('Complete prompt for second'))
 })
 
@@ -126,4 +126,20 @@ it('shows matching Guide directions and sends adjusted selection to the handoff 
   expect(buildFlashcardPrompt).toHaveBeenLastCalledWith(expect.objectContaining({ guideDirections: [expect.objectContaining({ id: 'guide' })] }))
   await act(async () => preview.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click())
   expect(buildFlashcardPrompt).toHaveBeenLastCalledWith(expect.objectContaining({ guideDirections: [] }))
+})
+
+it('selects an apkg for the Anki handoff without writing it into saved notebooks', async () => {
+  seed([journal('ready')]);await render('ready')
+  const before=JSON.stringify(useStore.getState().academics.classCenter)
+  const input=container.querySelector<HTMLInputElement>('input[type="file"][accept=".apkg"]')!
+  expect(input).toBeTruthy()
+  Object.defineProperty(input,'files',{configurable:true,value:[new File(['test deck bytes'],'Lesson.apkg')]})
+  await act(async()=>input.dispatchEvent(new Event('change',{bubbles:true})))
+  expect(container.textContent).toContain('Lesson.apkg selected. Open this file from its saved folder in Anki')
+  expect(container.textContent).toContain('Premed OS does not import or save Anki decks.')
+  expect(JSON.stringify(useStore.getState().academics.classCenter)).toBe(before)
+  Object.defineProperty(input,'files',{configurable:true,value:[new File(['not a deck'],'Lesson.json')]})
+  await act(async()=>input.dispatchEvent(new Event('change',{bubbles:true})))
+  expect(container.textContent).not.toContain('Lesson.json selected')
+  expect(JSON.stringify(useStore.getState().academics.classCenter)).toBe(before)
 })

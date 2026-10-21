@@ -20,8 +20,12 @@ vi.mock('../intelligence/studyTools', async (importOriginal) => {
 const source = { id: 'chunk-1', fileId: 'file-1', courseId: 'course-1', topicId: 'topic-1', content: 'Encoding transforms incoming information into a form memory can store.' } as SourceChunk
 const empty = { title: 'Memory', unit: 'Psychology', standards: [] }
 const valid = { ...empty, standards: [{ id: 'objective-1', title: 'Study objective: Explain encoding',
-  freeRecallCues: ['Explain how encoding transforms information without notes.'], understand: [source.content],
-  beAbleToDo: [], watchFor: [], examPractice: [], sourceChunkIds: ['S1'],
+  // 2e560a7 retired freeRecallCues/watchFor/examPractice for newly authored
+  // outlines (must be empty) and requires a skill, howTested and applicationSkills.
+  freeRecallCues: [], understand: [source.content],
+  beAbleToDo: ['Explain what encoding does to incoming information.'], watchFor: [], examPractice: [], sourceChunkIds: ['S1'],
+  howTested: { setup: 'The selected passage defines encoding without sample questions.', questions: [], noQuestionsReason: 'The selected passage contains no actual practice questions for this objective.' },
+  applicationSkills: [{ text: 'Explain what encoding does to incoming information.', questionIds: [] }],
   evidenceLimit: 'The selected passage defines encoding but provides no worked examples or further mechanisms.',
 }] }
 

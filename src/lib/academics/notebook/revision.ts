@@ -1,6 +1,6 @@
 import { notebookVisualPracticeKey, projectNotebookEntry } from './visualProjection'
 import { uid } from '@/lib/id'
-import { canonical } from './package'
+import { canonical, parseNotebookPackage } from './package'
 import { notebookPackageFilename } from './downloadFilename'
 import type { ImportedNotebook, NotebookHistoryVersion, NotebookPackage, NotebookProgress, NotebookUpdateSession } from './types'
 
@@ -25,10 +25,32 @@ export function revisionInput(session: NotebookUpdateSession) {
   const entry = session.baseline.entries[0]
   return JSON.stringify({ mode: 'update-existing-entry', baselineFile: notebookUpdateBaselineFilename(session), entryId: entry.id, revision: entry.revision, baseline: UPDATE_BASELINE_DESCRIPTION })
 }
-export function retainNotebookVersion(n: ImportedNotebook, reason: NotebookHistoryVersion['reason'], now = Date.now()) {
-  const version: NotebookHistoryVersion = { id: uid(), savedAt: now, reason, current: cloneNotebookData(n.current), notes: n.notes, progress: cloneNotebookData(n.progress), ...(n.acceptedRaw ? { acceptedRaw: n.acceptedRaw } : {}) }
-  n.history = [...(n.history ?? []), version]
+export const NOTEBOOK_RECENT_HISTORY_LIMIT = 10
+/** A policy note derived from existing history; no new persisted envelope field. */
+export function notebookHistoryRetentionNote(n: Pick<ImportedNotebook, 'history'>): string | undefined {
+  return (n.history?.length ?? 0) >= NOTEBOOK_RECENT_HISTORY_LIMIT
+    ? 'Version history keeps the original and latest 10 saved versions; older versions are removed.' : undefined
 }
+function keptNotebookAssetIds(n: ImportedNotebook, incoming: NotebookPackage[]): Set<string> {
+  const packages = [...incoming, n.original, n.current, ...(n.history ?? []).map(version => version.current), ...(n.updateSession ? [n.updateSession.baseline] : []),
+    ...[n.originalRaw, n.acceptedRaw, ...(n.history ?? []).map(version => version.acceptedRaw)].filter((raw): raw is string => raw !== undefined).map(raw => parseNotebookPackage(raw))]
+  return new Set(packages.flatMap(pkg => pkg.version === 2 ? [] : pkg.assets.map(asset => asset.id)))
+}
+/** Include incoming content while pruning: callers install it after snapshotting current. */
+export function retainNotebookVersion(n: ImportedNotebook, reason: NotebookHistoryVersion['reason'], now = Date.now(), incoming: NotebookPackage[] = []) {
+  const version: NotebookHistoryVersion = { id: uid(), savedAt: now, reason, current: cloneNotebookData(n.current), notes: n.notes, progress: cloneNotebookData(n.progress), ...(n.acceptedRaw ? { acceptedRaw: n.acceptedRaw } : {}) }
+  const history = [...(n.history ?? []), version]
+  const originalKey = canonical(selectedNotebook(n.original, n.entryId))
+  const original = history.find(item => canonical(selectedNotebook(item.current, n.entryId)) === originalKey)
+  const recent = history.filter(item => item !== original).slice(-NOTEBOOK_RECENT_HISTORY_LIMIT)
+  const kept = original ? [original, ...recent] : recent
+  n.history = kept
+  if (kept.length < history.length && n.assetBindings) {
+    const ids = keptNotebookAssetIds(n, incoming)
+    n.assetBindings = n.assetBindings.filter(binding => ids.has(binding.assetId))
+  }
+}
+
 function learningContent(pkg: NotebookPackage, entryId: string) {
   const { title: _title, revision: _revision, baseRevision: _base, ...entry } = selectedNotebook(pkg, entryId).entries[0]
   return { course: pkg.course, sources: pkg.sources, entry }
@@ -97,9 +119,9 @@ export function readableDifference(value: unknown): string {
   if (value === null) return 'Not supplied'
   if (typeof value !== 'object') return String(value)
   if (Array.isArray(value)) return value.map((item, index) => `${index + 1}. ${readableDifference(item)}`).join('\n\n') || 'None'
-  const labels: Record<string, string> = { lines: 'Illustration lines', summary: 'Summary', more: 'Show-more explanation', prompt: 'Question', answer: 'Answer', rationale: 'Why this answer', text: 'Content', title: 'Title', scope: 'Scope', basis: 'Coverage explanation', inspected: 'Material inspected', limitations: 'Limits', freeRecallCues: 'Recall prompts', beAbleToDo: 'Apply it', watchFor: 'Watch for', sourceIds: 'Source references', excerptIds: 'Excerpt references', practiceBlockIds: 'Linked practice references', requirementId: 'Requirement reference', id: 'Reference ID' }
+  const labels: Record<string, string> = { lines: 'Illustration lines', summary: 'Summary', more: 'Show-more explanation', prompt: 'Question', answer: 'Answer', rationale: 'Why this answer', text: 'Content', title: 'Title', scope: 'Scope', basis: 'Coverage explanation', inspected: 'Material inspected', limitations: 'Limits', freeRecallCues: 'Recall prompts', beAbleToDo: 'Apply it', watchFor: 'Legacy notes', sourceIds: 'Source references', excerptIds: 'Excerpt references', practiceBlockIds: 'Linked practice references', requirementId: 'Requirement reference', id: 'Reference ID' }
   const secondary = new Set(['id', 'sourceIds', 'excerptIds', 'practiceBlockIds', 'requirementId', 'sectionId', 'order', 'provenance'])
-  return Object.entries(value).sort(([a], [b]) => Number(secondary.has(a)) - Number(secondary.has(b))).map(([key, item]) => `${labels[key] ?? key.replace(/([a-z])([A-Z])/g, '$1 $2')}: ${readableDifference(item)}`).join('\n')
+  return Object.entries(value).filter(([key]) => !['freeRecallCues', 'watchFor'].includes(key)).sort(([a], [b]) => Number(secondary.has(a)) - Number(secondary.has(b))).map(([key, item]) => `${labels[key] ?? key.replace(/([a-z])([A-Z])/g, '$1 $2')}: ${readableDifference(item)}`).join('\n')
 }
 
 export function selectedNotebook(...args: Parameters<typeof legacySelectedNotebook>): ReturnType<typeof legacySelectedNotebook> { return projectNotebookEntry(args[0], args[1]) }

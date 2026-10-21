@@ -97,6 +97,9 @@ export function privateAssessmentSimilarity(candidate: string, reference: string
 export interface MasteryValidationEvidence {
   /** Selected assessment text only; checked locally, never echoed in errors. */
   privateAssessmentPhrases?: readonly string[]
+  /** New mastery generation quotes actual selected course questions. */
+  requireSourcedMastery?: boolean
+  sourceContent?: ReadonlyMap<string, string>
 }
 
 // These fields contain no external visual attachment. Inline values, sequences,
@@ -125,6 +128,33 @@ export function validateMasteryOutline(value: unknown, closedChunkIds: readonly 
     const limited = standard.evidenceLimit !== undefined
     if (limited && (!text(standard.evidenceLimit) || clean(standard.evidenceLimit).split(' ').length < 8)) {
       return fail(`${path}.evidenceLimit: explain the specific missing source support in at least 8 words`)
+    }
+    if (evidence.requireSourcedMastery || standard.howTested !== undefined || standard.applicationSkills !== undefined) {
+      if (!allClosed(standard.sourceChunkIds, closed) || new Set(standard.sourceChunkIds).size !== standard.sourceChunkIds!.length) return fail(`${path}.sourceChunkIds: missing, duplicate or outside selected sources`)
+      if (!validStringList(standard.understand) || !standard.understand.length || !unique(standard.understand)) return fail(`${path}.understand: distinct supported factual answers required`)
+      if (!validStringList(standard.beAbleToDo) || !standard.beAbleToDo.length || !unique(standard.beAbleToDo)) return fail(`${path}.beAbleToDo: distinct observable skills required`)
+      if (!validStringList(standard.freeRecallCues) || !validStringList(standard.watchFor)) return fail(`${path}: legacy fields must remain string arrays`)
+      if (evidence.requireSourcedMastery && (standard.freeRecallCues.length || standard.watchFor.length || !Array.isArray(standard.examPractice) || standard.examPractice.length)) return fail(`${path}: newly authored retired fields must be empty`)
+      const tested = standard.howTested
+      if (!tested || !text(tested.setup) || !Array.isArray(tested.questions)) return fail(`${path}.howTested: setup and actual source questions required`)
+      if (tested.questions.length ? tested.noQuestionsReason !== undefined : !text(tested.noQuestionsReason)) return fail(`${path}.howTested: empty questions require an honest reason; populated questions omit it`)
+      const questionIds = new Set<string>()
+      const objectiveSources = new Set(standard.sourceChunkIds)
+      for (const question of tested.questions) {
+        if (!question || !text(question.id) || questionIds.has(question.id) || !text(question.text)
+          || !allClosed(question.sourceChunkIds, objectiveSources) || new Set(question.sourceChunkIds).size !== question.sourceChunkIds.length) return fail(`${path}.howTested.questions: unique IDs, actual text and objective source IDs required`)
+        if (evidence.requireSourcedMastery && !question.sourceChunkIds.some(id => evidence.sourceContent?.get(id)?.includes(question.text))) return fail(`${path}.howTested.questions: text must quote an actual selected source`)
+        questionIds.add(question.id)
+      }
+      if (!Array.isArray(standard.applicationSkills) || !standard.applicationSkills.length) return fail(`${path}.applicationSkills: observable skills required`)
+      if (new Set(standard.applicationSkills.map(skill => clean(skill?.text ?? ''))).size !== standard.applicationSkills.length) return fail(`${path}.applicationSkills: repeated skills`)
+      for (const skill of standard.applicationSkills) {
+        if (!skill || !text(skill.text) || !validStringList(skill.questionIds) || new Set(skill.questionIds).size !== skill.questionIds.length
+          || (questionIds.size > 0 && !skill.questionIds.length) || skill.questionIds.some(id => !questionIds.has(id))) return fail(`${path}.applicationSkills: references must resolve to this objective's questions`)
+      }
+      if (standard.beAbleToDo.length !== standard.applicationSkills.length || standard.applicationSkills.some((skill, i) => skill.text !== standard.beAbleToDo![i])) return fail(`${path}.beAbleToDo: compatibility strings must match applicationSkills`)
+      seen.add(standard.id)
+      continue
     }
     if (!validFreeRecallCues(standard.freeRecallCues)) {
       const cues: unknown = (raw as unknown as Record<string, unknown>).freeRecallCues

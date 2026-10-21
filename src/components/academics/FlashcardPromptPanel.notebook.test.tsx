@@ -44,29 +44,29 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 it('marks the notebook required and lecture materials recommended', async () => {
   await render()
   const inputs = container.querySelector('[aria-label="What to attach in your AI chat"]')!
-  expect([...inputs.querySelectorAll('li')].map(item => item.textContent)).toEqual(['NotebookRequired', 'Lecture materialsRecommended'])
+  expect(inputs.textContent).toContain('NotebookJSON + imagesDownload'); expect(inputs.textContent).toContain('Lecture materialsRecommended')
   expect(container.textContent).not.toContain('Downloads, notes and history')
   // No Guide notes for this class, so the Guide preview stays out of the way.
   expect(container.querySelector('[aria-label="Using your Guide"]')).toBeNull()
-  expect(container.querySelector('ol')?.textContent).toContain('Get your notebook.')
-  expect(container.querySelector('ol')?.textContent).toContain('Open a new AI chat and attach it.')
+  expect(container.querySelector('.nai-steps')?.textContent).toContain('Gather your files')
+  expect(container.textContent).toContain('Paste the prompt and attach your files.')
 })
 it('holds the prompt until the student downloads the notebook or says they have it', async () => {
   await render()
-  expect(button('Copy complete prompt').disabled).toBe(true)
-  expect(button('Download prompt').disabled).toBe(true)
+  expect(button('Copy prompt').disabled).toBe(true)
+  expect([...container.querySelectorAll<HTMLButtonElement>('.nai-actions button')].find(button=>button.textContent?.trim()==='Download')!.disabled).toBe(true)
   expect(button('I already have it').getAttribute('aria-pressed')).toBe('false')
   await click('I already have it')
   expect(button('I already have it').getAttribute('aria-pressed')).toBe('true')
-  expect(button('Copy complete prompt').disabled).toBe(false)
-  await click('Copy complete prompt')
+  expect(button('Copy prompt').disabled).toBe(false)
+  await click('Copy prompt')
   expect(writeText).toHaveBeenCalledExactlyOnceWith(`Complete prompt for ${id}`)
   expect(saved).toEqual([])
 })
 it('downloads the current saved notebook from this page without changing saved content', async () => {
   const before = JSON.stringify(useStore.getState().academics.classCenter)
   await render()
-  await click('Download notebook')
+  await act(async () => container.querySelector<HTMLButtonElement>('.nai-file button')!.click())
   expect(saved).toHaveLength(1)
   expect(saved[0].filename).toMatch(/\.(json|zip)$/)
   if (saved[0].filename.endsWith('.json')) {
@@ -74,6 +74,6 @@ it('downloads the current saved notebook from this page without changing saved c
     expect(downloaded.entries.map(entry => entry.id)).toEqual([useStore.getState().academics.classCenter.lectures.find(item => item.id === id)!.importedNotebook!.entryId])
   }
   expect(container.textContent).toMatch(/Notebook (and its images )?downloaded/)
-  expect(button('Copy complete prompt').disabled).toBe(false)
+  expect(button('Copy prompt').disabled).toBe(false)
   expect(JSON.stringify(useStore.getState().academics.classCenter)).toBe(before)
 })

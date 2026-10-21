@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { sortNotebookLectures } from '@/lib/academics/notebook/catalogDate'
 import { GenerationUsageDialog } from './GenerationUsageDialog'
 import { ExternalNotebookView } from './ExternalNotebookView'
@@ -48,15 +49,16 @@ function fileExtension(file: Pick<AcademicFile, 'fileName' | 'title' | 'mimeType
 }
 
 export function LectureCapturePanel({ courseId, course, data, onOpenNotes, initialLectureId, initialDestination = 'overview', displayMode = 'dialog', onNavigateLecture, onDeletedLecture }: {
-  courseId: string; course?: Pick<Course, 'code' | 'title'>; data: ClassCenterData; onOpenNotes: () => void; initialLectureId?: string; initialDestination?: LectureDestination; displayMode?: 'dialog' | 'embedded' | 'page'; onNavigateLecture?: (id: string) => void; onDeletedLecture?: () => void
+  courseId: string; course?: Pick<Course, 'code' | 'title'>; data: ClassCenterData; onOpenNotes: () => void; initialLectureId?: string; initialDestination?: LectureDestination; displayMode?: 'dialog' | 'embedded' | 'page'; onNavigateLecture?: (id: string, destinationCourseId?: string) => void; onDeletedLecture?: () => void
 }) {
+  const navigate = useNavigate()
   const lectures = useMemo(() => sortNotebookLectures(data.lectures, courseId), [courseId, data.lectures])
   const [activeLectureId, setActiveLectureId] = useState<string | undefined>(initialLectureId)
   const activeLecture = lectures.find((lecture) => lecture.id === activeLectureId)
   const [rebuildingLectureId, setRebuildingLectureId] = useState<string>()
   const [view, setView] = useState<WorkspaceView>(initialDestination === 'transcript' || initialDestination === 'evidence' ? 'sources' : initialDestination === 'study-work' ? 'materials' : 'brief')
   const [captureGuideOpen, setCaptureGuideOpen] = useState(false)
-  if (activeLecture?.importedNotebook) return <ExternalNotebookView key={activeLecture.id} lecture={activeLecture} courseCode={course?.code ?? courseId} onNavigateEntry={id => { setActiveLectureId(id); onNavigateLecture?.(id) }} />
+  if (activeLecture?.importedNotebook) return <ExternalNotebookView key={activeLecture.id} lecture={activeLecture} courseCode={course?.code ?? courseId} onNavigateEntry={(id, destinationCourseId) => { if (destinationCourseId && destinationCourseId !== courseId) { if (onNavigateLecture) onNavigateLecture(id, destinationCourseId); else navigate(`/academics/classes/${encodeURIComponent(destinationCourseId)}/journal/${encodeURIComponent(id)}`); return }; setActiveLectureId(id); onNavigateLecture?.(id, destinationCourseId) }} />
   if (activeLecture?.workspaceState === 'complete' && rebuildingLectureId !== activeLecture.id) return <LectureWorkspace course={course} courseId={courseId} data={data} lectures={lectures} activeLecture={activeLecture} view={view} onView={setView} onSelect={(lecture) => { if (onNavigateLecture) { onNavigateLecture(lecture.id); return }; setActiveLectureId(lecture.id); setRebuildingLectureId(undefined); setView('brief') }} onDeleted={(lectureId) => { if (activeLectureId !== lectureId) return; if (onDeletedLecture) { onDeletedLecture(); return }; setActiveLectureId(lectures.find((lecture) => lecture.id !== lectureId)?.id); setRebuildingLectureId(undefined); setView('brief') }} onRebuild={() => { setRebuildingLectureId(activeLecture.id) }} onOpenNotes={onOpenNotes} onHelp={() => setCaptureGuideOpen(true)} help={<LectureCaptureGuide open={captureGuideOpen} onOpenChange={setCaptureGuideOpen} />} embedded={displayMode === 'embedded'} standalone={displayMode === 'page'} />
   return <NotebookEntryComposer courseId={courseId} course={course} data={data} entry={activeLecture} onBuilt={id => { setActiveLectureId(id); setRebuildingLectureId(undefined); setView('brief'); onNavigateLecture?.(id) }} />
 

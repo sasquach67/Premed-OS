@@ -95,6 +95,7 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
     const path = `$.entries.${e.id}`
     if ((e.revision === 1 && e.baseRevision !== null) || (e.revision > 1 && e.baseRevision !== e.revision - 1)) fail(path, 'Revision must name its immediately preceding base; first revision has null.')
     const blocks = new Map<string, VisualNotebookBlock>(), sections = new Set(e.sections.map(s => s.id))
+    for (const link of e.argumentChain ?? []) if (!sections.has(link.sectionId)) fail(path, 'Argument-chain targets must reference a section in this entry.')
     for (const s of e.sections) {
       global(s.id, sectionIds, path)
       for (const b of s.blocks) {
@@ -102,6 +103,10 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
         evidence(b, b.type !== 'gap' && ['source', 'clarification', 'generated-practice'].includes(b.provenance))
         for (const id of visualAssetReferences(b)) referenced.add(id)
         if (b.type === 'practice' && (!['source', 'generated-practice'].includes(b.provenance) || !b.sourceIds.length || (!b.excerptIds.length && !visualAssetReferences(b).length))) fail(path, 'Practice requires source or generated-practice provenance and precise evidence.')
+        if (b.type === 'practice') {
+          if ((b.options === undefined) !== (b.correctIndex === undefined)) fail(path, 'Multiple-choice practice needs both options and correctIndex.')
+          if (b.options && (b.correctIndex! < 0 || b.correctIndex! >= b.options.length)) fail(path, 'correctIndex must identify an existing option.')
+        }
         if (b.type === 'table' && b.rows.some(r => r.length !== b.columns.length)) fail(path, 'Table rows must match the column count.')
         validateLearningVisual(b)
         if (b.type !== 'study-diagram') for (const item of learningVisualItems(b)) {
@@ -118,6 +123,22 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
           }
           for (const edge of b.edges) if (!nodes.has(edge.from) || !nodes.has(edge.to)) fail(path, 'Diagram edges must connect declared nodes.')
         }
+      }
+    }
+    const definitions = new Map<string, string>()
+    for (const section of e.sections) {
+      for (const id of section.learningObjectiveIds ?? []) if (!e.objectives.some(o => o.id === id)) fail(path, 'Learning objectives must belong to this entry.')
+      for (const block of section.blocks) {
+        for (const term of block.definedTerms ?? []) {
+          const key = term.term.trim().toLocaleLowerCase()
+          if (definitions.has(key) && definitions.get(key) !== term.definition) fail(path, `Use the same definition for ${term.term} throughout the entry.`)
+          definitions.set(key, term.definition)
+        }
+        if (block.type === 'bullets') {
+          unique((block.nestedItems ?? []).map(item => String(item.parentIndex)), path)
+          for (const item of block.nestedItems ?? []) if (item.parentIndex >= block.items.length) fail(path, 'Nested bullets must reference an existing parent item.')
+        }
+        if (block.type === 'study-diagram') for (const node of block.nodes) if (node.targetBlockId && !section.blocks.some(b => b.id === node.targetBlockId)) fail(path, 'Map targets must reference a block in the same section.')
       }
     }
     for (const b of blocks.values()) if (b.type === 'practice' || b.type === 'worked-example') {
@@ -142,6 +163,21 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
         if (!b || b.type !== 'practice') fail(path, 'Objective practice references must be practice blocks in this entry.')
         if (b!.sourceIds.some(id => !o.sourceIds.includes(id)) || b!.excerptIds.some(id => !o.excerptIds.includes(id)) || visualAssetReferences(b!).some(id => !visualAssetReferences(o).includes(id))) fail(path, 'Objective evidence must contain its practice evidence.')
       }
+      if (o.howTested) {
+        const questions = identify(o.howTested.questions, `${path}.objectives.${o.id}.howTested.questions`)
+        if (!questions.size && !o.howTested.noQuestionsReason?.trim()) fail(path, 'Explain when the supplied sources contain no actual question for this objective.')
+        if (questions.size && o.howTested.noQuestionsReason) fail(path, 'A no-questions explanation cannot accompany actual sourced questions.')
+        for (const question of questions.values()) {
+          evidence(question, true)
+          if (question.sourceIds.some(id => !o.sourceIds.includes(id)) || question.excerptIds.some(id => !o.excerptIds.includes(id)) || visualAssetReferences(question).some(id => !visualAssetReferences(o).includes(id))) fail(path, 'Objective evidence must contain its quoted question evidence.')
+          for (const id of visualAssetReferences(question)) referenced.add(id)
+        }
+        for (const skill of o.applicationSkills ?? []) {
+          unique(skill.questionIds, path)
+          if (questions.size && !skill.questionIds.length) fail(path, 'Application skills must reference the actual questions they answer.')
+          if (skill.questionIds.some(id => !questions.has(id))) fail(path, 'Application skills must reference questions in this objective.')
+        }
+      } else if (o.applicationSkills) fail(path, 'Question-linked application skills need a how-tested setup and question list.')
       for (const id of visualAssetReferences(o)) referenced.add(id)
     }
   }

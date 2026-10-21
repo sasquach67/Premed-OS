@@ -1,0 +1,133 @@
+/* Class folder setup (walkthrough "Set up a class", Oct 18 2026). Values follow
+   mockup-lab/01-academics/walkthrough-app/frame.html: folderQuestions(), folderGuide(). */
+.class-folder { display:grid; gap:.75rem; max-width:48rem; margin:0 auto; }
+.class-folder-crumbs { display:flex; align-items:center; gap:.375rem; font-size:.8125rem; font-weight:700; color:var(--muted-foreground); }
+.class-folder-crumbs button { min-height:2.75rem; color:var(--primary); }
+.class-folder-crumbs button:hover { text-decoration:underline; }
+.class-folder-crumbs svg { width:.875rem; height:.875rem; }
+
+.class-folder-panel { overflow:hidden; border:1px solid var(--border); border-radius:1rem; background:var(--card); box-shadow:0 18px 44px -28px rgba(0,0,0,.72); }
+.class-folder-panel-head { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.875rem 1.25rem; border-bottom:1px solid var(--border); background:color-mix(in srgb,var(--muted) 55%,transparent); }
+.class-folder-panel-head h2 { margin-top:.25rem; font:800 1.125rem/1.3 var(--font-display); }
+.class-folder-panel-head p:not(.class-folder-kicker) { margin-top:.25rem; font-size:.75rem; font-weight:600; color:var(--muted-foreground); }
+.class-folder-kicker { font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--primary); }
+.class-folder-quiet { flex:none; min-height:2.75rem; font-size:.75rem; font-weight:700; color:var(--muted-foreground); }
+.class-folder-quiet:hover { color:var(--foreground); }
+.class-folder-body { padding:1.25rem; }
+.class-folder-stack { display:grid; gap:1.25rem; }
+
+.class-folder-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
+.class-folder-options.is-three { grid-template-columns:repeat(3,minmax(0,1fr)); gap:.5rem; }
+.class-folder-option { display:flex; flex-direction:column; align-items:flex-start; min-height:104px; padding:.75rem; border:1px solid var(--border); border-radius:13px; background:var(--muted); text-align:left; color:var(--muted-foreground); transition:background-color .15s,border-color .15s,box-shadow .15s; }
+.class-folder-option:hover { border-color:color-mix(in srgb,var(--primary) 60%,var(--border)); }
+.class-folder-option:focus-visible { outline:2px solid var(--ring); outline-offset:2px; }
+.class-folder-option svg { width:1.25rem; height:1.25rem; color:var(--primary); }
+.class-folder-option b { margin-top:.5rem; font:800 .875rem var(--font-display); color:var(--foreground); }
+.class-folder-option span { margin-top:.125rem; font-size:.75rem; font-weight:600; line-height:1.35; }
+.class-folder-option.is-on { border-color:var(--primary); background:color-mix(in srgb,var(--primary) 12%,var(--muted)); color:var(--foreground); box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 42%,transparent); }
+@media (prefers-reduced-motion:reduce) { .class-folder-option { transition:none; } }
+.class-folder-qfoot { display:flex; align-items:center; justify-content:space-between; margin-top:1rem; padding-top:.75rem; border-top:1px solid var(--border); }
+.class-folder-dots { display:flex; gap:.375rem; }
+.class-folder-dots i, .class-folder-dots button { width:.5rem; height:.5rem; border-radius:50%; background:color-mix(in srgb,var(--muted-foreground) 30%,transparent); }
+.class-folder-dots button { width:.625rem; height:.625rem; }
+.class-folder-dots .is-on { background:var(--primary); }
+
+.class-folder-summary { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; }
+.class-folder-summary span { padding:.125rem .625rem; border:1px solid var(--border); border-radius:99px; font-size:.75rem; font-weight:600; }
+.class-folder-summary button { min-height:2rem; font-size:.75rem; font-weight:700; color:var(--primary); }
+.class-folder-summary button:hover { text-decoration:underline; }
+
+/* AI filing: five-step track with "Waits" highlighted */
+.class-folder-track { position:relative; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); margin:0; padding:0; list-style:none; }
+.class-folder-track li { position:relative; display:flex; flex-direction:column; align-items:center; gap:6px; padding:0 4px; text-align:center; }
+.class-folder-track li::after { content:""; position:absolute; top:17px; left:calc(50% + 20px); right:calc(-50% + 20px); border-top:2px solid var(--border); }
+.class-folder-track li:last-child::after { display:none; }
+.class-folder-track .dot { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:var(--muted); color:var(--muted-foreground); }
+.class-folder-track .dot svg { width:1rem; height:1rem; }
+.class-folder-track .is-stop .dot { border-color:color-mix(in srgb,var(--primary) 50%,transparent); background:color-mix(in srgb,var(--primary) 14%,var(--card)); color:var(--primary); }
+.class-folder-track li > div { display:flex; flex-direction:column; gap:2px; }
+.class-folder-track b { font:800 13.5px/1.2 var(--font-display); }
+.class-folder-track .is-stop b { color:var(--primary); }
+.class-folder-track span:not(.dot) { font-size:11.5px; font-weight:600; line-height:1.3; color:var(--muted-foreground); }
+.class-folder-fold summary { display:inline-flex; align-items:center; gap:4px; min-height:2.75rem; cursor:pointer; list-style:none; font-size:.75rem; font-weight:800; color:var(--primary); }
+.class-folder-fold summary::-webkit-details-marker { display:none; }
+.class-folder-fold summary svg { width:14px; height:14px; transition:transform .15s; }
+.class-folder-fold[open] summary svg { transform:rotate(90deg); }
+.class-folder-prompt { max-height:260px; overflow:auto; margin:0; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--card); white-space:pre-wrap; font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; }
+.class-folder-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; padding-top:.75rem; border-top:1px solid var(--border); }
+
+/* the four steps (values from the class hub's lecture-capture step strip) */
+.class-folder-steps { width:100%; max-width:48rem; margin:0 auto; padding:16px; overflow:hidden; border:1px solid var(--border); border-radius:16px; background:var(--card); }
+.class-folder-steps-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+.class-folder-steps-head h2 { margin:3px 0; font:800 23px/1.1 var(--font-display); }
+.class-folder-pill { flex:none; padding:3px 8px; border:1px solid var(--border); border-radius:999px; background:var(--muted); font:800 10px var(--font-display); color:var(--muted-foreground); }
+.class-folder-tabs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin-top:12px; overflow:hidden; border:1px solid var(--border); border-radius:12px; }
+.class-folder-tabs > button { min-width:0; min-height:2.75rem; padding:10px 11px; border-left:1px solid var(--border); text-align:left; color:var(--muted-foreground); }
+.class-folder-tabs > button:first-child { border-left:0; }
+.class-folder-tabs > button:focus-visible { outline:2px solid var(--ring); outline-offset:-2px; }
+.class-folder-tabs b { display:block; font:800 12px var(--font-display); }
+.class-folder-tabs span { display:block; margin-top:2px; font-size:10px; font-weight:700; }
+.class-folder-tabs .is-current { background:color-mix(in srgb,var(--primary) 10%,transparent); box-shadow:inset 0 -3px 0 var(--primary); }
+.class-folder-tabs .is-current b { color:var(--primary); }
+.class-folder-step-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin-top:12px; }
+.class-folder-later { margin-top:9px; font:800 10px var(--font-display); letter-spacing:.03em; color:var(--muted-foreground); }
+.class-folder-picture { margin-top:.75rem; overflow:hidden; border:1px solid var(--border); border-radius:12px; background:#fff; }
+.class-folder-picture img { display:block; width:100%; height:auto; }
+.class-folder-beat { display:flex; align-items:center; justify-content:space-between; gap:.75rem; margin-top:.75rem; }
+.class-folder-beat p { font-size:.875rem; font-weight:700; }
+.class-folder-result { display:flex; align-items:center; gap:.5rem; margin-top:.75rem; font-size:.875rem; font-weight:700; color:var(--success); }
+.class-folder-result svg { width:1rem; height:1rem; }
+.class-folder-tree { margin-top:.75rem; padding:.75rem; border:1px solid var(--border); border-radius:.75rem; background:var(--muted); font-size:.875rem; font-weight:700; line-height:2; }
+.class-folder-tree div { display:flex; align-items:center; gap:.5rem; }
+.class-folder-tree svg { width:1rem; height:1rem; color:var(--primary); }
+.class-folder-tree .d1 { padding-left:22px; }
+.class-folder-tree .d2 { padding-left:44px; }
+
+/* drawn Finder list: light like a real Finder window, in both themes */
+.class-folder-finder { color:#1d1d1f; font:14px/1.4 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
+.class-folder-finder .bar { padding:.75rem 1rem; border-bottom:1px solid #e5e5e7; font-weight:700; font-size:15px; }
+.class-folder-finder .head { display:flex; justify-content:space-between; padding:.375rem 1rem; border-bottom:1px solid #e5e5e7; font-size:12px; font-weight:700; color:#6e6e73; }
+.class-folder-finder .row { display:flex; align-items:center; gap:.5rem; padding-top:.4rem; padding-bottom:.4rem; padding-right:1rem; }
+.class-folder-finder .row:nth-child(odd) { background:#f5f5f7; }
+.class-folder-finder .row svg { width:16px; height:16px; flex:none; color:#8e8e93; }
+.class-folder-finder .row svg.is-folder { color:#5ea2d8; }
+.class-folder-finder .kind { margin-left:auto; font-size:12px; color:#6e6e73; }
+
+/* Lessons tab: the class-folder card and its ready row */
+.class-folder-card { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; padding:1.25rem; border:1px solid var(--border); border-radius:1rem; background:var(--card); }
+.class-folder-card .icon { display:grid; flex:none; place-items:center; width:2.75rem; height:2.75rem; border:1px solid color-mix(in srgb,var(--primary) 30%,transparent); border-radius:.75rem; background:color-mix(in srgb,var(--primary) 10%,transparent); color:var(--primary); }
+.class-folder-card .icon svg { width:1.25rem; height:1.25rem; }
+.class-folder-card h3 { margin-top:.25rem; font:800 1.125rem var(--font-display); }
+.class-folder-card p.sub { margin-top:.25rem; font-size:.875rem; font-weight:600; color:var(--muted-foreground); }
+.class-folder-chips { display:flex; flex-wrap:wrap; align-items:center; gap:.375rem; margin-top:.75rem; font-size:.75rem; font-weight:700; }
+.class-folder-chips span.chip { display:inline-flex; align-items:center; gap:.375rem; padding:.25rem .5rem; border:1px solid var(--border); border-radius:.375rem; background:var(--muted); }
+.class-folder-chips span.chip.is-ai { border-color:color-mix(in srgb,var(--primary) 30%,transparent); background:color-mix(in srgb,var(--primary) 10%,transparent); color:var(--primary); }
+.class-folder-chips svg { width:.875rem; height:.875rem; color:var(--primary); }
+.class-folder-card-actions { display:flex; flex:none; flex-direction:column; align-items:flex-end; gap:.375rem; }
+.class-folder-card-actions .skip { min-height:2rem; font-size:.75rem; font-weight:700; color:var(--muted-foreground); }
+.class-folder-card-actions .skip:hover { color:var(--foreground); }
+.class-folder-ready { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; padding:.75rem; border:1px solid var(--border); border-radius:.75rem; background:var(--muted); }
+.class-folder-ready > div { display:flex; align-items:center; gap:.75rem; }
+.class-folder-ready svg { width:1.25rem; height:1.25rem; color:var(--primary); }
+.class-folder-ready b { font-weight:800; }
+.class-folder-ready small { display:block; font-size:.75rem; color:var(--muted-foreground); }
+.class-folder-ready .ok { display:inline-flex; align-items:center; gap:.375rem; padding:.25rem .75rem; border:1px solid color-mix(in srgb,var(--success) 30%,transparent); border-radius:99px; background:color-mix(in srgb,var(--success) 10%,transparent); font-size:.75rem; font-weight:800; color:var(--success); }
+.class-folder-ready .ok svg { width:.875rem; height:.875rem; color:inherit; }
+.class-folder-ready button.change { font-size:.75rem; font-weight:700; color:var(--primary); }
+
+.class-folder-line { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin-bottom:.75rem; font-size:.8125rem; font-weight:600; color:var(--muted-foreground); }
+.class-folder-line svg { width:1rem; height:1rem; color:var(--primary); }
+.class-folder-line button { min-height:2rem; font-size:.75rem; font-weight:700; color:var(--primary); }
+
+@media (max-width:640px) {
+  .class-folder-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .class-folder-tabs > button:nth-child(3) { border-left:0; }
+  .class-folder-tabs > button:nth-child(n+3) { border-top:1px solid var(--border); }
+  .class-folder-options, .class-folder-options.is-three { grid-template-columns:1fr; }
+  .class-folder-option { min-height:0; }
+  .class-folder-track { grid-template-columns:1fr; gap:.75rem; }
+  .class-folder-track li { flex-direction:row; text-align:left; }
+  .class-folder-track li::after { display:none; }
+  .class-folder-card-actions { align-items:stretch; width:100%; }
+  .class-folder-panel-head { flex-wrap:wrap; }
+}

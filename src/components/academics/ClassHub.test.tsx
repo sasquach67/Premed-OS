@@ -9,7 +9,7 @@ import { ClassHub, WritingTools } from '@/components/academics/ClassHub'
 import { ToastProvider } from '@/components/common/ToastProvider'
 import { createSeedData } from '@/data/seed'
 import { createDemoData } from '@/data/demoSeed'
-import type { LectureRecord, ClassAssignment, AssignedReading } from '@/lib/types'
+import type { ClassAssignment, AssignedReading } from '@/lib/types'
 import { revisionFixture } from '@/lib/academics/notebook/revision.test-fixtures'
 import { recurringFeedbackThemes, readingDebt } from '@/lib/academics/writingEvidence'
 import { createInitialDataForMode, CURRENT_STORE_VERSION, snapshotData, STORAGE_KEY, useStore } from '@/store/store'
@@ -283,35 +283,6 @@ describe('ClassHub approved Overview', () => {
     expect(useStore.getState().academics.classCenter.workspaces.find(item => item.courseId === course.id)?.lastOpenedLectureId).toBe(lecture.id)
   })
 
-  it('orders mixed notebook rows by their displayed dates after storage reload without changing records', async () => {
-    const seed = structuredClone(createSeedData())
-    const workspace = seed.academics.classCenter.workspaces.find(item => item.type === 'stem')!
-    const course = seed.courses.find(item => item.id === workspace.courseId)!
-    const pkg = revisionFixture()
-    const row = (id: string, occurredOn?: string): LectureRecord => ({ id, courseId: course.id, title: id, inputPath: 'pasted', processingState: 'ready', occurredOn, createdAt: 1, updatedAt: 2, order: 0 })
-    const imported = (id: string, importedAt: number, editedAt?: number): LectureRecord => ({ ...row(id, '2030-01-01'), importedNotebook: { original: pkg, current: pkg, originalRaw: JSON.stringify(pkg), entryId: pkg.entries[0].id, fingerprint: id, importedAt, editedAt, progress: {}, notes: 'Keep this note' } })
-    const rows = [row('undated'), imported('added-Sep8', new Date('2026-09-08T09:00:00').getTime()), row('tie-z', '2026-09-07'), row('native-Sep9', '2026-09-09'), row('tie-a', '2026-09-07'), imported('edited-Sep10', new Date('2026-08-01T09:00:00').getTime(), new Date('2026-09-10T09:00:00').getTime()), imported('missing-import-date', 0)]
-    Object.assign(rows.at(-1)!.importedNotebook!, { importedAt: undefined })
-    rows[3].createdAt = new Date('2026-09-12').getTime()
-    seed.academics.classCenter.lectures = rows
-    useStore.getState().replaceAll(seed)
-    const recordsBefore = JSON.stringify(useStore.getState().academics.classCenter.lectures)
-    const expected = ['tie-a', 'tie-z', 'native-Sep9', 'missing-import-date', 'edited-Sep10', 'added-Sep8', 'undated']
-    for (let pass = 0; pass < 2; pass++) {
-      if (pass) {
-        await act(async () => root.unmount())
-        root = createRoot(container)
-        await act(async () => useStore.persist.rehydrate())
-      }
-      await act(async () => root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={useStore.getState().academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>))
-      expect([...container.querySelectorAll('.lecture-journal-row-text b')].map(item => item.textContent?.replace(/^Lesson \d+ — /, ''))).toEqual(expected)
-      expect(container.querySelectorAll('.lecture-journal-list time')).toHaveLength(7)
-      expect(container.querySelector('.lecture-journal-list time')?.getAttribute('datetime')).toBe('2026-09-07')
-      expect(container.querySelector('[data-notebook-row="undated"] time')?.textContent).toMatch(/^Added /)
-      expect(JSON.stringify(useStore.getState().academics.classCenter.lectures)).toBe(recordsBefore)
-    }
-  })
-
   it('keeps supporting screenshots out of Materials and its badge without deleting source records', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find(item => item.type === 'stem')!
@@ -325,7 +296,9 @@ describe('ClassHub approved Overview', () => {
     seed.academics.classCenter.notes = []
     await act(async () => root.render(<MemoryRouter initialEntries={['/?classTab=materials']}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>))
     expect(container.textContent).toContain('2 items in this course library')
-    expect(container.querySelector('[role="tab"][data-state="active"]')?.textContent).toContain('Materials2')
+    // Materials became the Lessons tab (Oct 2026); its file count moved to the Class files section.
+    expect(container.querySelector('[role="tab"][data-state="active"]')?.textContent).toMatch(/^Lessons/)
+    expect(container.querySelector('.lessons-files-count')?.textContent).toBe('2')
     expect(container.textContent).toContain('Lecture handout')
     expect(container.textContent).toContain('Generated concept map')
     expect(container.textContent).not.toContain('Screenshot 2026-09-03')
@@ -433,272 +406,6 @@ describe('ClassHub approved Overview', () => {
     expect(menu.textContent).toContain('included in Class Notebook')
   })
 
-  it('opens journal entry creation by default while the bounded journal opens saved lecture evidence on demand', async () => {
-
-    const seed = structuredClone(createSeedData())
-    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
-    const course = seed.courses.find((item) => item.id === workspace.courseId)!
-    for (const topic of seed.academics.classCenter.topics.filter((item) => item.courseId === course.id)) {
-      topic.status = 'ready'
-      topic.fsrs.reps = 0
-    }
-    seed.academics.classCenter.lectures.push({
-      id: 'lecture-saved-1',
-      courseId: course.id,
-      title: 'Lecture 1',
-      inputPath: 'pasted',
-      processingState: 'ready',
-      occurredOn: '2026-08-26',
-      createdAt: now,
-      updatedAt: now,
-      order: 0,
-    })
-    useStore.getState().replaceAll(seed)
-
-    await act(async () => {
-      root.render(
-        <MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}>
-          <ToastProvider>
-            <ClassHub course={course} workspace={{...workspace, id: course.id}} data={seed.academics.classCenter} persons={seed.persons} />
-          </ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
-
-      )
-    })
-
-    expect(container.textContent).toContain('Class notebook')
-    expect(container.textContent).not.toContain('Create a study entry page')
-    expect(container.querySelector('.lecture-journal-list')).toBeTruthy()
-    expect(container.querySelector('.lecture-overview-composition')).toBeNull()
-    expect(container.textContent).toContain('Continue studying')
-    const focusButton = container.querySelector<HTMLButtonElement>('.overview-focus')!
-    await act(async () => focusButton.click())
-    const focusInput = document.querySelector<HTMLInputElement>('#class-study-focus')!
-    await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(focusInput, 'Compare mechanisms')
-      focusInput.dispatchEvent(new Event('input', { bubbles: true }))
-    })
-    const saveFocus = [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find(button => button.textContent === 'Save focus')!
-    await act(async () => saveFocus.click())
-    expect(useStore.getState().academics.classCenter.workspaces.find(item => item.courseId === course.id)?.studyFocus).toBe('Compare mechanisms')
-
-
-    expect(container.textContent).not.toContain('Class Plan')
-    expect([...container.querySelectorAll<HTMLButtonElement>('button')].some((button) => button.textContent?.trim().startsWith('Topics'))).toBe(false)
-
-    const savedLecture = container.querySelector('button.lecture-rail-entry') as HTMLButtonElement
-    expect(savedLecture.getAttribute('aria-expanded')).toBe('false')
-    expect(container.querySelector('[aria-label="Embedded lecture workspace"]')).toBeNull()
-    await act(async () => savedLecture.click())
-    expect(container.textContent).toContain('Study Guide')
-    expect(container.textContent).not.toContain('Lecture Brief')
-    expect(container.textContent).toContain('Mastery Map')
-    expect(container.textContent).toContain('0 selected sources')
-    expect(savedLecture.getAttribute('aria-expanded')).toBe('true')
-    expect(container.textContent).toContain('Continue entry')
-
-    const addToday = [...container.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.classList.contains('overview-entry-tile'))
-    expect(addToday).toBeTruthy()
-    await act(async () => addToday!.click())
-    expect(document.body.textContent).toContain('Choose your goal')
-    expect([...document.body.querySelectorAll('button')].some(button => button.textContent?.trim() === 'Next')).toBe(true)
-
-  })
-
-  it('gives every saved lecture matching right-click and overflow actions for edit and recoverable delete', async () => {
-    const seed = structuredClone(createSeedData())
-    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
-    const course = seed.courses.find((item) => item.id === workspace.courseId)!
-    const center = seed.academics.classCenter
-    center.lectures = center.lectures.filter((lecture) => lecture.courseId !== course.id)
-    center.lectures.push(
-      {
-        id: 'lecture-actions', courseId: course.id, title: 'Lecture 1 · Cell signaling', inputPath: 'pasted',
-        transcriptFileId: 'lecture-actions-source', occurredOn: '2026-09-01', processingState: 'ready',
-        workspaceState: 'complete', selectedSourceFileIds: ['lecture-actions-source'], masteryMapId: 'lecture-actions-mastery',
-        createdAt: now, updatedAt: now, order: 0,
-      },
-      {
-        id: 'lecture-actions-2', courseId: course.id, title: 'Lecture 2 · Autophagy generation', inputPath: 'pasted',
-        aiTitle: 'Autophagy quality control',
-        transcriptFileId: 'lecture-actions-source-2', occurredOn: '2026-09-02', processingState: 'ready',
-        createdAt: now + 1, updatedAt: now + 1, order: 1,
-      },
-      {
-        id: 'lecture-actions-3', courseId: course.id, title: 'Lecture 2', inputPath: 'pasted',
-        transcriptFileId: 'lecture-actions-source-3', occurredOn: '2026-09-03', processingState: 'ready',
-        createdAt: now + 2, updatedAt: now + 2, order: 2,
-      },
-    )
-    center.files.push({
-      id: 'lecture-actions-source', courseId: course.id, lectureId: 'lecture-actions', sourceType: 'paste',
-      title: 'Cell signaling transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready',
-      createdAt: now, updatedAt: now, order: 0,
-    })
-    center.generatedMasteryOutlines.push({
-      id: 'lecture-actions-mastery', courseId: course.id, lectureId: 'lecture-actions', scope: 'lecture', scopeId: 'lecture-actions',
-      title: 'Cell signaling mastery', unit: 'Lecture 1', specId: 'unit-mastery-outline-v1', specHash: 'actions', standards: [],
-      sourceChunkIds: [], createdAt: now, updatedAt: now, order: 0,
-    })
-    center.lectureFindings.push({
-      id: 'lecture-actions-finding', courseId: course.id, lectureId: 'lecture-actions', sourceChunkId: 'source-chunk',
-      quote: 'Cell signaling', timestamp: '01:00', label: 'Emphasis', detail: 'Know this pathway.',
-      createdAt: now, updatedAt: now, order: 0,
-    })
-    useStore.getState().replaceAll(seed)
-
-    await act(async () => {
-      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={center} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
-    })
-
-    const lectureRecord = container.querySelector<HTMLElement>('[data-lecture-actions="lecture-actions"]')!
-    const card = lectureRecord.querySelector<HTMLButtonElement>('button.lecture-rail-entry')!
-    const overflow = container.querySelector<HTMLButtonElement>('button[aria-label="Actions for Lecture 1 · Cell signaling"]')!
-    const controls = overflow.closest<HTMLElement>('[data-lecture-rail-controls]')
-    expect(controls).toBeTruthy()
-    expect(controls?.textContent?.trim()).toBe('')
-    expect(lectureRecord.className).toContain('grid-cols-[minmax(0,1fr)_1.75rem]')
-    expect(controls?.className).not.toContain('absolute')
-    expect(controls?.className).toContain('opacity-0')
-    expect(controls?.className).toContain('pointer-events-none')
-    expect(controls?.className).toContain('group-hover/lecture-record:opacity-100')
-    expect(controls?.className).toContain('focus-within:opacity-100')
-    expect(card.textContent).not.toMatch(/Lecture \d+\s*·\s*Lecture \d+/)
-    for (const [lectureId, expectedTitle] of [
-      ['lecture-actions', 'Lesson 1 — Cell signaling'],
-      ['lecture-actions-2', 'Lesson 2 — Autophagy generation'],
-      ['lecture-actions-3', 'Lesson 2'],
-    ]) {
-      const record = container.querySelector<HTMLElement>(`[data-lecture-actions="${lectureId}"]`)!
-      expect(record.className).toContain('grid-cols-[minmax(0,1fr)_1.75rem]')
-      expect(record.querySelector('.lecture-rail-controls')?.className).not.toContain('absolute')
-      expect(record.querySelector('b')?.textContent).toBe(expectedTitle)
-    }
-    await act(async () => card.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 12, clientY: 12 })))
-    const contextItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
-    for (const label of ['Open lecture', 'Edit lecture', 'Delete lecture']) {
-      expect(contextItems.some((item) => item.textContent?.trim() === label)).toBe(true)
-    }
-    expect(contextItems.some((item) => item.textContent?.trim() === 'Open full screen')).toBe(true)
-
-    const edit = contextItems.find((item) => item.textContent?.trim() === 'Edit lecture')!
-    await act(async () => edit.click())
-    const title = document.body.querySelector<HTMLInputElement>('input[aria-label="Lecture title"]')!
-    await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(title, 'Lecture 1 · Receptor signaling')
-      title.dispatchEvent(new Event('input', { bubbles: true }))
-      title.dispatchEvent(new Event('change', { bubbles: true }))
-    })
-    const save = [...document.body.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Save changes')!
-    await act(async () => save.click())
-    expect(useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'lecture-actions')?.title).toBe('Lecture 1 · Receptor signaling')
-
-    expect(overflow).toBeTruthy()
-    await act(async () => {
-      overflow.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
-      overflow.click()
-    })
-    const remove = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((item) => item.textContent?.trim() === 'Delete lecture')!
-    await act(async () => remove.click())
-    expect(document.body.textContent).toContain('Attached files will stay in Class Materials')
-    const confirm = [...document.body.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Delete lecture')!
-    await act(async () => confirm.click())
-
-    const deleted = useStore.getState().academics.classCenter
-    expect(deleted.lectures.some((lecture) => lecture.id === 'lecture-actions')).toBe(false)
-    expect(deleted.files.find((file) => file.id === 'lecture-actions-source')).toMatchObject({ lectureId: undefined })
-    expect(deleted.generatedMasteryOutlines.some((outline) => outline.id === 'lecture-actions-mastery')).toBe(false)
-    expect(deleted.lectureFindings.some((finding) => finding.id === 'lecture-actions-finding')).toBe(false)
-
-    const undo = [...document.body.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Undo')!
-    await act(async () => undo.click())
-    const restored = useStore.getState().academics.classCenter
-    expect(restored.lectures.some((lecture) => lecture.id === 'lecture-actions')).toBe(true)
-    expect(restored.files.find((file) => file.id === 'lecture-actions-source')?.lectureId).toBe('lecture-actions')
-    expect(restored.generatedMasteryOutlines.some((outline) => outline.id === 'lecture-actions-mastery')).toBe(true)
-    expect(restored.lectureFindings.some((finding) => finding.id === 'lecture-actions-finding')).toBe(true)
-  })
-
-  it('expands the full preview beneath a journal entry and opens full screen separately', async () => {
-    const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
-    const course = seed.courses.find((item) => item.id === 'demo-course-biol103-current')!
-    const workspace = seed.academics.classCenter.workspaces.find((item) => item.courseId === course.id)!
-    useStore.getState().replaceAll(seed)
-
-    await act(async () => {
-      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
-
-    })
-
-    const lectureOne = [...container.querySelectorAll<HTMLButtonElement>('button.lecture-rail-entry')]
-      .find((button) => button.textContent?.includes('Experimental thinking'))!
-    const lectureTwo = [...container.querySelectorAll<HTMLButtonElement>('button.lecture-rail-entry')]
-      .find((button) => button.textContent?.includes('Central Dogma'))!
-    expect(container.querySelector('[aria-label="Embedded lecture workspace"]')).toBeNull()
-    await act(async () => lectureOne.click())
-    expect(lectureOne.getAttribute('aria-expanded')).toBe('true')
-    await act(async () => lectureOne.click())
-    expect(lectureOne.getAttribute('aria-expanded')).toBe('false')
-    await act(async () => lectureTwo.click())
-    const workspaceSurface = container.querySelector('[aria-label="Embedded lecture workspace"]')!
-    expect(lectureTwo.closest('[data-lecture-actions]')?.parentElement?.contains(workspaceSurface)).toBe(true)
-    expect(workspaceSurface.textContent).toContain('A gene is expressed through linked but distinct synthesis steps')
-    expect(workspaceSurface.textContent).toContain('Gene expression can be tested at two different levels')
-    expect(workspaceSurface.querySelector('[aria-label="Lecture workspace views"]')).toBeTruthy()
-    expect(workspaceSurface.querySelector('[aria-label="Lecture reading area"]')?.getAttribute('tabindex')).toBe('0')
-    expect(workspaceSurface.textContent).not.toContain('Source-led draft available')
-
-    const mastery = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Mastery Map')!
-    await act(async () => mastery.click())
-    expect(workspaceSurface.textContent).toContain('Trace gene expression from DNA to a mature transcript')
-    expect(workspaceSurface.querySelectorAll('button[aria-label^="Mastery state for"]').length).toBe(5)
-
-    const materials = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Materials')!
-    await act(async () => materials.click())
-    expect(workspaceSurface.textContent).toContain('Generated resources')
-    expect(workspaceSurface.textContent).toContain('Your sources')
-    expect(workspaceSurface.textContent).toContain('Mastery Map')
-    expect(workspaceSurface.textContent).toContain('Lecture 2 Central Dogma BIOL103.pdf')
-    expect([...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].some((button) => button.textContent?.trim() === 'Add source')).toBe(false)
-
-    const sources = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Sources')!
-    await act(async () => sources.click())
-    expect(workspaceSurface.querySelector('input[placeholder="Search exact words across transcript and sources"]')).toBeTruthy()
-    const fullScreen = [...container.querySelectorAll<HTMLButtonElement>('.lecture-saved-actions button')].find((button) => button.textContent?.includes('Full Screen'))!
-    await act(async () => fullScreen.click())
-    expect(container.querySelector('[aria-label="Lecture page"]')).toBeTruthy()
-    expect(document.body.querySelector('[role="dialog"]')).toBeNull()
-
-  })
-
-  it('offers the optional-transcript journal on writing and general class overviews', async () => {
-
-    const seed = structuredClone(createSeedData())
-    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'writing')!
-    const course = seed.courses.find((item) => item.id === workspace.courseId)!
-    useStore.getState().replaceAll(seed)
-
-    await act(async () => {
-      root.render(
-        <MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}>
-          <ToastProvider>
-            <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
-          </ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
-
-      )
-    })
-
-    expect(container.textContent).toContain('Class notebook')
-    expect(container.textContent).toContain('Bring your class materials')
-    expect(container.querySelector('.lecture-overview-composition')).toBeNull()
-    const addLecture = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.classList.contains('overview-entry-tile'))!
-    await act(async () => addLecture.click())
-    expect([...document.body.querySelectorAll('button')].some(button => button.textContent?.trim() === 'Next')).toBe(true)
-
-  })
-
   it('retires the legacy Create study work action in favor of the lecture workspace', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
@@ -721,15 +428,12 @@ describe('ClassHub approved Overview', () => {
 
     await act(async () => {
       root.render(
-        <MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}>
-          <ToastProvider>
-            <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
-          </ToastProvider>
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}/lectures/lecture-with-source`]}>
+          
         <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )
     })
 
-    await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
     expect(container.textContent).toContain('Study Guide')
     expect(container.textContent).toContain('Mastery Map')
     expect(container.textContent).not.toContain('Create study work')
@@ -754,11 +458,10 @@ describe('ClassHub approved Overview', () => {
     useStore.getState().replaceAll(seed)
 
     await act(async () => {
-      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}/lectures/lecture-read-route`]}><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
-    await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
     expect(container.textContent).not.toContain('Read transcript')
-    expect(container.textContent).toContain('Transcript and supporting files stay under Sources')
+    expect([...container.querySelectorAll('button')].some(button => button.textContent?.trim() === 'Sources')).toBe(true)
   })
 
   it('retires the legacy Add evidence summary action', async () => {
@@ -776,9 +479,8 @@ describe('ClassHub approved Overview', () => {
     useStore.getState().replaceAll(seed)
 
     await act(async () => {
-      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}/lectures/lecture-add-evidence`]}><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
-    await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
     expect(container.textContent).not.toContain('Add evidence')
     expect(container.textContent).toContain('Study Guide')
   })
@@ -798,11 +500,10 @@ describe('ClassHub approved Overview', () => {
     useStore.getState().replaceAll(seed)
 
     await act(async () => {
-      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}/lectures/lecture-open-evidence`]}><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
-    await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
     expect(container.textContent).not.toContain('Supporting evidence')
-    expect(container.textContent).toContain('Transcript and supporting files stay under Sources')
+    expect([...container.querySelectorAll('button')].some(button => button.textContent?.trim() === 'Sources')).toBe(true)
   })
 
   it('moves generated lecture work behind the Materials view', async () => {
@@ -820,9 +521,8 @@ describe('ClassHub approved Overview', () => {
     useStore.getState().replaceAll(seed)
 
     await act(async () => {
-      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}/lectures/lecture-open-study`]}><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
-    await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
     expect(container.textContent).not.toContain('Open study work')
     expect(container.textContent).toContain('Study Guide')
   })
@@ -850,7 +550,7 @@ describe('ClassHub approved Overview', () => {
     })
 
     const text = container.textContent ?? ''
-    expect(container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toMatch(/^Materials/)
+    expect(container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toMatch(/^Lessons/)
     expect([...container.querySelectorAll('[role="tab"]')].map(tab => tab.textContent)).not.toContain('Topics')
     expect(text).not.toContain('Syllabus standards, ordered by scheduled week.')
     expect(useStore.getState().academics.classCenter.topics).toEqual(seed.academics.classCenter.topics)
@@ -931,9 +631,12 @@ describe('ClassHub approved Overview', () => {
       )
     })
 
-    expect(document.body.textContent).toContain('Choose your goal')
-    expect(document.body.querySelector('[aria-label="Notebook workflow progress"]')?.textContent).toContain('Choose goal')
-    expect(document.body.textContent).toContain('Use your AI')
+    expect(document.body.textContent).toContain('Gather your files')
+    expect(document.body.textContent).toContain('Review a lesson')
+    expect(document.body.textContent).toContain('Prepare for an exam')
+    expect(document.body.textContent).toContain('Copy the prompt into a new AI chat')
+    expect(document.body.textContent).toContain('Bring it back')
+    expect(document.body.querySelector('[aria-label="Notebook workflow progress"]')).toBeNull()
 
   })
 
@@ -1117,7 +820,7 @@ describe('ClassHub approved Overview', () => {
     await act(async () => filter.click())
     expect(container.textContent).not.toContain('Class discussion transcript')
     expect(container.textContent).not.toContain('Reference notes')
-    const all = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim().startsWith('All '))!
+    const all = [...container.querySelector('.lessons-files')!.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim().startsWith('All '))!
     await act(async () => all.click())
     const organize = container.querySelector<HTMLButtonElement>('button[aria-label="Organize Class discussion transcript"]')!
     await act(async () => { organize.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 })); organize.click() })

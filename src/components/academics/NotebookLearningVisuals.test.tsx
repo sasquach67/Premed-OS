@@ -56,8 +56,9 @@ it('keeps cleared nullable inputs blank in the real saved-entry draft across sub
     entryId: pkg.entries[0].id, original: structuredClone(pkg), originalRaw: raw, current: pkg, notes: '', progress: {}, history: [], assetBindings: [],
   } } as unknown as LectureRecord
   await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode="DEMO 000" />))
-  const edit = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Edit entry')!
-  await act(async () => edit.click())
+  await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="More notebook actions"]')!.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true})))
+  const edit=[...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(item=>item.textContent?.trim()==='Edit notebook')!
+  await act(async()=>edit.click())
   const field = (label: string) => [...container.querySelectorAll<HTMLLabelElement>('label')].find(node => node.firstChild?.textContent?.trim() === label)?.querySelector<HTMLTextAreaElement>('textarea')
   const fill = async (label: string, value: string) => {
     const input = field(label); expect(input, label).toBeTruthy()

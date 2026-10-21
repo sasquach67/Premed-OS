@@ -41,47 +41,62 @@ beforeEach(async () => {
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.unstubAllGlobals() })
 function button(label: string) { const b = [...container.querySelectorAll('button')].find(b => b.textContent?.trim() === label); expect(b, label).toBeTruthy(); return b! }
-async function click(label: string) { await act(async () => button(label).click()) }
+async function click(label:string) {
+  if(label==='Edit notebook') {
+    await act(async()=>container.querySelector<HTMLButtonElement>('[aria-label="More notebook actions"]')!.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true})))
+    const item=[...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(item=>item.textContent?.trim()===label)!
+    expect(item).toBeTruthy();await act(async()=>item.click());return
+  }
+  if(label==='Flashcards') { const start=container.querySelector<HTMLButtonElement>('[aria-label="Start making flashcards"]'); expect(start,label).toBeTruthy(); await act(async()=>start!.click()); return }
+  await act(async()=>button(label==='Practice'?'Practice set':label).click())
+}
+// The notebook is reopened from the Lessons tab (Oct 2026: Class days replaced the Overview notebook list).
+async function openFromLessons() {
+  const tab = [...container.querySelectorAll<HTMLButtonElement>('[role=tab]')].find(b => b.textContent?.startsWith('Lessons'))!
+  await act(async () => { tab.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); tab.click() })
+  return container.querySelector<HTMLButtonElement>('.lessons-tile')!
+}
 function study() { expect(button('Study guide').getAttribute('aria-pressed')).toBe('true'); expect(container.querySelector('[aria-label="Update saved notebook"]')).toBeNull(); expect(container.textContent).not.toContain('Editing your copy') }
 
-it.each(['Update this notebook', 'Edit entry', 'Practice recall', 'Sources'])('opens Study guide after %s, actual Class Center, and same notebook re-entry', async action => {
+it.each(['Update', 'Edit notebook', 'Practice', 'Sources'])('opens Study guide after %s, actual Class Center, and same notebook re-entry', async action => {
   await click(action)
   const retained = JSON.stringify(notebook())
   await click('Back to Class Notebook'); await click('Class Center')
   expect(container.querySelector('[data-location]')!.textContent).toBe('/academics')
   await click('Open')
   expect(container.querySelector('[data-location]')!.textContent).toBe(`/academics/classes/${course.id}`)
-  const row = container.querySelector<HTMLButtonElement>('.imported-notebook-link')!
-  expect(row.textContent).toContain(pkg.entries[0].title)
-  await act(async () => row.click()); study(); expect(JSON.stringify(notebook())).toBe(retained)
+  await openFromLessons()
+  expect(container.querySelector('.lessons-card h3')?.textContent).toContain(pkg.entries[0].title)
+  await act(async () => container.querySelector<HTMLButtonElement>('.lessons-tile')!.click()); study(); expect(JSON.stringify(notebook())).toBe(retained)
   await click('Browser back'); await click('Browser forward'); study(); expect(JSON.stringify(notebook())).toBe(retained)
-  await click('Lecture alias'); study(); await click('Practice recall'); await click('Class route')
-  await act(async () => container.querySelector<HTMLButtonElement>('.imported-notebook-link')!.click()); study()
+  await click('Lecture alias'); study(); await click('Practice'); await click('Class route')
+  const tile = container.querySelector<HTMLButtonElement>('.lessons-tile') ?? await openFromLessons()
+  await act(async () => tile.click()); study()
   expect(JSON.stringify(notebook())).toBe(retained)
 })
 
 
 it('opens the complete prompt for this saved Journal without changing notebook content or practice', async () => {
   const retained = JSON.stringify(notebook())
-  await click('Create flashcards')
-  const panel = container.querySelector('[aria-label="Flashcard prompt"]')!
+  await click('Flashcards')
+  const panel = document.querySelector('[aria-label="Flashcard prompt"]')!
   expect(panel).toBeTruthy()
   expect(panel.textContent).toContain(pkg.entries[0].title)
   expect([...panel.querySelectorAll('select')].every(select => select.closest('[aria-label="Using your Guide"]'))).toBe(true)
-  expect(panel.textContent).toContain('Copy complete prompt')
+  expect(panel.textContent).toContain('Copy prompt')
   const prompt = panel.querySelector<HTMLTextAreaElement>('textarea')!.value
   expect(prompt).toContain('build_deck.py')
   expect(prompt).toContain('card-styles.css')
   expect(prompt).not.toContain('Protected note')
   expect(prompt).not.toContain('My saved answer')
-  expect(container.querySelector('[data-location]')!.textContent).toBe(`/academics/classes/${course.id}/resources/flashcards`)
-  await click('Back to Journal')
-  expect(container.querySelector('[aria-label="Flashcard prompt"]')).toBeNull()
+  expect(container.querySelector('[data-location]')!.textContent).toBe(`/academics/classes/${course.id}/journal/${id}`)
+  await act(async()=>document.querySelector<HTMLButtonElement>('[aria-label="Close flashcard prompt"]')!.click())
+  expect(document.querySelector('[aria-label="Flashcard prompt"]')).toBeNull()
   expect(JSON.stringify(notebook())).toBe(retained)
 })
 
 it('continues reading the last opened notebook from the class overview in Study guide mode', async () => {
-  await click('Practice recall')
+  await click('Practice')
   const retained = JSON.stringify(notebook())
   await click('Back to Class Notebook')
   expect(container.querySelector('.overview-reading')?.textContent).toContain(pkg.entries[0].title)

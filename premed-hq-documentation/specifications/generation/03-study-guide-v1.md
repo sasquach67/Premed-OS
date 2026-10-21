@@ -23,7 +23,7 @@ document by `src/lib/generation/artifacts/studyGuide.v1.ts`.
 | `SG-7` | Do not restate a concept across sections unless the repetition serves a distinct learning purpose. | tunable |
 | `SG-8` | Do not inflate output to appear comprehensive. | invariant |
 | `SG-9` | If material is incomplete, mark the gap explicitly; never invent. | invariant |
-| `SG-10` | Every major concept gets an explicit representation decision. Bullets are not the default and must be justified by structure — a process in bullets, a comparison in bullets, and a hierarchy in bullets are all defects. | tunable |
+| `SG-10` | Every major concept gets a content-matched representation. Lines are the default for facts; real sequences use numbered steps, dated events use timelines, comparisons use tables, and parallel factors use map groups. Short explanation blocks connect the pieces. | tunable |
 | `SG-11` | Visual grammar is consistent across the whole artifact. | invariant |
 | `SG-SHORT-TITLE` | The TITLE section must contain one concise, content-specific label of two to six words. Omit lecture numbers, file names, and words such as generated, transcript, script, or study guide; the app owns chronology and presentation labels. | invariant |
 | `SG-AT-A-GLANCE` | The Study Guide is the one canonical lecture-learning document. Begin with an AT A GLANCE section that performs the former Lecture Brief job: give a concise connected orientation, surface the strongest source-supported instructor emphasis, anchor essential vocabulary in context, and name the highest-risk distinction or misconception. This opening is a map into the full guide, not a second summary artifact. | invariant |
@@ -119,7 +119,7 @@ Final Synthesis integrates *after* it, and should connect concepts that were int
 | `SG-7` | Do not restate a concept across sections unless the repetition serves a distinct learning purpose | tunable |
 | `SG-8` | Do not inflate output to appear comprehensive | invariant |
 | `SG-9` | If material is incomplete, mark the gap explicitly; never invent | invariant |
-| `SG-10` | Every major concept gets a **representation decision** (`06` §2) — bullets are not the default | tunable |
+| `SG-10` | Every major concept uses its content-matched shape: lines for facts, steps for real sequences, timeline for dates, table for comparisons, map groups for parallel factors | tunable |
 | `SG-11` | Visual grammar is consistent across the whole artifact (`06` §8) | invariant |
 | `SG-SHORT-TITLE` | The TITLE section must contain one concise, content-specific label of two to six words. Omit lecture numbers, file names, and words such as generated, transcript, script, or study guide; the app owns chronology and presentation labels. | invariant |
 | `SG-AT-A-GLANCE` | The Study Guide is the one canonical lecture-learning document. Begin with an AT A GLANCE section that performs the former Lecture Brief job: give a concise connected orientation, surface the strongest source-supported instructor emphasis, anchor essential vocabulary in context, and name the highest-risk distinction or misconception. This opening is a map into the full guide, not a second summary artifact. | invariant |
@@ -154,9 +154,9 @@ the visual system and is specified in full in `06`. Summary of the obligation he
 Prose · bullets · numbered sequence · comparison table · flowchart · hierarchy/tree · labeled
 diagram · cycle · timeline · cause-effect chain · formula block · process map · concept map.
 
-**Bullets are not the default and must be justified by structure** — a genuinely unordered set of
-peer items. A process in bullets, a comparison in bullets, and a hierarchy in bullets are all
-defects.
+**Lines are the default for facts.** Real ordered processes use steps; parallel
+factors use map groups or peer bullets; comparisons use tables. Short connects,
+why and deeper explanation blocks say how the pieces fit.
 
 ---
 
@@ -230,4 +230,79 @@ External notebooks compose this guide's learning rules with the shared source co
 
 ### Explanation depth and language
 
-A guide teaches the explanation the learner needs, rather than merely listing tasks to perform. Start with the course term and its plain meaning, explain the supported steps or relationships, and connect an example to the feature that makes it illustrate the concept. For a comparison, name what varies: what consciousness contains versus what it does is more useful than a heading saying only “two schools.” A source-supported explanation may need several sentences; cut repeated wording, not the steps that make it understandable. A short task belongs in the Mastery Map; its substantive explanation belongs in the guide. Evidence evaluation is itself a main learning task when the topic calls for it. Otherwise, keep a concise uncertainty or likely error beside the relevant content without letting it replace the concept being taught.
+A guide teaches the explanation the learner needs, rather than merely listing tasks to perform. Use formal exam vocabulary with a clear definition, explain the supported steps or relationships, and connect an example to the feature that makes it illustrate the concept. For a comparison, name what varies: what consciousness contains versus what it does is more useful than a heading saying only “two schools.” A source-supported explanation may need several sentences; cut repeated wording, not the steps that make it understandable. A short task belongs in the Mastery Map; its substantive explanation belongs in the guide. Evidence evaluation is itself a main learning task when the topic calls for it. Otherwise, keep a concise uncertainty or likely error beside the relevant content without letting it replace the concept being taught.
+
+
+### Grouped-term Review guide — approved October 17, 2026
+
+For external Review notebooks, the grouped-term contract in EC-GROUPED-GUIDE
+supersedes the legacy fixed section skeleton and SG-GENERATED-APPLICATION's
+embedded question/answer panels. Practice belongs exclusively in Practice.
+Keep the coverage, source fidelity and explanatory depth of the rules above.
+
+The governing philosophy is shape before format: show how the pieces fit,
+choose the structure from the content, explain the connections simply, tie each
+section to its predecessor, and end on the knowledge the learner will need.
+EC-LINES-FIRST supplies the content-to-structure table and sole approved example.
+
+Use plain topic headings. One idea per line: terms are one-line bullets, real
+sequences are numbered steps with short reasons, dated events use timelines,
+comparisons use tables and parallel factors use map groups. Argument sections
+use a core claim/evidence/soWhat block right after their map. Prose appears only
+in the short connects, why and deeper explanation blocks, never more than
+3 sentences or about 60 words per block. Every teaching section requires a
+2–3 sentence core Why it works and 2–3 sentence extra Go deeper. A core How
+this connects block of 1–2 sentences opens each section after the first. These
+requirements supersede earlier conditional explanation wording. The question is
+under 20 words; the map has 3–5 labeled groups and brief inline members.
+Then teach terms and the content-matched structure in branch order, explain
+why it works, show one inspected main figure with a one-line caption and 2–4
+Look for lines, add the useful extras, and finish with one sentence to remember.
+One idea per sentence, about 25 words at most. Keep complete causal steps and
+scientific qualifiers. The entry summary (`entry.scope`) is one plain sentence
+naming the main idea, with no parenthetical topic list. Mark blocks core or
+extra; Condensed hides extras, including Go deeper, while Full shows everything.
+An argument-led guide opens with 4–6 linked argumentChain items, one line per
+logical step. A mechanism-led guide opens with its whole overview map.
+
+State each claim directly. Teach a distinction with two parallel statements,
+a short list or a table. Avoid a correct claim followed by an unprompted guard:
+“X, not Y”, “does not mean”, “should not be confused with”, “is different from”,
+“Keep … separate” or “Distinguish … from …”. A caution needs evidence of that
+exact mix-up in the student's notes, a supplied question or the instructor's
+explanation. State the correct fact in a `mix-up` callout, at most one per section.
+Cut hedge tails such as “without establishing…”, “which cannot be…” and
+“is not a claim that…”. Preserve cautious words such as “may contribute” when
+scientifically necessary. Never use “nothing can be concluded” or “X is not
+established” as teaching content; genuine missing evidence stays in the existing
+limit records. Teaching text has no reader-directed instructions or course meta.
+Note corrections state the correct fact once, without arguing against the error.
+Exact source excerpts, quotations and official objective wording stay unchanged.
+
+Find the governing argument first from instructor discussion questions, slide
+titles and framing statements in the transcript. Each section is one step of
+that argument. History, biography and dates serve as evidence inside that step;
+reference dates, officeholders and legal milestones go into existing timeline
+or table blocks for quick reference. Corrections of fact stay secondary under
+EC-RESOLVE unless they change the argument. The opening question and final
+“Tie it together” state the governing argument in the course's own terms.
+
+
+Keep the course's formal vocabulary: loss-of-function, gain-of-function,
+phosphorylates, hydrophobic, proliferation, constitutively active, homozygous
+and heterozygous where appropriate. Define unfamiliar terms without replacing
+them with casual stand-ins such as “gene breaks,” “stuck on” or “fat-loving.”
+Remove hedge tails unless the qualification is scientifically necessary; use
+few parentheses and omit meta wording such as “this entry” and “in this lesson.”
+Preserve exact source quotations and official objective wording in their records.
+
+A real mechanism uses numbered steps with the complete cause-and-effect chain.
+Give a short step reason where the action would otherwise be a bare fact.
+Parallel factors never receive sequence numbers. Use the sole approved example
+section in EC-LINES-FIRST as a format illustration, never as another course's
+source or scope.
+
+Use one notebook when the requested lessons build on one another. Open with a
+big-picture map connecting the lessons and close with “Tie it together,” which
+integrates their pathways and explains where the connections matter. This does
+not authorize adding unrelated lessons or silently expanding selected scope.

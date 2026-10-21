@@ -43,7 +43,7 @@ it.each(['unknown optional field', 'missing required field'] as const)('keeps %s
   await act(async () => root.render(<ExternalNotebookView lecture={stored} courseCode="DEMO" />))
   expect(container.querySelector('[role="alert"]')?.textContent).toContain('Nothing was changed')
   expect(container.textContent).toContain(fault === 'unknown optional field' ? 'Unrecognized field' : 'Required field is missing')
-  expect(container.textContent).not.toContain('Update this notebook'); expect(container.textContent).not.toContain('Edit entry')
+  expect([...container.querySelectorAll('button')].some(button=>button.textContent?.trim()==='Update')).toBe(false); expect(container.querySelector('[aria-label="More notebook actions"]')).toBeNull()
   const download = vi.fn()
   await act(async () => root.render(<NotebookReadGuard lecture={stored} downloadRecovery={download}><p>Must not mount</p></NotebookReadGuard>))
   await act(async () => container.querySelector<HTMLButtonElement>('button')!.click())
@@ -59,7 +59,7 @@ it('renders supported detail normally and rechecks a replacement record after a 
   await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode="DEMO" />))
   expect(container.querySelector('[aria-label="Notebook unavailable"]')).toBeNull()
   expect(container.textContent).toContain('The full fictional explanation.')
-  expect(container.textContent).toContain('Update this notebook')
+  expect([...container.querySelectorAll('button')].some(button=>button.textContent?.trim()==='Update')).toBe(true)
 })
 
 it('revalidates content and entry changes but skips independent notes and progress saves', async () => {

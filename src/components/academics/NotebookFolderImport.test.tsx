@@ -6,6 +6,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { NotebookImportPanel } from './NotebookImportPanel'
+import { ToastContext } from '@/components/common/toast-context'
 import { activateAccountWorkspace, activateGuestWorkspace, createInitialDataForMode, snapshotData, useStore } from '@/store/store'
 import { exportNotebook, saveNotebookEdits } from '@/lib/academics/notebook/import'
 import { notebookTransaction } from './ExternalNotebookView'
@@ -67,32 +68,32 @@ async function selectOption(label: string) {
 async function select(value: string) { await openSelect('[role="combobox"][aria-label="Notebook JSON"]'); await selectOption(value) }
 function rowsPackage() { const p = visualFixture(); p.assets.push({ ...p.assets[0], id: 'second-image', fileName: 'second.png' }); p.visualReview.candidates.push({ ...p.visualReview.candidates[0], id: 'candidate-second', assetId: 'second-image' }); const figure = p.entries[0].sections.flatMap(s => s.blocks).find(b => b.type === 'figure')!; p.entries[0].sections[0].blocks.push({ ...figure, id: 'second-figure', assetId: 'second-image' }); return p }
 it('defaults to the folder action, imports nested images without manual mapping, and preserves raw JSON through save, reload and duplicate import', async () => {
-  expect(button('Choose notebook folder')).toBeTruthy(); expect(container.querySelector<HTMLDetailsElement>('.en-import-inputs')!.open).toBe(false)
+  expect(button('Choose the folder your AI made')).toBeTruthy(); expect(container.querySelector<HTMLDetailsElement>('.en-import-inputs')!.open).toBe(false)
   const raw = ' \n' + JSON.stringify(pkg, null, 2) + '\n', files = [file('Title.json', raw), file('deep/images/' + pkg.assets[0].fileName, pngBytes()), file('Checks.json', '{}'), file('notes.txt', 'Not interpreted')]
   await folder(files)
   expect(container.textContent).toContain('1 of 1 images validated'); expect(container.querySelectorAll('.en-image-problem')).toHaveLength(0)
   expect(container.querySelectorAll('.en-image-review input[aria-label^="Map image"]')).toHaveLength(0)
   expect(container.querySelector<HTMLDetailsElement>('.en-image-review details:has(.en-matched-images)')!.open).toBe(false)
   expect(container.textContent).toContain('1 unsupported file will not be imported'); expect(container.textContent).toContain('1 supporting JSON file')
-  await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click()); expect(container.querySelector('.en-save-blocked')?.textContent).toBeUndefined(); await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
+  await act(async () => button('Keep in PSYC 101').click()); expect(container.querySelector('.en-save-blocked')?.textContent).toContain('Ready to save'); await act(async () => button('Save notebook').click()); await settled()
   expect(container.querySelector('.en-error')?.textContent).toBeUndefined(); expect(imported).toHaveBeenCalledTimes(1); expect(repo.bytes.size).toBe(1)
   await act(async () => useStore.persist.rehydrate())
   const saved = useStore.getState().academics.classCenter.lectures[0]
   expect(exportNotebook(saved, 'original')).toBe(raw); expect(saved.importedNotebook!.assetBindings).toHaveLength(1)
-  await folder(files); await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click()); expect(button('Open existing saved entry').disabled).toBe(false)
-  await act(async () => button('Open existing saved entry').click()); await settled(); expect(useStore.getState().academics.classCenter.lectures).toHaveLength(1)
+  await folder(files); await act(async () => button('Keep in PSYC 101').click()); expect(button('Open saved notebook').disabled).toBe(false)
+  await act(async () => button('Open saved notebook').click()); await settled(); expect(useStore.getState().academics.classCenter.lectures).toHaveLength(1)
 })
 it('shows only the missing image control and cannot partially save otherwise valid images', async () => {
   const p = rowsPackage(); await folder([file('Title.json', JSON.stringify(p)), file('images/' + p.assets[0].fileName, pngBytes())])
   expect(container.textContent).toContain('1 of 2 images validated · 1 need attention'); expect(container.querySelectorAll('.en-image-problem')).toHaveLength(1)
-  expect(container.querySelector('.en-image-problem')!.textContent).toContain('second.png'); expect(button('Save editable entry to PSYC 101').disabled).toBe(true)
+  expect(container.querySelector('.en-image-problem')!.textContent).toContain('second.png'); expect(button('Save notebook').disabled).toBe(true)
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0); expect(repo.bytes.size).toBe(0)
   await input('.en-image-problem input', [file('second.png', pngBytes(), false)])
   expect(container.textContent).toContain('2 of 2 images validated'); expect(container.querySelectorAll('.en-image-problem')).toHaveLength(0)
 })
 it('requires an explicit path choice for duplicate basenames', async () => {
   await folder([file('Title.json', JSON.stringify(pkg)), file('originals/' + pkg.assets[0].fileName, pngBytes()), file('rendered/' + pkg.assets[0].fileName, pngBytes())])
-  expect(container.textContent).toContain('Ambiguous filename'); expect(button('Save editable entry to PSYC 101').disabled).toBe(true)
+  expect(container.textContent).toContain('Ambiguous filename'); expect(button('Save notebook').disabled).toBe(true)
   await openSelect('.en-image-problem [role="combobox"]')
   expect([...document.querySelectorAll('[role="option"]')].map(option => option.textContent)).toEqual(['Choose the exact image', 'originals/' + pkg.assets[0].fileName, 'rendered/' + pkg.assets[0].fileName])
   await selectOption('originals/' + pkg.assets[0].fileName); await settled()
@@ -100,7 +101,7 @@ it('requires an explicit path choice for duplicate basenames', async () => {
 })
 it('requires notebook selection for multiple candidates and rejects material-only folders', async () => {
   await folder([file('b.json', JSON.stringify(pkg)), file('a.json', JSON.stringify(pkg)), file('Checks.json', '{}')])
-  expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeNull(); expect(container.textContent).toContain('2 JSON files found')
+  expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeNull(); expect(container.querySelector('[aria-label="Notebook JSON"]')).toBeTruthy()
   await select('b.json'); await settled(); expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeTruthy()
   await folder([file('lecture.pdf', 'raw'), file('Checks.json', '{}')]); expect(container.textContent).toContain('No notebook JSON found'); expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeNull()
 })
@@ -152,8 +153,8 @@ it.each([{ explicitCutover: false, staleEstimate: false }, { explicitCutover: tr
   await act(async () => activateAccountWorkspace(accountId, snapshotData()))
   const files = [file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())]
   await folder(files)
-  await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click())
-  await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
+  await act(async () => button('Keep in PSYC 101').click())
+  await act(async () => button('Save notebook').click()); await settled()
   const old = useStore.getState().academics.classCenter.lectures[0]
   const edited = structuredClone(old.importedNotebook!.current); edited.entries[0].title = 'Saved manual edit'
   await act(async () => notebookTransaction(state => {
@@ -174,7 +175,7 @@ it.each([{ explicitCutover: false, staleEstimate: false }, { explicitCutover: tr
   const raw = ' \n' + JSON.stringify(next, null, 2) + '\n'
   await folder([file('Title.json', raw), files[1]])
   expect(container.textContent).toContain('1 of 1 images validated')
-  await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click())
+  await act(async () => button('Keep in PSYC 101').click())
   const originalSet = Storage.prototype.setItem
   let fail: 'minimal' | 'fixed' = 'minimal', rejectedSize = 0, rejectedCompressed = false, rejectedValue = ''
   const budget = 5 * 1024 * 1024
@@ -197,7 +198,7 @@ it.each([{ explicitCutover: false, staleEstimate: false }, { explicitCutover: tr
     originalSet.call(this, name, value)
   })
   imported.mockClear()
-  await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
+  await act(async () => button('Save notebook').click()); await settled()
   expect(container.textContent).toContain('Browser storage could not save')
   expect(imported).not.toHaveBeenCalled()
   expect(useStore.getState().academics).toEqual(prior)
@@ -254,7 +255,7 @@ it.each([{ explicitCutover: false, staleEstimate: false }, { explicitCutover: tr
     expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toBe(raw)
     expect(localStorage.getItem(key)!.startsWith(workspaceCodec.WORKSPACE_CHUNKS_PREFIX)).toBe(true)
   }
-  await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
+  await act(async () => button('Save notebook').click()); await settled()
   expect(imported).toHaveBeenCalledTimes(1)
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(2)
   await act(async () => useStore.persist.rehydrate())
@@ -286,8 +287,8 @@ it('keeps a new account recovery usable and ignores an older operation releasing
     originalSet.call(this, key, value)
   })
   await folder([file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())])
-  await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click())
-  await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
+  await act(async () => button('Keep in PSYC 101').click())
+  await act(async () => button('Save notebook').click()); await settled()
   const pending = new Map<string, () => void>(), finished: string[] = []
   beforeRecoverySave = snapshot => new Promise(resolve => pending.set(snapshot.workspaceKey, resolve))
   const commit = workspaceOptimization.commitWorkspaceOptimization
@@ -322,12 +323,12 @@ it.each([false, true])('rejects an account switch after image staging, even with
   const data = structuredClone(snapshotData()), key = useStore.persist.getOptions().name!
   const before = localStorage.getItem(key)
   await folder([file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())])
-  await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click())
+  await act(async () => button('Keep in PSYC 101').click())
   repo.afterStage = () => {
     activateAccountWorkspace('folder-stage-b', data)
     if (switchBack) activateAccountWorkspace('folder-stage-a')
   }
-  await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
+  await act(async () => button('Save notebook').click()); await settled()
   expect(container.textContent).toContain('The active workspace changed')
   expect(button('Copy repair request and JSON')).toBeUndefined()
   expect(imported).not.toHaveBeenCalled()
@@ -341,11 +342,11 @@ it('keeps a committed source-account notebook but suppresses navigation if the a
   await act(async () => activateAccountWorkspace('folder-finish-a', snapshotData()))
   const empty = structuredClone(snapshotData()), key = useStore.persist.getOptions().name!
   await folder([file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())])
-  await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click())
+  await act(async () => button('Keep in PSYC 101').click())
   let finish!: () => void
   const originalFinish = repo.finish.bind(repo)
   vi.spyOn(repo, 'finish').mockImplementationOnce(async id => { await new Promise<void>(resolve => { finish = resolve }); await originalFinish(id) })
-  await act(async () => button('Save editable entry to PSYC 101').click())
+  await act(async () => button('Save notebook').click())
   await vi.waitFor(() => expect(finish).toBeTypeOf('function'))
   const committed = JSON.parse(decodeWorkspaceStorage(localStorage.getItem(key)!)).state.academics.classCenter.lectures
   expect(committed).toHaveLength(1)
@@ -355,4 +356,34 @@ it('keeps a committed source-account notebook but suppresses navigation if the a
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
   expect(JSON.parse(decodeWorkspaceStorage(localStorage.getItem(key)!)).state.academics.classCenter.lectures).toEqual(committed)
   expect(await repo.journals()).toHaveLength(0)
+})
+
+it('keeps successful validation silent, shows only unresolved choices, and notifies a signed-out save once', async () => {
+  await act(async () => { activateGuestWorkspace(); const data = createInitialDataForMode(false); data.courses = [course]; useStore.getState().replaceAll(data) })
+  sessionStorage.removeItem('premed-os:notebook-device-save-notice:v1')
+  const toast = vi.fn(() => 'device-notice')
+  await act(async () => root.render(<ToastContext.Provider value={{ toast }}><NotebookImportPanel courseId={course.id} onImported={imported} /></ToastContext.Provider>))
+  const files = [file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())]
+  await folder(files)
+  expect(container.querySelector('.nr-checks')?.textContent).not.toContain('Files check out')
+  expect(container.querySelector('.nr-checks')?.textContent).not.toContain('marked read')
+  expect(container.querySelector('.en-import > p[role="status"]')?.textContent ?? '').toBe('')
+  await act(async () => button('Keep in PSYC 101').click())
+  expect(container.querySelector('.nr-checks')?.textContent ?? '').not.toContain('Save in')
+  await act(async () => button('Save notebook').click()); await settled()
+  expect(imported).toHaveBeenCalledTimes(1)
+  expect(toast).toHaveBeenCalledExactlyOnceWith({ title: 'Saved on this device. Sign in to keep it on your other devices.', tone: 'info' })
+  await folder(files); await act(async () => button('Keep in PSYC 101').click())
+  await act(async () => button('Open saved notebook').click()); await settled()
+  expect(toast).toHaveBeenCalledTimes(1)
+  sessionStorage.removeItem('premed-os:notebook-device-save-notice:v1')
+})
+it('does not show the device-only notice after an account save', async () => {
+  await act(async () => activateAccountWorkspace('release-device-notice', snapshotData()))
+  const toast = vi.fn(() => 'device-notice')
+  await act(async () => root.render(<ToastContext.Provider value={{ toast }}><NotebookImportPanel courseId={course.id} onImported={imported} /></ToastContext.Provider>))
+  await folder([file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())])
+  await act(async () => button('Keep in PSYC 101').click())
+  await act(async () => button('Save notebook').click()); await settled()
+  expect(imported).toHaveBeenCalledTimes(1); expect(toast).not.toHaveBeenCalled()
 })
