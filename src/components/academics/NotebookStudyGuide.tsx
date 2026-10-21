@@ -9,7 +9,7 @@ type Term = { term: string; definition: string }
 const Terms = createContext<Term[]>([])
 const BlockTargets = createContext('')
 const LinesFirst = createContext(false)
-export function isLinesFirstGuide(entry: NotebookEntry) { return Boolean(entry.argumentChain?.length || entry.sections.some(section => section.blocks.some(block => block.detail !== undefined || block.type === 'claim' || (block.type === 'paragraph' && block.role)))) }
+export function isLinesFirstGuide(entry: NotebookEntry) { return Boolean(entry.argumentChain?.length || entry.sections.some(section => section.blocks.some(block => block.detail !== undefined || block.type === 'claim' || block.type === 'walkthrough' || (block.type === 'paragraph' && block.role)))) }
 export function useLinesFirstGuide() { return useContext(LinesFirst) }
 export function guideTerms(entry: NotebookEntry): Term[] {
   const terms = new Map<string, Term>()
@@ -39,11 +39,11 @@ export function NotebookInlineText({ text }: { text: string }) {
 }
 const callouts = {
   question: { label: 'The question', icon: null },
-  'lecture-example': { label: 'Lecture example', icon: Presentation },
+  'lecture-example': { label: 'From lecture', icon: Presentation },
   analogy: { label: 'Analogy / memory hook', icon: Lightbulb },
   'mix-up': { label: 'Easy to mix up', icon: TriangleAlert },
   'builds-on': { label: 'Builds on', icon: Link },
-  'one-thing': { label: 'If you remember one thing', icon: Star },
+  'one-thing': { label: 'Key idea', icon: Star },
 }
 export function NotebookCallout({ block }: { block: Extract<NotebookBlock, { type: 'callout' }> }) {
   const { label, icon: Icon } = callouts[block.tone]

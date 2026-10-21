@@ -206,7 +206,8 @@
               "enum": [
                 "connects",
                 "why",
-                "deeper"
+                "deeper",
+                "lede"
               ]
             }
           },
@@ -730,6 +731,86 @@
               "type": "integer",
               "minimum": 0,
               "maximum": 5
+            },
+            "parts": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200000
+              },
+              "minItems": 1,
+              "maxItems": 12
+            },
+            "matching": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "left": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200000
+                  },
+                  "minItems": 2,
+                  "maxItems": 12
+                },
+                "right": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200000
+                  },
+                  "minItems": 2,
+                  "maxItems": 12
+                }
+              },
+              "required": [
+                "left",
+                "right"
+              ]
+            },
+            "table": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "columns": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "minItems": 2,
+                  "maxItems": 8
+                },
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200000
+                    },
+                    "minItems": 1,
+                    "maxItems": 8
+                  },
+                  "minItems": 1,
+                  "maxItems": 24
+                }
+              },
+              "required": [
+                "columns",
+                "rows"
+              ]
+            },
+            "src": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
             }
           },
           "required": [
@@ -2989,6 +3070,192 @@
             "evidence",
             "soWhat"
           ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200000
+            },
+            "provenance": {
+              "enum": [
+                "source",
+                "clarification",
+                "background",
+                "generated-practice",
+                "student-work"
+              ]
+            },
+            "sourceIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200000
+              },
+              "minItems": 0,
+              "maxItems": 5000
+            },
+            "excerptIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200000
+              },
+              "minItems": 0,
+              "maxItems": 5000
+            },
+            "type": {
+              "const": "walkthrough"
+            },
+            "assetIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "minItems": 0,
+              "maxItems": 64
+            },
+            "definedTerms": {
+              "type": "array",
+              "maxItems": 256,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "term": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "definition": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200000
+                  }
+                },
+                "required": [
+                  "term",
+                  "definition"
+                ]
+              }
+            },
+            "stressed": {
+              "type": "boolean"
+            },
+            "detail": {
+              "enum": [
+                "core",
+                "extra"
+              ]
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "point": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200000
+                  },
+                  "paragraphs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200000
+                    },
+                    "minItems": 1,
+                    "maxItems": 2
+                  },
+                  "cards": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 240
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200000
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "text"
+                      ]
+                    },
+                    "minItems": 2,
+                    "maxItems": 8
+                  },
+                  "figureBlockId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "attachedBlockIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "uniqueItems": true
+                  },
+                  "note": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "label": {
+                        "enum": [
+                          "Your notes",
+                          "Easy to mix up"
+                        ]
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200000
+                      }
+                    },
+                    "required": [
+                      "label",
+                      "text"
+                    ]
+                  }
+                },
+                "required": [
+                  "point",
+                  "paragraphs"
+                ]
+              },
+              "minItems": 1,
+              "maxItems": 8
+            }
+          },
+          "required": [
+            "id",
+            "provenance",
+            "sourceIds",
+            "excerptIds",
+            "type",
+            "items"
+          ]
         }
       ]
     },
@@ -3320,6 +3587,36 @@
               }
             },
             "noQuestionsReason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200000
+            },
+            "forecast": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200000
+                  }
+                },
+                "required": [
+                  "format",
+                  "text"
+                ]
+              },
+              "minItems": 1,
+              "maxItems": 6
+            },
+            "basis": {
               "type": "string",
               "minLength": 1,
               "maxLength": 200000

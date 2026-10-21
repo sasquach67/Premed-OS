@@ -44,7 +44,7 @@ const mutations: [string, (p: VisualNotebookPackage) => void][] = [
   ['practice as stimulus', p => { const b = practice(p); Object.assign(b, { stimulusBlockIds: [b.id] }) }],
   ['whole section as stimulus', p => { Object.assign(practice(p), { stimulusBlockIds: [p.entries[0].sections[0].id] }) }],
   ['unclosed diagram endpoint', p => { diagram(p).edges[0].to = 'absent' }],
-  ['diagram without node evidence', p => { Object.assign(diagram(p).nodes[0], { sourceIds: [], excerptIds: [], assetIds: [] }) }],
+  ['diagram without node evidence', p => { const d = diagram(p); Object.assign(d.nodes.find(node => d.edges.some(edge => edge.to === node.id))!, { sourceIds: [], excerptIds: [], assetIds: [] }) }],
   ['diagram evidence outside envelope', p => { diagram(p).assetIds = []; diagram(p).nodes[0].assetIds = [p.assets[0].id] }],
   ['too many diagram nodes', p => { diagram(p).nodes = Array.from({ length: 41 }, (_, i) => ({ ...diagram(p).nodes[0], id: `n${i}` })) }],
   ['duplicate visual evidence', p => { figure(p).assetIds = [p.assets[0].id, p.assets[0].id] }],
@@ -52,6 +52,11 @@ const mutations: [string, (p: VisualNotebookPackage) => void][] = [
 it.each(mutations)('rejects %s without modifying the package', (_, mutate) => {
   const p = visualFixture(); mutate(p); const raw = JSON.stringify(p)
   expect(() => parsePortableNotebook(raw)).toThrow(); expect(JSON.stringify(p)).toBe(raw)
+})
+it('lets a map root without its own evidence inherit the block evidence (beta-33)', () => {
+  const p = visualFixture(); const d = diagram(p)
+  Object.assign(d.nodes.find(node => !d.edges.some(edge => edge.to === node.id))!, { sourceIds: [], excerptIds: [], assetIds: [] })
+  expect(() => parsePortableNotebook(JSON.stringify(p))).not.toThrow()
 })
 it('rejects duplicate JSON fields before last-key-wins parsing', () => {
   const raw = JSON.stringify(visualFixture()).replace('"version":3', '"version":2,"version":3')
