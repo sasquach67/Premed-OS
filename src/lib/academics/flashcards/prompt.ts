@@ -10,7 +10,7 @@ const textPresent = (value: string | undefined) => Boolean(value?.trim())
 function isGuideContent(block: NotebookBlock): boolean {
   if (block.provenance === 'student-work' || block.type === 'gap' || block.type === 'practice') return false
   if ('text' in block) return textPresent(block.text)
-  if ('items' in block) return block.items.some(item => textPresent(typeof item === 'string' ? item : item.text))
+  if ('items' in block) return block.items.some(item => textPresent(typeof item === 'string' ? item : 'point' in item ? item.point : item.text))
   if ('rows' in block) return block.rows.some(row => row.some(textPresent))
   return true // Remaining block variants are supported instructional visuals.
 }

@@ -58,6 +58,13 @@ Show the actual course questions before observable application skills and factua
 answers in formal exam vocabulary. This is a preparation map, not a claim that
 the learner has mastered the material or that a question will appear on an exam.
 
+For external Review, EC-MASTERY-TASKS supersedes the display part of
+`UMO-HOW-TESTED`: How it's tested shows an exam forecast (a setup line in the
+instructor's voice, 3–4 question-shape rows and a basis line), a soft launch into
+the practice set. The actual class questions stay quoted in `questions` as
+evidence for skill references and appear in Practice in structured form. Forecast
+rows are likely question shapes, never full items or copies of class questions.
+
 External Review uses the shared rules above with the field mapping below. Old
 records retain their stored fields; new authoring does not impose recall cues,
 cautions, original question quotas or numeric detail floors.
@@ -66,9 +73,10 @@ cautions, original question quotas or numeric detail floors.
 
 For each new external v4 Review objective, use:
 
-- `howTested: {setup, questions, noQuestionsReason?}`. Each question has
-  `{id, text, sourceIds, excerptIds, assetIds?}`. Question IDs are unique within
-  the objective. `questions: []` requires a concrete `noQuestionsReason`; omit
+- `howTested: {setup, forecast, basis, questions, noQuestionsReason?}`.
+  `forecast` holds 3–4 `{format, text}` rows and `basis` one line (EC-MASTERY-TASKS).
+  Each question has `{id, text, sourceIds, excerptIds, assetIds?}`. Question IDs are
+  unique within the objective. `questions: []` requires a concrete `noQuestionsReason`; omit
   that field when questions are present. Quotes and excerpts must match.
 - `applicationSkills: [{text, questionIds}]`. References use question IDs from
   this same objective. A skill needs at least one reference when actual questions

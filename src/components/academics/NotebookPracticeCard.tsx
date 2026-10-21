@@ -1,7 +1,22 @@
 import { useState, type ReactNode } from 'react'
 import { NotebookInlineText } from './NotebookStudyGuide'
+import type { NotebookBlock } from '@/lib/academics/notebook/types'
+import './notebookTeachFirst.css'
 
-export function NotebookPracticeCard({ number, origin, prompt, stimulus, hasStimulus, answer, rationale, original, sources, earlierWork, missing, solutionTestId, options, correctIndex }: { options?: string[]; correctIndex?: number;
+type Practice = Extract<NotebookBlock, { type: 'practice' }>
+/** Structured class questions (brief §2.9): sub-questions, matching columns and a blank comparison table. */
+export function NotebookPracticeStructure({ block }: { block: Practice }) {
+  if (!block.parts?.length && !block.matching && !block.table && !block.src) return null
+  const letter = (index: number) => String.fromCharCode(65 + index)
+  return <div className="sg np-structure">
+    {block.src && <span className="mq-src">{block.src}</span>}
+    {block.parts?.length ? <div className="mq-opts mq-parts">{block.parts.map((part, index) => <p key={index}><span className="mq-l">{String.fromCharCode(97 + index)}</span><NotebookInlineText text={part} /></p>)}</div> : null}
+    {block.matching && <div className="mq-match"><div>{block.matching.left.map((item, index) => <p key={index}><span className="mq-l">{index + 1}</span><NotebookInlineText text={item} /></p>)}</div><div>{block.matching.right.map((item, index) => <p key={index}><span className="mq-l">{letter(index)}</span><NotebookInlineText text={item} /></p>)}</div></div>}
+    {block.table && <div className="mq-tbl"><table><thead><tr>{block.table.columns.map((column, index) => <th key={index}>{column}</th>)}</tr></thead><tbody>{block.table.rows.map((row, ri) => <tr key={ri}>{block.table!.columns.map((_, ci) => <td key={ci}>{row[ci] ?? ''}</td>)}</tr>)}</tbody></table></div>}
+  </div>
+}
+
+export function NotebookPracticeCard({ number, origin, prompt, stimulus, hasStimulus, answer, rationale, original, sources, earlierWork, missing, solutionTestId, options, correctIndex, structure }: { options?: string[]; correctIndex?: number; structure?: ReactNode;
   number: number; origin: string; prompt: ReactNode; stimulus: ReactNode; hasStimulus: boolean;
   answer: ReactNode; rationale: ReactNode; original: string; sources: ReactNode; earlierWork?: ReactNode; missing: string[]; solutionTestId?: string;
 }) {
@@ -11,7 +26,7 @@ export function NotebookPracticeCard({ number, origin, prompt, stimulus, hasStim
       <p className="np-origin">{origin}</p>
       <div className="np-question-layout">
         {hasStimulus && <div className="np-stimulus">{stimulus}</div>}
-        <div className="np-question">{prompt}</div>
+        <div className="np-question">{prompt}{structure}</div>
       </div>
       {missing.length ? <p role="status" className="en-notice">Required images are loading or unavailable: {missing.join(', ')}. Reveal stays closed until they are available. Your saved practice records have not changed.</p> : options && correctIndex !== undefined ? <NotebookChoiceQuestion key={JSON.stringify([original, options, correctIndex])} options={options} correctIndex={correctIndex} rationale={rationale} sources={sources} earlierWork={earlierWork} /> : <details data-testid={solutionTestId} className="en-answer nbr-reveal np-reveal">
         <summary><span className="np-closed-label">Reveal answer</span><span className="np-open-label">Hide answer</span></summary>

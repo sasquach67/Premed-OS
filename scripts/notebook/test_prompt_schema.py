@@ -11,16 +11,16 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS = Path('premed-hq-documentation/specifications/generation/portable-notebooks')
 APP = Path('src/lib/academics/notebook')
-# Approved October 20 shape-first explanations and additive v4 block-detail scope. Frozen full-template hashes
+# Approved October 20 beta-33 teach-first walkthrough, exam profile and forecast scope. Frozen full-template hashes
 # detect unreviewed rule/schema changes; generated assets separately require parity.
-APPROVED_PROMPT_HASHES = {'review': '9f1cd930c6050ba575f377a3ab9c71b7bae1d6c70f58bf291237f57eb744d83d', 'assessment': 'e1409ac4d0d4eeba2e66dba44eae17e361360f9fd63c51bf3c7012409b154d20', 'assignment': '67194203edf312b235e9b29c2b90e089d15a4d9c32d2f7ec2e67eaef1429a8f1'}
+APPROVED_PROMPT_HASHES = {'review': 'b038130a487437ec701179ef95e3330810d8334fe4c17630b1df5f84a4948f1e', 'assessment': '94455494b9187e2d3063ec3e3f986b0fd071972f4c91dd90f6fb01d79aced477', 'assignment': 'f471ef9cb221ba77f1f13fbbdc1ce96365c14fd4051f25f5f380e5aae1f2f13d'}
 PIN = 'notebook-prompt-v4.schema.json'
-PIN_HASH = 'f056d5fc78de15146e7913f9881f3efe28d205f210058eb47b9d6fce957c4c9d'
-READER_HASH = 'f056d5fc78de15146e7913f9881f3efe28d205f210058eb47b9d6fce957c4c9d'
+PIN_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'
+READER_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'
 PREFIX = 'The prefix belongs only on mastery-objective labels. Section titles and every other heading are plain, concrete titles with no numbers, objective numbers, Review or Practice prefixes or other labels.'
 GAP = 'A gap or source-limit section gets a plain student-facing title such as "Figures not supplied" or "Not covered yet", never "unfinished tasks"; administrative narration stays in the companion message.'
-DETAIL = '- `EC-READING-DETAIL`: For guide teaching in new and update notebooks, mark each block detail="core" or detail="extra". The optional field is accepted on every v4 block type; absent means core. Full detail is the default and shows all blocks. Condensed hides extra blocks and legacy more text. Keep the question, map, terms, content-matched structure, claim blocks, How this connects, Why it works, main figure/Look for and one-thing line core; put Go deeper, Lecture example, permitted comparison extras and note corrections in extra blocks. Core must make sense by itself; Full detail must retain the complete relevant explanation without duplication. Do not remove substantive teaching to meet a word count or percentage. New authoring does not require more; paragraphs and bullets may omit it, and an illustration retains more:null where required by the schema. Preserve every stored more value on updates; the reader still reads legacy more in Full. Do not put practice answers or worked solutions in explanation blocks or more; retain reveal behavior and the requested assignment help stage. The app supplies the guide-wide switch; do not write duplicate Full detail/Condensed sections or interface instructions into the notebook. Both layers remove fluff and repetition; source narration belongs in neither layer.'
-DETAIL_CHECK = '- `EC-DETAIL-CHECK`: Before delivery, read the guide once with extra blocks and legacy more hidden and once with everything visible. Condensed must make sense by itself; Full detail must retain complete relevant explanation without duplicated sentences, source narration or unsupported additions. Check every teaching section for the required 2–3 sentence core Why it works and extra Go deeper, a 1–2 sentence core connection after the first section, justified step reasons, and 2–4 Look for lines for its actual main figure. No prose block exceeds 3 sentences or about 60 words. Check an argument guide\'s linked 4–6 item argumentChain and claim/evidence/soWhat in each argument section. Apply EC-PERTINENT-ONLY to both layers, including phrases such as "the lecture reports" and "the outline says". Keep genuine evidence limits in the existing limitations/gap records, and keep scientific uncertainty when it changes the claim. Check the declared schema and every detail/role field without deleting stored more; successful JSON validation alone does not establish teaching completeness.'
+DETAIL = '- `EC-READING-DETAIL`: For guide teaching in new and update notebooks, mark each block detail="core" or detail="extra". The optional field is accepted on every v4 block type; absent means core. Full detail is the default and shows all blocks. Condensed hides extra blocks and legacy more text. Keep the question, lede, walkthrough, map, terms, content-matched structure, claim blocks, main figure/Look for and key idea core; Condensed shows only the point sentence of each walkthrough item. Put Lecture example, permitted comparison extras and note corrections in extra blocks. Core must make sense by itself; Full detail must retain the complete relevant explanation without duplication. Do not remove substantive teaching to meet a word count or percentage. New authoring does not require more; paragraphs and bullets may omit it, and an illustration retains more:null where required by the schema. Preserve every stored more value on updates; the reader still reads legacy more in Full. Do not put practice answers or worked solutions in explanation blocks or more; retain reveal behavior and the requested assignment help stage. The app supplies the guide-wide switch; do not write duplicate Full detail/Condensed sections or interface instructions into the notebook. Both layers remove fluff and repetition; source narration belongs in neither layer.'
+DETAIL_CHECK = '- `EC-DETAIL-CHECK`: Before delivery, read the guide once with extra blocks and legacy more hidden and once with everything visible. Condensed must make sense by itself; Full detail must retain complete relevant explanation without duplicated sentences, source narration or unsupported additions. Check every teaching section for its question, 1–2 sentence lede, 3–6 point walkthrough with 1–2 short paragraphs per point, key idea, justified step reasons, and 2–4 Look for lines for its actual main figure. No prose block exceeds 3 sentences or about 60 words. Check an argument guide\'s linked 4–6 item argumentChain and claim/evidence/soWhat in each argument section. Apply EC-PERTINENT-ONLY to both layers, including phrases such as "the lecture reports" and "the outline says". Keep genuine evidence limits in the existing limitations/gap records, and keep scientific uncertainty when it changes the claim. Check the declared schema and every detail/role field without deleting stored more; successful JSON validation alone does not establish teaching completeness.'
 OLD_VISUAL = 'Use a visual in the main guide only when it clarifies a difficult relationship or materially replaces text; otherwise use the clearer shorter explanation. Place necessary neutral source-question stimuli in Practice. A figure used there need not receive a second walkthrough in the guide.'
 GUIDE_VISUAL = 'Show source visuals where they are taught. When a guide section teaches something that a supplied slide, figure, graph, diagram or image depicts, place that figure in that section beside its explanation, using the supplied pixels and a faithful caption; use the answer-neutral version when the original would reveal a practice answer. Practice may reuse the same asset: a figure used in Practice still appears in the guide section that teaches it. Decorative, title, administrative and duplicate slides stay out.'
 VISUAL_GAPS = "- `EC-VISUAL-GAPS`: For every guide section, check whether the idea is visual: a structure, process, pathway, comparison, map, data reading or before-and-after. If it is and no supplied image depicts it, build a native visual from supported facts with the existing block types (study-diagram, sequence-strip, timeline, venn, continuum, table, illustration, worked-example). If the materials refer to a figure that was not supplied or could not be extracted, name it in the plain-titled gap section with exactly what to supply, and still teach the idea with a native visual where the facts support one. Never generate a synthetic image file for a missing visual; extracting or faithfully cropping supplied source pixels under EC-FIGURES stays allowed. Never present a native visual as the instructor's figure, and never reconstruct an unavailable question stimulus."
@@ -88,7 +88,7 @@ class PromptSchemaTests(unittest.TestCase):
         self.assertEqual(prompt.count(VISUAL_REVIEW), 1)
         self.assertEqual(prompt.count(COMPANION_VISUAL), 1)
         self.assertNotIn(OLD_VISUAL, prompt)
-        self.assertIn('notebook-instructions-beta-32', prompt)
+        self.assertIn('notebook-instructions-beta-33', prompt)
         self.assertIn('- `EC-GROUPED-GUIDE`:', prompt)
         if goal == 'review':
             self.assertIn('Practice belongs exclusively in Practice.', prompt)
@@ -96,9 +96,10 @@ class PromptSchemaTests(unittest.TestCase):
         self.assertIn('learningObjectiveIds', prompt)
         self.assertIn('EC-LINES-FIRST', prompt)
         self.assertIn('Shape follows content', prompt)
-        self.assertIn('Why it works), 2–3 sentences in EVERY teaching section', prompt)
-        self.assertIn('Go deeper) in 2–3 sentences in EVERY teaching section', prompt)
-        self.assertIn('no prose block exceeds 3 sentences or about 60 words', prompt)
+        self.assertIn('- `EC-WALKTHROUGH`:', prompt)
+        self.assertIn('- `EC-IMPORT-CHECK`:', prompt)
+        self.assertNotIn('Why it works), 2–3 sentences in EVERY teaching section', prompt)
+        self.assertIn('no prose block or walkthrough paragraph exceeds 3 sentences or about 60 words', prompt)
         self.assertIn('premedOS/Lesson N - Title', prompt)
         self.assertNotIn('This is a draft instruction workflow', prompt)
         self.assertNotIn('Transport instructionsVersion:', prompt)
@@ -106,7 +107,8 @@ class PromptSchemaTests(unittest.TestCase):
         self.assertIn('in the actual class folder', prompt)
         self.assertIn('only if that class folder cannot be reached', prompt)
         self.assertIn('say exactly where it was saved', prompt)
-        self.assertIn('quotes the actual relevant', prompt)
+        self.assertIn('How it may be tested is a forecast of what the coming exam could ask', prompt)
+        self.assertIn('Keep the actual class questions as evidence in howTested.questions', prompt)
         self.assertIn('applicationSkills:[{text,questionIds}]', prompt)
         self.assertNotIn('Try recalling first', prompt)
         self.assertNotIn('Watch for', prompt)
@@ -115,7 +117,7 @@ class PromptSchemaTests(unittest.TestCase):
             self.assertNotIn('one or two original, self-contained exam-style', prompt)
             self.assertNotIn('at least one cue per objective', prompt)
         self.assertEqual(sha(prompt.encode()), APPROVED_PROMPT_HASHES[goal],
-                         'Template differs from the approved direct-language and empty-legacy-fields beta32 scope')
+                         'Template differs from the approved beta33 teach-first scope')
 
     def test_default_pin_and_bounded_prose_schema_scope(self):
         self.assertEqual(sha((self.out/PIN).read_bytes()), PIN_HASH)
