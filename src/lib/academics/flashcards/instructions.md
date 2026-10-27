@@ -218,7 +218,11 @@ Accepted style examples, not content to insert into unrelated decks:
 
 No meta wording anywhere on a card. State the idea itself, never how or where the course framed it. Banned: “in this model”, “in this network”, “in the illustrated pathway”, “in the simplified comparison”, “in the animal-cell model”, “the lecture's example”, “as shown on the slide”. The course's version is what the student learns, so state it as fact. If a claim truly holds only for one organism or condition, name that condition as content (“in animal cells”), never the source.
 - Before: “In this model, ERK signaling promotes {{c1::cell proliferation and Bcl-2-mediated survival}}.” After: “ERK signaling promotes {{c1::cell proliferation and Bcl-2-mediated survival}}.”
-- Before: “In the simplified sensory-memory comparison, capacity is relatively stable from about {{c1::age 5}}.” After: “Sensory-memory capacity stays about the same from {{c1::age 5}} onward.”
+- Before: “In the simplified sensory-memory comparison, capacity is relatively stable from about {{c1::age 5}}.” After: no card of its own; the sensory-memory card's Extra reads “Its capacity stays about the same from age 5.”
+
+A small detail about a term, such as an age, number or condition, goes on that term's card, not on a card of its own.
+
+Never call an idea by a placeholder such as “the alternative view”, “the other theory” or “the second approach”. Name it, or ask about the contrast itself: “The alternative view of long-term storage allows {{c1::some memories to vanish permanently}}.” → “Does everything in long-term memory stay there forever?” → “Debated: one view says yes and forgetting is a retrieval failure; the other says some memories vanish for good.”
 - Before: “Ligand binding in the illustrated RTK pathway promotes {{c1::receptor dimerization…}}.” After: “Growth-factor binding makes RTKs {{c1::dimerize and phosphorylate each other's tyrosines}}.”
 
 Question fronts follow the reference decks too: short, direct and concrete. A scenario uses the lecture's situation in natural event order, followed by one plain question. No meta framing such as “An explanation says…” or “Which perspective explains fear as helping…”, which describes the answer inside the question.
@@ -1770,7 +1774,7 @@ def parallel_meaning_terms(card, targets, term_ids):
             names.add(name)
     return names
 
-META_WORDING = re.compile(r"\b(?:in (?:the|this) (?:simplified|illustrated|depicted)\b|in this (?:model|network|pathway|lecture|lesson|figure|diagram|example)\b|in the [\w\- ]{1,30}? (?:model|comparison|framework)\b|the (?:lecture|instructor|reading|slide)'s\b|according to the (?:lecture|reading|slides?|instructor|model)\b|as (?:shown|described|presented) (?:in|on) the\b)", re.IGNORECASE)
+META_WORDING = re.compile(r"\b(?:in (?:the|this) (?:simplified|illustrated|depicted)\b|in this (?:model|network|pathway|lecture|lesson|figure|diagram|example)\b|in the [\w\- ]{1,30}? (?:model|comparison|framework)\b|the (?:lecture|instructor|reading|slide)'s\b|according to the (?:lecture|reading|slides?|instructor|model)\b|as (?:shown|described|presented) (?:in|on) the\b|the (?:alternative|other|second|first|opposing|competing) (?:view|theory|approach|idea|perspective|account|model)\b)", re.IGNORECASE)
 
 def card_language_warnings(card):
     warnings = []

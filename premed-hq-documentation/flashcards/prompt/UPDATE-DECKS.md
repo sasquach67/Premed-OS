@@ -107,3 +107,4 @@ Definition cards stay one per term. Predict is a new Basic Q&A retrieval demand:
 ## 2026-10-27 — no meta wording (2026-10-27a)
 
 Cards state the idea itself, never how the course framed it ("in this model", "in the illustrated pathway", "in the simplified comparison"). The builder warns on meta wording in any card field. Fields, permanent IDs and update behavior are unchanged.
+A small detail about a term (an age, number or condition) goes on that term's card, not on a card of its own.

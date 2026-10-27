@@ -176,6 +176,8 @@ class PromptChecks(unittest.TestCase):
             with self.subTest(text=text):
                 data=self.concept_fixture(); data['cards'][0][field]=text
                 self.assertTrue(any('meta wording' in w for w in validate(data)))
+        data=self.concept_fixture(); data['cards'][0]['front']='What does the alternative view of long-term storage allow?'
+        self.assertTrue(any('meta wording' in w for w in validate(data)))
         data=self.concept_fixture(); data['cards'][0]['front']='In animal cells, what organizes the spindle poles?'
         self.assertFalse(any('meta wording' in w for w in validate(data)))
         data=self.concept_fixture(); data['cards'][0]['front']='A poet uses words with sensitivity to meaning. Which Gardner intelligence is illustrated?'
