@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-21a — rebuild cards for whole recall structures and quick predict cards; free-recall retired.
+Prompt revision: 2026-10-27a — no meta wording; a qualifying detail never gets its own card.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -216,6 +216,13 @@ Accepted style examples, not content to insert into unrelated decks:
 - Cloze: The {{c1::James–Lange theory::theory of emotion}} states that {{c2::an event makes the body react, and noticing that reaction produces the emotion}}.
 - Extra: J and L have a letter between them: one step after the other.
 
+No meta wording anywhere on a card. State the idea itself, never how or where the course framed it. Banned: “in this model”, “in this network”, “in the illustrated pathway”, “in the simplified comparison”, “in the animal-cell model”, “the lecture's example”, “as shown on the slide”. The course's version is what the student learns, so state it as fact. If a claim truly holds only for one organism or condition, name that condition as content (“in animal cells”), never the source.
+- Before: “In this model, ERK signaling promotes {{c1::cell proliferation and Bcl-2-mediated survival}}.” After: “ERK signaling promotes {{c1::cell proliferation and Bcl-2-mediated survival}}.”
+- Before: “Ligand binding in the illustrated RTK pathway promotes {{c1::receptor dimerization…}}.” After: “Growth-factor binding makes RTKs {{c1::dimerize and phosphorylate each other's tyrosines}}.”
+
+A qualifying detail never gets its own card. A number, age, duration or condition earns a card only when the value itself is the taught fact: “The classic short-term capacity estimate is {{c1::7 ± 2 items}}.” or “A GPCR crosses the plasma membrane {{c1::7}} times.” When it only qualifies an idea, keep it inside the card for the term it describes, or in that card's Extra. If the lecture defines no such term, drop it.
+- Before: “In the simplified sensory-memory comparison, capacity is relatively stable from about {{c1::age 5}}.” After: no card. The age goes in the sensory-memory card's Extra, or the contrast becomes a predict card: “Does sensory-memory capacity grow with age the way short-term memory does?” → “No: it stays about the same from age 5; short-term grows with knowledge and rehearsal.”
+
 Question fronts follow the reference decks too: short, direct and concrete. A scenario uses the lecture's situation in natural event order, followed by one plain question. No meta framing such as “An explanation says…” or “Which perspective explains fear as helping…”, which describes the answer inside the question.
 
 Sentence frames from the reference decks: “X is Y” or “X is when Y” for a term; “The X theory states that Y” for a theory; arrows for any order of events; individual meaning sentences for non-self-explanatory pair members; a headline contrast with meanings visible and both names hidden together; a named set of parts as one list cloze with its key in Extra. Keep the course's terms and explain them; use standard terminology when a transcript uses a word loosely. Extra follows the order below: the lecture's own example or mnemonic first, then a famous standard one (“C and B sit side by side in the alphabet: Cannon–Bard arousal and emotion happen together”).
@@ -266,7 +273,7 @@ In every case: keep the instructor's examples, what the instructor stressed, phr
 - exemplar: the example shape, or a source-based recognition scenario. Set the appropriate exampleDirection; a partner is never required.
 - rebuild: the whole-structure Q&A shape on the Basic model, Type rebuild. free-recall is retired.
 - predict: the quick outcome-and-reason Q&A on the Basic model, Type predict.
-- cloze: the two-blank term or theory note, the fact shape, or the list/steps shape. For a fact, blank the term, name or number and keep the rest visible.
+- cloze: the two-blank term or theory note, the fact shape, or the list/steps shape. For a fact, blank the term, name or number and keep the rest visible; blank a number only when the value itself is the taught fact.
 
 When clozePattern is set, front/back/recallItems are empty and cloze carries the sentence or short list. Use {{c1::answer}}, with an optional short hint as {{c1::answer::hint}} only when the blank would otherwise be ambiguous, for example {{c1::hippocampus::brain structure}}. Hints must name a kind or category without giving away the answer. Never list candidate answers as either/or options, including slash-, pipe-, comma- or semicolon-separated alternatives or “A or B”. Use a plain category such as “type of motivation” or “effect on Rb” instead. The builder emits a warning when a slash-separated word-choice hint contains the answer as one of its options, and still rejects option-list hints. No nested cloze. Keep one fact per sentence; do not hide unrelated facts together.
 
@@ -343,7 +350,7 @@ Use the environment's equivalent Python path on other operating systems. The Ank
 
 Never invent terms. Use the course's exact named terms. Descriptive wording stays descriptive: “the efficiency of our thought processes” is not a named “thought process efficiency” term. Do not manufacture jargon or compress an explanation into an invented noun phrase.
 
-Required cold-read review before building. Re-read every card as a student who missed the lecture, card by card, and rewrite any that fails these eight checks: (1) the non-blank text names what the card is about; (2) the answer is understood on first read; (3) no phrase is awkward, compressed or invented; (4) applicable lecture/Journal examples belong in Extra, with biology restricted to at most one optional passage example/evidence line; (5) one fact per card, with the approved grouped formats retained; (6) each non-self-explanatory term has independent meaning recall; self-explanatory labels stay with their umbrella or parent example; grouped recall uses names contrasts, lists/umbrellas, sequences and the whole-structure rebuild exception, never grouped definition drills; (7) each rebuild structure is shown whole in the lecture, its count matches, and its steps are names; (8) each predict card asks one outcome, its reason is under about ten words, and no other card asks the same thing. Headline contrasts hide both names together with meanings visible; no opposite half or hint gives away a name. Check headline pairs without cutting a non-self-explanatory term's last meaning recall. Report how many cards were rewritten in this pass, using actual card IDs. Report every background term moved into a lecture card. Builder warnings for context-poor clozes and definitions missing an available example are review cues, not semantic proof; investigate and record their dispositions.
+Required cold-read review before building. Re-read every card as a student who missed the lecture, card by card, and rewrite any that fails these nine checks: (1) the non-blank text names what the card is about; (2) the answer is understood on first read; (3) no phrase is awkward, compressed or invented; (4) applicable lecture/Journal examples belong in Extra, with biology restricted to at most one optional passage example/evidence line; (5) one fact per card, with the approved grouped formats retained; (6) each non-self-explanatory term has independent meaning recall; self-explanatory labels stay with their umbrella or parent example; grouped recall uses names contrasts, lists/umbrellas, sequences and the whole-structure rebuild exception, never grouped definition drills; (7) each rebuild structure is shown whole in the lecture, its count matches, and its steps are names; (8) each predict card asks one outcome, its reason is under about ten words, and no other card asks the same thing; (9) no card uses meta wording, and no card's only blank is a detail that merely qualifies an idea. Headline contrasts hide both names together with meanings visible; no opposite half or hint gives away a name. Check headline pairs without cutting a non-self-explanatory term's last meaning recall. Report how many cards were rewritten in this pass, using actual card IDs. Report every background term moved into a lecture card. Builder warnings for context-poor clozes and definitions missing an available example are review cues, not semantic proof; investigate and record their dispositions.
 
 Before building, reconcile the scope/target ledger and inspect semantic overlaps; structural validation cannot establish factual accuracy or educational quality. Keep conceptual objectives and non-self-explanatory meaning recall. Record biology passage exclusions, background moves, skipped recordings, hedge/skill dispositions and any justified coverage exception. Name where every removed or combined card's meaning now lives. Investigate warnings without gaming the checks. Run the friend test on every card, including its Required answer, before building.
 
@@ -1765,8 +1772,19 @@ def parallel_meaning_terms(card, targets, term_ids):
             names.add(name)
     return names
 
+META_WORDING = re.compile(r"\b(?:in (?:the|this) (?:simplified|illustrated|depicted)\b|in this (?:model|network|pathway|lecture|lesson|figure|diagram|example)\b|in the [\w\- ]{1,30}? (?:model|comparison|framework)\b|the (?:lecture|instructor|reading|slide)'s\b|according to the (?:lecture|reading|slides?|instructor|model)\b|as (?:shown|described|presented) (?:in|on) the\b)", re.IGNORECASE)
+NUMBER_BLANK = re.compile(r"^\s*(?:about |around |roughly |~)?(?:age )?[\d.,±%\-–/ ]+(?:\s*(?:years?|ms|seconds?|minutes?|hours?|days?|items?|chunks?|times|%|percent))?\s*$", re.IGNORECASE)
+
 def card_language_warnings(card):
     warnings = []
+    surface = ' '.join(card.get(field) or '' for field in ('front', 'back', 'cloze', 'explanation'))
+    if card.get('example'):
+        surface += ' ' + card['example'].get('text', '')
+    if META_WORDING.search(surface):
+        warnings.append(f'{card["id"]}: meta wording describes how the course framed the idea; state the idea itself.')
+    blanks = [m[1].split('::')[0] for m in re.finditer(r'\{\{c[1-9][0-9]*::([^{}]+)\}\}', card.get('cloze') or '')]
+    if blanks and all(NUMBER_BLANK.match(b) for b in blanks):
+        warnings.append(f'{card["id"]}: only a number is blanked; keep it only when the value itself is the taught fact, otherwise fold it into its term\'s card or Extra.')
     back = card['back'] or card['cloze']
     if card['type'] in ['application', 'exemplar'] and re.search(r'\b(?:nothing (?:can be|is) concluded|(?:it is |origin[ :]+)?unresolved|not established|cannot be concluded|does not (?:establish|identify)|neither .{0,100} established)\b', back, re.IGNORECASE):
         warnings.append(f'{card["id"]}: scenario answer is a non-conclusion; test a concrete term, named choice or short cause.')

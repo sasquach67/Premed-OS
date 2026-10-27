@@ -7,8 +7,8 @@
   "prepare_occlusion.py": "bacdd1e99210377f89cf2ddcc1360981c63681e984c630a1eb885402c74dd747",
   "read_previous.py": "dc87a8be076d9a40fc5c54b7460062ebee94c48e5d6a0ce9610dd22a823ac644",
   "pair_rules.py": "91e3a0993cd14c5cbd3d6d3a75ff4ca125dce18860ff83edec4344e32b1cb0ff",
-  "build_deck.py": "c68bd53b4024b89ae8ba6fa2d61cba4b7e160106545619d0a051f466055c692a",
+  "build_deck.py": "7d0223f781e5efc2369b3335964e8c3f402b213fde476074202de034f1ff7a3f",
   "verify_deck.py": "9019cdbdf50397763139b8590dc8941ace783afe76019c12bb44ac594f1e47df",
-  "authoring.md": "e01080236372d4aa03ba8aaa8eb35f6df8ee0b37726286fab1b4268fbec76258",
-  "instructions.md": "1d3592066abfc1728dac3d1806d733216b95fb59df1855a8bcd0abb97bae4d1c"
+  "authoring.md": "0e87969eb1b02f6ca2a675f4ea3ddd6730ac713f7a56c59dfa73594a948c86a0",
+  "instructions.md": "60b5bd6fce4073c95ad7f34cd8f1c000eab1bfde65ec555c3443fbf71bbaf5e8"
 }
