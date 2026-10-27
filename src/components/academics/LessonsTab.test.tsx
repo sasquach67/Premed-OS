@@ -1,8 +1,9 @@
-import { act } from 'react'
+import { act, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LessonsTab } from './LessonsTab'
 import { lessonSchedule } from '@/lib/academics/classDays'
+import { autoExamScope, editedExamScope, type LessonExam } from '@/lib/academics/lessonGroups'
 import type { LectureRecord, SyllabusScheduleEntry } from '@/lib/types'
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -116,5 +117,47 @@ describe('LessonsTab', () => {
     render()
     expect(container.textContent).toContain('Class files')
     expect(container.textContent).not.toContain('Class files content')
+  })
+
+  it('lets the student change which lessons an exam covers, and go back to automatic', () => {
+    const saved = vi.fn()
+    // Applies an edit the way ClassHub's store update does.
+    function Harness() {
+      const [exams, setExams] = useState<LessonExam[]>([{ id: 'x1', title: 'Exam 1', date: '2026-09-17' }, { id: 'x2', title: 'Exam 2', date: '2026-11-03' }])
+      return <LessonsTab schedule={schedule} exams={exams} lectures={[]} today="2026-10-30" titleOf={(l) => l.title} defaultFolderName="PSYC 101" classFolder={{ site: 'canvas', place: 'documents', mover: 'me', name: 'PSYC 101', state: 'skipped', updatedAt: 1 }} classFiles={null}
+        onOpenNotebook={vi.fn()} onNewNotebook={vi.fn()} onFlashcards={vi.fn()} onPracticeSet={vi.fn()} onSetUpFolder={vi.fn()} onSkipFolder={vi.fn()}
+        onSetExamLessons={(id, range, lessons) => { saved(id, range); setExams((list) => list.map((e) => e.id !== id ? e : { ...e, scope: range ? editedExamScope(e.scope, range.first, range.last, lessons) : autoExamScope(e.scope) })) }} />
+    }
+    act(() => root.render(<Harness />))
+    expect(text('.lessons-ghead .r')).toEqual(['Lesson 1', 'Lessons 7–11'])
+    const editButton = () => container.querySelector<HTMLButtonElement>('[aria-label="Change which lessons Exam 1 covers"]')!
+    const setValue = (id: string, value: string) => act(() => {
+      const input = container.querySelector<HTMLInputElement>(`#${id}`)!
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, value)
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    const save = () => [...container.querySelectorAll<HTMLButtonElement>('.lessons-range button')].find((b) => b.textContent === 'Save')!
+
+    act(() => editButton().click())
+    expect((container.querySelector('#exam-range-x1-from') as HTMLInputElement).value).toBe('1')
+    expect(container.textContent).not.toContain('Back to automatic')
+    setValue('exam-range-x1-to', '20')
+    expect(save().disabled).toBe(true)
+    expect(container.textContent).toContain('Pick lessons between 1 and 11')
+    setValue('exam-range-x1-to', '8')
+    act(() => save().click())
+    expect(saved).toHaveBeenLastCalledWith('x1', { first: 1, last: 8 })
+    expect(container.querySelector('.lessons-range')).toBeNull()
+    expect(text('.lessons-ghead .r')).toEqual(['Lessons 1–8 · set by you', 'Lessons 9–11'])
+
+    act(() => editButton().click())
+    act(() => [...container.querySelectorAll<HTMLButtonElement>('.lessons-range button')].find((b) => b.textContent === 'Back to automatic')!.click())
+    expect(saved).toHaveBeenLastCalledWith('x1', null)
+    expect(text('.lessons-ghead .r')).toEqual(['Lesson 1', 'Lessons 7–11'])
+  })
+
+  it('shows no range control without a way to save it', () => {
+    render()
+    expect(container.querySelector('.lessons-gedit')).toBeNull()
   })
 })

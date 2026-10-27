@@ -54,7 +54,7 @@ import { ClassDays } from '@/components/academics/ClassDays'
 import { LessonsTab } from '@/components/academics/LessonsTab'
 import { defaultFolderName } from '@/lib/academics/classFolder'
 import { isoDay, lessonDates, lessonlessTitle, type ClassDay, type ClassDayOverride } from '@/lib/academics/classDays'
-import { findLessonNotebook } from '@/lib/academics/lessonGroups'
+import { autoExamScope, editedExamScope, findLessonNotebook } from '@/lib/academics/lessonGroups'
 import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
@@ -289,6 +289,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
           onNewNotebook={lesson => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new${lesson !== undefined ? `?lesson=${lesson}` : ''}`)}
           onFlashcards={lectureId => navigate(`/academics/classes/${encodeURIComponent(course.id)}/resources/flashcards?journal=${encodeURIComponent(lectureId)}`)}
           onPracticeSet={openNotebook}
+          onSetExamLessons={(examId, range, lessons) => update(draft => { const item = draft.academics.classCenter.assignments.find(row => row.id === examId); if (!item) return; item.examScope = range ? editedExamScope(item.examScope, range.first, range.last, lessons) : autoExamScope(item.examScope); item.updatedAt = Date.now() })}
           readings={courseReadings}
           onNewReadingNotebook={key => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new?reading=${encodeURIComponent(key)}`)}
           onToggleReadingPart={readingId => update(draft => { const item = draft.academics.classCenter.assignedReadings.find(row => row.id === readingId); if (item) { item.status = item.status === 'read' ? 'not-started' : 'read'; item.updatedAt = Date.now() } })}
