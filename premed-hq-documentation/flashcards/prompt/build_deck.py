@@ -131,7 +131,6 @@ def parallel_meaning_terms(card, targets, term_ids):
     return names
 
 META_WORDING = re.compile(r"\b(?:in (?:the|this) (?:simplified|illustrated|depicted)\b|in this (?:model|network|pathway|lecture|lesson|figure|diagram|example)\b|in the [\w\- ]{1,30}? (?:model|comparison|framework)\b|the (?:lecture|instructor|reading|slide)'s\b|according to the (?:lecture|reading|slides?|instructor|model)\b|as (?:shown|described|presented) (?:in|on) the\b)", re.IGNORECASE)
-NUMBER_BLANK = re.compile(r"^\s*(?:about |around |roughly |~)?(?:age )?[\d.,±%\-–/ ]+(?:\s*(?:years?|ms|seconds?|minutes?|hours?|days?|items?|chunks?|times|%|percent))?\s*$", re.IGNORECASE)
 
 def card_language_warnings(card):
     warnings = []
@@ -140,9 +139,6 @@ def card_language_warnings(card):
         surface += ' ' + card['example'].get('text', '')
     if META_WORDING.search(surface):
         warnings.append(f'{card["id"]}: meta wording describes how the course framed the idea; state the idea itself.')
-    blanks = [m[1].split('::')[0] for m in re.finditer(r'\{\{c[1-9][0-9]*::([^{}]+)\}\}', card.get('cloze') or '')]
-    if blanks and all(NUMBER_BLANK.match(b) for b in blanks):
-        warnings.append(f'{card["id"]}: only a number is blanked; keep it only when the value itself is the taught fact, otherwise fold it into its term\'s card or Extra.')
     back = card['back'] or card['cloze']
     if card['type'] in ['application', 'exemplar'] and re.search(r'\b(?:nothing (?:can be|is) concluded|(?:it is |origin[ :]+)?unresolved|not established|cannot be concluded|does not (?:establish|identify)|neither .{0,100} established)\b', back, re.IGNORECASE):
         warnings.append(f'{card["id"]}: scenario answer is a non-conclusion; test a concrete term, named choice or short cause.')

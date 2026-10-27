@@ -15,7 +15,7 @@ function lecture(): LectureRecord {
 describe('flashcard prompt handoff', () => {
   it('copies the October 27a prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-27a — no meta wording; a qualifying detail never gets its own card.')
+    expect(prompt).toContain('Prompt revision: 2026-10-27a — no meta wording on any card.')
     expect(prompt).toContain('A standalone headline term or theory whose meaning needs learning gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
@@ -48,9 +48,9 @@ describe('flashcard prompt handoff', () => {
     expect(prompt).not.toContain('cyclin–Cdk {{c2::inhibited}}')
   })
 
-  it('bans meta wording and cards built on a qualifying detail', () => {
+  it('bans meta wording on any card', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    for (const phrase of ['No meta wording anywhere on a card.', '“in this model”', 'A qualifying detail never gets its own card.', 'If the lecture defines no such term, drop it.', 'no card uses meta wording']) expect(prompt).toContain(phrase)
+    for (const phrase of ['No meta wording anywhere on a card.', '“in this model”', 'no card uses meta wording']) expect(prompt).toContain(phrase)
   })
 
   it('limits new cards to lecture retention and checks recordings only for gaps', () => {
@@ -218,7 +218,7 @@ describe('flashcard prompt handoff', () => {
       '| Why / how | One direct question | One sentence |',
       'One question per card.',
       'Cloze: {{c1::Scientific management::management approach}} (Taylorism)',
-      'For a fact, blank the term, name or number and keep the rest visible; blank a number only when the value itself is the taught fact.',
+      'For a fact, blank the term, name or number and keep the rest visible.',
       '{{c1::answer::hint}}',
       '{{c1::hippocampus::brain structure}}',
       'No nested cloze.',

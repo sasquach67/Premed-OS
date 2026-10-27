@@ -181,16 +181,6 @@ class PromptChecks(unittest.TestCase):
         data=self.concept_fixture(); data['cards'][0]['front']='A poet uses words with sensitivity to meaning. Which Gardner intelligence is illustrated?'
         self.assertFalse(any('meta wording' in w for w in validate(data)))
 
-    def test_number_only_blank_warns(self):
-        data=self.concept_fixture()
-        data['cards'][0].update(type='cloze', clozePattern='single', front='', back='',
-            cloze='Sensory-memory capacity is stable from about {{c1::age 5}}.')
-        self.assertTrue(any('only a number is blanked' in w for w in validate(data)))
-        data['cards'][0]['cloze']='The classic short-term capacity estimate is {{c1::7 ± 2 items}}.'
-        self.assertTrue(any('only a number is blanked' in w for w in validate(data)))
-        data['cards'][0]['cloze']='Sensory memory is {{c1::briefly holding sensory information}}.'
-        self.assertFalse(any('only a number is blanked' in w for w in validate(data)))
-
     def test_direction_word_blank_warns(self):
         data=self.concept_fixture()
         data['cards'][0].update(type='cloze', clozePattern='single', front='', back='',

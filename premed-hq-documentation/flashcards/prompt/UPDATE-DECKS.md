@@ -104,7 +104,6 @@ Review the feature preview in `~/Documents/Premed OS Academics Audit/2026-10-20-
 
 Definition cards stay one per term. Predict is a new Basic Q&A retrieval demand: one change, one outcome, Back written "outcome: reason" with the reason under about ten words, only for reasoning the course's exams reuse and the lecture teaches, never repeating another card's question. Predict notes have separate `-predict` concept IDs and source evidence, never satisfy definition recall, and are listed in the build report under `predictCards`. Rebuild chain Backs are names only, with actions and details in Extra; the builder warns on a chain step over four words and on any cloze that blanks a direction word, since a direction blank is answered from the sentence rather than the meaning. Field lists, permanent IDs and update behavior are unchanged; predict notes are new notes.
 
-## 2026-10-27 — no meta wording; details stay with their term (2026-10-27a)
+## 2026-10-27 — no meta wording (2026-10-27a)
 
-Cards state the idea itself, never how the course framed it ("in this model", "in the illustrated pathway", "in the simplified comparison"). A number, age, duration or condition gets its own card only when the value itself is the taught fact; otherwise it stays in the card for the term it qualifies or in that card's Extra, and is dropped when no such term exists. The builder warns on meta wording in any card field and on clozes whose only blanks are numbers. Fields, permanent IDs and update behavior are unchanged; rebuilding an existing deck rewrites affected notes in place or retires them.
-
+Cards state the idea itself, never how the course framed it ("in this model", "in the illustrated pathway", "in the simplified comparison"). The builder warns on meta wording in any card field. Fields, permanent IDs and update behavior are unchanged.
