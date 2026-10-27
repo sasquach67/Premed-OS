@@ -41,3 +41,45 @@ export function NotebookComparison({ before, after, entryId, separate = false }:
     {!differences.length && <p>No content changes. Saving will not create another history version.</p>}
   </section>
 }
+
+const NON_TEXT_KEYS = new Set(['id', 'type', 'sourceIds', 'excerptIds', 'practiceBlockIds', 'stimulusBlockIds', 'assetId', 'requirementId', 'sectionId', 'order', 'provenance', 'detail', 'tone', 'role', 'correctIndex'])
+function plainText(value: unknown): string {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) return value.map(plainText).filter(Boolean).join(' ')
+  if (value && typeof value === 'object') return Object.entries(value).filter(([key]) => !NON_TEXT_KEYS.has(key)).map(([, item]) => plainText(item)).filter(Boolean).join(' ')
+  return ''
+}
+/** Changed words with a little surrounding context, so a revised section reads as a short excerpt. */
+function changedExcerpt(before: string, after: string, context = 12) {
+  const parts = changedTextParts(before, after)
+  const near = parts.map((_, index) => parts.slice(Math.max(0, index - context), index + context + 1).some(part => part.change))
+  const result: ({ text: string; change?: 'added' | 'edited' } | null)[] = []
+  parts.forEach((part, index) => { if (near[index]) result.push(part); else if (result.at(-1) !== null) result.push(null) })
+  while (result[0] === null) result.shift()
+  // Join changed words split only by retained spaces, so a changed phrase reads as one mark.
+  const merged: typeof result = []
+  for (const part of result) {
+    const last = merged.at(-1), gap = merged.at(-2)
+    if (part?.change && gap?.change === part.change && last && !last.change && !last.text.trim()) { merged.pop(); merged[merged.length - 1] = { text: gap.text + last.text + part.text, change: part.change } }
+    else merged.push(part)
+  }
+  return merged.some(part => part?.change) ? merged : []
+}
+/** Compact section rows for an update review: what was revised, added or removed, with changed wording marked. */
+export function NotebookUpdateChanges({ before, after, entryId }: { before: NotebookPackage; after: NotebookPackage; entryId: string }) {
+  const old = before.entries.find(entry => entry.id === entryId), next = after.entries.find(entry => entry.id === entryId)
+  if (!old || !next) return null
+  const status = changedNotebookSections(before, after, entryId)
+  const removed = old.sections.filter(section => !next.sections.some(item => item.id === section.id))
+  const label = { added: 'New', changed: 'Revised', removed: 'Removed' } as const
+  const row = (key: string, index: number, title: string, state?: keyof typeof label) => <div className="nr-sec" data-status={state} key={key}><i>{String(index + 1).padStart(2, '0')}</i><span>{title}</span>{state && <em>{label[state]}</em>}</div>
+  return <div className="nr-update-changes">
+    <p className="nr-update-legend"><span><i aria-hidden="true" />Added</span><span><i aria-hidden="true" />Revised</span></p>
+    {next.sections.map((section, index) => {
+      const previous = old.sections.find(item => item.id === section.id)
+      const excerpts = status[section.id] === 'changed' && previous ? section.blocks.map(block => { const prior = previous.blocks.find(item => item.id === block.id); return canonical(prior) === canonical(block) ? [] : changedExcerpt(plainText(prior), plainText(block)) }).filter(parts => parts.length).slice(0, 2) : []
+      return <div key={section.id}>{row(section.id, index, section.title, status[section.id])}{excerpts.map((parts, ei) => <p className="nr-sec-body" key={ei}>{parts.map((part, pi) => part === null ? <span key={pi}> … </span> : part.change ? <mark className="nr-inline-change" data-change={part.change} key={pi}>{part.text}</mark> : <span key={pi}>{part.text}</span>)}</p>)}</div>
+    })}
+    {removed.map((section, index) => row(`removed-${section.id}`, next.sections.length + index, section.title, 'removed'))}
+  </div>
+}

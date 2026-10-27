@@ -16,12 +16,13 @@ import { collectNotebookFolder, matchNotebookImages, type NotebookFileCollection
 import { classifyNotebookJsonFiles, notebookBundleFromFolder, readNotebookImportZip } from '@/lib/academics/notebook/notebookImportFiles'
 import { NotebookAssetsProvider, NotebookAssetThumbnail } from './NotebookVisuals'
 import type { NotebookPackage, NotebookUpdateSession } from '@/lib/academics/notebook/types'
-import { NotebookReviewSummary, NotebookReviewCheck } from './NotebookReviewSave'
-import { NotebookComparison, changedNotebookSections } from './NotebookComparison'
+import { NotebookReviewSummary, NotebookReviewCheck, NotebookUpdateCounts } from './NotebookReviewSave'
+import { changedNotebookSections, NotebookUpdateChanges } from './NotebookComparison'
+import { notebookPracticePolicy } from '@/lib/academics/notebook/revision'
 import { NotebookImportPreview } from './NotebookImportPreview'
 import { NotebookStorageRecovery, WorkspaceRecoveryDownload } from './NotebookStorageRecovery'
 import { downloadNotebookText, NotebookPackageView, notebookTransaction } from './ExternalNotebookView'
-export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onRawChange, revision, revisionValidation, onReviewChange }: { onReviewChange?: (reviewing: boolean) => void; courseId: string; onImported: (id: string, destinationCourseId?: string) => void; initialRaw?: string; onRawChange?: (raw: string) => void; revision?: NotebookUpdateSession; revisionValidation?: (baseline: NotebookPackage, proposed: NotebookPackage) => void }) {
+export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onRawChange, revision, revisionValidation, onReviewChange, onCancel, onRestart }: { onReviewChange?: (reviewing: boolean) => void; /** Leaves the update review without saving. */ onCancel?: () => void; /** Starts a fresh update from the latest saved entry. */ onRestart?: () => void; courseId: string; onImported: (id: string, destinationCourseId?: string) => void; initialRaw?: string; onRawChange?: (raw: string) => void; revision?: NotebookUpdateSession; revisionValidation?: (baseline: NotebookPackage, proposed: NotebookPackage) => void }) {
   const toastContext=useContext(ToastContext)
   const deviceNoticeShown=useRef(false)
   const saveReasonId=useId()
@@ -43,7 +44,6 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   const [destination, setDestination] = useState(false)
   const [revisions, setRevisions] = useState(false)
   const [separate, setSeparate] = useState(false)
-  const [acceptChanges, setAcceptChanges] = useState(false)
   const [imageFiles, setImageFiles] = useState<NamedNotebookImage[]>([])
   const [mappedImages, setMappedImages] = useState<Map<string, Blob>>(new Map())
   const [assetPrepared, setAssetPrepared] = useState<PreparedNotebookAssets | null>(null)
@@ -65,10 +65,12 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   const revised = plan.some(item => item.previous && !item.duplicate)
   const duplicates = plan.filter(item => item.duplicate)
   const updating = Boolean(revision && !separate && !backup)
+  // Choosing a separate copy of an update is itself the confirmation to save revised content separately.
+  const confirmRevisions = revisions || Boolean(revision && separate)
   let updateError = ''
   let updatePlan: ReturnType<typeof inspectNotebookUpdate> | undefined
   if (preview && revision) { try { updatePlan = inspectNotebookUpdate(center, selectedCourseId, preview, revision) } catch (failure) { updateError = (failure as Error).message } }
-  const blockers = (backup ? [!confirmBackup ? 'confirm restoring the complete backup without overwriting existing entries' : '', wrongCourse && !destination ? 'confirm the different class or term' : ''] : updating ? [updateError, !acceptChanges ? 'review and confirm the changes and practice policy' : '', wrongCourse ? 'resolve the destination class mismatch' : ''] : [wrongCourse && !destination ? 'confirm the different class or term' : '', revised && !revisions ? 'confirm saving revised content separately' : '']).filter(Boolean)
+  const blockers = (backup ? [!confirmBackup ? 'confirm restoring the complete backup without overwriting existing entries' : '', wrongCourse && !destination ? 'confirm the different class or term' : ''] : updating ? [updateError, wrongCourse ? 'resolve the destination class mismatch' : ''] : [wrongCourse && !destination ? 'confirm the different class or term' : '', revised && !confirmRevisions ? 'confirm saving revised content separately' : '']).filter(Boolean)
   if (preview && revisionValidation && revision) {
     try {
       if (separate || backup) throw new Error('Use the notebook update import here; separate copies and backups belong in the general notebook importer.')
@@ -76,7 +78,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
     } catch (failure) { blockers.push((failure as Error).message) }
   }
   if (preview && preview.package.version !== 2 && !assetPrepared) blockers.push('select and validate every required image')
-  function clearPreview() { attempt.current++; setSelectedCourseId(courseId); setPreview(null); setError(''); setStatus(''); setDestination(false); setRevisions(false); setAcceptChanges(false); setBusy(false); setAssetPrepared(null); setAssetError(''); setImageFiles([]); setMappedImages(new Map()); setBundleFile(null); setBackup(null); setConfirmBackup(false); setCollection(null); setCandidate(''); setReadyImages([]); setImageProblems(new Map()); setBundleUsed([]) }
+  function clearPreview() { attempt.current++; setSelectedCourseId(courseId); setPreview(null); setError(''); setStatus(''); setDestination(false); setRevisions(false); setBusy(false); setAssetPrepared(null); setAssetError(''); setImageFiles([]); setMappedImages(new Map()); setBundleFile(null); setBackup(null); setConfirmBackup(false); setCollection(null); setCandidate(''); setReadyImages([]); setImageProblems(new Map()); setBundleUsed([]) }
   function bindingContext(prepared: PreparedNotebook) {
     const current = useStore.getState().academics.classCenter
     const related = inspectNotebookImport(current, selectedCourseId, prepared).map(item => item.duplicate ?? item.previous).filter(item => item !== undefined)
@@ -133,11 +135,11 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   }
   async function changeImages(files: NamedNotebookImage[], mapped: Map<string, Blob>) {
     if (!preview) return
-    const id = ++attempt.current; setImageFiles(files); setMappedImages(mapped); setAcceptChanges(false); setRevisions(false); setBusy(true)
+    const id = ++attempt.current; setImageFiles(files); setMappedImages(mapped); setRevisions(false); setBusy(true)
     await checkImages(preview, id, files, mapped); if (id === attempt.current) setBusy(false)
   }
   async function validate(text = raw, files = imageFiles, mapped = mappedImages) {
-    const id = ++attempt.current; setBusy(true); setError(''); setPreview(null); setDestination(false); setRevisions(false); setAcceptChanges(false)
+    const id = ++attempt.current; setBusy(true); setError(''); setPreview(null); setDestination(false); setRevisions(false)
     try { const result = await prepareNotebook(text); if (id === attempt.current) { setPreview(result); setOtherOpen(false); setStatus('Package structure and references validated. Review the content before saving.'); if (result.package.version !== 2) await checkImages(result, id, files, mapped) } }
     catch (failure) { if (id === attempt.current) setError((failure as Error).message) }
     finally { if (id === attempt.current) setBusy(false) }
@@ -174,7 +176,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
       const commit = () => { assertFresh(); const durable = notebookTransaction(state => {
         const currentCourse = state.courses.find(c => c.id === selectedCourseId)
         if (!currentCourse) throw new Error('The destination class no longer exists.')
-        ids = restored && original ? restoreCompleteNotebookBackup(state.academics.classCenter, currentCourse, restored.notebook, original, confirmBackup, destination) : revision && !separate ? acceptNotebookUpdate(state.academics.classCenter, currentCourse, validated, revision, acceptChanges) : importNotebook(state.academics.classCenter, currentCourse, validated, { confirmDestination: destination, confirmRevisions: revisions })
+        ids = restored && original ? restoreCompleteNotebookBackup(state.academics.classCenter, currentCourse, restored.notebook, original, confirmBackup, destination) : revision && !separate ? acceptNotebookUpdate(state.academics.classCenter, currentCourse, validated, revision, true) : importNotebook(state.academics.classCenter, currentCourse, validated, { confirmDestination: destination, confirmRevisions })
       }); return { committed: true as const, durable } }
       if (resolved) await commitNotebookAssets({ prepared: resolved, ...context, assertFresh, commit })
       else await commit().durable
@@ -198,8 +200,14 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   const matchingCourses = preview ? courses.filter(item => !notebookDestinationMismatch(preview.package, item)) : []
   const matchingCourse = matchingCourses.length === 1 ? matchingCourses[0] : undefined
   const sourceComplete = preview?.package.sources.every(source => source.access === 'read' && source.used) ?? false
-  const saveReason = busy ? 'Checking files. Please wait.' : wrongCourse && !destination ? 'Choose where to save first.' : blockers.length ? `${blockers[0][0].toUpperCase()}${blockers[0].slice(1)}.` : ''
+  const saveReason = busy ? 'Checking files. Please wait.' : wrongCourse && !destination ? 'Choose where to save first.' : updating && updateError ? 'Choose an option above to continue.' : blockers.length ? `${blockers[0][0].toUpperCase()}${blockers[0].slice(1)}.` : ''
+  const baselineEntry = revision?.baseline.entries[0]
   const sectionChanges = preview && revision ? changedNotebookSections(revision.baseline, preview.package, revision.baseline.entries[0].id) : undefined
+  const incomingEntry = baselineEntry && preview?.package.entries.find(entry => entry.id === baselineEntry.id)
+  const removedSections = baselineEntry && incomingEntry ? baselineEntry.sections.filter(section => !incomingEntry.sections.some(item => item.id === section.id)) : []
+  const practicePolicy = updating && incomingEntry && preview && revision ? notebookPracticePolicy(revision.baseline, preview.package, baselineEntry!.id) : undefined
+  const keptPractice = baselineEntry && incomingEntry ? baselineEntry.sections.flatMap(section => section.blocks).filter(block => block.type === 'practice' && !practicePolicy?.affectedIds.includes(block.id) && incomingEntry.sections.some(section => section.blocks.some(item => item.id === block.id))).length : 0
+  const staleBaseline = /changed after the baseline|no longer current/.test(updateError)
   const unusedImages = imageFiles.filter(file => bundleFile ? !bundleUsed.includes(file.name) : !preview || !imageSelection(preview).matches.some(match => match.file?.blob === file.blob))
   return <section className="external-notebook en-import" aria-label="Import external notebook">{!preview && <h2 className="en-import-heading">Bring it back</h2>}
     <div className="en-folder-picker" hidden={Boolean(preview)}>{folderSupported ? <><Button disabled={busy} onClick={() => folderInput.current?.click()}>Choose the folder your AI made</Button><span>Usually in your class folder, or Downloads.</span></> : <p>Folder selection is unavailable in this browser. Open Other import options to choose your notebook ZIP.</p>}<input ref={node => { folderInput.current = node; node?.setAttribute('webkitdirectory', '') }} type="file" multiple hidden disabled={busy} aria-label="Choose notebook folder" onChange={async event => {
@@ -237,20 +245,22 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
     {restoredInput && !preview && <p className="en-import-limit">Your unsaved JSON is kept. Check that it matches the current request, then validate it again before saving.</p>}
     {error && <div className="en-notice en-error" role="alert"><b>Nothing was saved</b><p className="en-text">{error}</p>{!recoveryError && <Button variant="outline" onClick={() => { void navigator.clipboard.writeText(`Repair this notebook package error: ${error}\nPreserve all other content, source text, IDs, and revisions. Return one titled folder with the complete corrected notebook JSON and all required actual PNG/JPEG files, preserving filenames and relative paths. A local assistant should save the folder in the class folder, fall back to Downloads only if the class folder is unreachable, say where it saved, and never overwrite existing files. If folder delivery is unavailable, provide the complete downloadable file set with its intended folder name and relative paths, and state the limitation. Create a ZIP only when I explicitly request one. Do not invent missing files or claim the package is complete without its required bytes. Preserve any explicitly requested discussion stage.\n\nOriginal JSON:\n${raw}`).then(() => setStatus('Repair request copied.'), () => setStatus('Clipboard unavailable. Select the error and JSON to copy them.')) }}>Copy repair request and JSON</Button>}{recoveryError === 'storage' && <><Button variant="outline" onClick={() => downloadNotebookText("unsaved-notebook.json", raw)}>Download unsaved JSON</Button><p>Keep the images with this JSON. You can retry Save below; your selected files are still here.</p><NotebookStorageRecovery onStart={() => { const id = ++attempt.current; setBusy(true); return () => { if (id === attempt.current) setBusy(false) } }} onOptimized={() => { setError(''); setStatus('Browser storage optimized. Your selected notebook files are kept. Retry Save below.') }} /></>}</div>}
     <p role="status" aria-live="polite" hidden={!/^(Repair request|Clipboard unavailable|Browser storage optimized)/.test(status)}>{/^(Repair request|Clipboard unavailable|Browser storage optimized)/.test(status) ? status : ''}</p>
-    {preview && <div className="nr-review" aria-label="Validated notebook preview"><NotebookReviewSummary pkg={preview.package} update={updating} onChooseDifferent={() => { clearPreview(); setRaw(''); folderInput.current?.click() }} />
-      {((preview.package.version !== 2 && !assetPrepared) || !sourceComplete || (wrongCourse && !destination)) && <ul className="nr-checks">
+    {preview && <div className="nr-review" aria-label="Validated notebook preview"><NotebookReviewSummary pkg={preview.package} update={updating} revision={updating && baselineEntry ? baselineEntry.revision + 1 : undefined} onChooseDifferent={() => { clearPreview(); setRaw(''); folderInput.current?.click() }} />
+      {updating && sectionChanges && incomingEntry && <NotebookUpdateCounts added={Object.values(sectionChanges).filter(status => status === 'added').length} revised={Object.values(sectionChanges).filter(status => status === 'changed').length} removed={removedSections.length} kept={keptPractice} />}
+      <ul className="nr-checks">
+        {revision && !backup && updateError && !separate && <NotebookReviewCheck title="This update can’t replace your saved notebook" choice detail={updateError}>{staleBaseline && onRestart && <Button onClick={onRestart}>Restart from latest saved entry</Button>}<Button variant={staleBaseline && onRestart ? 'outline' : 'default'} onClick={() => setSeparate(true)}>Save a separate copy</Button></NotebookReviewCheck>}
+        {revision && !backup && separate && <NotebookReviewCheck title="Saving as a separate copy" detail="Your saved notebook stays unchanged. The separate copy starts with empty notes and practice records.">{!updateError && <Button variant="outline" onClick={() => setSeparate(false)}>Update the saved notebook instead</Button>}</NotebookReviewCheck>}
         {preview.package.version !== 2 && !assetPrepared && <NotebookReviewCheck title="Images need attention" choice detail="Select and validate every required image." />}
         {!sourceComplete && <NotebookReviewCheck title="Review source coverage" choice detail="Some sources are partial, unreadable, not accessed or not used. Their limits are in the preview." />}
         {wrongCourse && !destination && <NotebookReviewCheck title={`This notebook was made for ${preview.package.course.code}`} choice detail={`You opened it from ${course.code}.`}><Button disabled={!matchingCourse || updating} onClick={() => { if (matchingCourse) { setSelectedCourseId(matchingCourse.id); setDestination(false); setError('') } }}>Save to {preview.package.course.code}</Button><Button variant="outline" onClick={() => setDestination(true)}>Keep in {course.code}</Button>{!matchingCourse && <small>{matchingCourses.length ? 'Several matching classes exist. Open import from the intended class.' : 'Add that class in Academics before saving there.'}</small>}</NotebookReviewCheck>}
-      </ul>}
+        {practicePolicy?.reset && <NotebookReviewCheck title={`${practicePolicy.affectedIds.length} practice ${practicePolicy.affectedIds.length === 1 ? 'item starts' : 'items start'} fresh`} detail={practicePolicy.explanation} />}
+        {updating && updatePlan && updatePlan.extras.length > 0 && <NotebookReviewCheck title={`Also adds ${updatePlan.extras.length} ${updatePlan.extras.length === 1 ? 'notebook' : 'notebooks'}`} detail={`${updatePlan.extras.map(item => `${item.entry.title} (${item.duplicate ? 'already saved' : 'new separate notebook'})`).join('; ')}. Unrelated existing notebooks will not be replaced.`} />}
+      </ul>
 
       <NotebookImportAdjustments raw={backup ? backup.notebook.acceptedRaw ?? backup.notebook.originalRaw : preview.raw} />
       {backup && <section className="en-stage-panel"><h3>Restore complete notebook backup</h3><p>This restores the original import, saved content, {backup.notebook.history?.length ?? 0} historical versions, personal notes, practice records and all retained images. It does not overwrite existing entries or accept an AI update.</p><details><summary>Personal records in this backup</summary><p className="en-text">{backup.notebook.notes || 'No personal notes.'}</p><p>{Object.keys(backup.notebook.progress).length} saved practice records.</p></details><label className="en-check"><input type="checkbox" checked={confirmBackup} onChange={event => setConfirmBackup(event.target.checked)} />Restore this complete backup; keep any existing entries unchanged</label></section>}
-      {revision && !backup && <details className="nr-copy-options" open={Boolean(updateError) || separate}><summary>Save a separate copy instead</summary>{updateError && <p className="en-notice" role="alert">{updateError} Your saved notebook has not changed. Return to the entry and choose Restart from latest saved entry, or use the separate-copy option.</p>}<label className="en-check"><input type="checkbox" checked={separate} onChange={event => { setSeparate(event.target.checked); setAcceptChanges(false); setRevisions(false) }} />Save as separate entries instead; do not update the selected notebook</label></details>}
-      {revision && preview.package.entries.some(e => e.id === revision.baseline.entries[0].id) && <><div className="en-import-comparison-scroll" role="region" aria-label="Scroll notebook changes" tabIndex={0}><NotebookComparison before={revision.baseline} after={preview.package} entryId={revision.baseline.entries[0].id} separate={separate} /></div><details className="en-import-content"><summary>Read the exported baseline</summary><NotebookImportPreview title="Saved baseline preview"><NotebookPackageView pkg={revision.baseline} assetBindings={center.lectures.find(l => l.id === revision.localId)?.importedNotebook?.assetBindings} /></NotebookImportPreview></details></>}
-      {updating && updatePlan && <div className="en-notice"><p>{updatePlan.alreadyApplied ? 'This proposal is already the current saved content. No duplicate version will be created.' : 'Accepting keeps this notebook identity and saves the previous content and study records in recoverable history.'}</p>{updatePlan.extras.length > 0 && <p>Also included: {updatePlan.extras.map(item => `${item.entry.title} (${item.duplicate ? 'already saved' : 'new separate notebook'})`).join('; ')}. Unrelated existing notebooks will not be replaced.</p>}<label className="en-check"><input type="checkbox" checked={acceptChanges} onChange={event => setAcceptChanges(event.target.checked)} />I reviewed the content, source and practice changes and any listed new notebooks; accept this proposal</label></div>}
       {duplicates.length > 0 && <p className="en-notice">{duplicates.length} identical {duplicates.length === 1 ? 'entry is' : 'entries are'} already saved. Existing edits and progress will be kept; no duplicate will be created.</p>}
-      {revised && !updating && !backup && <div className="en-notice"><b>Revised or conflicting content</b><p>Incoming content shares an identity with an earlier entry. Save it separately, including when the revision number is unchanged or older. Your original entry, edits, responses, and progress stay intact.</p><label className="en-check"><input type="checkbox" checked={revisions} onChange={event => setRevisions(event.target.checked)} />Save revised content as separate entries</label></div>}
+      {revised && !updating && !backup && !(revision && separate) && <div className="en-notice"><b>Revised or conflicting content</b><p>Incoming content shares an identity with an earlier entry. Save it separately, including when the revision number is unchanged or older. Your original entry, edits, responses, and progress stay intact.</p><label className="en-check"><input type="checkbox" checked={revisions} onChange={event => setRevisions(event.target.checked)} />Save revised content as separate entries</label></div>}
       <NotebookAssetsProvider pkg={preview.package} prepared={assetPrepared ?? undefined}>
       {preview.package.version !== 2 && !preview.package.assets.length && assetError && <p className="en-notice en-error" role="alert">{assetError}</p>}
       {preview.package.version !== 2 && preview.package.assets.length > 0 && <details className="nr-image-details" open={busy || !assetPrepared}><summary>Image files and replacements</summary><section className="en-stage-panel en-image-review" aria-label="Notebook images"><h3>Notebook images</h3><p role="status">{busy ? 'Checking image files…' : `${readyImages.length} of ${preview.package.assets.length} images validated${imageProblems.size ? ` · ${imageProblems.size} need attention` : ''}.`}</p>
@@ -260,8 +270,8 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
         {unusedImages.length > 0 && <details className="en-small-detail"><summary>{unusedImages.length} image files not used</summary><p>These files are not imported. Resolve any ambiguous matches above.</p><ul>{unusedImages.map((file, index) => <li key={index}>{file.name}</li>)}</ul></details>}
         {assetError && <p className="en-notice en-error" role="alert">{assetError}</p>}
       </section></details>}
-      <NotebookImportPreview><NotebookTextChanges before={revision?.baseline} after={preview.package}><NotebookPackageView pkg={preview.package} sectionChanges={sectionChanges} /></NotebookTextChanges></NotebookImportPreview></NotebookAssetsProvider>
-      <div className="en-save-actions"><p id={saveReasonId} className="en-save-blocked" role="status">{saveReason || `Ready to save in ${course.code}.`}</p><div className="en-actions"><button type="button" className={buttonVariants()} aria-describedby={saveReasonId} disabled={busy || blockers.length > 0} onClick={() => void save()}>{backup ? 'Restore complete notebook backup' : updating ? 'Save update' : duplicates.length === plan.length ? 'Open saved notebook' : 'Save notebook'}</button></div></div>
+      {updating && revision ? <NotebookImportPreview title="Changes" fullContent={<NotebookTextChanges before={revision.baseline} after={preview.package}><NotebookPackageView pkg={preview.package} sectionChanges={sectionChanges} /></NotebookTextChanges>}><NotebookUpdateChanges before={revision.baseline} after={preview.package} entryId={revision.baseline.entries[0].id} /></NotebookImportPreview> : <NotebookImportPreview><NotebookTextChanges before={revision?.baseline} after={preview.package}><NotebookPackageView pkg={preview.package} sectionChanges={sectionChanges} /></NotebookTextChanges></NotebookImportPreview>}</NotebookAssetsProvider>
+      <div className="en-save-actions"><p id={saveReasonId} className="en-save-blocked" role="status">{saveReason || (updating ? updatePlan?.alreadyApplied ? 'This is already your saved version. No new version will be created.' : 'Earlier versions stay in history.' : `Ready to save in ${course.code}.`)}</p><div className="en-actions">{onCancel && <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>}<button type="button" className={buttonVariants()} aria-describedby={saveReasonId} disabled={busy || blockers.length > 0} onClick={() => void save()}>{backup ? 'Restore complete notebook backup' : updating ? 'Accept update' : duplicates.length === plan.length ? 'Open saved notebook' : 'Save notebook'}</button></div></div>
     </div>}
   </section>
 }
