@@ -168,6 +168,19 @@ class PromptChecks(unittest.TestCase):
         data=self.predict_fixture(); data['cards'][0]['back']='No: MEK sits downstream of Raf in the relay, so lowering it cannot reach back up.'
         self.assertEqual(sum('predict reason longer' in w for w in validate(data)), 1)
 
+    def test_meta_wording_warns_in_any_field(self):
+        for field,text in [('front','In this model, what does ERK promote?'),
+                           ('back','Dimerization, in the illustrated RTK pathway.'),
+                           ('explanation','In the simplified sensory-memory comparison, capacity holds.'),
+                           ('front',"What does the lecture's example show about Ras?")]:
+            with self.subTest(text=text):
+                data=self.concept_fixture(); data['cards'][0][field]=text
+                self.assertTrue(any('meta wording' in w for w in validate(data)))
+        data=self.concept_fixture(); data['cards'][0]['front']='In animal cells, what organizes the spindle poles?'
+        self.assertFalse(any('meta wording' in w for w in validate(data)))
+        data=self.concept_fixture(); data['cards'][0]['front']='A poet uses words with sensitivity to meaning. Which Gardner intelligence is illustrated?'
+        self.assertFalse(any('meta wording' in w for w in validate(data)))
+
     def test_direction_word_blank_warns(self):
         data=self.concept_fixture()
         data['cards'][0].update(type='cloze', clozePattern='single', front='', back='',

@@ -130,8 +130,15 @@ def parallel_meaning_terms(card, targets, term_ids):
             names.add(name)
     return names
 
+META_WORDING = re.compile(r"\b(?:in (?:the|this) (?:simplified|illustrated|depicted)\b|in this (?:model|network|pathway|lecture|lesson|figure|diagram|example)\b|in the [\w\- ]{1,30}? (?:model|comparison|framework)\b|the (?:lecture|instructor|reading|slide)'s\b|according to the (?:lecture|reading|slides?|instructor|model)\b|as (?:shown|described|presented) (?:in|on) the\b)", re.IGNORECASE)
+
 def card_language_warnings(card):
     warnings = []
+    surface = ' '.join(card.get(field) or '' for field in ('front', 'back', 'cloze', 'explanation'))
+    if card.get('example'):
+        surface += ' ' + card['example'].get('text', '')
+    if META_WORDING.search(surface):
+        warnings.append(f'{card["id"]}: meta wording describes how the course framed the idea; state the idea itself.')
     back = card['back'] or card['cloze']
     if card['type'] in ['application', 'exemplar'] and re.search(r'\b(?:nothing (?:can be|is) concluded|(?:it is |origin[ :]+)?unresolved|not established|cannot be concluded|does not (?:establish|identify)|neither .{0,100} established)\b', back, re.IGNORECASE):
         warnings.append(f'{card["id"]}: scenario answer is a non-conclusion; test a concrete term, named choice or short cause.')
