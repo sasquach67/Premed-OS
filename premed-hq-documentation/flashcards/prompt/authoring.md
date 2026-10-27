@@ -221,6 +221,8 @@ No meta wording anywhere on a card. State the idea itself, never how or where th
 - Before: “In the simplified sensory-memory comparison, capacity is relatively stable from about {{c1::age 5}}.” After: no card of its own; the sensory-memory card's Extra reads “Its capacity stays about the same from age 5.”
 
 A small detail about a term, such as an age, number or condition, goes on that term's card, not on a card of its own.
+
+Never call an idea by a placeholder such as “the alternative view”, “the other theory” or “the second approach”. Name it, or ask about the contrast itself: “The alternative view of long-term storage allows {{c1::some memories to vanish permanently}}.” → “Does everything in long-term memory stay there forever?” → “Debated: one view says yes and forgetting is a retrieval failure; the other says some memories vanish for good.”
 - Before: “Ligand binding in the illustrated RTK pathway promotes {{c1::receptor dimerization…}}.” After: “Growth-factor binding makes RTKs {{c1::dimerize and phosphorylate each other's tyrosines}}.”
 
 Question fronts follow the reference decks too: short, direct and concrete. A scenario uses the lecture's situation in natural event order, followed by one plain question. No meta framing such as “An explanation says…” or “Which perspective explains fear as helping…”, which describes the answer inside the question.
