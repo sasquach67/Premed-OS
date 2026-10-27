@@ -89,6 +89,21 @@ export function groupLessonsByExam(lessons: LessonRow[], exams: LessonExam[]): L
 }
 
 /**
+ * A reading that is only a lesson's own textbook chapter ("Chapter 6 ·
+ * Learning", due on a Learning class day) is that lesson, not a reading of its
+ * own: the lesson's notebook already covers it. PSYC 101 lists one beside every
+ * class, and Andy said the Readings group they made is unnecessary (Oct 27
+ * 2026). The parser drops them on import; this drops ones saved before that.
+ */
+export function isLessonChapter(title: string, due: string | undefined, lessons: LessonRow[]): boolean {
+  const chapter = title.trim().match(/^(?:chapter|ch\.?)\s*(\d+)\s*(?:[·:\-–—]\s*(.+))?$/i)
+  const row = chapter && lessons.find((r) => r.lesson === Number(chapter[1]))
+  if (!row) return false
+  const norm = (text: string) => text.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').trim()
+  return Boolean(due && row.dates.includes(due.slice(0, 10))) || Boolean(chapter[2] && row.title && norm(chapter[2]) === norm(row.title))
+}
+
+/**
  * A lesson's notebook (one per lesson, Andy Oct 20 2026): the notebook saved
  * for that lesson; else, for older notebooks, one dated on any of the
  * lesson's class days (after the student's changes) or titled "Lesson N".

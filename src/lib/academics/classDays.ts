@@ -1,4 +1,5 @@
 import type { SyllabusScheduleEntry } from '@/lib/types'
+import { isNoClassRow } from './syllabusParser'
 
 /**
  * Class days (Andy, Oct 19 2026): the Overview shows only the days a class
@@ -76,6 +77,39 @@ export function topicOf(label: string): string | undefined {
 function entryDates(entry: SyllabusScheduleEntry): string[] {
   if (entry.dates?.length) return entry.dates.map((d) => d.slice(0, 10))
   return entry.startDate ? [entry.startDate.slice(0, 10)] : []
+}
+
+const INTRODUCTION = /\b(?:introduction|intro|syllabus|welcome|overview|orientation|first day)\b/i
+
+/**
+ * A schedule saved before lessons were grouped (PR #42, Oct 19 2026) has one
+ * entry per class date and no lesson numbers, so PSYC 101 showed its two
+ * Learning classes as "Lesson 8 — Learning" and "Lesson 9 — Learning" (Andy,
+ * Oct 27 2026). `migrateClassLessonsV52` rewrites it once, the way the parser
+ * now writes it: back-to-back classes
+ * on one topic are one lesson with both dates, an opening introduction day is
+ * lesson 0, and the rest are numbered in order. Only that shape changes: a
+ * schedule with lesson numbers, a week-based one (never two entries in one
+ * week) or one with no repeated topic comes back as it is.
+ */
+export function lessonSchedule(schedule: SyllabusScheduleEntry[] = []): SyllabusScheduleEntry[] {
+  if (schedule.some((e) => e.lesson !== undefined || (e.dates?.length ?? 0) > 1)) return schedule
+  const norm = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const sessions = schedule.filter((e) => e.startDate && !isNoClassRow(e.label))
+    .sort((a, b) => a.startDate!.localeCompare(b.startDate!) || a.order - b.order)
+  const day = (e: SyllabusScheduleEntry) => e.startDate!.slice(0, 10)
+  const perClass = sessions.some((e, i) => i > 0 && mondayOf(day(sessions[i - 1])).getTime() === mondayOf(day(e)).getTime())
+  const repeats = sessions.some((e, i) => i > 0 && norm(sessions[i - 1].label) === norm(e.label))
+  if (sessions.length < 3 || !perClass || !repeats) return schedule
+  const lessons: SyllabusScheduleEntry[] = []
+  for (const e of sessions) {
+    const previous = lessons[lessons.length - 1]
+    if (previous && norm(previous.label) === norm(e.label)) previous.dates = [...previous.dates!, day(e)]
+    else lessons.push({ ...e, dates: [day(e)] })
+  }
+  let number = 0
+  lessons.forEach((e, i) => { e.lesson = i === 0 && INTRODUCTION.test(e.label) ? 0 : ++number })
+  return lessons
 }
 
 /**

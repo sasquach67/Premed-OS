@@ -167,6 +167,23 @@ Thurs 9/3 Sensation and Perception (Chapter 4)`)
     expect(units.find((item) => item.label === 'Sensation and Perception')?.lesson).toBe(4)
   })
 
+  it('makes no reading of a lesson’s own chapter (PSYC 101, Andy Oct 27 2026)', () => {
+    const parsed = parseSyllabusText(`PSYC 101 — Introduction to Psychology
+Fall 2026
+Course Schedule
+Date Topic Reading
+Tues 8/18 Class Introduction
+Thurs 8/20 The Evolution of Psychology Chapter 1
+Tues 8/25 Research Enterprise in Psychology Chapter 2              (Forum 1 due 8/25)
+Thurs 9/10 Learning Chapter 6
+Tues 9/15 Learning Chapter 6               (Forum 4 due 9/15)
+Thurs 9/17 Exam 1`)
+    expect(parsed.items.filter((item) => item.kind === 'readings')).toEqual([])
+    expect(parsed.items.filter((item) => item.kind === 'units').map((item) => [item.lesson, item.label])).toEqual([
+      [0, 'Class Introduction'], [1, 'The Evolution of Psychology'], [2, 'Research Enterprise in Psychology'], [6, 'Learning'],
+    ])
+  })
+
   it('numbers topics in order when the syllabus names no chapters', () => {
     const parsed = parseSyllabusText(`HIST 101 — World History
 Fall 2026

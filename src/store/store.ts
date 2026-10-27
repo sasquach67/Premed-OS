@@ -72,6 +72,7 @@ import { migrateProfileMinorsV40 } from '@/store/migrations/profileMinorsV40'
 import { migrateNotebookV49 } from '@/store/migrations/notebookV49'
 import { migrateNotebookV50 } from '@/store/migrations/notebookV50'
 import { migrateResearchV51 } from '@/store/migrations/researchV51'
+import { migrateClassLessonsV52 } from '@/store/migrations/classLessonsV52'
 import { recordResearchDeletion, reconcileResearchRelations } from '@/lib/researchLifecycle'
 import { validateResearchData } from '@/lib/validateResearchData'
 import { migrateJournalIntentV48 } from '@/store/migrations/journalIntentV48'
@@ -624,7 +625,7 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateClassIdentityV46(migrated)
   migrated = migrateCurrentClassIdentityV47(migrated)
   migrated = migrateJournalIntentV48(migrated)
-  return prepareWorkspaceData(migrateResearchV51(migrateNotebookV50(migrateNotebookV49(migrated))))
+  return prepareWorkspaceData(migrateClassLessonsV52(migrateResearchV51(migrateNotebookV50(migrateNotebookV49(migrated)))))
 }
 
 /**

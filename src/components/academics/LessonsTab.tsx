@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Collapsible } from '@/components/common/Collapsible'
 import { cn } from '@/lib/utils'
 import { dateOf, isoDay } from '@/lib/academics/classDays'
-import { buildLessons, findLessonNotebook, groupLessonsByExam, type LessonExam, type LessonRow } from '@/lib/academics/lessonGroups'
+import { buildLessons, findLessonNotebook, groupLessonsByExam, isLessonChapter, type LessonExam, type LessonRow } from '@/lib/academics/lessonGroups'
 import { buildReadingItems, readingExamKey, readingsDiscussedOn, type ReadingItem } from '@/lib/academics/readingGroups'
 import { folderTrail, readingFolderName } from '@/lib/academics/classFolder'
 import type { AssignedReading, ClassFolderSetup, LectureRecord, SyllabusScheduleEntry } from '@/lib/types'
@@ -76,7 +76,7 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
     }
   }, [schedule, lessonNotebooks, today])
   const groups = useMemo(() => groupLessonsByExam(lessons, exams), [lessons, exams])
-  const readingItems = useMemo(() => buildReadingItems(readings), [readings])
+  const readingItems = useMemo(() => buildReadingItems(readings.filter((r) => !isLessonChapter(r.title, r.dueForDiscussion, lessons))), [readings, lessons])
   const readingsByGroup = useMemo(() => {
     const out = new Map<string, ReadingItem[]>()
     if (!groups.length) return out
@@ -136,7 +136,9 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
         const withNotebook = groupTaught.filter((l) => stateOf(l).notebook).length
         const hasCurrent = group.lessons.some((l) => l.lesson === current)
         const open = groupOpen(group.key, hasCurrent)
-        const first = group.lessons[0].lesson, last = group.lessons[group.lessons.length - 1].lesson
+        // An introduction day (lesson 0) is not what an exam covers: "Lessons 1–6", not "0–6".
+        const ranged = group.lessons.length > 1 && group.lessons[0].lesson === 0 ? group.lessons.slice(1) : group.lessons
+        const first = ranged[0].lesson, last = ranged[ranged.length - 1].lesson
         const rows = groupTaught.filter((l) => shown(stateOf(l))).reverse()
         const groupReadings = readingsByGroup.get(group.key) ?? []
         const assigned = groupReadings.filter((r) => !r.firstDue || r.firstDue <= today)
