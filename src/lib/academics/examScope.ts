@@ -1,5 +1,5 @@
 import type { SyllabusItem, SyllabusProposal } from '@/lib/academics/syllabusParser'
-import type { ClassAssignment, ClassCenterData, SyllabusScheduleEntry } from '@/lib/types'
+import type { ClassAssignment, ClassCenterData, ExamScope, SyllabusScheduleEntry } from '@/lib/types'
 
 /** The per-lesson facts a schedule unit carries into `syllabusSchedule`. */
 export function lessonFields(item: SyllabusItem): Pick<SyllabusScheduleEntry, 'lesson' | 'dates' | 'objectives' | 'unit'> {
@@ -39,4 +39,11 @@ export function examScopeFromSyllabus(center: ClassCenterData, courseId: string,
     examScope: { ...(lessons.length ? { lessons } : {}), ...(item.scope.cumulative !== undefined ? { cumulative: item.scope.cumulative } : {}) },
     ...(covered.length ? { coveredTopicIds: covered } : {}),
   }
+}
+
+/** A syllabus re-read never overwrites lessons the student set on the Lessons
+ *  tab: the new syllabus list waits behind the edit for "Back to automatic". */
+export function keepStudentLessons(current: ExamScope | undefined, fromSyllabus: ExamScope | undefined): ExamScope | undefined {
+  if (!current?.studentEdit || !fromSyllabus) return fromSyllabus
+  return { ...fromSyllabus, lessons: current.lessons, studentEdit: { ...(fromSyllabus.lessons ? { syllabusLessons: fromSyllabus.lessons } : {}), editedAt: current.studentEdit.editedAt } }
 }

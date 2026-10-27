@@ -1,4 +1,4 @@
-import type { LectureRecord, SyllabusScheduleEntry } from '@/lib/types'
+import type { ExamScope, LectureRecord, SyllabusScheduleEntry } from '@/lib/types'
 import { topicOf } from './classDays'
 
 /**
@@ -19,7 +19,7 @@ export interface LessonExam {
   id: string
   title: string
   date?: string
-  scope?: { lessons?: string[]; cumulative?: boolean }
+  scope?: ExamScope
 }
 
 export interface LessonGroup {
@@ -28,6 +28,8 @@ export interface LessonGroup {
   date?: string
   /** True when the exam is cumulative; the group then holds only lessons new since the last exam. */
   cumulative?: boolean
+  /** True when the student set which lessons this exam covers. */
+  edited?: boolean
   lessons: LessonRow[]
 }
 
@@ -65,27 +67,60 @@ export function scopeLessonNumbers(scope?: LessonExam['scope']): number[] {
 }
 
 /**
- * Each lesson belongs to exactly one group: the first exam, in date order,
- * whose scope names it. A cumulative exam claims only lessons no earlier exam
- * claimed. A lesson no scope names joins the first exam dated after it. With
- * no exams, everything is one group.
+ * Each lesson belongs to exactly one group. A range the student set on the
+ * Lessons tab wins first, and an edited exam holds only its range. Then the
+ * first exam, in date order, whose scope names it; a cumulative exam claims
+ * only lessons no earlier exam claimed. A lesson no scope names joins the
+ * first unedited exam dated after it. With no exams, everything is one group.
  */
 export function groupLessonsByExam(lessons: LessonRow[], exams: LessonExam[]): LessonGroup[] {
   const sorted = [...exams].sort((a, b) => (a.date ?? '9').localeCompare(b.date ?? '9'))
   if (!sorted.length) return lessons.length ? [{ key: 'all', name: 'All lessons', lessons }] : []
-  const groups: LessonGroup[] = sorted.map((exam) => ({ key: exam.id, name: exam.title, date: exam.date, cumulative: exam.scope?.cumulative || undefined, lessons: [] }))
+  const edited = sorted.map((exam) => Boolean(exam.scope?.studentEdit))
+  const groups: LessonGroup[] = sorted.map((exam, i) => ({ key: exam.id, name: exam.title, date: exam.date, cumulative: exam.scope?.cumulative || undefined, edited: edited[i] || undefined, lessons: [] }))
   const named = sorted.map((exam) => new Set(scopeLessonNumbers(exam.scope)))
+  const lastAuto = edited.lastIndexOf(false)
   for (const row of lessons) {
-    let at = sorted.findIndex((exam, i) => !exam.scope?.cumulative && named[i].has(row.lesson))
+    let at = named.findIndex((set, i) => edited[i] && set.has(row.lesson))
+    if (at < 0) at = sorted.findIndex((exam, i) => !edited[i] && !exam.scope?.cumulative && named[i].has(row.lesson))
     if (at < 0) {
       const last = row.dates[row.dates.length - 1]
-      at = last ? sorted.findIndex((exam) => exam.date !== undefined && exam.date >= last) : -1
+      at = last ? sorted.findIndex((exam, i) => !edited[i] && exam.date !== undefined && exam.date >= last) : -1
     }
-    if (at < 0) at = named.findIndex((set) => set.has(row.lesson))
-    if (at < 0) at = groups.length - 1
+    if (at < 0) at = named.findIndex((set, i) => !edited[i] && set.has(row.lesson))
+    if (at < 0) at = lastAuto >= 0 ? lastAuto : groups.length - 1
     groups[at].lessons.push(row)
   }
-  return groups.filter((group) => group.lessons.length)
+  // An edited exam stays even when empty, so the student can change it back.
+  return groups.filter((group) => group.lessons.length || group.edited)
+}
+
+/** A lesson range as a scope label: "Lesson 7" or "Lessons 7–11". */
+export const lessonRangeLabel = (first: number, last: number) => first === last ? `Lesson ${first}` : `Lessons ${first}–${last}`
+
+/**
+ * The scope after the student sets an exam's lessons to `first`–`last`. The
+ * syllabus's own list is kept so `autoExamScope` can bring it back, and
+ * `cumulative` is left as it was. When the range starts at the first real
+ * lesson, an introduction day (lesson 0) comes with it, as the header hides it.
+ */
+export function editedExamScope(scope: ExamScope | undefined, first: number, last: number, lessons: LessonRow[] = [], now = Date.now()): ExamScope {
+  const lo = Math.min(first, last), hi = Math.max(first, last)
+  const firstReal = lessons.find((row) => row.lesson > 0)?.lesson
+  const start = lo === firstReal && lessons.some((row) => row.lesson === 0) ? 0 : lo
+  const syllabusLessons = scope?.studentEdit ? scope.studentEdit.syllabusLessons : scope?.lessons
+  return {
+    ...scope,
+    lessons: [lessonRangeLabel(start, hi)],
+    studentEdit: { ...(syllabusLessons ? { syllabusLessons } : {}), editedAt: now },
+  }
+}
+
+/** The scope with the student's range undone: back to the syllabus's own lessons. */
+export function autoExamScope(scope: ExamScope | undefined): ExamScope | undefined {
+  if (!scope?.studentEdit) return scope
+  const { studentEdit, lessons: _edited, ...rest } = scope
+  return { ...rest, ...(studentEdit.syllabusLessons ? { lessons: studentEdit.syllabusLessons } : {}) }
 }
 
 /**

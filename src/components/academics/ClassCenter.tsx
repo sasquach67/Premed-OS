@@ -41,7 +41,7 @@ import { ClassHub } from '@/components/academics/ClassHub'
 import { SyllabusImportMode, type PastDueImportDecision, type ReimportDecision } from '@/components/academics/SyllabusImportMode'
 import { SyllabusImportDialog } from '@/components/academics/SyllabusImportDialog'
 import type { SyllabusItem, SyllabusProposal } from '@/lib/academics/syllabusParser'
-import { examScopeFromSyllabus, lessonFields } from '@/lib/academics/examScope'
+import { examScopeFromSyllabus, keepStudentLessons, lessonFields } from '@/lib/academics/examScope'
 import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
 import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
 import {
@@ -529,7 +529,8 @@ function applyAcceptedReimport(center: ClassCenterData, courseId: string, propos
       existing.syllabusSourceKey = key
       if (sourceFileId && !existing.linkedFileIds.includes(sourceFileId)) existing.linkedFileIds.push(sourceFileId)
       existing.notes = `Source: ${item.evidence.location} — “${item.evidence.quote}”`
-      Object.assign(existing, examScopeFromSyllabus(center, courseId, proposal, item))
+      const scoped = examScopeFromSyllabus(center, courseId, proposal, item)
+      Object.assign(existing, scoped.examScope ? { ...scoped, examScope: keepStudentLessons(existing.examScope, scoped.examScope) } : scoped)
       existing.updatedAt = now
       return
     }

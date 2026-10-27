@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { examScopeFromSyllabus, lessonFields } from '@/lib/academics/examScope'
+import { examScopeFromSyllabus, keepStudentLessons, lessonFields } from '@/lib/academics/examScope'
 import type { SyllabusItem, SyllabusProposal } from '@/lib/academics/syllabusParser'
 import type { ClassCenterData } from '@/lib/types'
 
@@ -53,5 +53,14 @@ describe('examScopeFromSyllabus', () => {
   it('writes nothing when the syllabus says nothing about scope', () => {
     const exam: SyllabusItem = { id: 'e', kind: 'exams', label: 'Exam 1', value: '2026-09-17', confidence: 'high', evidence }
     expect(examScopeFromSyllabus(centerWith([]), 'c1', proposal([exam]), exam)).toEqual({})
+  })
+})
+
+describe('keepStudentLessons', () => {
+  it('keeps lessons the student set when the syllabus is read again', () => {
+    const edited = { lessons: ['Lessons 7–11'], studentEdit: { syllabusLessons: ['Lesson 9'], editedAt: 5 } }
+    expect(keepStudentLessons(edited, { lessons: ['Lesson 8', 'Lesson 9'], cumulative: false }))
+      .toEqual({ lessons: ['Lessons 7–11'], cumulative: false, studentEdit: { syllabusLessons: ['Lesson 8', 'Lesson 9'], editedAt: 5 } })
+    expect(keepStudentLessons({ lessons: ['Lesson 1'] }, { lessons: ['Lesson 2'] })).toEqual({ lessons: ['Lesson 2'] })
   })
 })

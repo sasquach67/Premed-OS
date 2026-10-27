@@ -1,10 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { BookOpen, BookOpenCheck, CalendarDays, Check, ChevronDown, ChevronRight, Folder, Layers, ListChecks, NotebookText, Plus } from 'lucide-react'
+import { BookOpen, BookOpenCheck, CalendarDays, Check, ChevronDown, ChevronRight, Folder, Layers, ListChecks, NotebookText, PencilLine, Plus, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Collapsible } from '@/components/common/Collapsible'
 import { cn } from '@/lib/utils'
 import { dateOf, isoDay } from '@/lib/academics/classDays'
-import { buildLessons, findLessonNotebook, groupLessonsByExam, isLessonChapter, type LessonExam, type LessonRow } from '@/lib/academics/lessonGroups'
+import { buildLessons, findLessonNotebook, groupLessonsByExam, isLessonChapter, lessonRangeLabel, type LessonExam, type LessonGroup, type LessonRow } from '@/lib/academics/lessonGroups'
 import { buildReadingItems, readingExamKey, readingsDiscussedOn, type ReadingItem } from '@/lib/academics/readingGroups'
 import { folderTrail, readingFolderName } from '@/lib/academics/classFolder'
 import type { AssignedReading, ClassFolderSetup, LectureRecord, SyllabusScheduleEntry } from '@/lib/types'
@@ -28,7 +28,7 @@ const shortDate = (iso: string) => dateOf(iso).toLocaleDateString(undefined, { m
  * lessons of the same exam (reading notebooks, Oct 19). The class's files sit
  * in a collapsed section at the bottom, so nothing the Materials tab held is lost.
  */
-export function LessonsTab({ schedule, exams, lectures, readings = [], today = isoDay(new Date()), titleOf, onOpenNotebook, onNewNotebook, onNewReadingNotebook, onToggleReadingPart, onFlashcards, onPracticeSet, classFiles, classFilesCount, classFilesOpen = false, classFolder, defaultFolderName, onSetUpFolder, onSkipFolder }: {
+export function LessonsTab({ schedule, exams, lectures, readings = [], today = isoDay(new Date()), titleOf, onOpenNotebook, onNewNotebook, onNewReadingNotebook, onToggleReadingPart, onFlashcards, onPracticeSet, onSetExamLessons, classFiles, classFilesCount, classFilesOpen = false, classFolder, defaultFolderName, onSetUpFolder, onSkipFolder }: {
   schedule?: SyllabusScheduleEntry[]
   exams: LessonExam[]
   /** This class's notebooks. */
@@ -46,6 +46,8 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
   onToggleReadingPart?: (readingId: string) => void
   onFlashcards: (lectureId: string) => void
   onPracticeSet: (lectureId: string) => void
+  /** Set which lessons an exam covers, or `null` to go back to automatic sorting. */
+  onSetExamLessons?: (examId: string, range: { first: number; last: number } | null, lessons: LessonRow[]) => void
   classFiles: ReactNode
   classFilesCount?: number
   /** Open when a link asked for the class's files (old Materials links). */
@@ -93,6 +95,7 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
   const [filter, setFilter] = useState<Filter>('all')
   const [openGroups, setOpenGroups] = useState<Set<string>>()
   const [openLessons, setOpenLessons] = useState<Set<string>>()
+  const [editingExam, setEditingExam] = useState<string>()
   const groupOpen = (key: string, hasCurrent: boolean) => openGroups ? openGroups.has(key) : hasCurrent
   const currentKey = current !== undefined ? `lesson-${current}` : undefined
   const itemOpen = (key: string) => openLessons ? openLessons.has(key) : key === currentKey
@@ -138,20 +141,26 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
         const open = groupOpen(group.key, hasCurrent)
         // An introduction day (lesson 0) is not what an exam covers: "Lessons 1–6", not "0–6".
         const ranged = group.lessons.length > 1 && group.lessons[0].lesson === 0 ? group.lessons.slice(1) : group.lessons
-        const first = ranged[0].lesson, last = ranged[ranged.length - 1].lesson
+        const first = ranged[0]?.lesson, last = ranged[ranged.length - 1]?.lesson
         const rows = groupTaught.filter((l) => shown(stateOf(l))).reverse()
         const groupReadings = readingsByGroup.get(group.key) ?? []
         const assigned = groupReadings.filter((r) => !r.firstDue || r.firstDue <= today)
         const upcoming = groupReadings.filter((r) => r.firstDue && r.firstDue > today)
         const readingRows = assigned.filter((r) => shown(readingState(r))).reverse()
         return <section key={group.key} className={cn('lessons-group', open && 'is-open')}>
-          <button type="button" className="lessons-ghead" aria-expanded={open} onClick={() => setOpenGroups(toggle(openGroups, groups.filter((g) => g.lessons.some((l) => l.lesson === current)).map((g) => g.key), group.key))}>
-            {open ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
-            <span className="t"><b>{group.name}</b>{group.date && ` · ${shortDate(group.date)}`}</span>
-            <span className="r">{group.cumulative ? 'Cumulative · new: ' : ''}{first === last ? `Lesson ${first}` : `Lessons ${first}–${last}`}</span>
-            <span className="grow" />
-            <span className="s">{groupTaught.length ? `${withNotebook} of ${groupTaught.length} with notebooks` : 'Not taught yet'}</span>
-          </button>
+          <div className="lessons-ghead-row">
+            <button type="button" className="lessons-ghead" aria-expanded={open} onClick={() => setOpenGroups(toggle(openGroups, groups.filter((g) => g.lessons.some((l) => l.lesson === current)).map((g) => g.key), group.key))}>
+              {open ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+              <span className="t"><b>{group.name}</b>{group.date && ` · ${shortDate(group.date)}`}</span>
+              <span className="r">{first === undefined ? 'No lessons' : <>{group.cumulative ? 'Cumulative · new: ' : ''}{lessonRangeLabel(first, last)}</>}{group.edited && ' · set by you'}</span>
+              <span className="grow" />
+              <span className="s">{groupTaught.length ? `${withNotebook} of ${groupTaught.length} with notebooks` : 'Not taught yet'}</span>
+            </button>
+            {onSetExamLessons && group.key !== 'all' && <button type="button" className="lessons-gedit" aria-label={`Change which lessons ${group.name} covers`} aria-expanded={editingExam === group.key} title="Change which lessons this exam covers" onClick={() => setEditingExam(editingExam === group.key ? undefined : group.key)}><PencilLine aria-hidden="true" /></button>}
+          </div>
+          {onSetExamLessons && editingExam === group.key && <ExamRangeEditor group={group} lessons={lessons} first={first} last={last}
+            onSave={(range) => { onSetExamLessons(group.key, range, lessons); setEditingExam(undefined) }}
+            onCancel={() => setEditingExam(undefined)} />}
           {open && <div className="lessons-gbody">
             {future.length > 0 && <div className="lessons-row is-future"><span className="lessons-num"><CalendarDays aria-hidden="true" /></span><span className="lessons-main"><b>{future.length > 1 ? `Lessons ${future[0].lesson}–${future[future.length - 1].lesson}` : `Lesson ${future[0].lesson}`}</b><small>{future.length} not taught yet · {future.length > 1 ? 'they appear' : 'it appears'} here as the class reaches {future.length > 1 ? 'them' : 'it'}</small></span></div>}
             {rows.map((row) => {
@@ -186,6 +195,33 @@ export function LessonsTab({ schedule, exams, lectures, readings = [], today = i
     </> : <div className="lessons-first"><NotebookText aria-hidden="true" /><p className="h">Make your first notebook</p><p>Your AI turns the lesson’s slides, outline and transcript into a study guide.</p><Button onClick={() => onNewNotebook()}><Plus aria-hidden="true" /> New notebook</Button></div>}
     <div className="lessons-files"><Collapsible title="Class files" badge={classFilesCount ? <span className="lessons-files-count" aria-label={`${classFilesCount} files`}>{classFilesCount}</span> : undefined} defaultOpen={classFilesOpen}>{classFolder && <p className="class-folder-line"><Folder aria-hidden="true" /><span>{classFolder.state === 'ready' ? <>Class folder · {folderTrail(classFolder).join(' › ')}</> : <>No class folder · your AI saves to Downloads</>}</span><button type="button" onClick={onSetUpFolder}>{classFolder.state === 'ready' ? 'Change' : 'Set it up'}</button></p>}{classFiles}</Collapsible></div>
   </div>
+}
+
+/**
+ * Sets which lessons one exam covers, for when the automatic sorting put a
+ * lesson under the wrong exam (Andy, Oct 27 2026). Other unedited exams keep
+ * sorting by date around it; "Back to automatic" undoes the edit.
+ */
+function ExamRangeEditor({ group, lessons, first, last, onSave, onCancel }: { group: LessonGroup; lessons: LessonRow[]; first?: number; last?: number; onSave: (range: { first: number; last: number } | null) => void; onCancel: () => void }) {
+  const numbers = lessons.map((row) => row.lesson).filter((n) => n > 0)
+  const min = numbers.length ? Math.min(...numbers) : 1, max = numbers.length ? Math.max(...numbers) : 1
+  const [from, setFrom] = useState(String(first ?? min))
+  const [to, setTo] = useState(String(last ?? max))
+  const a = Number(from), b = Number(to)
+  const valid = Number.isInteger(a) && Number.isInteger(b) && from !== '' && to !== '' && a >= min && b <= max && a <= b
+  const id = `exam-range-${group.key}`
+  return <form className="lessons-range" aria-label={`Lessons ${group.name} covers`} onSubmit={(event) => { event.preventDefault(); if (valid) onSave({ first: a, last: b }) }}>
+    <span className="lbl">Covers lessons</span>
+    <label className="sr-only" htmlFor={`${id}-from`}>First lesson</label>
+    <input id={`${id}-from`} type="number" inputMode="numeric" min={min} max={max} value={from} onChange={(event) => setFrom(event.target.value)} />
+    <span aria-hidden="true">–</span>
+    <label className="sr-only" htmlFor={`${id}-to`}>Last lesson</label>
+    <input id={`${id}-to`} type="number" inputMode="numeric" min={min} max={max} value={to} onChange={(event) => setTo(event.target.value)} />
+    <Button size="sm" variant="outline" type="submit" disabled={!valid}>Save</Button>
+    <button type="button" className="lessons-range-link" onClick={onCancel}>Cancel</button>
+    {group.edited && <button type="button" className="lessons-range-link" onClick={() => onSave(null)}><RotateCcw aria-hidden="true" />Back to automatic</button>}
+    <small>{valid ? 'Lessons outside this range move to the other exams by date.' : `Pick lessons between ${min} and ${max}, first to last.`}</small>
+  </form>
 }
 
 function lessonTitle(row: LessonRow, state: LessonState, titleOf: (l: LectureRecord) => string) {

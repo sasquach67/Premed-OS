@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildLessons, findLessonNotebook, groupLessonsByExam, isLessonChapter, scopeLessonNumbers, type LessonRow } from './lessonGroups'
+import { autoExamScope, buildLessons, editedExamScope, findLessonNotebook, groupLessonsByExam, isLessonChapter, scopeLessonNumbers, type LessonExam, type LessonRow } from './lessonGroups'
 import { lessonSchedule } from './classDays'
 import { lessonFields } from './examScope'
 import { parseSyllabusText } from './syllabusParser'
@@ -75,6 +75,53 @@ describe('groupLessonsByExam', () => {
   })
   it('keeps everything in one group with no exams', () => {
     expect(groupLessonsByExam(lessons, []).map((g) => g.name)).toEqual(['All lessons'])
+  })
+})
+
+describe('an exam range the student set', () => {
+  const lessons = [row(1, '2026-08-20'), row(8, '2026-09-15'), row(9, '2026-09-22'), row(15, '2026-10-13'), row(16, '2026-10-20'), row(17, '2026-10-27')]
+  const exams: LessonExam[] = [{ id: 'e1', title: 'Exam 1', date: '2026-09-17' }, { id: 'e2', title: 'Exam 2', date: '2026-11-03' }]
+  const edit = (exam: LessonExam, first: number, last: number): LessonExam => ({ ...exam, scope: editedExamScope(exam.scope, first, last, lessons, 1) })
+  const numbers = (list: LessonExam[]) => groupLessonsByExam(lessons, list).map((g) => [g.name, g.lessons.map((l) => l.lesson), Boolean(g.edited)])
+
+  it('claims its lessons; the unedited exam keeps sorting by date', () => {
+    expect(numbers([exams[0], edit(exams[1], 8, 17)])).toEqual([['Exam 1', [1], false], ['Exam 2', [8, 9, 15, 16, 17], true]])
+    expect(numbers([edit(exams[0], 1, 9), exams[1]])).toEqual([['Exam 1', [1, 8, 9], true], ['Exam 2', [15, 16, 17], false]])
+  })
+  it('holds only its range: a lesson dated before it moves to the next unedited exam', () => {
+    expect(numbers([edit(exams[0], 1, 1), exams[1]])).toEqual([['Exam 1', [1], true], ['Exam 2', [8, 9, 15, 16, 17], false]])
+  })
+  it('wins over another exam’s syllabus scope', () => {
+    const groups = groupLessonsByExam(lessons, [
+      { id: 'e1', title: 'Exam 1', date: '2026-09-17', scope: { lessons: ['Lessons 1-9'] } },
+      { id: 'e2', title: 'Exam 2', date: '2026-10-22', scope: editedExamScope({ lessons: ['Lessons 9-15'] }, 8, 15, lessons, 1) },
+      { id: 'f', title: 'Final', date: '2026-12-07', scope: { cumulative: true } },
+    ])
+    expect(groups.map((g) => [g.name, g.lessons.map((l) => l.lesson)])).toEqual([['Exam 1', [1]], ['Exam 2', [8, 9, 15]], ['Final', [16, 17]]])
+  })
+  it('stays as a group when another edit took all its lessons, so it can be changed back', () => {
+    expect(numbers([edit(exams[0], 1, 17), edit(exams[1], 8, 9)])).toEqual([['Exam 1', [1, 8, 9, 15, 16, 17], true], ['Exam 2', [], true]])
+  })
+})
+
+describe('editedExamScope and autoExamScope', () => {
+  const psyc = [0, 1, 2, 3, 4, 5, 6, 7].map((n) => row(n, `2026-08-${10 + n}`))
+  it('stores the range as a lesson label, keeping cumulative and the syllabus list', () => {
+    expect(editedExamScope({ lessons: ['Lesson 9', 'Lesson 10'], cumulative: true }, 7, 11, psyc, 5))
+      .toEqual({ lessons: ['Lessons 7–11'], cumulative: true, studentEdit: { syllabusLessons: ['Lesson 9', 'Lesson 10'], editedAt: 5 } })
+    expect(scopeLessonNumbers(editedExamScope(undefined, 7, 7, psyc, 5))).toEqual([7])
+  })
+  it('brings the introduction day along when the range starts at the first lesson', () => {
+    expect(editedExamScope(undefined, 1, 6, psyc, 5).lessons).toEqual(['Lessons 0–6'])
+    expect(groupLessonsByExam(psyc, [{ id: 'e1', title: 'Exam 1', date: '2026-08-01', scope: editedExamScope(undefined, 1, 6, psyc, 5) }, { id: 'e2', title: 'Exam 2', date: '2026-12-01' }])
+      .map((g) => g.lessons.map((l) => l.lesson))).toEqual([[0, 1, 2, 3, 4, 5, 6], [7]])
+  })
+  it('goes back to the syllabus’s own lessons, even after editing twice', () => {
+    const twice = editedExamScope(editedExamScope({ lessons: ['Lesson 9'], cumulative: false }, 7, 11, psyc, 5), 6, 11, psyc, 6)
+    expect(twice.studentEdit).toEqual({ syllabusLessons: ['Lesson 9'], editedAt: 6 })
+    expect(autoExamScope(twice)).toEqual({ lessons: ['Lesson 9'], cumulative: false })
+    expect(autoExamScope(editedExamScope(undefined, 7, 11, psyc, 5))).toEqual({})
+    expect(autoExamScope({ lessons: ['Lesson 3'] })).toEqual({ lessons: ['Lesson 3'] })
   })
 })
 
