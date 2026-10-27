@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildLessons, findLessonNotebook, groupLessonsByExam, isLessonChapter, scopeLessonNumbers, type LessonRow } from './lessonGroups'
+import { lessonSchedule } from './classDays'
 import type { SyllabusScheduleEntry } from '@/lib/types'
 
 const row = (lesson: number, date: string): LessonRow => ({ lesson, dates: [date] })
@@ -89,7 +90,7 @@ const psycSaved: SyllabusScheduleEntry[] = ([
 
 describe('a schedule saved one entry per class date', () => {
   it('reads it as lessons: back-to-back classes on a topic are one lesson, the introduction is lesson 0', () => {
-    const rows = buildLessons(psycSaved)
+    const rows = buildLessons(lessonSchedule(psycSaved))
     expect(rows.map((r) => [r.lesson, r.title])).toEqual([
       [0, 'Class Introduction'], [1, 'The Evolution of Psychology'], [2, 'Research Enterprise in Psychology'], [3, 'The Biological Bases of Behavior'],
       [4, 'Sensation and Perception'], [5, 'Variations in Consciousness'], [6, 'Learning'], [7, 'Human Memory'], [8, 'Cognition and Intelligence'],
@@ -98,19 +99,19 @@ describe('a schedule saved one entry per class date', () => {
     expect(rows.find((r) => r.lesson === 6)?.dates).toEqual(['2026-09-10', '2026-09-15'])
   })
   it('puts Lessons 1–6 under Exam 1 and starts Exam 2 at Lesson 7', () => {
-    const groups = groupLessonsByExam(buildLessons(psycSaved), [{ id: 'x1', title: 'Exam 1', date: '2026-09-17' }, { id: 'x2', title: 'Exam 2', date: '2026-11-03' }, { id: 'f', title: 'Final Exam', date: '2026-12-10' }])
+    const groups = groupLessonsByExam(buildLessons(lessonSchedule(psycSaved)), [{ id: 'x1', title: 'Exam 1', date: '2026-09-17' }, { id: 'x2', title: 'Exam 2', date: '2026-11-03' }, { id: 'f', title: 'Final Exam', date: '2026-12-10' }])
     expect(groups.map((g) => g.lessons.map((r) => r.lesson))).toEqual([[0, 1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11], [12]])
   })
   it('leaves a week schedule and an already numbered schedule alone', () => {
     const weeks: SyllabusScheduleEntry[] = ['2026-08-17', '2026-08-24', '2026-08-31'].map((startDate, order) => ({ id: `w${order}`, week: `Week ${order + 1}`, label: 'Climate', startDate, order }))
-    expect(buildLessons(weeks).map((r) => r.lesson)).toEqual([1, 2, 3])
+    expect(lessonSchedule(weeks)).toBe(weeks)
     const numbered = psycSaved.map((e, i) => ({ ...e, lesson: i + 1 }))
-    expect(buildLessons(numbered)).toHaveLength(psycSaved.length)
+    expect(lessonSchedule(numbered)).toBe(numbered)
   })
 })
 
 describe('isLessonChapter', () => {
-  const lessons = buildLessons(psycSaved)
+  const lessons = buildLessons(lessonSchedule(psycSaved))
   it('is a chapter reading due on its lesson’s class day', () => {
     expect(isLessonChapter('Chapter 6 · Learning', '2026-09-15', lessons)).toBe(true)
     expect(isLessonChapter('Chapter 9 · Motivation & Emotion', undefined, lessons)).toBe(true)

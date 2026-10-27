@@ -1,5 +1,5 @@
 import type { LectureRecord, SyllabusScheduleEntry } from '@/lib/types'
-import { lessonSchedule, topicOf } from './classDays'
+import { topicOf } from './classDays'
 
 /**
  * The Lessons tab (Andy picked the Oct 18 design, Oct 20 2026): one row per
@@ -32,8 +32,7 @@ export interface LessonGroup {
 }
 
 /** Lessons from the syllabus schedule. Rows without a lesson number are numbered in order. */
-export function buildLessons(saved: SyllabusScheduleEntry[] = []): LessonRow[] {
-  const schedule = lessonSchedule(saved)
+export function buildLessons(schedule: SyllabusScheduleEntry[] = []): LessonRow[] {
   const rows = new Map<number, LessonRow>()
   // When the syllabus numbers or dates its lessons, an entry with neither is a
   // heading or note (an undated "Unit 1: …" line), not a lesson.

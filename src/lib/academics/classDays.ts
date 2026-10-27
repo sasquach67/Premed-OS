@@ -85,7 +85,8 @@ const INTRODUCTION = /\b(?:introduction|intro|syllabus|welcome|overview|orientat
  * A schedule saved before lessons were grouped (PR #42, Oct 19 2026) has one
  * entry per class date and no lesson numbers, so PSYC 101 showed its two
  * Learning classes as "Lesson 8 — Learning" and "Lesson 9 — Learning" (Andy,
- * Oct 27 2026). Read it the way the parser now writes it: back-to-back classes
+ * Oct 27 2026). `migrateClassLessonsV52` rewrites it once, the way the parser
+ * now writes it: back-to-back classes
  * on one topic are one lesson with both dates, an opening introduction day is
  * lesson 0, and the rest are numbered in order. Only that shape changes: a
  * schedule with lesson numbers, a week-based one (never two entries in one
@@ -122,7 +123,6 @@ export function buildClassDays({ schedule = [], meetingDays, exams = [], overrid
   /** Per-date changes the student made with the pencil; the syllabus is never rewritten. */
   overrides?: Record<string, ClassDayOverride>
 }): ClassDay[] {
-  schedule = lessonSchedule(schedule)
   const weekdays = meetingWeekdays(meetingDays)
   const dated = schedule.filter((e) => entryDates(e).length).sort((a, b) => entryDates(a)[0].localeCompare(entryDates(b)[0]) || a.order - b.order)
   const perClass = dated.some((e) => e.lesson !== undefined || (e.dates?.length ?? 0) > 1)
