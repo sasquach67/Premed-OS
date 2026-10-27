@@ -85,4 +85,7 @@ describe('stageStates', () => {
   it('opens only Prime before class', () => {
     expect(stageStates({ ...day, date: '2026-10-22' }, [], '2026-10-20')).toEqual(['open', 'locked', 'locked'])
   })
+  it('opens every stage on the day of class', () => {
+    expect(stageStates({ ...day, date: '2026-10-27' }, ['prime'], '2026-10-27')).toEqual(['done', 'open', 'open'])
+  })
 })

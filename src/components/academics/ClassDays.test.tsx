@@ -34,13 +34,17 @@ describe('ClassDays', () => {
     expect(container.textContent).toContain('Continued')
   })
 
-  it('opens only Prime before class and saves a tick through onToggle', () => {
+  it('opens only Prime before class, every stage on the class day, and saves a tick through onToggle', () => {
     const { onToggle } = render()
     const prime = buttons('Do the before-class work')[0]
     expect(prime.disabled).toBe(false)
-    expect(buttons('Go to class and take notes')[0].disabled).toBe(true)
+    const [todayClass, thursday] = buttons('Go to class and take notes')
+    expect(todayClass.disabled).toBe(false)
+    expect(thursday.disabled).toBe(true)
     act(() => prime.click())
     expect(onToggle).toHaveBeenCalledWith('2026-10-20', 'prime')
+    act(() => todayClass.click())
+    expect(onToggle).toHaveBeenCalledWith('2026-10-20', 'attend')
   })
 
   it('offers Import on a past day with no notebook and flags missed steps', () => {

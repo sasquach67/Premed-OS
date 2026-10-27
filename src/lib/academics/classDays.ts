@@ -228,6 +228,7 @@ export function stageStates(day: ClassDay, checked: readonly string[], today: st
     // Prime and Learn are late the day after class; Retain after its two days.
     if (past && tracked && day.kind === 'class' && (i < 2 || daysSince > 2)) return 'late'
     if (on) return 'part'
-    return i === 0 || past || day.kind === 'exam' ? 'open' : 'locked'
+    // Learn is "in and after class": everything opens on the class day itself.
+    return i === 0 || day.date <= today || day.kind === 'exam' ? 'open' : 'locked'
   })
 }
