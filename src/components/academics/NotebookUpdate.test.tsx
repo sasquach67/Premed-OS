@@ -38,7 +38,7 @@ async function click(label: string) {
     await click('Download');target=[...document.querySelectorAll<HTMLElement>('button')].find(node=>node.textContent?.trim()===label)
   }
   expect(target,label).toBeTruthy();await act(async()=>target!.click())
-  if (['Validate and preview','Save notebook','Save update'].includes(label)) await vi.waitFor(async()=>{await act(async()=>{});expect(container.querySelector('input[type="file"]')?.hasAttribute('disabled')).not.toBe(true)},{timeout:10000,interval:20})
+  if (['Validate and preview','Save notebook','Accept update'].includes(label)) await vi.waitFor(async()=>{await act(async()=>{});expect(container.querySelector('input[type="file"]')?.hasAttribute('disabled')).not.toBe(true)},{timeout:10000,interval:20})
 }
 
 async function fill(label: string, value: string) {
@@ -46,7 +46,6 @@ async function fill(label: string, value: string) {
   if (!field) throw new Error(`Missing textarea: ${label}`)
   expect(field, label).toBeTruthy(); await act(async () => { Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(field, value); field.dispatchEvent(new Event('input', { bubbles: true })) })
 }
-async function check(text: string) { const box = [...document.querySelectorAll('label')].find(l => l.textContent?.includes(text))?.querySelector<HTMLInputElement>('input[type="checkbox"]'); if (!box) throw new Error(`Missing checkbox: ${text}`); await act(async () => box.click()) }
 async function toImport() {
   await click('Update')
   expect(button('Copy prompt').disabled).toBe(true)
@@ -86,17 +85,25 @@ it('opens the saved reader after reload and resumes the untouched update draft o
   expect(container.querySelectorAll('.nai-step')).toHaveLength(3)
   expect(button('Copy prompt').disabled).toBe(false)
 })
-it('shows readable differences and explicit acceptance, preserves independent practice through store reload', async () => {
+it('shows a change count and one Changes preview, accepts with one action, preserves independent practice through store reload', async () => {
   await preview()
   expect(container.textContent).toContain('Hypothetical task: how long is the shape shown?')
-  expect(container.textContent).toContain('Source / excerpts'); expect(button('Save update').disabled).toBe(true)
-  const previewFrame = [...container.querySelectorAll('.en-notebook-preview')].find(node => node.querySelector('h3')?.textContent === 'Preview — not saved yet')!
-  expect(container.querySelector('.en-import-comparison-scroll[tabindex="0"]')).toBeTruthy()
+  expect(container.querySelector('.nr-summary .en-eyebrow')?.textContent).toBe('Update · revision 2')
+  expect(container.querySelector('[aria-label="Change summary"]')?.textContent).toContain('practice records kept')
+  const previewFrame = [...container.querySelectorAll('.en-notebook-preview')].find(node => node.querySelector('h3')?.textContent === 'Changes')!
+  expect(container.querySelectorAll('.en-notebook-preview')).toHaveLength(1)
+  expect([...previewFrame.querySelectorAll('.nr-sec[data-status="changed"] em')].map(node => node.textContent)).toContain('Revised')
+  expect(previewFrame.querySelector('.nr-sec-body mark')).toBeTruthy()
   expect(previewFrame.querySelector('.en-notebook-preview-scroll[tabindex="0"]')).toBeTruthy()
   expect(previewFrame.querySelector('[inert]')).toBeNull()
   expect(previewFrame.textContent).not.toMatch(/Expand preview|Collapse preview/)
-  expect(button('Save update').disabled).toBe(true)
-  await check('I reviewed the content'); await click('Save update')
+  // The mockup's review has no secondary disclosures, acceptance checkbox or side-by-side change list.
+  expect(container.textContent).not.toMatch(/Save a separate copy instead|Read the exported baseline|I reviewed the content|Restart only when/)
+  expect(container.querySelector('[aria-label="Validated notebook preview"] input[type="checkbox"]')).toBeNull()
+  expect(button('Back to saved entry').closest('[hidden]')).toBeTruthy()
+  expect(container.textContent).toContain('Earlier versions stay in history.')
+  expect(button('Accept update').disabled).toBe(false)
+  await click('Accept update')
   expect(lecture().id).toBe(id); expect(lecture().importedNotebook!.current.entries[0].revision).toBe(2)
   expect(lecture().importedNotebook!.progress['question-mapping'].complete).toBe(true)
   expect(lecture().importedNotebook!.progress['question-timing']).toBeUndefined()
@@ -109,32 +116,38 @@ it('shows readable differences and explicit acceptance, preserves independent pr
   expect(JSON.parse(exportNotebook(lecture(), 'current')).entries[0].title).toBe('Edited after acceptance')
 })
 it('blocks content changed after preview and explains a separate copy accurately', async () => {
-  await preview(); await check('I reviewed the content')
+  await preview()
   await act(async () => notebookTransaction(state => { state.academics.classCenter.lectures[0].importedNotebook!.current.entries[0].title = 'Newer saved title' }))
-  expect(container.textContent).toContain('The saved notebook changed after this update started'); expect(button('Save update').disabled).toBe(true)
-  await check('Save as separate entries instead')
+  expect(button('Accept update').disabled).toBe(true)
+  const problem = container.querySelector('.nr-check[data-state="choice"]')!
+  expect(problem.textContent).toContain('Saved content changed after the baseline was exported')
+  expect([...problem.querySelectorAll('button')].map(node => node.textContent)).toEqual(['Restart from latest saved entry', 'Save a separate copy'])
+  // The error is stated once, in its check; the save bar only points to it.
+  expect(container.textContent!.split('Saved content changed after the baseline').length).toBe(2)
+  expect(container.querySelector('.en-save-blocked')?.textContent).toBe('Choose an option above to continue.')
+  await click('Save a separate copy')
   expect(container.textContent).toContain('separate copy starts with empty notes and practice records')
-  await check('Save revised content as separate entries'); await click('Save notebook')
+  await click('Save notebook')
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(2)
   expect(lecture().importedNotebook!.current.entries[0].title).toBe('Newer saved title')
   const copy = useStore.getState().academics.classCenter.lectures.find(l => l.id !== id)!.importedNotebook!
   expect(copy.notes).toBe(''); expect(copy.progress).toEqual({})
 })
 it('rolls back content, history and study records when persistence fails during acceptance', async () => {
-  await preview(); await check('I reviewed the content'); const before = JSON.stringify(lecture().importedNotebook)
+  await preview(); const before = JSON.stringify(lecture().importedNotebook)
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Quota exceeded') })
-  await click('Save update')
+  await click('Accept update')
   expect(container.textContent).toContain('Browser storage could not save'); expect(JSON.stringify(lecture().importedNotebook)).toBe(before)
 })
 it('rejects a cross-tab change after preview without replacing newer disk content', async () => {
-  await preview(); await check('I reviewed the content')
+  await preview()
   const disk = JSON.parse(localStorage.getItem(STORAGE_KEY)!); disk.state.academics.classCenter.lectures[0].importedNotebook.notes = 'Newer other-tab notes'; localStorage.setItem(STORAGE_KEY, JSON.stringify(disk))
-  await click('Save update'); expect(container.textContent).toContain('another tab')
+  await click('Accept update'); expect(container.textContent).toContain('another tab')
   expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).state.academics.classCenter.lectures[0].importedNotebook.notes).toBe('Newer other-tab notes')
   expect(lecture().importedNotebook!.current.entries[0].revision).toBe(1)
 })
 it('restores a reviewed history version and retains the replaced version', async () => {
-  await preview(); await check('I reviewed the content'); await click('Save update')
+  await preview(); await click('Accept update')
   await click('Version history')
   await click('Review this version'); expect(document.body.textContent).toContain('Review before restoring')
   await click('Restore this version')
@@ -276,6 +289,12 @@ it.each(['Save edits', 'Cancel edits'])('returns to Study guide after %s without
   else expect(lecture().importedNotebook!.history).toEqual(before.history)
 })
 
+it('cancels the update review back to the saved entry without saving', async () => {
+  await preview(); const before = JSON.stringify(lecture().importedNotebook)
+  await click('Cancel')
+  expect(container.querySelector('[aria-label="Saved external notebook"]')).toBeTruthy()
+  expect(JSON.stringify(lecture().importedNotebook)).toBe(before)
+})
 it('reopens an existing update draft without requiring another workspace write', async () => {
   await click('Update')
   const draft = JSON.stringify(lecture().importedNotebook!.updateSession)
@@ -302,7 +321,7 @@ it('reports the selected destination when an update is saved as a separate noteb
   await toImport()
   const proposal=correctedFixture();proposal.course={code:destination.code,title:destination.title,term:destination.term}
   await fill('Paste complete JSON',JSON.stringify(proposal));await click('Validate and preview')
-  await check('Save as separate entries instead');await click('Save to OTHER 101');await click('Save notebook')
+  await click('Save a separate copy');await click('Save to OTHER 101');await click('Save notebook')
   const saved=useStore.getState().academics.classCenter.lectures.find(item=>item.courseId===destination.id)!
   expect(saved).toBeTruthy();expect(navigate).toHaveBeenCalledWith(saved.id,destination.id)
   expect(lecture().importedNotebook!.current).toEqual(before!.current)
