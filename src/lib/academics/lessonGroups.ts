@@ -1,5 +1,5 @@
 import type { LectureRecord, SyllabusScheduleEntry } from '@/lib/types'
-import { topicOf } from './classDays'
+import { lessonSchedule, topicOf } from './classDays'
 
 /**
  * The Lessons tab (Andy picked the Oct 18 design, Oct 20 2026): one row per
@@ -32,7 +32,8 @@ export interface LessonGroup {
 }
 
 /** Lessons from the syllabus schedule. Rows without a lesson number are numbered in order. */
-export function buildLessons(schedule: SyllabusScheduleEntry[] = []): LessonRow[] {
+export function buildLessons(saved: SyllabusScheduleEntry[] = []): LessonRow[] {
+  const schedule = lessonSchedule(saved)
   const rows = new Map<number, LessonRow>()
   // When the syllabus numbers or dates its lessons, an entry with neither is a
   // heading or note (an undated "Unit 1: …" line), not a lesson.
@@ -86,6 +87,21 @@ export function groupLessonsByExam(lessons: LessonRow[], exams: LessonExam[]): L
     groups[at].lessons.push(row)
   }
   return groups.filter((group) => group.lessons.length)
+}
+
+/**
+ * A reading that is only a lesson's own textbook chapter ("Chapter 6 ·
+ * Learning", due on a Learning class day) is that lesson, not a reading of its
+ * own: the lesson's notebook already covers it. PSYC 101 lists one beside every
+ * class, and Andy said the Readings group they made is unnecessary (Oct 27
+ * 2026). The parser drops them on import; this drops ones saved before that.
+ */
+export function isLessonChapter(title: string, due: string | undefined, lessons: LessonRow[]): boolean {
+  const chapter = title.trim().match(/^(?:chapter|ch\.?)\s*(\d+)\s*(?:[·:\-–—]\s*(.+))?$/i)
+  const row = chapter && lessons.find((r) => r.lesson === Number(chapter[1]))
+  if (!row) return false
+  const norm = (text: string) => text.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').trim()
+  return Boolean(due && row.dates.includes(due.slice(0, 10))) || Boolean(chapter[2] && row.title && norm(chapter[2]) === norm(row.title))
 }
 
 /**

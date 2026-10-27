@@ -1739,6 +1739,19 @@ function groupSessionsIntoLessons(items: SyllabusItem[]): SyllabusItem[] {
   return items.filter((item) => !removed.has(item))
 }
 
+/** A "Chapter N" reading due on a class day of lesson N is that lesson's own
+ *  textbook chapter, not a reading of its own: the lesson notebook covers it.
+ *  PSYC 101 lists one beside every class; Andy said the Readings group they
+ *  made is unnecessary (Oct 27 2026). Readings that cite anything else stay. */
+function dropLessonChapterReadings(items: SyllabusItem[]): SyllabusItem[] {
+  const lessons = items.filter((unit) => unit.kind === 'units' && unit.lesson != null)
+  return items.filter((item) => {
+    if (item.kind !== 'readings' || !item.value) return true
+    const chapter = item.label.match(/^Chapter\s+(\d+)(?:\s*·.*)?$/i)
+    return !chapter || !lessons.some((unit) => unit.lesson === Number(chapter[1]) && (unit.dates ?? [unit.value]).includes(item.value))
+  })
+}
+
 /** A heading that groups lessons: `Unit 2: How cells control division`, `Module 3 — Immunity`. */
 const UNIT_HEADING = /^(?:unit|module|part|theme|section)\s+(?:\d+|[ivx]+)\s*[:.\-–—]\s*\S/i
 
@@ -1978,7 +1991,7 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
   // Deliberately conservative: a one-page syllabus with just office hours still counts
   // as a syllabus, and the student can override this either way.
   const documentKind: DocumentKind = !scanDetected && structureFound.length === 0 ? 'unrecognized' : 'syllabus'
-  return { sourceName, sourceKind, text, items: tidyItems(attachUnitHeadings(groupSessionsIntoLessons(pruneRedundantLogistics(items)))), searched, scanDetected, documentKind, structureFound, numberedItems }
+  return { sourceName, sourceKind, text, items: tidyItems(attachUnitHeadings(dropLessonChapterReadings(groupSessionsIntoLessons(pruneRedundantLogistics(items))))), searched, scanDetected, documentKind, structureFound, numberedItems }
 }
 
 const SYLLABUS_KINDS: SyllabusKind[] = ['identity', 'standards', 'exams', 'weights', 'units', 'readings', 'deadlines', 'policies', 'logistics']

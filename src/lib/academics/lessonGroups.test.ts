@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildLessons, findLessonNotebook, groupLessonsByExam, scopeLessonNumbers, type LessonRow } from './lessonGroups'
+import { buildLessons, findLessonNotebook, groupLessonsByExam, isLessonChapter, scopeLessonNumbers, type LessonRow } from './lessonGroups'
+import type { SyllabusScheduleEntry } from '@/lib/types'
 
 const row = (lesson: number, date: string): LessonRow => ({ lesson, dates: [date] })
 
@@ -71,5 +72,52 @@ describe('groupLessonsByExam', () => {
   })
   it('keeps everything in one group with no exams', () => {
     expect(groupLessonsByExam(lessons, []).map((g) => g.name)).toEqual(['All lessons'])
+  })
+})
+
+// PSYC 101 as it was saved before lessons were grouped: one entry per class
+// date, no lesson numbers (Andy's page, Oct 27 2026).
+const psycSaved: SyllabusScheduleEntry[] = ([
+  ['2026-08-18', 'Class Introduction'], ['2026-08-20', 'The Evolution of Psychology'], ['2026-08-25', 'Research Enterprise in Psychology'],
+  ['2026-08-27', 'The Biological Bases of Behavior'], ['2026-09-01', 'The Biological Bases of Behavior'], ['2026-09-03', 'Sensation and Perception'],
+  ['2026-09-08', 'Variations in Consciousness'], ['2026-09-10', 'Learning'], ['2026-09-15', 'Learning'],
+  ['2026-09-22', 'Human Memory'], ['2026-09-24', 'Human Memory'], ['2026-09-29', 'Cognition and Intelligence'], ['2026-10-01', 'Cognition and Intelligence'],
+  ['2026-10-06', 'Well-being day'], ['2026-10-08', 'Motivation & Emotion'], ['2026-10-13', 'Motivation & Emotion'], ['2026-10-15', 'Fall Break'],
+  ['2026-10-20', 'Human Development Across the Lifespan'], ['2026-10-22', 'Human Development Across the Lifespan'],
+  ['2026-10-27', 'Personality'], ['2026-10-29', 'Personality'], ['2026-11-05', 'Social Behavior'],
+] as const).map(([startDate, label], order) => ({ id: `s${order}`, week: 'Unscheduled', label, startDate, order }))
+
+describe('a schedule saved one entry per class date', () => {
+  it('reads it as lessons: back-to-back classes on a topic are one lesson, the introduction is lesson 0', () => {
+    const rows = buildLessons(psycSaved)
+    expect(rows.map((r) => [r.lesson, r.title])).toEqual([
+      [0, 'Class Introduction'], [1, 'The Evolution of Psychology'], [2, 'Research Enterprise in Psychology'], [3, 'The Biological Bases of Behavior'],
+      [4, 'Sensation and Perception'], [5, 'Variations in Consciousness'], [6, 'Learning'], [7, 'Human Memory'], [8, 'Cognition and Intelligence'],
+      [9, 'Motivation & Emotion'], [10, 'Human Development Across the Lifespan'], [11, 'Personality'], [12, 'Social Behavior'],
+    ])
+    expect(rows.find((r) => r.lesson === 6)?.dates).toEqual(['2026-09-10', '2026-09-15'])
+  })
+  it('puts Lessons 1–6 under Exam 1 and starts Exam 2 at Lesson 7', () => {
+    const groups = groupLessonsByExam(buildLessons(psycSaved), [{ id: 'x1', title: 'Exam 1', date: '2026-09-17' }, { id: 'x2', title: 'Exam 2', date: '2026-11-03' }, { id: 'f', title: 'Final Exam', date: '2026-12-10' }])
+    expect(groups.map((g) => g.lessons.map((r) => r.lesson))).toEqual([[0, 1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11], [12]])
+  })
+  it('leaves a week schedule and an already numbered schedule alone', () => {
+    const weeks: SyllabusScheduleEntry[] = ['2026-08-17', '2026-08-24', '2026-08-31'].map((startDate, order) => ({ id: `w${order}`, week: `Week ${order + 1}`, label: 'Climate', startDate, order }))
+    expect(buildLessons(weeks).map((r) => r.lesson)).toEqual([1, 2, 3])
+    const numbered = psycSaved.map((e, i) => ({ ...e, lesson: i + 1 }))
+    expect(buildLessons(numbered)).toHaveLength(psycSaved.length)
+  })
+})
+
+describe('isLessonChapter', () => {
+  const lessons = buildLessons(psycSaved)
+  it('is a chapter reading due on its lesson’s class day', () => {
+    expect(isLessonChapter('Chapter 6 · Learning', '2026-09-15', lessons)).toBe(true)
+    expect(isLessonChapter('Chapter 9 · Motivation & Emotion', undefined, lessons)).toBe(true)
+  })
+  it('is not any other reading', () => {
+    expect(isLessonChapter('Chapter 6 · Memory and the brain', '2026-10-27', lessons)).toBe(false)
+    expect(isLessonChapter('Chapter 40', '2026-09-15', lessons)).toBe(false)
+    expect(isLessonChapter('Steinberg, Sizwe’s Test, “Preface” (pp. 1-75)', '2026-09-15', lessons)).toBe(false)
   })
 })

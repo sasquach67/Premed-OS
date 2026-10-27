@@ -98,6 +98,19 @@ describe('LessonsTab', () => {
     expect(h.onNewReadingNotebook).toHaveBeenCalledWith('steinberg, sizwes test')
   })
 
+  it('reads a schedule saved one entry per class date as lessons, with no chapter readings (PSYC 101, Oct 27 2026)', () => {
+    const saved: SyllabusScheduleEntry[] = ([
+      ['2026-08-18', 'Class Introduction'], ['2026-08-20', 'The Evolution of Psychology'], ['2026-08-25', 'Research Enterprise in Psychology'],
+      ['2026-08-27', 'The Biological Bases of Behavior'], ['2026-09-01', 'The Biological Bases of Behavior'], ['2026-09-03', 'Sensation and Perception'], ['2026-09-08', 'Variations in Consciousness'],
+      ['2026-09-10', 'Learning'], ['2026-09-15', 'Learning'], ['2026-09-22', 'Human Memory'], ['2026-09-24', 'Human Memory'],
+    ] as const).map(([startDate, label], order) => ({ id: `s${order}`, week: 'Unscheduled', label, startDate, order }))
+    const reading = (title: string, due: string) => ({ id: due, courseId: 'c', week: 'Due for Tues class', title, status: 'not-started' as const, dueForDiscussion: due, createdAt: 1, updatedAt: 1, order: 0 })
+    render([], { schedule: saved, today: '2026-09-25', readings: [reading('Chapter 6 · Learning', '2026-09-15'), reading('Chapter 7 · Human Memory', '2026-09-22')] })
+    expect(text('.lessons-ghead .r')).toEqual(['Lessons 1–6', 'Lesson 7'])
+    expect(container.textContent).not.toContain('Readings')
+    expect(container.textContent).not.toMatch(/Lesson [89] — Learning/)
+  })
+
   it('keeps the class files in a collapsed section', () => {
     render()
     expect(container.textContent).toContain('Class files')
