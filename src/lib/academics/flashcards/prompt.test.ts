@@ -50,7 +50,7 @@ describe('flashcard prompt handoff', () => {
 
   it('requires an example pass that also checks reused notes', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    for (const phrase of ['Example pass (required)', 'Examples are checked, never copied forward.', 'exampleInventory', 'every reused note goes through this pass too', 'An example appears once', 'never an outline of how to answer', 'the example pass is done']) expect(prompt).toContain(phrase)
+    for (const phrase of ['Example pass (required)', 'Examples are checked, never copied forward.', 'exampleInventory', 'every reused note goes through this pass too', 'An example appears once', 'never an outline of how to answer', 'the example pass is done', 'it never copies old cards forward', 'Never add a term or idea the class did not teach', 'use the exact name the class uses']) expect(prompt).toContain(phrase)
     expect(prompt).not.toContain('even if an example card also exists')
   })
 

@@ -112,4 +112,5 @@ A small detail about a term (an age, number or condition) goes on that term's ca
 ## 2026-10-28 — required example pass (2026-10-28a)
 
 cards.json must carry `exampleInventory`: every example the instructor gives, with its location, placed on cardIds or skipped with a reason; the builder fails without it and reports placed and skipped counts. In an update, reused notes go through the same pass; reuseGuid keeps identity while examples improve. An example appears once (not in both a definition's Extra and its scenario card). The builder also warns on class framing ("the class described"), a subject opener repeated on five or more cards, and a rebuild Back that is an answer outline. Fields, permanent IDs and update behavior are unchanged.
+An update rebuilds every card against the current prompt; reused notes are re-checked against every rule, and the build report's `reusedNotes` shows how many changed and which stayed word for word. Real field terms stay when the idea was taught; made-up labels and untaught content go; named tests and studies use the class's exact name.
 
