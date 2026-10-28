@@ -606,5 +606,13 @@
   "limitations": [
     "Synthetic data. No lecture content or learning quality was evaluated."
   ],
-  "coverageExceptions": []
+  "coverageExceptions": [],
+  "exampleInventory": [
+    {
+      "text": "Synthetic fixture example",
+      "location": "fixture",
+      "cardIds": [],
+      "skipReason": "Synthetic fixture with no lecture source."
+    }
+  ]
 }

@@ -1,6 +1,6 @@
 # Premed OS lecture flashcards — complete prompt v1
 
-Prompt revision: 2026-10-27a — no meta wording on any card.
+Prompt revision: 2026-10-28a — required example pass with an example inventory; no meta wording on any card.
 
 You are creating a finished Anki `.apkg` deck from an already completed lecture Class Journal, plus the original course materials when the student supplies them. Premed OS supplied this prompt; it does not generate or import the result. The student imports your finished file into Anki.
 
@@ -94,7 +94,7 @@ Require a whole figure, slide, objective or instructor start-to-end explanation;
 
 Use Basic type rebuild, no cloze, empty recallItems, null listOrdered and empty axis. Grade ONE Q&A once as a whole. Front states the count: “What are the N steps of ⟨structure⟩, from ⟨start⟩ to ⟨end⟩?”; “Compare the N ⟨things⟩ on ⟨axis⟩ and ⟨axis⟩.”; or “Rebuild ⟨Author⟩'s argument on ⟨topic⟩ in 3 parts: claim, case, what it answers.” Axes name one comparison.
 
-Back: chain on one arrow line of names only, outcome last: the protein, molecule, event or stage at each step, never what it does, so the card stays quick; put actions and details in Extra; table one line per item, written “Item: value; value” with axes in identical order; argument three lines headed Claim:, Case:, Answers:. Steps are names, not definitions. Register: Technical for BIOL, plain PSYC, author and actual case for ANTH/GEOG; at most one short parenthesis. Extra: at most three lines plus the lecture figure; biology may add one taught “where it breaks” line.
+A rebuild Back is the content itself, never an outline of how to answer (“Definition → sources → critical periods”). Back: chain on one arrow line of names only, outcome last: the protein, molecule, event or stage at each step, never what it does, so the card stays quick; put actions and details in Extra; table one line per item, written “Item: value; value” with axes in identical order; argument three lines headed Claim:, Case:, Answers:. Steps are names, not definitions. Register: Technical for BIOL, plain PSYC, author and actual case for ANTH/GEOG; at most one short parenthesis. Extra: at most three lines plus the lecture figure; biology may add one taught “where it breaks” line.
 
 Start where this lecture's figure starts, extending upstream only through shown steps: if it begins at Ras, begin at Ras. Extra may locate earlier steps: “Steps 1–3: Lesson 11”. The completing lesson hosts the full chain; earlier shorter chains remain distinct demands, never reused or retired.
 
@@ -196,8 +196,16 @@ Biology concept formats (subject to the concepts-only scope above):
 
 No source chatter in any student-facing card field: Front, Back, cloze text, Extra, labels, or figure captions/alt text. Never add commentary about lectures, readings, authors or slides, or phrases such as “not X's label” as commentary about where an idea came from. The one exception is a bare locator in Extra, such as “Slide 14”, and only when the student would need to find a figure or exact claim again; usually it is not needed. Teach the idea only. Keep source references and attribution in sourceRefs / hidden premedos_source metadata; keep unresolved source conflicts in the separate audit/limitations report, never as a recall task or explanatory aside. Under the Readings emphasis, naming the scholar, people or place as the holder or subject of an argument is content, not source chatter. Commentary about where an idea was found, such as “the reading says”, is still excluded.
 
+### Example pass (required)
+
+Examples are checked, never copied forward. Before writing cards, read the transcript, slides, handwritten notes and Journal for every example the instructor gives: scenarios, demonstrations, named studies or people, analogies, celebrities or characters, and student examples the instructor approves. Record each in cards.json `exampleInventory` as {text, location, cardIds, skipReason}. Attach it to the card for the idea it shows (its Extra, or its scenario card when that idea gets one) and list those cardIds, or give a skipReason (duplicate of a better example, inaccurate, off-topic). The builder fails without this inventory; use an empty list with `exampleInventoryNote` only when the materials truly contain no examples.
+
+Then check every card's example. Fix one that is wrong, vague, attached to the wrong idea, or harder than the idea. Add one where the idea is hard to picture: the instructor's first, otherwise a short plain illustration in Extra that teaches only the taught idea, recorded in the delivery report as written by you. In an update, every reused note goes through this pass too: reuseGuid keeps the identity while the example and wording improve.
+
+Calibration: “Displacement is redirecting a feeling to a substitute target.” Extra: “Stressed at work, you come home and snap at your family.” For Kohlberg, use the instructor's Heinz dilemma; for object permanence, peekaboo; for id, ego and superego, the instructor's devil, angel and you deciding.
+
 Extra holds up to three short lines, each only when it helps. For biology, passage examples/evidence together occupy at most one optional short line; the general required-example/evidence rules do not force extra passage content or cards. Structure/process diagrams may help; experimental data figures are not card material:
-- Example first. Use the lecture's own example; use a famous standard one only if the lecture has none. This line is required on a definition or claim card whenever the Journal or lecture gives an example for it. Do not omit an available example just to shorten the card, even if an example card also exists. Mark a supplied example as kind "source" with its actual evidence; a famous standard example is kind "illustrative" and is never invented or presented as lecture evidence.
+- Example first. Use the lecture's own example; use a famous standard one only if the lecture has none. This line is required on a definition or claim card whenever the Journal or lecture gives an example for it. Do not omit an available example just to shorten the card. An example appears once: if a scenario card uses it, the definition card's Extra uses a different lecture example or none, unless that example is needed to understand the term. Mark a supplied example as kind "source" with its actual evidence; a famous standard example is kind "illustrative" and is never invented or presented as lecture evidence.
 - In other words. Add a plain restatement when an abstract or technical phrase needs unpacking. This is allowed under default wording too, as well as Technical and Readings. Say what happens rather than repeating the same jargon. A clearer Back is still required; Extra cannot repair an incomprehensible answer.
 - Evidence. For a research finding or case-study claim, include the study, case or observation behind it: who or what was examined and what was found. Use only supplied evidence, never invent participants, methods or results. A concrete study or person's name is content here; “the lecture says” is still source chatter. Record unavailable evidence in the report instead of fabricating it.
 
@@ -216,7 +224,7 @@ Accepted style examples, not content to insert into unrelated decks:
 - Cloze: The {{c1::James–Lange theory::theory of emotion}} states that {{c2::an event makes the body react, and noticing that reaction produces the emotion}}.
 - Extra: J and L have a letter between them: one step after the other.
 
-No meta wording anywhere on a card. State the idea itself, never how or where the course framed it. Banned: “in this model”, “in this network”, “in the illustrated pathway”, “in the simplified comparison”, “in the animal-cell model”, “the lecture's example”, “as shown on the slide”. The course's version is what the student learns, so state it as fact. If a claim truly holds only for one organism or condition, name that condition as content (“in animal cells”), never the source.
+No meta wording anywhere on a card. State the idea itself, never how or where the course framed it. Banned: “in this model”, “in this network”, “in the illustrated pathway”, “in the simplified comparison”, “in the animal-cell model”, “the lecture's example”, “as shown on the slide”, “the class described”, “in class”. Never open card after card with a subject label such as “In human development,” or “In personality,”. Keep capitals on names: “Kohlberg's level”, never “kohlberg's level”. The course's version is what the student learns, so state it as fact. If a claim truly holds only for one organism or condition, name that condition as content (“in animal cells”), never the source.
 - Before: “In this model, ERK signaling promotes {{c1::cell proliferation and Bcl-2-mediated survival}}.” After: “ERK signaling promotes {{c1::cell proliferation and Bcl-2-mediated survival}}.”
 - Before: “In the simplified sensory-memory comparison, capacity is relatively stable from about {{c1::age 5}}.” After: no card of its own; the sensory-memory card's Extra reads “Its capacity stays about the same from age 5.”
 
@@ -352,7 +360,7 @@ Use the environment's equivalent Python path on other operating systems. The Ank
 
 Never invent terms. Use the course's exact named terms. Descriptive wording stays descriptive: “the efficiency of our thought processes” is not a named “thought process efficiency” term. Do not manufacture jargon or compress an explanation into an invented noun phrase.
 
-Required cold-read review before building. Re-read every card as a student who missed the lecture, card by card, and rewrite any that fails these nine checks: (1) the non-blank text names what the card is about; (2) the answer is understood on first read; (3) no phrase is awkward, compressed or invented; (4) applicable lecture/Journal examples belong in Extra, with biology restricted to at most one optional passage example/evidence line; (5) one fact per card, with the approved grouped formats retained; (6) each non-self-explanatory term has independent meaning recall; self-explanatory labels stay with their umbrella or parent example; grouped recall uses names contrasts, lists/umbrellas, sequences and the whole-structure rebuild exception, never grouped definition drills; (7) each rebuild structure is shown whole in the lecture, its count matches, and its steps are names; (8) each predict card asks one outcome, its reason is under about ten words, and no other card asks the same thing; (9) no card uses meta wording. Headline contrasts hide both names together with meanings visible; no opposite half or hint gives away a name. Check headline pairs without cutting a non-self-explanatory term's last meaning recall. Report how many cards were rewritten in this pass, using actual card IDs. Report every background term moved into a lecture card. Builder warnings for context-poor clozes and definitions missing an available example are review cues, not semantic proof; investigate and record their dispositions.
+Required cold-read review before building. Re-read every card as a student who missed the lecture, card by card, and rewrite any that fails these ten checks: (1) the non-blank text names what the card is about; (2) the answer is understood on first read; (3) no phrase is awkward, compressed or invented; (4) applicable lecture/Journal examples belong in Extra, with biology restricted to at most one optional passage example/evidence line; (5) one fact per card, with the approved grouped formats retained; (6) each non-self-explanatory term has independent meaning recall; self-explanatory labels stay with their umbrella or parent example; grouped recall uses names contrasts, lists/umbrellas, sequences and the whole-structure rebuild exception, never grouped definition drills; (7) each rebuild structure is shown whole in the lecture, its count matches, and its steps are names; (8) each predict card asks one outcome, its reason is under about ten words, and no other card asks the same thing; (9) no card uses meta wording; (10) the example pass is done: every inventory example is placed or skipped with a reason, no example appears twice, and reused notes were checked too. Headline contrasts hide both names together with meanings visible; no opposite half or hint gives away a name. Check headline pairs without cutting a non-self-explanatory term's last meaning recall. Report how many cards were rewritten in this pass, using actual card IDs. Report every background term moved into a lecture card. Builder warnings for context-poor clozes and definitions missing an available example are review cues, not semantic proof; investigate and record their dispositions.
 
 Before building, reconcile the scope/target ledger and inspect semantic overlaps; structural validation cannot establish factual accuracy or educational quality. Keep conceptual objectives and non-self-explanatory meaning recall. Record biology passage exclusions, background moves, skipped recordings, hedge/skill dispositions and any justified coverage exception. Name where every removed or combined card's meaning now lives. Investigate warnings without gaming the checks. Run the friend test on every card, including its Required answer, before building.
 
@@ -373,7 +381,7 @@ Save each following fenced block under the exact filename shown. The block conte
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Journal-based Anki build input \u2014 v1",
+  "title": "Journal-based Anki build input — v1",
   "$defs": {
     "source": {
       "type": "object",
@@ -764,7 +772,10 @@ Save each following fenced block under the exact filename shown. The block conte
       "maxLength": 300
     },
     "subject": {
-      "enum": ["biology", "other"],
+      "enum": [
+        "biology",
+        "other"
+      ],
       "description": "Explicit lecture subject; omitted legacy inputs behave as other."
     },
     "scope": {
@@ -912,6 +923,39 @@ Save each following fenced block under the exact filename shown. The block conte
         "minLength": 1,
         "maxLength": 2000
       }
+    },
+    "exampleInventory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "location",
+          "cardIds",
+          "skipReason"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "cardIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skipReason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "exampleInventoryNote": {
+      "type": "string"
     }
   },
   "required": [
@@ -1720,6 +1764,12 @@ number_words = {2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',8:'eight',
 WHOLE_QA = ('rebuild', 'predict')
 DIRECTION_WORDS = {'increase', 'increases', 'increased', 'decrease', 'decreases', 'decreased', 'raises', 'lowers', 'up', 'down', 'no change', 'unchanged', 'inhibited', 'activated', 'stimulated', 'blocked'}
 
+OUTLINE_STEP = re.compile(r'^(?:definitions?|sources?|examples?|features?|causes?|effects?|types?|overview|summary|critical periods?|dose-response(?: relation)?)$', re.IGNORECASE)
+EXAMPLE_STOP = set('that this with from they their them have when what which there about into than then were your will would could should does doing being other another person people someone something child children student students woman women young after before while because'.split())
+
+def example_words(text):
+    return {w for w in re.findall(r'[a-z]{4,}', (text or '').casefold()) if w not in EXAMPLE_STOP}
+
 def is_argument_rebuild(card):
     return card['back'].lstrip().casefold().startswith('claim:')
 
@@ -1774,7 +1824,7 @@ def parallel_meaning_terms(card, targets, term_ids):
             names.add(name)
     return names
 
-META_WORDING = re.compile(r"\b(?:in (?:the|this) (?:simplified|illustrated|depicted)\b|in this (?:model|network|pathway|lecture|lesson|figure|diagram|example)\b|in the [\w\- ]{1,30}? (?:model|comparison|framework)\b|the (?:lecture|instructor|reading|slide)'s\b|according to the (?:lecture|reading|slides?|instructor|model)\b|as (?:shown|described|presented) (?:in|on) the\b|the (?:alternative|other|second|first|opposing|competing) (?:view|theory|approach|idea|perspective|account|model)\b)", re.IGNORECASE)
+META_WORDING = re.compile(r"\b(?:in (?:the|this) (?:simplified|illustrated|depicted)\b|in this (?:model|network|pathway|lecture|lesson|figure|diagram|example)\b|in the [\w\- ]{1,30}? (?:model|comparison|framework)\b|the (?:lecture|instructor|reading|slide)'s\b|according to the (?:lecture|reading|slides?|instructor|model)\b|as (?:shown|described|presented) (?:in|on) the\b|the class (?:described|said|discussed|used|called|named|gave)\b|\bin class\b|the (?:instructor|lecturer|professor) (?:said|described|gave|used|called)\b|the (?:alternative|other|second|first|opposing|competing) (?:view|theory|approach|idea|perspective|account|model)\b)", re.IGNORECASE)
 
 def card_language_warnings(card):
     warnings = []
@@ -1853,6 +1903,15 @@ def validate(data, updating=False):
     for key in ['sources', 'targets', 'cards']:
         ids = [r['id'] for r in data[key]]
         require(len(ids) == len(set(ids)), f'Duplicate {key} IDs.')
+    # The example pass is required: every instructor example is placed or skipped with a reason.
+    inventory = data.get('exampleInventory')
+    require(inventory is not None, 'exampleInventory is required: list every instructor example with its location, then its cardIds or a skipReason.')
+    require(inventory or (data.get('exampleInventoryNote') or '').strip(), 'An empty exampleInventory needs exampleInventoryNote saying the materials contain no examples.')
+    card_ids = {c['id'] for c in data['cards']}
+    for n, item in enumerate(inventory, 1):
+        require(item['text'].strip() and item['location'].strip(), f'exampleInventory item {n}: text and location are required.')
+        require(all(cid in card_ids for cid in item['cardIds']), f'exampleInventory item {n}: unknown cardId.')
+        require(item['cardIds'] or item['skipReason'].strip(), f'exampleInventory item {n}: place it on a card or give a skipReason.')
     require(data['deckName'].strip() and (updating or '::' not in data['deckName']), 'Use one standalone deck title without :: nesting.')
     sources = {s['id']: s for s in data['sources']}
     targets = {t['id']: t for t in data['targets']}
@@ -1954,6 +2013,8 @@ def validate(data, updating=False):
             lines = extra.splitlines()
             if len(lines) > 3 or any(word_count(line) > 20 for line in lines):
                 warnings.append(f'{cid}: Extra exceeds three short lines (about 20 words each); retain useful example, plain restatement and evidence only.')
+        if c['type'] == 'rebuild' and sum(bool(OUTLINE_STEP.match(step)) for step in rebuild_steps(c)) >= 2:
+            warnings.append(f'{cid}: rebuild Back is an answer outline; rebuild the content itself.')
         if c['type'] == 'rebuild':
             if is_comparison_rebuild(c) or is_argument_rebuild(c):
                 if any(word_count(step) > 12 for step in rebuild_steps(c)):
@@ -2080,6 +2141,21 @@ def validate(data, updating=False):
                 answers.append(c['back'] or '\n'.join(c['recallItems']))
         normalized_answers = [' '.join(answer.casefold().split()).rstrip('.') for answer in answers]
         require(len(set(normalized_answers)) == len(normalized_answers), f'{concept}: exact repeated required answer; trim redundant review cards.')
+    openers = Counter(m[1].casefold() for c in data['cards'] for m in [re.match(r'\s*(In [^,{}]{3,40}),', c['cloze'] or c['front'])] if m)
+    for opener, count in openers.items():
+        if count >= 5:
+            warnings.append(f'{count} cards open with "{opener},"; drop the repeated subject label.')
+    scenario_words = {}
+    for c in data['cards']:
+        if c['type'] in ('application', 'exemplar'):
+            scenario_words.setdefault(c['conceptId'], set()).update(example_words(c['front']))
+    for c in data['cards']:
+        if c['type'] in ('application', 'exemplar') or c['conceptId'] not in scenario_words:
+            continue
+        own = example_words(c['cloze'] or (c['front'] + ' ' + c['back']))
+        extra = example_words(extra_text(c)) - own
+        if extra & scenario_words[c['conceptId']]:
+            warnings.append(f'{c["id"]}: Extra repeats the example on this idea\'s scenario card; use a different example or none.')
     rebuilds = [c for c in data['cards'] if c['type'] == 'rebuild']
     normalized = [coverage_text(c['back']) for c in rebuilds]
     if len(normalized) != len(set(normalized)):
@@ -2210,7 +2286,7 @@ def build(data, out, input_dir, previous=None):
         require(archive.testzip() is None, 'Package CRC check failed.')
     concept_reviews = Counter()
     for card in data['cards']: concept_reviews[card['conceptId']] += len(indices(card))
-    report = {'mode':'update' if previous is not None else 'new', 'activeNotes':len(data['cards']), 'activeReviewCards':sum(len(indices(c)) for c in data['cards']), 'newNotes':sum(n['status'] == 'new' for n in manifest), 'updatedNotes':sum(n['status'] == 'updated' for n in manifest), 'retiredNotes':sum(n['status'] == 'retired' for n in manifest), 'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'conceptReviewCards':dict(concept_reviews), 'predictCards':{'count':sum(c['type'] == 'predict' for c in data['cards']), 'questions':[{'id':c['id'], 'question':c['front']} for c in data['cards'] if c['type'] == 'predict']}, 'rebuildCards':{'count':sum(c['type'] == 'rebuild' for c in data['cards']), 'structures':[{'id':c['id'], 'conceptId':c['conceptId'], 'structure':c['front']} for c in data['cards'] if c['type'] == 'rebuild']}, 'media':sorted(all_media), 'targets':data['targets'], 'coverageExceptions':data['coverageExceptions'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
+    report = {'mode':'update' if previous is not None else 'new', 'activeNotes':len(data['cards']), 'activeReviewCards':sum(len(indices(c)) for c in data['cards']), 'newNotes':sum(n['status'] == 'new' for n in manifest), 'updatedNotes':sum(n['status'] == 'updated' for n in manifest), 'retiredNotes':sum(n['status'] == 'retired' for n in manifest), 'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'conceptReviewCards':dict(concept_reviews), 'exampleInventory':{'total':len(data['exampleInventory']), 'placed':sum(bool(i['cardIds']) for i in data['exampleInventory']), 'skipped':[{'text':i['text'], 'skipReason':i['skipReason']} for i in data['exampleInventory'] if not i['cardIds']]}, 'predictCards':{'count':sum(c['type'] == 'predict' for c in data['cards']), 'questions':[{'id':c['id'], 'question':c['front']} for c in data['cards'] if c['type'] == 'predict']}, 'rebuildCards':{'count':sum(c['type'] == 'rebuild' for c in data['cards']), 'structures':[{'id':c['id'], 'conceptId':c['conceptId'], 'structure':c['front']} for c in data['cards'] if c['type'] == 'rebuild']}, 'media':sorted(all_media), 'targets':data['targets'], 'coverageExceptions':data['coverageExceptions'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
     report_path = out.with_suffix('.build-report.json')
     require(not report_path.exists(), 'Build report already exists; choose a fresh output name.')
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n')

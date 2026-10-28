@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Journal-based Anki build input \u2014 v1",
+  "title": "Journal-based Anki build input — v1",
   "$defs": {
     "source": {
       "type": "object",
@@ -391,7 +391,10 @@
       "maxLength": 300
     },
     "subject": {
-      "enum": ["biology", "other"],
+      "enum": [
+        "biology",
+        "other"
+      ],
       "description": "Explicit lecture subject; omitted legacy inputs behave as other."
     },
     "scope": {
@@ -539,6 +542,39 @@
         "minLength": 1,
         "maxLength": 2000
       }
+    },
+    "exampleInventory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "location",
+          "cardIds",
+          "skipReason"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "cardIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skipReason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "exampleInventoryNote": {
+      "type": "string"
     }
   },
   "required": [
