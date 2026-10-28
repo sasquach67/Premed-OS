@@ -1,5 +1,5 @@
 {
-  "cards.schema.json": "9286b21080aa11dafd269e3a31969f69211f3f31180daee9c65bfecc6b62c104",
+  "cards.schema.json": "5949b9b569cabf72897a6de2e3501d51474d475b0c499ff1a7686d200999d390",
   "card-styles.css": "75e4e5abaa1bdfca492eb59ed9c88df631e93e1805af23203cd48d861dd381e3",
   "requirements.txt": "04d20605d3f62a9b588b59281dedc42c406d619fd8c385bba3e54bd61f9499e8",
   "list-reveal.js": "c6d518c1463c2d81c59580b48f50c4ba864d02792458726abb355efc7e88c1e1",
@@ -7,8 +7,8 @@
   "prepare_occlusion.py": "bacdd1e99210377f89cf2ddcc1360981c63681e984c630a1eb885402c74dd747",
   "read_previous.py": "dc87a8be076d9a40fc5c54b7460062ebee94c48e5d6a0ce9610dd22a823ac644",
   "pair_rules.py": "91e3a0993cd14c5cbd3d6d3a75ff4ca125dce18860ff83edec4344e32b1cb0ff",
-  "build_deck.py": "6a65d5a0cad3dd728c5ece34dc62ad7393e45d559a049d02f455b8a29ec00e7f",
+  "build_deck.py": "0db428ad4c4c04582542ec94b2ce075400757beb21d710206cc1f1fd00bcd48b",
   "verify_deck.py": "9019cdbdf50397763139b8590dc8941ace783afe76019c12bb44ac594f1e47df",
-  "authoring.md": "6392e4c5b92f443b0a6386feecdb81ca7f003744591dd0f2b06f8adb87ec2c64",
-  "instructions.md": "25e19d1864d14099745e8105f9f79229e28e9f222bc5bda2d3d2d4e644e12476"
+  "authoring.md": "0fb601dffcf533efe734f65e3473af7f131b84f48dca6f3b24e166056d895b31",
+  "instructions.md": "3a75214f053c9c5b1e71005842e551119a960db635a838653fe6e08ad61fd22e"
 }

@@ -84,6 +84,10 @@ class UpdateChecks(unittest.TestCase):
             updated['targets'][0]['cardIds'] = [c['id'] for c in updated['cards']]
             final = build(updated, work / 'v2.apkg', work / 'v1.apkg')
             self.assertEqual((final['activeNotes'], final['retiredNotes'], final['notes']), (2, 1, 3))
+            self.assertEqual(final['reusedNotes'], {'changed':1, 'unchanged':0, 'unchangedIds':[]})
+            same = copy.deepcopy(updated); same['cards'][0]['back'] = data['cards'][0]['back']
+            repeat = build(same, work / 'v2b.apkg', work / 'v1.apkg')
+            self.assertEqual(repeat['reusedNotes'], {'changed':0, 'unchanged':1, 'unchangedIds':[data['cards'][0]['id']]})
             (work / 'cards.json').write_text(json.dumps(updated))
             with contextlib.redirect_stdout(io.StringIO()):
                 verified = verify(work / 'v2.apkg', work / 'v2.build-report.json',

@@ -183,6 +183,47 @@ class PromptChecks(unittest.TestCase):
         data=self.concept_fixture(); data['cards'][0]['front']='A poet uses words with sensitivity to meaning. Which Gardner intelligence is illustrated?'
         self.assertFalse(any('meta wording' in w for w in validate(data)))
 
+    def test_example_inventory_is_required_and_checked(self):
+        data=self.concept_fixture(); del data['exampleInventory']
+        with self.assertRaisesRegex(ValueError,'exampleInventory is required'): validate(data)
+        data=self.concept_fixture(); data['exampleInventory']=[]
+        with self.assertRaisesRegex(ValueError,'exampleInventoryNote'): validate(data)
+        data['exampleInventoryNote']='The outline gives no examples.'
+        self.assertFalse(any('exampleInventory' in w for w in validate(data)))
+        data=self.concept_fixture(); data['exampleInventory']=[{'text':'Peekaboo','location':'chapter10.txt line 728','cardIds':['nope'],'skipReason':''}]
+        with self.assertRaisesRegex(ValueError,'unknown cardId'): validate(data)
+        data['exampleInventory'][0]['cardIds']=[]
+        with self.assertRaisesRegex(ValueError,'cardId|skipReason'): validate(data)
+        data['exampleInventory'][0]['cardIds']=['idea-0']
+        self.assertEqual(validate(data), [])
+        built,_=self.pipeline_fixture(data)
+        self.assertEqual(built['exampleInventory'], {'total':1,'placed':1,'skipped':[]})
+
+    def test_class_framing_and_repeated_subject_opener_warn(self):
+        data=self.concept_fixture(); data['cards'][0]['front']='The class described Jimmy Fallon as upbeat. Which Big Five factor fits?'
+        self.assertTrue(any('meta wording' in w for w in validate(data)))
+        data=self.concept_fixture(5)
+        for i,card in enumerate(data['cards']):
+            card.update(type='cloze', clozePattern='single', front='', back='', conceptId=f'term-{i}', reinforcementReason='',
+                        cloze=f'In human development, term {i} is {{{{c1::meaning number {i}}}}}.')
+        data['targets'][0]['cardIds']=[c['id'] for c in data['cards']]
+        self.assertTrue(any('open with "in human development,"' in w for w in validate(data)))
+
+    def test_extra_repeating_the_scenario_example_warns(self):
+        data=self.concept_fixture(2)
+        data['cards'][0].update(type='cloze', clozePattern='single', front='', back='', reinforcementReason='',
+            cloze='Linguistic intelligence is {{c1::using words effectively}}.', explanation='A poet or teacher.')
+        data['cards'][1].update(type='application', front='A poet chooses words with care. Which Gardner intelligence?', back='Linguistic intelligence',
+            reinforcementReason="Instructor's example from the lecture.")
+        self.assertTrue(any('repeats the example' in w for w in validate(data)))
+        data['cards'][0]['explanation']='Writing a persuasive essay.'
+        self.assertFalse(any('repeats the example' in w for w in validate(data)))
+
+    def test_rebuild_answer_outline_warns(self):
+        data=self.rebuild_fixture(); data['cards'][0].update(front='What are the 4 parts of a teratogen answer?',
+            back='Definition → sources → critical periods → dose-response relation')
+        self.assertTrue(any('answer outline' in w for w in validate(data)))
+
     def test_direction_word_blank_warns(self):
         data=self.concept_fixture()
         data['cards'][0].update(type='cloze', clozePattern='single', front='', back='',

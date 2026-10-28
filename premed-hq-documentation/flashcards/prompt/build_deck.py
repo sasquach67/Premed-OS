@@ -76,6 +76,12 @@ number_words = {2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',8:'eight',
 WHOLE_QA = ('rebuild', 'predict')
 DIRECTION_WORDS = {'increase', 'increases', 'increased', 'decrease', 'decreases', 'decreased', 'raises', 'lowers', 'up', 'down', 'no change', 'unchanged', 'inhibited', 'activated', 'stimulated', 'blocked'}
 
+OUTLINE_STEP = re.compile(r'^(?:definitions?|sources?|examples?|features?|causes?|effects?|types?|overview|summary|critical periods?|dose-response(?: relation)?)$', re.IGNORECASE)
+EXAMPLE_STOP = set('that this with from they their them have when what which there about into than then were your will would could should does doing being other another person people someone something child children student students woman women young after before while because'.split())
+
+def example_words(text):
+    return {w for w in re.findall(r'[a-z]{4,}', (text or '').casefold()) if w not in EXAMPLE_STOP}
+
 def is_argument_rebuild(card):
     return card['back'].lstrip().casefold().startswith('claim:')
 
@@ -130,7 +136,7 @@ def parallel_meaning_terms(card, targets, term_ids):
             names.add(name)
     return names
 
-META_WORDING = re.compile(r"\b(?:in (?:the|this) (?:simplified|illustrated|depicted)\b|in this (?:model|network|pathway|lecture|lesson|figure|diagram|example)\b|in the [\w\- ]{1,30}? (?:model|comparison|framework)\b|the (?:lecture|instructor|reading|slide)'s\b|according to the (?:lecture|reading|slides?|instructor|model)\b|as (?:shown|described|presented) (?:in|on) the\b|the (?:alternative|other|second|first|opposing|competing) (?:view|theory|approach|idea|perspective|account|model)\b)", re.IGNORECASE)
+META_WORDING = re.compile(r"\b(?:in (?:the|this) (?:simplified|illustrated|depicted)\b|in this (?:model|network|pathway|lecture|lesson|figure|diagram|example)\b|in the [\w\- ]{1,30}? (?:model|comparison|framework)\b|the (?:lecture|instructor|reading|slide)'s\b|according to the (?:lecture|reading|slides?|instructor|model)\b|as (?:shown|described|presented) (?:in|on) the\b|the class (?:described|said|discussed|used|called|named|gave)\b|\bin class\b|the (?:instructor|lecturer|professor) (?:said|described|gave|used|called)\b|the (?:alternative|other|second|first|opposing|competing) (?:view|theory|approach|idea|perspective|account|model)\b)", re.IGNORECASE)
 
 def card_language_warnings(card):
     warnings = []
@@ -209,6 +215,15 @@ def validate(data, updating=False):
     for key in ['sources', 'targets', 'cards']:
         ids = [r['id'] for r in data[key]]
         require(len(ids) == len(set(ids)), f'Duplicate {key} IDs.')
+    # The example pass is required: every instructor example is placed or skipped with a reason.
+    inventory = data.get('exampleInventory')
+    require(inventory is not None, 'exampleInventory is required: list every instructor example with its location, then its cardIds or a skipReason.')
+    require(inventory or (data.get('exampleInventoryNote') or '').strip(), 'An empty exampleInventory needs exampleInventoryNote saying the materials contain no examples.')
+    card_ids = {c['id'] for c in data['cards']}
+    for n, item in enumerate(inventory, 1):
+        require(item['text'].strip() and item['location'].strip(), f'exampleInventory item {n}: text and location are required.')
+        require(all(cid in card_ids for cid in item['cardIds']), f'exampleInventory item {n}: unknown cardId.')
+        require(item['cardIds'] or item['skipReason'].strip(), f'exampleInventory item {n}: place it on a card or give a skipReason.')
     require(data['deckName'].strip() and (updating or '::' not in data['deckName']), 'Use one standalone deck title without :: nesting.')
     sources = {s['id']: s for s in data['sources']}
     targets = {t['id']: t for t in data['targets']}
@@ -310,6 +325,8 @@ def validate(data, updating=False):
             lines = extra.splitlines()
             if len(lines) > 3 or any(word_count(line) > 20 for line in lines):
                 warnings.append(f'{cid}: Extra exceeds three short lines (about 20 words each); retain useful example, plain restatement and evidence only.')
+        if c['type'] == 'rebuild' and sum(bool(OUTLINE_STEP.match(step)) for step in rebuild_steps(c)) >= 2:
+            warnings.append(f'{cid}: rebuild Back is an answer outline; rebuild the content itself.')
         if c['type'] == 'rebuild':
             if is_comparison_rebuild(c) or is_argument_rebuild(c):
                 if any(word_count(step) > 12 for step in rebuild_steps(c)):
@@ -436,6 +453,21 @@ def validate(data, updating=False):
                 answers.append(c['back'] or '\n'.join(c['recallItems']))
         normalized_answers = [' '.join(answer.casefold().split()).rstrip('.') for answer in answers]
         require(len(set(normalized_answers)) == len(normalized_answers), f'{concept}: exact repeated required answer; trim redundant review cards.')
+    openers = Counter(m[1].casefold() for c in data['cards'] for m in [re.match(r'\s*(In [^,{}]{3,40}),', c['cloze'] or c['front'])] if m)
+    for opener, count in openers.items():
+        if count >= 5:
+            warnings.append(f'{count} cards open with "{opener},"; drop the repeated subject label.')
+    scenario_words = {}
+    for c in data['cards']:
+        if c['type'] in ('application', 'exemplar'):
+            scenario_words.setdefault(c['conceptId'], set()).update(example_words(c['front']))
+    for c in data['cards']:
+        if c['type'] in ('application', 'exemplar') or c['conceptId'] not in scenario_words:
+            continue
+        own = example_words(c['cloze'] or (c['front'] + ' ' + c['back']))
+        extra = example_words(extra_text(c)) - own
+        if extra & scenario_words[c['conceptId']]:
+            warnings.append(f'{c["id"]}: Extra repeats the example on this idea\'s scenario card; use a different example or none.')
     rebuilds = [c for c in data['cards'] if c['type'] == 'rebuild']
     normalized = [coverage_text(c['back']) for c in rebuilds]
     if len(normalized) != len(set(normalized)):
@@ -542,7 +574,9 @@ def build(data, out, input_dir, previous=None):
             require(guid not in {row['guid'] for row in manifest}, 'Duplicate generated or reused note GUID.')
             note = genanki.Note(model=model, fields=fields, tags=tags, guid=guid)
             decks[-1].add_note(note)
-            manifest.append({'id':card['id'], 'guid':guid, 'model':model.name, 'fields':dict(zip([f['name'] for f in model.fields], fields)), 'reviewCards':len(indices(card)), 'status':'updated' if guid in old_notes else 'new'})
+            named = dict(zip([f['name'] for f in model.fields], fields))
+            unchanged = guid in old_notes and all(named.get(k) == dict(zip(old_notes[guid]['fieldNames'], old_notes[guid]['fields'])).get(k) for k in ('Front', 'Back', 'Extra', 'Text'))
+            manifest.append({'id':card['id'], 'guid':guid, 'model':model.name, 'fields':named, 'reviewCards':len(indices(card)), 'status':'updated' if guid in old_notes else 'new', 'unchanged':unchanged})
         for guid, prior in old_notes.items():
             if guid in reused: continue
             model = next(m for m in (basic, cloze, io_model) if m.model_id == prior['modelId'])
@@ -566,7 +600,7 @@ def build(data, out, input_dir, previous=None):
         require(archive.testzip() is None, 'Package CRC check failed.')
     concept_reviews = Counter()
     for card in data['cards']: concept_reviews[card['conceptId']] += len(indices(card))
-    report = {'mode':'update' if previous is not None else 'new', 'activeNotes':len(data['cards']), 'activeReviewCards':sum(len(indices(c)) for c in data['cards']), 'newNotes':sum(n['status'] == 'new' for n in manifest), 'updatedNotes':sum(n['status'] == 'updated' for n in manifest), 'retiredNotes':sum(n['status'] == 'retired' for n in manifest), 'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'conceptReviewCards':dict(concept_reviews), 'predictCards':{'count':sum(c['type'] == 'predict' for c in data['cards']), 'questions':[{'id':c['id'], 'question':c['front']} for c in data['cards'] if c['type'] == 'predict']}, 'rebuildCards':{'count':sum(c['type'] == 'rebuild' for c in data['cards']), 'structures':[{'id':c['id'], 'conceptId':c['conceptId'], 'structure':c['front']} for c in data['cards'] if c['type'] == 'rebuild']}, 'media':sorted(all_media), 'targets':data['targets'], 'coverageExceptions':data['coverageExceptions'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
+    report = {'mode':'update' if previous is not None else 'new', 'activeNotes':len(data['cards']), 'activeReviewCards':sum(len(indices(c)) for c in data['cards']), 'newNotes':sum(n['status'] == 'new' for n in manifest), 'updatedNotes':sum(n['status'] == 'updated' for n in manifest), 'retiredNotes':sum(n['status'] == 'retired' for n in manifest), 'spec':SPEC, 'deckName':data['deckName'], 'journalTitle':data['journalTitle'], 'notes':len(manifest), 'reviewCards':sum(n['reviewCards'] for n in manifest), 'conceptReviewCards':dict(concept_reviews), 'reusedNotes':{'changed':sum(n['status'] == 'updated' and not n.get('unchanged') for n in manifest), 'unchanged':sum(bool(n.get('unchanged')) for n in manifest), 'unchangedIds':[n['id'] for n in manifest if n.get('unchanged')]}, 'exampleInventory':{'total':len(data['exampleInventory']), 'placed':sum(bool(i['cardIds']) for i in data['exampleInventory']), 'skipped':[{'text':i['text'], 'skipReason':i['skipReason']} for i in data['exampleInventory'] if not i['cardIds']]}, 'predictCards':{'count':sum(c['type'] == 'predict' for c in data['cards']), 'questions':[{'id':c['id'], 'question':c['front']} for c in data['cards'] if c['type'] == 'predict']}, 'rebuildCards':{'count':sum(c['type'] == 'rebuild' for c in data['cards']), 'structures':[{'id':c['id'], 'conceptId':c['conceptId'], 'structure':c['front']} for c in data['cards'] if c['type'] == 'rebuild']}, 'media':sorted(all_media), 'targets':data['targets'], 'coverageExceptions':data['coverageExceptions'], 'limitations':data['limitations'], 'warnings':warnings, 'records':manifest, 'apkgSha256':hashlib.sha256(out.read_bytes()).hexdigest()}
     report_path = out.with_suffix('.build-report.json')
     require(not report_path.exists(), 'Build report already exists; choose a fresh output name.')
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n')
