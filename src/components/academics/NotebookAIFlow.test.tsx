@@ -7,6 +7,8 @@ import { visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
 import * as bundles from '@/lib/academics/notebook/notebookBundle'
 import * as assets from '@/lib/academics/notebook/notebookAssetStore'
 import type { NotebookUpdateSession } from '@/lib/academics/notebook/types'
+// jsdom has no folder input; the picker is what these flows reach.
+Object.defineProperty(HTMLInputElement.prototype, 'webkitdirectory', { configurable: true, value: '' })
 let root:Root, container:HTMLDivElement
 const baseline=visualFixture(), courseId='ai-flow-class'
 const revision:NotebookUpdateSession={id:'update',localId:'saved',createdAt:1,baseline}

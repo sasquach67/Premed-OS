@@ -22,7 +22,7 @@ import { notebookPracticePolicy } from '@/lib/academics/notebook/revision'
 import { NotebookImportPreview } from './NotebookImportPreview'
 import { NotebookStorageRecovery, WorkspaceRecoveryDownload } from './NotebookStorageRecovery'
 import { downloadNotebookText, NotebookPackageView, notebookTransaction } from './ExternalNotebookView'
-export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onRawChange, revision, revisionValidation, onReviewChange, onCancel, onRestart }: { onReviewChange?: (reviewing: boolean) => void; /** Leaves the update review without saving. */ onCancel?: () => void; /** Starts a fresh update from the latest saved entry. */ onRestart?: () => void; courseId: string; onImported: (id: string, destinationCourseId?: string) => void; initialRaw?: string; onRawChange?: (raw: string) => void; revision?: NotebookUpdateSession; revisionValidation?: (baseline: NotebookPackage, proposed: NotebookPackage) => void }) {
+export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onRawChange, revision, revisionValidation, onReviewChange, onCancel, onRestart, embedded = false, locked }: { /** The surrounding step already titles this panel. */ embedded?: boolean; /** Why the folder picker cannot be used yet. */ locked?: string; onReviewChange?: (reviewing: boolean) => void; /** Leaves the update review without saving. */ onCancel?: () => void; /** Starts a fresh update from the latest saved entry. */ onRestart?: () => void; courseId: string; onImported: (id: string, destinationCourseId?: string) => void; initialRaw?: string; onRawChange?: (raw: string) => void; revision?: NotebookUpdateSession; revisionValidation?: (baseline: NotebookPackage, proposed: NotebookPackage) => void }) {
   const toastContext=useContext(ToastContext)
   const deviceNoticeShown=useRef(false)
   const saveReasonId=useId()
@@ -41,6 +41,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   function setError(value: string) { setErrorMessage(value); setRecoveryError(null) }
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [destination, setDestination] = useState(false)
   const [revisions, setRevisions] = useState(false)
   const [separate, setSeparate] = useState(false)
@@ -65,6 +66,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   const revised = plan.some(item => item.previous && !item.duplicate)
   const duplicates = plan.filter(item => item.duplicate)
   const updating = Boolean(revision && !separate && !backup)
+  const alreadySaved = Boolean(preview && !backup && !updating && plan.length > 0 && duplicates.length === plan.length)
   // Choosing a separate copy of an update is itself the confirmation to save revised content separately.
   const confirmRevisions = revisions || Boolean(revision && separate)
   let updateError = ''
@@ -78,7 +80,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
     } catch (failure) { blockers.push((failure as Error).message) }
   }
   if (preview && preview.package.version !== 2 && !assetPrepared) blockers.push('select and validate every required image')
-  function clearPreview() { attempt.current++; setSelectedCourseId(courseId); setPreview(null); setError(''); setStatus(''); setDestination(false); setRevisions(false); setBusy(false); setAssetPrepared(null); setAssetError(''); setImageFiles([]); setMappedImages(new Map()); setBundleFile(null); setBackup(null); setConfirmBackup(false); setCollection(null); setCandidate(''); setReadyImages([]); setImageProblems(new Map()); setBundleUsed([]) }
+  function clearPreview() { attempt.current++; setSelectedCourseId(courseId); setPreview(null); setError(''); setStatus(''); setDestination(false); setRevisions(false); setBusy(false); setSaving(false); setAssetPrepared(null); setAssetError(''); setImageFiles([]); setMappedImages(new Map()); setBundleFile(null); setBackup(null); setConfirmBackup(false); setCollection(null); setCandidate(''); setReadyImages([]); setImageProblems(new Map()); setBundleUsed([]) }
   function bindingContext(prepared: PreparedNotebook) {
     const current = useStore.getState().academics.classCenter
     const related = inspectNotebookImport(current, selectedCourseId, prepared).map(item => item.duplicate ?? item.previous).filter(item => item !== undefined)
@@ -144,9 +146,25 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
     catch (failure) { if (id === attempt.current) setError((failure as Error).message) }
     finally { if (id === attempt.current) setBusy(false) }
   }
-  async function save() {
-    if (!preview || !course || busy) return
-    const id = ++attempt.current; setBusy(true); setError('')
+  /** An identical notebook opens at once. Save still runs if this device lacks its images, because the chosen folder can restore them. */
+  async function openSaved() {
+    if (!preview || !course) return
+    const id = ++attempt.current; setError('')
+    try {
+      const saved = duplicates.map(item => item.duplicate!), bindings = saved.flatMap(item => item.importedNotebook?.assetBindings ?? []), repository = notebookAssetRepository()
+      const assets = preview.package.version === 2 ? [] : preview.package.assets
+      let complete = assets.every(asset => bindings.some(binding => binding.assetId === asset.id))
+      for (const binding of complete ? bindings : []) { const blob = await repository.read(binding.sha256); if (!blob || blob.size !== binding.byteLength) { complete = false; break } }
+      if (id !== attempt.current) return
+      setBusy(false)
+      if (complete) { onImported(saved[0].id, course.id); return }
+    } catch { if (id !== attempt.current) return; setBusy(false) }
+    await save(true)
+  }
+  async function save(force = false) {
+    if (!preview || !course || (busy && !force)) return
+    const id = ++attempt.current; setBusy(true); setSaving(true); setError('')
+    let finished = false
     try {
       const snapshot = () => { const state = useStore.getState(); return canonical({ course: state.courses.find(c => c.id === selectedCourseId), notebooks: state.academics.classCenter.lectures.filter(l => l.importedNotebook) }) }
       const expected = snapshot()
@@ -192,15 +210,16 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
           try { sessionStorage.setItem('premed-os:notebook-device-save-notice:v1','shown') } catch { /* The mounted importer still shows this only once. */ }
         }
       }
+      finished = true
       onImported(ids[0], course.id)
     } catch (failure) { if (id === attempt.current) { setError((failure as Error).message); setRecoveryError(failure instanceof WorkspaceSaveError ? 'storage' : failure instanceof WorkspaceChangedError ? 'workspace' : null) } }
-    finally { if (id === attempt.current) setBusy(false) }
+    finally { if (id === attempt.current) { setBusy(false); if (!finished) setSaving(false) } }
   }
   if (!course) return <p role="alert">Destination class not found. Open import from an existing class notebook.</p>
   const matchingCourses = preview ? courses.filter(item => !notebookDestinationMismatch(preview.package, item)) : []
   const matchingCourse = matchingCourses.length === 1 ? matchingCourses[0] : undefined
   const sourceComplete = preview?.package.sources.every(source => source.access === 'read' && source.used) ?? false
-  const saveReason = busy ? 'Checking files. Please wait.' : wrongCourse && !destination ? 'Choose where to save first.' : updating && updateError ? 'Choose an option above to continue.' : blockers.length ? `${blockers[0][0].toUpperCase()}${blockers[0].slice(1)}.` : ''
+  const saveReason = saving ? 'Saving your notebook.' : alreadySaved ? 'Already saved.' : busy ? 'Checking files. Please wait.' : wrongCourse && !destination ? 'Choose where to save first.' : updating && updateError ? 'Choose an option above to continue.' : blockers.length ? `${blockers[0][0].toUpperCase()}${blockers[0].slice(1)}.` : ''
   const baselineEntry = revision?.baseline.entries[0]
   const sectionChanges = preview && revision ? changedNotebookSections(revision.baseline, preview.package, revision.baseline.entries[0].id) : undefined
   const incomingEntry = baselineEntry && preview?.package.entries.find(entry => entry.id === baselineEntry.id)
@@ -209,14 +228,14 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   const keptPractice = baselineEntry && incomingEntry ? baselineEntry.sections.flatMap(section => section.blocks).filter(block => block.type === 'practice' && !practicePolicy?.affectedIds.includes(block.id) && incomingEntry.sections.some(section => section.blocks.some(item => item.id === block.id))).length : 0
   const staleBaseline = /changed after the baseline|no longer current/.test(updateError)
   const unusedImages = imageFiles.filter(file => bundleFile ? !bundleUsed.includes(file.name) : !preview || !imageSelection(preview).matches.some(match => match.file?.blob === file.blob))
-  return <section className="external-notebook en-import" aria-label="Import external notebook">{!preview && <h2 className="en-import-heading">Bring it back</h2>}
-    <div className="en-folder-picker" hidden={Boolean(preview)}>{folderSupported ? <><Button disabled={busy} onClick={() => folderInput.current?.click()}>Choose the folder your AI made</Button><span>Usually in your class folder, or Downloads.</span></> : <p>Folder selection is unavailable in this browser. Open Other import options to choose your notebook ZIP.</p>}<input ref={node => { folderInput.current = node; node?.setAttribute('webkitdirectory', '') }} type="file" multiple hidden disabled={busy} aria-label="Choose notebook folder" onChange={async event => {
+  return <section className="external-notebook en-import" aria-label="Import external notebook">{!preview && !embedded && <h2 className="en-import-heading">Bring it back</h2>}
+    <div className="en-folder-picker" hidden={Boolean(preview)}>{folderSupported ? <><Button disabled={busy || Boolean(locked)} onClick={() => folderInput.current?.click()}>Choose the folder your AI made</Button>{locked && <span>{locked}</span>}</> : <p>Folder selection is unavailable in this browser. Open Other import options to choose your notebook ZIP.</p>}<input ref={node => { folderInput.current = node; node?.setAttribute('webkitdirectory', '') }} type="file" multiple hidden disabled={busy} aria-label="Choose notebook folder" onChange={async event => {
       const files = [...(event.target.files ?? [])]; event.target.value = ''; if (!files.length) return
       clearPreview(); setRaw('')
       try { await chooseCollection(collectNotebookFolder(files)) } catch (failure) { setError((failure as Error).message); setBusy(false) }
     }} /></div>
     {collection && <div className="en-collection-summary" hidden={Boolean(preview)}><p>{collection.json.length} JSON {collection.json.length === 1 ? 'file' : 'files'} · {collection.images.length} image {collection.images.length === 1 ? 'file' : 'files'} found</p>{collection.json.length > 1 && <label className="en-field">Notebook JSON<SelectField aria-label="Notebook JSON" className="mt-2 min-h-11 w-full bg-background font-normal" value={candidate} onValueChange={value => { const file = collection.json.find(f => f.name === value); if (file) void selectCandidate(file, collection) }} options={[{ value: '', label: 'Choose one notebook', disabled: true }, ...collection.json.map(file => ({ value: file.name, label: file.name }))]} /></label>}{candidate && <p className="en-file-path">{candidate}</p>}{preview && (preview.package.version === 2 || !preview.package.assets.length) && unusedImages.length > 0 && <p>{unusedImages.length} image files are not referenced by this notebook and will not be imported.</p>}{collection.auxiliary.length > 0 && <details><summary>{collection.auxiliary.length} supporting JSON {collection.auxiliary.length === 1 ? 'file' : 'files'}</summary><p>These are not separate notebooks. App image bindings are used when present; other reports or mappings are not imported.</p><ul>{collection.auxiliary.map(file => <li key={file.name}>{file.name}</li>)}</ul></details>}{bundleUsed.length > 0 && <p>{bundleUsed.length} indexed package files used.</p>}{collection.other.length > 0 && <details><summary>{collection.other.length} unsupported {collection.other.length === 1 ? 'file' : 'files'} will not be imported</summary><p>Only notebook JSON and its declared PNG/JPEG images are imported. PDFs, documents and other files are not read or displayed.</p><ul>{collection.other.map(file => <li key={file.name}>{file.name}</li>)}</ul></details>}</div>}
-    <details className="en-import-inputs" hidden={Boolean(preview)} open={otherOpen} onToggle={event => setOtherOpen(event.currentTarget.open)}><summary>Other import options</summary>
+    <details className="en-import-inputs" hidden={Boolean(preview) || Boolean(locked)} open={otherOpen} onToggle={event => setOtherOpen(event.currentTarget.open)}><summary>Other import options</summary>
     <label className="en-field en-upload">Notebook file (JSON or ZIP)<input type="file" accept=".json,.zip,application/json,application/zip" disabled={busy} onChange={async event => {
       const file = event.target.files?.[0]; event.target.value = ''; if (!file) return; clearPreview(); setRaw('')
       const id = ++attempt.current; setBusy(true)
@@ -240,8 +259,8 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
     }} /></label>
     <details className="en-paste" open={restoredInput}><summary>Paste JSON instead</summary><label className="en-field">Paste complete JSON<textarea className="en-json" value={raw} disabled={busy} onChange={event => { clearPreview(); setRaw(event.target.value) }} placeholder="Paste the complete notebook package or fenced JSON block" /></label>
     <Button disabled={busy || !raw.trim()} onClick={() => void validate()}>{busy ? 'Checking package...' : 'Validate and preview'}</Button></details>
-    <details><summary>Storage recovery copy</summary><WorkspaceRecoveryDownload disabled={busy} /></details></details>
-    <p className="en-import-limit" hidden={Boolean(preview)}>A notebook folder or ZIP needs the final notebook JSON and any referenced PNG/JPEG images. Raw class materials alone cannot create a notebook. JSON is limited to 8 MiB. Working checkpoint files are not final notebooks.</p>
+    <details><summary>Storage recovery copy</summary><WorkspaceRecoveryDownload disabled={busy} /></details>
+    <p className="en-import-limit">A notebook folder or ZIP needs the final notebook JSON and any referenced PNG/JPEG images. Raw class materials alone cannot create a notebook. JSON is limited to 8 MiB. Working checkpoint files are not final notebooks.</p></details>
     {restoredInput && !preview && <p className="en-import-limit">Your unsaved JSON is kept. Check that it matches the current request, then validate it again before saving.</p>}
     {error && <div className="en-notice en-error" role="alert"><b>Nothing was saved</b><p className="en-text">{error}</p>{!recoveryError && <Button variant="outline" onClick={() => { void navigator.clipboard.writeText(`Repair this notebook package error: ${error}\nPreserve all other content, source text, IDs, and revisions. Return one titled folder with the complete corrected notebook JSON and all required actual PNG/JPEG files, preserving filenames and relative paths. A local assistant should save the folder in the class folder, fall back to Downloads only if the class folder is unreachable, say where it saved, and never overwrite existing files. If folder delivery is unavailable, provide the complete downloadable file set with its intended folder name and relative paths, and state the limitation. Create a ZIP only when I explicitly request one. Do not invent missing files or claim the package is complete without its required bytes. Preserve any explicitly requested discussion stage.\n\nOriginal JSON:\n${raw}`).then(() => setStatus('Repair request copied.'), () => setStatus('Clipboard unavailable. Select the error and JSON to copy them.')) }}>Copy repair request and JSON</Button>}{recoveryError === 'storage' && <><Button variant="outline" onClick={() => downloadNotebookText("unsaved-notebook.json", raw)}>Download unsaved JSON</Button><p>Keep the images with this JSON. You can retry Save below; your selected files are still here.</p><NotebookStorageRecovery onStart={() => { const id = ++attempt.current; setBusy(true); return () => { if (id === attempt.current) setBusy(false) } }} onOptimized={() => { setError(''); setStatus('Browser storage optimized. Your selected notebook files are kept. Retry Save below.') }} /></>}</div>}
     <p role="status" aria-live="polite" hidden={!/^(Repair request|Clipboard unavailable|Browser storage optimized)/.test(status)}>{/^(Repair request|Clipboard unavailable|Browser storage optimized)/.test(status) ? status : ''}</p>
@@ -250,7 +269,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
       <ul className="nr-checks">
         {revision && !backup && updateError && !separate && <NotebookReviewCheck title="This update can’t replace your saved notebook" choice detail={updateError}>{staleBaseline && onRestart && <Button onClick={onRestart}>Restart from latest saved entry</Button>}<Button variant={staleBaseline && onRestart ? 'outline' : 'default'} onClick={() => setSeparate(true)}>Save a separate copy</Button></NotebookReviewCheck>}
         {revision && !backup && separate && <NotebookReviewCheck title="Saving as a separate copy" detail="Your saved notebook stays unchanged. The separate copy starts with empty notes and practice records.">{!updateError && <Button variant="outline" onClick={() => setSeparate(false)}>Update the saved notebook instead</Button>}</NotebookReviewCheck>}
-        {preview.package.version !== 2 && !assetPrepared && <NotebookReviewCheck title="Images need attention" choice detail="Select and validate every required image." />}
+        {preview.package.version !== 2 && !assetPrepared && !busy && !alreadySaved && <NotebookReviewCheck title="Images need attention" choice detail="Select and validate every required image." />}
         {!sourceComplete && <NotebookReviewCheck title="Review source coverage" choice detail="Some sources are partial, unreadable, not accessed or not used. Their limits are in the preview." />}
         {wrongCourse && !destination && <NotebookReviewCheck title={`This notebook was made for ${preview.package.course.code}`} choice detail={`You opened it from ${course.code}.`}><Button disabled={!matchingCourse || updating} onClick={() => { if (matchingCourse) { setSelectedCourseId(matchingCourse.id); setDestination(false); setError('') } }}>Save to {preview.package.course.code}</Button><Button variant="outline" onClick={() => setDestination(true)}>Keep in {course.code}</Button>{!matchingCourse && <small>{matchingCourses.length ? 'Several matching classes exist. Open import from the intended class.' : 'Add that class in Academics before saving there.'}</small>}</NotebookReviewCheck>}
         {practicePolicy?.reset && <NotebookReviewCheck title={`${practicePolicy.affectedIds.length} practice ${practicePolicy.affectedIds.length === 1 ? 'item starts' : 'items start'} fresh`} detail={practicePolicy.explanation} />}
@@ -263,7 +282,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
       {revised && !updating && !backup && !(revision && separate) && <div className="en-notice"><b>Revised or conflicting content</b><p>Incoming content shares an identity with an earlier entry. Save it separately, including when the revision number is unchanged or older. Your original entry, edits, responses, and progress stay intact.</p><label className="en-check"><input type="checkbox" checked={revisions} onChange={event => setRevisions(event.target.checked)} />Save revised content as separate entries</label></div>}
       <NotebookAssetsProvider pkg={preview.package} prepared={assetPrepared ?? undefined}>
       {preview.package.version !== 2 && !preview.package.assets.length && assetError && <p className="en-notice en-error" role="alert">{assetError}</p>}
-      {preview.package.version !== 2 && preview.package.assets.length > 0 && <details className="nr-image-details" open={busy || !assetPrepared}><summary>Image files and replacements</summary><section className="en-stage-panel en-image-review" aria-label="Notebook images"><h3>Notebook images</h3><p role="status">{busy ? 'Checking image files…' : `${readyImages.length} of ${preview.package.assets.length} images validated${imageProblems.size ? ` · ${imageProblems.size} need attention` : ''}.`}</p>
+      {preview.package.version !== 2 && preview.package.assets.length > 0 && <details className="nr-image-details" open={!alreadySaved && (busy || !assetPrepared)}><summary>Image files and replacements</summary><section className="en-stage-panel en-image-review" aria-label="Notebook images"><h3>Notebook images</h3><p role="status">{busy && !saving ? 'Checking image files…' : `${readyImages.length} of ${preview.package.assets.length} images validated${imageProblems.size ? ` · ${imageProblems.size} need attention` : ''}.`}</p>
         {!bundleFile && <details className="en-small-detail"><summary>Add or replace image files</summary><label className="en-field">Notebook image files<input type="file" multiple accept=".png,.jpg,.jpeg,image/png,image/jpeg" disabled={busy} onChange={event => { const selected = [...(event.target.files ?? [])].map(blob => ({ name: blob.name, blob })); event.target.value = ''; if (selected.length) void changeImages([...imageFiles, ...selected], mappedImages) }} /></label><Button variant="ghost" disabled={busy} onClick={() => void changeImages([], new Map())}>Clear selected images</Button></details>}
         {!busy && imageSelection(preview).matches.filter(match => !readyImages.includes(match.asset.id)).map(match => <div className="en-image-problem" key={match.asset.id}><b>{match.asset.fileName}</b><p>{match.asset.sourceId} / {match.asset.location}</p><p>{imageProblems.get(match.asset.id) ?? 'Not validated. Select the exact original file.'}</p>{!bundleFile && <>{match.candidates.length > 0 && <label className="en-field">Choose file for {match.asset.id}<SelectField aria-label={`Choose file for ${match.asset.id}`} className="mt-2 min-h-11 w-full bg-background font-normal" value={match.explicit ? String(imageFiles.findIndex(file => file.blob === mappedImages.get(match.asset.id))) : ''} onValueChange={value => { const file = imageFiles[Number(value)]; if (file) void changeImages(imageFiles, new Map(mappedImages).set(match.asset.id, file.blob)) }} options={[{ value: '', label: 'Choose the exact image', disabled: true }, ...match.candidates.map(file => ({ value: String(imageFiles.indexOf(file)), label: file.name }))]} /></label>}<label className="en-field">Map image {match.asset.id}<input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void changeImages(imageFiles, new Map(mappedImages).set(match.asset.id, file)) }} /></label></>}</div>)}
         {readyImages.length > 0 && <details className="en-small-detail"><summary>View {readyImages.length} validated images</summary><ul className="en-matched-images">{preview.package.assets.filter(asset => readyImages.includes(asset.id)).map(asset => <li key={asset.id}><b>{asset.fileName}</b><p className="en-file-path">{imageSelection(preview).matches.find(match => match.asset.id === asset.id)?.file?.name ?? 'Retained image bytes'}</p>{assetPrepared && <NotebookAssetThumbnail assetId={asset.id} />}</li>)}</ul></details>}
@@ -271,7 +290,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
         {assetError && <p className="en-notice en-error" role="alert">{assetError}</p>}
       </section></details>}
       {updating && revision ? <NotebookImportPreview title="Changes" fullContent={<NotebookTextChanges before={revision.baseline} after={preview.package}><NotebookPackageView pkg={preview.package} sectionChanges={sectionChanges} /></NotebookTextChanges>}><NotebookUpdateChanges before={revision.baseline} after={preview.package} entryId={revision.baseline.entries[0].id} /></NotebookImportPreview> : <NotebookImportPreview><NotebookTextChanges before={revision?.baseline} after={preview.package}><NotebookPackageView pkg={preview.package} sectionChanges={sectionChanges} /></NotebookTextChanges></NotebookImportPreview>}</NotebookAssetsProvider>
-      <div className="en-save-actions"><p id={saveReasonId} className="en-save-blocked" role="status">{saveReason || (updating ? updatePlan?.alreadyApplied ? 'This is already your saved version. No new version will be created.' : 'Earlier versions stay in history.' : `Ready to save in ${course.code}.`)}</p><div className="en-actions">{onCancel && <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>}<button type="button" className={buttonVariants()} aria-describedby={saveReasonId} disabled={busy || blockers.length > 0} onClick={() => void save()}>{backup ? 'Restore complete notebook backup' : updating ? 'Accept update' : duplicates.length === plan.length ? 'Open saved notebook' : 'Save notebook'}</button></div></div>
+      <div className="en-save-actions"><p id={saveReasonId} className="en-save-blocked" role="status">{saveReason || (updating ? updatePlan?.alreadyApplied ? 'This is already your saved version. No new version will be created.' : 'Earlier versions stay in history.' : `Ready to save in ${course.code}.`)}</p><div className="en-actions">{onCancel && <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>}<button type="button" className={buttonVariants()} aria-describedby={saveReasonId} disabled={saving || (!alreadySaved && (busy || blockers.length > 0))} onClick={() => void (alreadySaved ? openSaved() : save())}>{saving ? 'Saving…' : backup ? 'Restore complete notebook backup' : updating ? 'Accept update' : alreadySaved ? 'Open saved notebook' : 'Save notebook'}</button></div></div>
     </div>}
   </section>
 }

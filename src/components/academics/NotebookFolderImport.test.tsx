@@ -83,6 +83,22 @@ it('defaults to the folder action, imports nested images without manual mapping,
   await folder(files); await act(async () => button('Keep in PSYC 101').click()); expect(button('Open saved notebook').disabled).toBe(false)
   await act(async () => button('Open saved notebook').click()); await settled(); expect(useStore.getState().academics.classCenter.lectures).toHaveLength(1)
 })
+it('opens an identical saved notebook without staging its images again, and restores them when this device lacks them', async () => {
+  const pkg = visualFixture(), files = [file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())]
+  await folder(files); await act(async () => button('Keep in PSYC 101').click()); await act(async () => button('Save notebook').click()); await settled()
+  expect(imported).toHaveBeenCalledTimes(1); expect(repo.bytes.size).toBe(1)
+  const stage = vi.spyOn(repo, 'stage')
+  await folder(files); await act(async () => button('Keep in PSYC 101').click())
+  expect(container.querySelector('.en-save-blocked')?.textContent).toBe('Already saved.')
+  await act(async () => button('Open saved notebook').click()); await settled()
+  expect(stage).not.toHaveBeenCalled(); expect(imported).toHaveBeenCalledTimes(2)
+  expect(imported.mock.calls[1][0]).toBe(useStore.getState().academics.classCenter.lectures[0].id)
+  repo.bytes.clear()
+  await folder(files); await act(async () => button('Keep in PSYC 101').click())
+  await act(async () => button('Open saved notebook').click()); await settled()
+  expect(stage).toHaveBeenCalledTimes(1); expect(repo.bytes.size).toBe(1); expect(imported).toHaveBeenCalledTimes(3)
+  expect(useStore.getState().academics.classCenter.lectures).toHaveLength(1)
+})
 it('shows only the missing image control and cannot partially save otherwise valid images', async () => {
   const p = rowsPackage(); await folder([file('Title.json', JSON.stringify(p)), file('images/' + p.assets[0].fileName, pngBytes())])
   expect(container.textContent).toContain('1 of 2 images validated · 1 need attention'); expect(container.querySelectorAll('.en-image-problem')).toHaveLength(1)
