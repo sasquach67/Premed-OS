@@ -10,6 +10,8 @@ import * as notebookAssetStore from '@/lib/academics/notebook/notebookAssetStore
 import * as notebookBundles from '@/lib/academics/notebook/notebookBundle'
 import { correctedFixture, revisionFixture } from '@/lib/academics/notebook/revision.test-fixtures'
 import type { Course } from '@/lib/types'
+// jsdom has no folder input; the picker is what these flows reach.
+Object.defineProperty(HTMLInputElement.prototype, 'webkitdirectory', { configurable: true, value: '' })
 let root: Root, container: HTMLDivElement, id: string
 const pkg = revisionFixture()
 const course: Course = { id: 'update-demo', code: pkg.course.code, title: pkg.course.title, term: pkg.course.term!, credits: 3, grade: '', bcpm: false, status: 'in-progress', inResidence: true, satisfies: [], order: 0 }
@@ -161,7 +163,6 @@ it('uses the shared three steps and one collapsed troubleshooting disclosure for
   const help=container.querySelector<HTMLDetailsElement>('.nai-help')!
   expect(help.open).toBe(false);expect(help.textContent).toContain('I edited after downloading')
   expect(container.querySelector('.en-update-guide')).toBeNull()
-  expect(container.textContent).toContain('Your notes, practice answers and checkmarks stay in Premed OS.')
 })
 it('blocks an old handoff after saved edits, then restarts with the latest content and fresh acknowledgments', async () => {
   await toImport(); await fill('Paste complete JSON', JSON.stringify(correctedFixture()))

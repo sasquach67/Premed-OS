@@ -35,6 +35,7 @@ export function NotebookTeachFirstSection({ section, readingDetail, renderBlock 
   const extras = take(block => block.type === 'callout') as Callout[]
   const maps = take(block => block.type === 'study-diagram') as NotebookStudyDiagramBlock[]
   const gaps = take(block => block.type === 'gap') as Extract<NotebookBlock, { type: 'gap' }>[]
+  const steps = take(block => block.type === 'steps') as Extract<NotebookBlock, { type: 'steps' }>[]
   const termLists = take(isTermList) as Extract<NotebookBlock, { type: 'bullets' }>[]
   const rest = blocks.filter(block => !used.has(block.id))
   const terms = new Map<string, { term: string; definition: string }>()
@@ -44,7 +45,8 @@ export function NotebookTeachFirstSection({ section, readingDetail, renderBlock 
     if (match && !terms.has(match[1].toLocaleLowerCase())) terms.set(match[1].toLocaleLowerCase(), { term: match[1], definition: match[2] })
   }
   const cap = (value: string) => value.charAt(0).toLocaleUpperCase() + value.slice(1)
-  const reference = maps.length > 0 || terms.size > 0 || rest.length > 0 || gaps.length > 0
+  // A section with no walkthrough has nothing to set its reference apart from.
+  const reference = walkthroughs.length > 0 && (maps.length > 0 || terms.size > 0 || rest.length > 0 || gaps.length > 0)
   return <>
     {questions.map(block => <div key={block.id} data-q className="sg-q"><p><NotebookInlineText text={block.text} /></p></div>)}
     {ledes.map(block => <p key={block.id} className="sg-lede-big"><NotebookInlineText text={block.text} /></p>)}
@@ -61,6 +63,7 @@ export function NotebookTeachFirstSection({ section, readingDetail, renderBlock 
         </>}
       </li>
     })}</ol>)}
+    {steps.map(block => <ol key={block.id} className="sg-walk" data-condensed={condensed || undefined}>{block.items.map((item, index) => typeof item === 'string' ? <li key={index}><h4><NotebookInlineText text={item} /></h4></li> : <li key={index}><h4><NotebookInlineText text={item.text} /></h4>{!condensed && item.reason && <p><NotebookInlineText text={item.reason} /></p>}</li>)}</ol>)}
     {!condensed && extras.map(block => {
       const label = block.tone === 'lecture-example' ? 'From lecture' : block.tone === 'analogy' ? 'Analogy' : block.tone === 'builds-on' ? 'Builds on' : correction.exec(block.text)?.[1] ?? 'Easy to mix up'
       return <div key={block.id} className="sg-note" data-tone={block.tone}><p className="sg-k">{cap(label)}</p><p><NotebookInlineText text={block.text.replace(correction, '')} /></p></div>
@@ -75,26 +78,40 @@ export function NotebookTeachFirstSection({ section, readingDetail, renderBlock 
   </>
 }
 
-const tone = (value?: string) => value === 'stimulatory' ? 'wt-node wt-go' : value === 'inhibitory' ? 'wt-node wt-stop' : value === 'external' || value === 'checkpoint' ? 'wt-node wt-ext' : 'wt-node'
+/** A label reads "Label: details" or "Label — details"; the first separator splits chip from text. */
+export function splitMapLabel(label: string) {
+  const at = [' — ', ': '].map(separator => ({ index: label.indexOf(separator), length: separator.length })).find(found => found.index > 0)
+  return at ? { head: label.slice(0, at.index), tail: label.slice(at.index + at.length) } : { head: label, tail: '' }
+}
 
-/** Two-column outline: the root (or the diagram title) on top, then chip | text rows (brief §4 Map). */
-export function TeachFirstMap({ block }: { block: NotebookStudyDiagramBlock }) {
+/** Root on top, then one row per branch. A chain (a root with one child) lists every later node in order. */
+export function teachFirstMapRows(block: NotebookStudyDiagramBlock) {
   const nodes = new Map(block.nodes.map(node => [node.id, node]))
   const kids = new Map<string, typeof block.edges>()
   for (const edge of block.edges) kids.set(edge.from, [...(kids.get(edge.from) ?? []), edge])
   const incoming = new Set(block.edges.map(edge => edge.to))
   const roots = block.nodes.filter(node => !incoming.has(node.id))
-  const single = roots.length === 1 && (kids.get(roots[0].id)?.length ?? 0) >= 2 ? roots[0] : null
-  const groups = single ? (kids.get(single.id) ?? []).map(edge => nodes.get(edge.to)!).filter(Boolean) : roots
-  const reached = new Set([...(single ? [single.id] : []), ...groups.map(node => node.id), ...groups.flatMap(node => (kids.get(node.id) ?? []).map(edge => edge.to))])
-  const loose = block.nodes.filter(node => !reached.has(node.id))
-  const row = (node: (typeof block.nodes)[number], members: string) => {
-    const [head, tail] = node.label.includes(' — ') ? node.label.split(' — ', 2) : [node.label, '']
-    return <li key={node.id}><span className={tone(node.tone)}><NotebookInlineText text={head} /></span><span className="sg-mem"><NotebookInlineText text={[tail, members].filter(Boolean).join(' · ')} /></span></li>
-  }
+  const onlyRoot = roots.length === 1 ? roots[0] : null
+  const row = (node: (typeof block.nodes)[number], members: string) => { const { head, tail } = splitMapLabel(node.label); return { id: node.id, tone: node.tone, head, text: [tail, members].filter(Boolean).join(' · ') } }
+  if (onlyRoot && (kids.get(onlyRoot.id)?.length ?? 0) < 2) return { root: onlyRoot.label, rows: block.nodes.filter(node => node.id !== onlyRoot.id).map(node => { const link = block.edges.find(edge => edge.to === node.id)?.label; return row(node, splitMapLabel(node.label).tail || !link || link === 'includes' ? '' : link) }) }
+  const groups = onlyRoot ? (kids.get(onlyRoot.id) ?? []).map(edge => nodes.get(edge.to)!).filter(Boolean) : roots
+  const reached = new Set([...(onlyRoot ? [onlyRoot.id] : []), ...groups.map(node => node.id), ...groups.flatMap(node => (kids.get(node.id) ?? []).map(edge => edge.to))])
   const outs = (id: string) => (kids.get(id) ?? []).map(edge => `${edge.label ? edge.label + ' → ' : ''}${nodes.get(edge.to)?.label ?? ''}`).join(' · ')
-  return <figure className="wt-map" aria-label={block.title} data-extra={block.detail === 'extra' || undefined}><ul><li><span className="wt-node">{single?.label ?? block.title}</span><ul>
-    {groups.map(node => row(node, (kids.get(node.id) ?? []).map(edge => nodes.get(edge.to)?.label ?? '').filter(Boolean).join(' · ')))}
-    {loose.map(node => row(node, outs(node.id)))}
+  return {
+    root: onlyRoot?.label ?? block.title,
+    rows: [
+      ...groups.map(node => row(node, (kids.get(node.id) ?? []).map(edge => { const label = nodes.get(edge.to)?.label ?? ''; return label && edge.label && edge.label !== 'includes' ? `${edge.label} → ${label}` : label }).filter(Boolean).join(' · '))),
+      ...block.nodes.filter(node => !reached.has(node.id)).map(node => row(node, outs(node.id))),
+    ],
+  }
+}
+
+const tone = (value?: string) => value === 'stimulatory' ? 'wt-node wt-go' : value === 'inhibitory' ? 'wt-node wt-stop' : value === 'external' || value === 'checkpoint' ? 'wt-node wt-ext' : 'wt-node'
+
+/** Two-column outline: the root (or the diagram title) on top, then chip | text rows (brief §4 Map). */
+export function TeachFirstMap({ block }: { block: NotebookStudyDiagramBlock }) {
+  const { root, rows } = teachFirstMapRows(block)
+  return <figure className="wt-map" aria-label={block.title} data-extra={block.detail === 'extra' || undefined}><ul><li><span className="wt-node">{root}</span><ul>
+    {rows.map(row => <li key={row.id}><span className={`${tone(row.tone)}${row.text ? '' : ' wt-full'}`}><NotebookInlineText text={row.head} /></span>{row.text && <span className="sg-mem"><NotebookInlineText text={row.text} /></span>}</li>)}
   </ul></li></ul></figure>
 }

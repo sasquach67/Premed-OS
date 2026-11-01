@@ -1,6 +1,7 @@
 /* Approved lines-first exemplar, scoped to opt-in v4 teaching blocks. */
-.lf-document { font-size: 14px; }
-.external-notebook.lf-document .en-text { font-size: 14px; line-height: 1.6; margin: 0; }
+.lf-document:not([data-reader-mode=study]) { font-size: 14px; }
+.external-notebook.lf-document .en-text { margin: 0; }
+.external-notebook.lf-document:not([data-reader-mode=study]) .en-text { font-size: 14px; line-height: 1.6; }
 .lf-document .en-block { padding: 8px 0; }
 .lf-document .nbr-blocks { gap: 8px; }
 .lf-document .nbr-section-head { margin: 0 0 12px; }
@@ -96,21 +97,21 @@
 .lf-document .nsg-callout[data-tone=one-thing] { border-color: color-mix(in srgb,var(--success) 30%,transparent); background: color-mix(in srgb,var(--success) 10%,transparent); }
 .lf-document .nsg-callout[data-tone=one-thing] .nsg-callout-label { color: var(--success); }
 .lf-document .nsg-callout[data-tone=question] { background: color-mix(in srgb,var(--primary) 10%,transparent); }
-.lf-document { line-height: 20px; }
-.external-notebook.lf-document .en-text { line-height: 20px; }
-.lf-document .en-block .lf-tl li { font-size: 14px; line-height: 20px; }
+.lf-document:not([data-reader-mode=study]) { line-height: 20px; }
+.external-notebook.lf-document:not([data-reader-mode=study]) .en-text { line-height: 20px; }
+.lf-document:not([data-reader-mode=study]) .en-block .lf-tl li { font-size: 14px; line-height: 20px; }
 .lf-document .lf-map .nsg-node { line-height: 18.5714px; }
 .lf-document .nsg-callout[data-tone=lecture-example] { border-style: dashed; border-color: rgb(245 158 11 / .45); background: rgb(245 158 11 / .08); }
-.lf-document .en-block-steps > ol > li { font-size: 14px; line-height: 20px; }
+.lf-document:not([data-reader-mode=study]) .en-block-steps > ol > li { font-size: 14px; line-height: 20px; }
 .lf-document .nsg-callout { padding: 12px; }
 .lf-document .nsg-callout-label { font-size: 10px; letter-spacing: .12em; }
 .lf-document .nsg-callout[data-tone=lecture-example] { border-color: oklab(.769 .0640531 .176752 / .45); background: oklab(.769 .0640531 .176752 / .08); }
 .lf-document .nsg-callout[data-tone=question] { background: color-mix(in oklab,var(--primary) 10%,transparent); }
 .lf-document .nsg-callout[data-tone=one-thing] { background: color-mix(in oklab,var(--success) 10%,transparent); }
 .external-notebook .wt-opt, .external-notebook .wt-fb { line-height: 21px; }
-.nbr .nbr-doc.lf-document .en-block li { font-size: 14px; line-height: 20px; }
-.nbr .nbr-doc.lf-document .en-text { font-size: 14px; line-height: 20px; }
+.nbr .nbr-doc.lf-document:not([data-reader-mode=study]) .en-block li { font-size: 14px; line-height: 20px; }
+.nbr .nbr-doc.lf-document:not([data-reader-mode=study]) .en-text { font-size: 14px; line-height: 20px; }
 .nbr .nbr-doc.lf-document .lf-sw .en-text { font-size: inherit; line-height: inherit; color: inherit; }
 .lf-document .nsg-callout[data-tone=question], .lf-document .nsg-callout[data-tone=lecture-example] { border-left-width: 1px; }
 .lf-document .nsg-callout[data-tone=question] .nsg-callout-label { color: var(--primary); }
-.lf-document .nsg-callout[data-tone=question] p, .lf-document .nsg-callout[data-tone=one-thing] p { font-size: 14px; font-weight: 700; line-height: 20px; }
+.lf-document:not([data-reader-mode=study]) .nsg-callout[data-tone=question] p, .lf-document:not([data-reader-mode=study]) .nsg-callout[data-tone=one-thing] p { font-size: 14px; font-weight: 700; line-height: 20px; }

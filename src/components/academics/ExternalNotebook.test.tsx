@@ -15,6 +15,8 @@ import { loadNotebookWorkflowDraft, notebookWorkflowDraftKey, persistNotebookWor
 import review from '@/lib/academics/notebook/fixtures/fixture-review.json'
 import type { Course } from '@/lib/types'
 import { plainVisualFixture, visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
+// jsdom has no folder input; the picker is what these flows reach.
+Object.defineProperty(HTMLInputElement.prototype, 'webkitdirectory', { configurable: true, value: '' })
 let root: Root, container: HTMLDivElement
 const imported = vi.fn()
 const course: Course = { id: 'test-notebook', code: review.course.code, title: review.course.title, term: review.course.term ?? 'Fall 2026', credits: 3, grade: '', bcpm: false, status: 'in-progress', inResidence: true, satisfies: [], order: 0 }
@@ -333,7 +335,7 @@ it('rejects a stored import stage without current prompt acknowledgement', async
   const draft=loadNotebookWorkflowDraft(course.id,{preferences:'',term:course.term}).draft
   Object.assign(draft,{goal:'review',goalAccepted:true,step:'import',jsonReady:true});sessionStorage.setItem(notebookWorkflowDraftKey(course.id),JSON.stringify(draft))
   await renderWorkflow();expect(flowButton('Choose the folder your AI made').disabled).toBe(true)
-  expect(container.querySelector('[aria-label="Import external notebook"]')).toBeNull()
+  expect(container.querySelector<HTMLElement>('.en-import-inputs')!.hidden).toBe(true)
 })
 
 it('drops a restored assignment goal from a new-notebook draft but keeps it when updating an existing notebook', () => {

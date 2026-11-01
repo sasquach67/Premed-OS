@@ -11,7 +11,7 @@
 .nai-files { display: grid; gap: 8px; }
 .nai-file { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--card); }
 .nai-file small { display: block; color: var(--muted-foreground); margin-top: 3px; }
-.nai-help { margin: 20px 0; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; }
+.nai-help, .external-notebook .nai-help { margin: 20px 0; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; }
 .nai-help summary { cursor: pointer; font-weight: 600; }
 .nai-help p { margin-top: 12px; color: var(--muted-foreground); line-height: 1.6; }
 .nai-goal { border-bottom: 1px solid var(--border); padding-bottom: 24px; }

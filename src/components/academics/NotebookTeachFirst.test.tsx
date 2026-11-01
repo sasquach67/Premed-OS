@@ -7,6 +7,8 @@ import {parseNotebookPackage} from '@/lib/academics/notebook/package'
 import {createInitialDataForMode,useStore} from '@/store/store'
 import {NotebookPackageView} from './ExternalNotebookView'
 import {NotebookMasteryObjectives} from './NotebookMasteryObjectives'
+import {splitMapLabel,teachFirstMapRows} from './NotebookTeachFirst'
+import type {NotebookStudyDiagramBlock} from '@/lib/academics/notebook/visualTypes'
 import {notebookReadingDetailKey} from './useNotebookReadingDetail'
 let host:HTMLDivElement,root:Root
 beforeEach(()=>{
@@ -42,12 +44,13 @@ function fixture(){
  )
  return p
 }
+const routeSection=()=>[...host.querySelectorAll('.lf-sec.sg-x')].find(section=>section.textContent?.includes('Why does the route change'))!
 async function show(p:NotebookPackage,mode:'study'|'practice'='study'){await act(async()=>root.render(<NotebookPackageView pkg={p} entryId={p.entries[0].id} mode={mode} reader/>))}
 
 it('validates a walkthrough package and renders it teach-first, with the figure inside its point and nowhere else',async()=>{
  const p=fixture();expect(parseNotebookPackage(JSON.stringify(p))).toEqual(p);await show(p)
  expect(host.querySelector('.nbr-doc')?.classList).toContain('sg')
- const sec=host.querySelector('.lf-sec.sg-x')!
+ const sec=routeSection()
  expect(sec.querySelector('[data-q]')?.textContent).toContain('Why does the route change')
  expect(sec.querySelector('.sg-lede-big')?.textContent).toContain('sorts arrivals by type')
  const points=[...sec.querySelectorAll('.sg-walk>li>h4')].map(h=>h.textContent)
@@ -66,7 +69,7 @@ it('validates a walkthrough package and renders it teach-first, with the figure 
 
 it('shows only the point sentences in Condensed',async()=>{
  localStorage.setItem(notebookReadingDetailKey()!,'condensed');await show(fixture())
- const sec=host.querySelector('.lf-sec.sg-x')!
+ const sec=routeSection()
  expect(sec.querySelectorAll('.sg-walk>li>h4')).toHaveLength(3)
  expect(sec.querySelectorAll('.sg-walk p')).toHaveLength(0)
  expect(sec.querySelector('.sg-walkfig')).toBeNull()
@@ -105,4 +108,35 @@ it('shows How it may be tested as an exam forecast with its basis and a Practice
  expect(card.textContent).not.toContain('Compare the phenotype of a cancer cell')
  await act(async()=>card.querySelector<HTMLButtonElement>('.mq-go')!.click())
  expect(onPractice).toHaveBeenCalledWith(['p1'])
+})
+
+const map=(nodes:[string,string,string?][],edges:[string,string,string?][])=>({id:'m',type:'study-diagram',kind:'hierarchy',title:'Title',sourceIds:[],excerptIds:[],provenance:'source',nodes:nodes.map(([id,label,tone])=>({id,label,tone,sourceIds:[],excerptIds:[],assetIds:[]})),edges:edges.map(([from,to,label])=>({id:`${from}-${to}`,from,to,label,sourceIds:[],excerptIds:[]}))}) as unknown as NotebookStudyDiagramBlock
+
+it('splits a map label into chip and text at the first separator',()=>{
+ expect(splitMapLabel('Shared traits: immortal, move: both')).toEqual({head:'Shared traits',tail:'immortal, move: both'})
+ expect(splitMapLabel('DNA — held in: nucleus')).toEqual({head:'DNA',tail:'held in: nucleus'})
+ expect(splitMapLabel('Surface receptor, then kinases')).toEqual({head:'Surface receptor, then kinases',tail:''})
+})
+
+it('gives each map branch a row, keeping real relationships and dropping the bare includes',()=>{
+ const {root,rows}=teachFirstMapRows(map([['r','Root'],['a','Shared traits: immortal','stimulatory'],['b','Long label with no details'],['c','Child']],[['r','a','includes'],['r','b','includes'],['a','c','restricts']]))
+ expect(root).toBe('Root')
+ expect(rows.map(row=>[row.head,row.text])).toEqual([['Shared traits','immortal · restricts → Child'],['Long label with no details','']])
+})
+
+it('lists every node of a chain map in order',()=>{
+ const {root,rows}=teachFirstMapRows(map([['r','One genome'],['a','Stem cells: divide'],['b','Development: signaling']],[['r','a','starts from'],['a','b','supply']]))
+ expect(root).toBe('One genome')
+ expect(rows.map(row=>row.head)).toEqual(['Stem cells','Development'])
+})
+
+it('renders every section of a walkthrough notebook in the guide design, including numbered steps',async()=>{
+ const p=fixture(),e=p.entries[0],common={sourceIds:[],excerptIds:[],provenance:'background' as const}
+ e.sections.push({id:'tie',title:'Tie it together',purpose:'study-guide',blocks:[{...common,id:'tie-steps',type:'steps',items:[{text:'First step.',reason:'Because of this.'},'Second step.']}]} as never)
+ await show(p)
+ const tie=[...host.querySelectorAll('.nbr-section')].find(section=>section.querySelector('h3')?.textContent==='Tie it together')!
+ expect(tie.classList).toContain('lf-sec')
+ expect([...tie.querySelectorAll('.sg-walk>li>h4')].map(h=>h.textContent)).toEqual(['First step.','Second step.'])
+ expect(tie.querySelector('.sg-walk p')?.textContent).toBe('Because of this.')
+ expect(tie.querySelector('.sg-ref')).toBeNull()
 })
