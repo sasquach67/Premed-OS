@@ -419,3 +419,6 @@
 .nbr-detail-options button{min-height:2.75rem;height:auto;color:var(--muted-foreground)}.nbr-detail-options button[aria-pressed=true]{background:var(--card);color:var(--foreground);box-shadow:0 1px 3px #0002}
 .nbr-additional-detail[hidden]{display:none}.nbr-additional-detail{margin-top:.75rem}
 @media(max-width:640px){.nbr-reading-detail{align-items:stretch;flex-direction:column;gap:.75rem}.nbr-detail-options button{flex:1}}
+
+/* The generic details rule zeroes side padding; a bordered box needs it back. */
+.external-notebook details.en-notice, .external-notebook .nbr-coverage-disclosure { padding-inline: 1rem; }
