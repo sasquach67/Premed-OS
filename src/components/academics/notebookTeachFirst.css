@@ -194,3 +194,44 @@
 @media (max-width: 640px) {
   .nbr .nbr-doc.sg .lf-sec > h3, .nbr .nbr-doc.sg .lf-sec > .nbr-section-head h2 { font-size: 1.4rem; }
 }
+
+/* One type scale for the study guide: Baloo for titles, Nunito for everything else.
+   title 32 · section 28 · question 20 · lead and point 18 · body 17 · small 15 · caption and chip 14 · kicker 11. */
+.nbr.lf-reader .nbr-head h1 { font-size: 2rem; font-weight: 800; line-height: 1.15; }
+.nbr.lf-reader .nbr-scope { font-size: 1.0625rem; line-height: 1.75; }
+.nbr.lf-reader .en-eyebrow, .nbr.lf-reader .reading-contents-heading { font-size: 11px; font-weight: 800; letter-spacing: .1em; line-height: 1.4; }
+.nbr.lf-reader .nbr-views { padding: 0; background: none; }
+.nbr.lf-reader .lf-next-steps > div { border-color: var(--border); background: none; }
+.nbr.lf-reader .lf-next-steps strong { font-size: 15px; }
+.nbr.lf-reader .lf-next-steps small { font-size: 14px; }
+.nbr.lf-reader .nbr-detail-options button, .nbr.lf-reader .wt-detail button { font-size: 14px; }
+
+.nbr .nbr-doc.sg .lf-sec > h3, .nbr .nbr-doc.sg .lf-sec > .nbr-section-head h2, .nbr .nbr-doc.sg[data-reader-mode=study] article > section > h2, .nbr .nbr-doc.sg[data-reader-mode=study] article > h2 { font-size: 1.75rem; font-weight: 700; line-height: 1.2; }
+.sg .lf-sec [data-q] p, .nbr .nbr-doc.sg .lf-sec .nsg-callout[data-tone=question] p { font-size: 1.25rem; font-weight: 700; line-height: 1.5; }
+.sg .lf-sec .sg-lede-big, .nbr .nbr-doc.sg .lf-sec .en-block > p.lede { max-width: 40rem; font-size: 1.125rem; font-weight: 400; line-height: 1.7; }
+.nbr .nbr-doc.sg .lf-sec.sg-x .sg-walk h4 { font-size: 1.125rem; font-weight: 800; line-height: 1.4; }
+.sg .sg-take p:last-child, .nbr .nbr-doc.sg .lf-sec .nsg-callout[data-tone=one-thing] p { font-size: 1.125rem; font-weight: 700; line-height: 1.6; }
+.sg .lf-sec .sg-k, .sg .lf-sec .sg-ref, .nbr .nbr-doc.sg .lf-sec .nsg-callout-label { font-size: 11px; font-weight: 800; letter-spacing: .1em; line-height: 1.4; }
+.sg .lf-sec .sg-ref { margin-top: 2.1rem !important; }
+
+/* small: terms, map text, tables, context, gaps, sources */
+.sg .lf-tg li, .sg .wt-map .sg-mem, .sg .sg-gap, .nbr .nbr-doc.sg .lf-sec .nbr-figure-context, .sg .nsg-glossary dt, .sg .nsg-glossary dd, .nbr .nbr-doc.sg .lf-sec .en-table-scroll :is(th, td), .sg .lf-sec .nbr-learning-visual :is(p, li, small), .nbr .nbr-doc.sg .lf-sec .nbr-sources-panel > summary { font-size: 15px; line-height: 1.6; }
+.sg .lf-tg li b, .sg .nsg-glossary dt { font-weight: 800; }
+.nbr .nbr-doc.sg .lf-sec .en-table-scroll :is(th, td) .en-text, .sg .lf-sec .nbr-learning-visual .en-text { font-size: inherit; line-height: inherit; }
+.sg .lf-sec .nbr-learning-text strong { font-size: 1.0625rem; font-weight: 800; line-height: 1.5; }
+
+/* caption and chip */
+.nbr .nbr-doc.sg .lf-sec .nbr-figure figcaption > strong { font-size: 14px; font-weight: 400; line-height: 1.6; }
+.sg .wt-map > ul > li > ul > li > .wt-node { font-size: 14px; font-weight: 800; line-height: 1.4; }
+.sg .wt-map > ul > li > .wt-node { font-size: 1.0625rem; font-weight: 800; line-height: 1.4; }
+.sg .lf-sec .nsg-check, .nbr .nbr-doc.sg .lf-sec .en-muted { font-size: 14px; }
+@container(min-width:56rem) {
+  .sg-layout .reading-contents-heading { font-size: 11px; }
+  .sg-layout .reading-contents-title { font-size: 14px; font-weight: 700; line-height: 1.35; }
+}
+@media (max-width: 640px) {
+  .nbr.lf-reader .nbr-head h1 { font-size: 1.6rem; }
+  .nbr .nbr-doc.sg .lf-sec > h3, .nbr .nbr-doc.sg .lf-sec > .nbr-section-head h2 { font-size: 1.4rem; }
+}
+.sg .lf-sec .lf-sw, .nbr .nbr-doc.sg .lf-sec .lf-sw .en-text { font-size: 15px; font-weight: 400; line-height: 1.6; }
+.nbr.lf-reader .nbr-header-detail button { font-size: 14px; }
