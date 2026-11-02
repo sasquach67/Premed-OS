@@ -2050,3 +2050,12 @@ GPA/requirement logic is Academics-only; never center hours here. Assignments ar
 **⚠️ Do not spec, propose, or prototype a Canvas sync. Recorded so it is not re-raised.** **The blocker is the client secret and no design removes it.**
 
 **Store the least that works: title, due date, course, status. Not submissions, not Canvas grades, not attachments.**
+
+## Notebook study guide views
+
+The saved notebook's Study guide offers two views of the same content, and the choice is remembered per device: **Standard**, the default, and **Mind map**.
+
+Mind map keeps every study block written out on one zoomable canvas. Zooming out shows the big picture and zooming in reads the writing where it sits; nothing is hidden behind a panel. Each section is a hand-drawn oval with its question and lede beside it and its writing in reading-order columns on a shared rail. Heavy arrows follow reading order. The same notebook always gets the same positions. Home, fit a section, a minimap, an outline and full screen keep the reader oriented. Recall blurs the writing until it is tapped, because recalling from memory teaches more than studying a ready-made map.
+
+Stage 1 changes no saved data and no notebook format. Practice stays in its own tab; coverage, sources and the combined glossary stay in Standard. Later stages add the reader's own annotations and prompt-generated idea groups and links. The drawing is `mockup-lab/01-academics/academics-notebook-mindmap.html`.
+
