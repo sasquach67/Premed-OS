@@ -63,6 +63,22 @@ it('blurs writing in recall until tapped, and counts what was revealed', async (
   expect(host.querySelector('.nmm-shown')).toBeNull()
 })
 
+it('shows a new render on a parent update without moving the camera, and frames a new notebook', async () => {
+  const plain = entry([{ id: 'old', title: 'Old', purpose: 'study-guide', blocks: [{ ...common, id: 'a', type: 'paragraph', text: 'One' }] }])
+  await act(async () => root.render(<NotebookMindMap entry={plain} renderBlock={block => <div>before {block.id}</div>} />))
+  const camera = () => host.querySelector<HTMLElement>('.nmm-world')!.style.transform
+  const framed = camera()
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="Zoom in"]')!.click())
+  const zoomed = camera()
+  expect(zoomed).not.toBe(framed)
+  await act(async () => root.render(<NotebookMindMap entry={plain} renderBlock={block => <div>after {block.id}</div>} />))
+  expect(host.textContent).toContain('after a')
+  expect(host.textContent).not.toContain('before a')
+  expect(camera()).toBe(zoomed)
+  await act(async () => root.render(<NotebookMindMap entry={structuredClone(plain)} renderBlock={block => <div>after {block.id}</div>} />))
+  expect(camera()).toBe(framed)
+})
+
 it('renders the real package in the reader only for the study guide', async () => {
   const pkg = structuredClone(repertoire) as unknown as NotebookPackage, id = pkg.entries[0].id
   await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={id} mode="study" reader guideView="map" />))

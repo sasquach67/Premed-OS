@@ -55,10 +55,8 @@ export function mindMapSections(entry: NotebookEntry, render: RenderBlock): MapS
 }
 
 export function NotebookMindMap({ entry, renderBlock, intro }: { entry: NotebookEntry; renderBlock: RenderBlock; intro?: ReactNode }) {
-  // Blocks only read the entry, so their elements can stay the same across camera and recall updates.
-  const render = useRef(renderBlock)
-  useLayoutEffect(() => { render.current = renderBlock })
-  const sections = useMemo(() => mindMapSections(entry, (block, section) => render.current(block, section)), [entry])
+  // Camera and recall updates leave these props alone, so the block elements stay the same across them.
+  const sections = useMemo(() => mindMapSections(entry, renderBlock), [entry, renderBlock])
   const view = useRef<HTMLDivElement>(null), world = useRef<HTMLDivElement>(null), ink = useRef<SVGGElement>(null), miniSvg = useRef<SVGSVGElement>(null), miniWindow = useRef<SVGRectElement>(null), percent = useRef<HTMLOutputElement>(null)
   const camera = useRef({ x: 0, y: 0, k: 1 }), bounds = useRef<Box>({ x0: 0, y0: 0, x1: 1, y1: 1 }), placed = useRef(new Map<string, PlacedSection>()), framed = useRef(false), signature = useRef('')
   const [outline, setOutline] = useState(false), [full, setFull] = useState(false), [recall, setRecall] = useState(false), [revealed, setRevealed] = useState(0)
@@ -149,7 +147,9 @@ export function NotebookMindMap({ entry, renderBlock, intro }: { entry: Notebook
     if (framed.current) apply(); else { framed.current = true; home() }
   }, [sections, apply, home])
 
-  useLayoutEffect(() => { signature.current = ''; framed.current = false; layout() }, [layout])
+  // A new notebook frames itself again; a re-render of the same one keeps the reader's place.
+  useLayoutEffect(() => { signature.current = ''; framed.current = false }, [entry])
+  useLayoutEffect(() => { layout() }, [layout])
   useEffect(() => {
     // Figures load from device storage after the first paint; settle once they have.
     const inner = world.current, host = view.current; if (!inner || !host || typeof ResizeObserver === 'undefined') return
