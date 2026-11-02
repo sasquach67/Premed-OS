@@ -18,9 +18,11 @@ const termLine = /^\*\*[^*\n]+\*\*\s*[:—–-]\s*\S/
 const isTermList = (block: NotebookBlock) => block.type === 'bullets' && block.items.length > 0 && block.items.every(item => termLine.test(item))
 const correction = /^(Your notes|Easy to mix up):\s*/i
 
-/** Teach first, then the reference: question, lede, walkthrough, so what, key idea, Keep it straight (map, terms, rest, gap). */
-export function NotebookTeachFirstSection({ section, readingDetail, renderBlock }: { section: Section; readingDetail: NotebookReadingDetail; renderBlock: (block: NotebookBlock) => ReactNode }) {
-  const condensed = readingDetail === 'condensed'
+export type TeachFirstTerm = { term: string; definition: string }
+const cap = (value: string) => value.charAt(0).toLocaleUpperCase() + value.slice(1)
+
+/** A section split by the job each block does; shared by the guide and the mind map. */
+export function teachFirstParts(section: Section) {
   const blocks = section.blocks.filter(block => block.type !== 'practice')
   const walkthroughs = blocks.filter((block): block is Walkthrough => block.type === 'walkthrough')
   const attached = new Set(walkthroughs.flatMap(block => block.items.flatMap(item => [item.figureBlockId, ...(item.attachedBlockIds ?? [])]).filter((id): id is string => Boolean(id))))
@@ -38,41 +40,56 @@ export function NotebookTeachFirstSection({ section, readingDetail, renderBlock 
   const steps = take(block => block.type === 'steps') as Extract<NotebookBlock, { type: 'steps' }>[]
   const termLists = take(isTermList) as Extract<NotebookBlock, { type: 'bullets' }>[]
   const rest = blocks.filter(block => !used.has(block.id))
-  const terms = new Map<string, { term: string; definition: string }>()
+  const terms = new Map<string, TeachFirstTerm>()
   for (const block of blocks) for (const term of block.definedTerms ?? []) if (!terms.has(term.term.toLocaleLowerCase())) terms.set(term.term.toLocaleLowerCase(), term)
   for (const list of termLists) for (const item of list.items) {
     const match = /^\*\*([^*\n]+)\*\*\s*[:—–-]\s*(.+)$/.exec(item)
     if (match && !terms.has(match[1].toLocaleLowerCase())) terms.set(match[1].toLocaleLowerCase(), { term: match[1], definition: match[2] })
   }
-  const cap = (value: string) => value.charAt(0).toLocaleUpperCase() + value.slice(1)
+  return { byId, questions, ledes, walkthroughs, soWhat, keyIdeas, extras, maps, gaps, steps, rest, terms: [...terms.values()] }
+}
+
+export function TeachFirstPoint({ item, byId, renderBlock, condensed = false }: { item: Walkthrough['items'][number]; byId: ReadonlyMap<string, NotebookBlock>; renderBlock: (block: NotebookBlock) => ReactNode; condensed?: boolean }) {
+  const figure = item.figureBlockId ? byId.get(item.figureBlockId) : undefined
+  return <>
+    <h4><NotebookInlineText text={item.point} /></h4>
+    {!condensed && <>
+      {item.paragraphs.map((paragraph, pi) => <p key={pi}><NotebookInlineText text={paragraph} /></p>)}
+      {item.cards?.length ? <div className="sg-cond">{item.cards.map((card, ci) => <div key={ci}><b>{card.label}</b><NotebookInlineText text={card.text} /></div>)}</div> : null}
+      {figure && <div className="sg-walkfig">{renderBlock(figure)}</div>}
+      {(item.attachedBlockIds ?? []).flatMap(id => { const attachedBlock = byId.get(id); return attachedBlock ? [<div key={id} className="sg-tbl">{renderBlock(attachedBlock)}</div>] : [] })}
+      {item.note && <div className="sg-note" data-label={item.note.label}><p className="sg-k">{item.note.label}</p><p><NotebookInlineText text={item.note.text.replace(correction, '')} /></p></div>}
+    </>}
+  </>
+}
+export function TeachFirstLabeledNote({ block }: { block: Callout }) {
+  const label = block.tone === 'lecture-example' ? 'From lecture' : block.tone === 'analogy' ? 'Analogy' : block.tone === 'builds-on' ? 'Builds on' : correction.exec(block.text)?.[1] ?? 'Easy to mix up'
+  return <div className="sg-note" data-tone={block.tone}><p className="sg-k">{cap(label)}</p><p><NotebookInlineText text={block.text.replace(correction, '')} /></p></div>
+}
+export function TeachFirstKeyIdea({ block }: { block: Callout }) {
+  return <div data-take className="sg-take"><p className="sg-k">Key idea</p><p><NotebookInlineText text={block.text} /></p></div>
+}
+export function TeachFirstTerms({ terms }: { terms: readonly TeachFirstTerm[] }) {
+  return <div className="lf-terms">{terms.map(term => <div key={term.term} className="lf-tg"><ul className="wt-dots"><li><b>{cap(term.term)}</b><span>{cap(term.definition)}</span></li></ul></div>)}</div>
+}
+
+/** Teach first, then the reference: question, lede, walkthrough, so what, key idea, Keep it straight (map, terms, rest, gap). */
+export function NotebookTeachFirstSection({ section, readingDetail, renderBlock }: { section: Section; readingDetail: NotebookReadingDetail; renderBlock: (block: NotebookBlock) => ReactNode }) {
+  const condensed = readingDetail === 'condensed'
+  const { byId, questions, ledes, walkthroughs, soWhat, keyIdeas, extras, maps, gaps, steps, rest, terms } = teachFirstParts(section)
   // A section with no walkthrough has nothing to set its reference apart from.
-  const reference = walkthroughs.length > 0 && (maps.length > 0 || terms.size > 0 || rest.length > 0 || gaps.length > 0)
+  const reference = walkthroughs.length > 0 && (maps.length > 0 || terms.length > 0 || rest.length > 0 || gaps.length > 0)
   return <>
     {questions.map(block => <div key={block.id} data-q className="sg-q"><p><NotebookInlineText text={block.text} /></p></div>)}
     {ledes.map(block => <p key={block.id} className="sg-lede-big"><NotebookInlineText text={block.text} /></p>)}
-    {walkthroughs.map(block => <ol key={block.id} className="sg-walk" data-condensed={condensed || undefined}>{block.items.map((item, index) => {
-      const figure = item.figureBlockId ? byId.get(item.figureBlockId) : undefined
-      return <li key={index}>
-        <h4><NotebookInlineText text={item.point} /></h4>
-        {!condensed && <>
-          {item.paragraphs.map((paragraph, pi) => <p key={pi}><NotebookInlineText text={paragraph} /></p>)}
-          {item.cards?.length ? <div className="sg-cond">{item.cards.map((card, ci) => <div key={ci}><b>{card.label}</b><NotebookInlineText text={card.text} /></div>)}</div> : null}
-          {figure && <div className="sg-walkfig">{renderBlock(figure)}</div>}
-          {(item.attachedBlockIds ?? []).flatMap(id => { const attachedBlock = byId.get(id); return attachedBlock ? [<div key={id} className="sg-tbl">{renderBlock(attachedBlock)}</div>] : [] })}
-          {item.note && <div className="sg-note" data-label={item.note.label}><p className="sg-k">{item.note.label}</p><p><NotebookInlineText text={item.note.text.replace(correction, '')} /></p></div>}
-        </>}
-      </li>
-    })}</ol>)}
+    {walkthroughs.map(block => <ol key={block.id} className="sg-walk" data-condensed={condensed || undefined}>{block.items.map((item, index) => <li key={index}><TeachFirstPoint item={item} byId={byId} renderBlock={renderBlock} condensed={condensed} /></li>)}</ol>)}
     {steps.map(block => <ol key={block.id} className="sg-walk" data-condensed={condensed || undefined}>{block.items.map((item, index) => typeof item === 'string' ? <li key={index}><h4><NotebookInlineText text={item} /></h4></li> : <li key={index}><h4><NotebookInlineText text={item.text} /></h4>{!condensed && item.reason && <p><NotebookInlineText text={item.reason} /></p>}</li>)}</ol>)}
-    {!condensed && extras.map(block => {
-      const label = block.tone === 'lecture-example' ? 'From lecture' : block.tone === 'analogy' ? 'Analogy' : block.tone === 'builds-on' ? 'Builds on' : correction.exec(block.text)?.[1] ?? 'Easy to mix up'
-      return <div key={block.id} className="sg-note" data-tone={block.tone}><p className="sg-k">{cap(label)}</p><p><NotebookInlineText text={block.text.replace(correction, '')} /></p></div>
-    })}
+    {!condensed && extras.map(block => <TeachFirstLabeledNote key={block.id} block={block} />)}
     {!condensed && soWhat.map(block => <div key={block.id} className="lf-why"><p><NotebookInlineText text={block.text} /></p></div>)}
-    {keyIdeas.map(block => <div key={block.id} data-take className="sg-take"><p className="sg-k">Key idea</p><p><NotebookInlineText text={block.text} /></p></div>)}
+    {keyIdeas.map(block => <TeachFirstKeyIdea key={block.id} block={block} />)}
     {reference && <p className="sg-ref">Keep it straight</p>}
     {maps.map(block => <TeachFirstMap key={block.id} block={block} />)}
-    {!condensed && terms.size > 0 && <div className="lf-terms">{[...terms.values()].map(term => <div key={term.term} className="lf-tg"><ul className="wt-dots"><li><b>{cap(term.term)}</b><span>{cap(term.definition)}</span></li></ul></div>)}</div>}
+    {!condensed && terms.length > 0 && <TeachFirstTerms terms={terms} />}
     {!condensed && rest.map(block => <div key={block.id} className="sg-rest">{renderBlock(block)}</div>)}
     {!condensed && gaps.map(block => <p key={block.id} className="sg-gap">{block.text} {block.nextStep}</p>)}
   </>
