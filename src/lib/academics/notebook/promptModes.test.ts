@@ -16,19 +16,27 @@ it.each(['new', 'update'] as const)('includes the Assessment exam profile and pr
   expect(assessmentRules).toContain('If the student doesn\'t choose, use (a).')
   expect(prompt).toContain('Prompt build: notebook-instructions-beta-34.')
 })
-it.each(['new', 'update'] as const)('separates register from difficulty and keeps every tier precise in %s Assessment prompts', mode => {
+it.each(['new', 'update'] as const)('separates register from difficulty, keeps stretch opt-in and every tier precise and minimal in %s Assessment prompts', mode => {
   const prompt = composeNotebookPrompt('assessment', values, mode)
   const rules = prompt.split('## Assessment exam profile and practice style\n')[1]?.split('## Portable representation')[0]
   for (const clause of [
     '**Register is not difficulty.**',
-    'Reasoning depth always comes from `EC-DIFFICULTY-LADDER`.',
+    'whose tier mix is set by the course\'s exam-like questions',
     '- `EC-DIFFICULTY-LADDER`:',
     'Harder means more reasoning steps, never vaguer wording',
-    '**Recall and identify (one step), about 10–15% of a set.**',
-    '**Apply plus one step (two steps), about 50–60%.**',
-    '**Above-exam stretch (three or more steps), about 25–35%.**',
-    'then adds stretch items on top',
-    'Tag every stretch item with src "Harder than the exam"',
+    "The course's own exam-like questions (past exams, practice exams, practice papers, quizzes, assigned question sets) set the tier mix; match it.",
+    '**Recall and identify (one step).**',
+    '**Apply (one principle to a bare scene, or one principle plus one more step).**',
+    '**Stretch (three or more steps), optional.**',
+    'Stretch items are never the default.',
+    'Want a few harder-than-the-exam items added, clearly labeled?',
+    'Without a yes, add no stretch items.',
+    '**Minimum information.**',
+    'No stem defines or paraphrases the term being tested.',
+    "No stem restates a theory's claim",
+    'No stem hints at which principle applies',
+    'strike every stem sentence the item stays solvable without',
+    'Tag each with src "Harder than the exam"',
     '- `EC-PRECISION`:',
     'The explanation names that rule in its first sentence.',
     'Never write "most accurate" or "best describes" stems where two options are each partly true.',
