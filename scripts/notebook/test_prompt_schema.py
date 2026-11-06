@@ -11,9 +11,9 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS = Path('premed-hq-documentation/specifications/generation/portable-notebooks')
 APP = Path('src/lib/academics/notebook')
-# Approved October 20 beta-33 teach-first walkthrough, exam profile and forecast scope. Frozen full-template hashes
+# Approved beta-34: beta-33 teach-first scope plus the Assessment difficulty ladder and precision rules. Frozen full-template hashes
 # detect unreviewed rule/schema changes; generated assets separately require parity.
-APPROVED_PROMPT_HASHES = {'review': '69d836b9c1676f1cde4bafb8e2b60ef2f71e25b59f532e7eb553473c4ceaf7dc', 'assessment': '212e02870ab7c607777272ca436cb63b7a6ebcba26123fb9b7e0f9558eb60d9b', 'assignment': '17fd2702d7c7d2d2235bad4e2e7427b2133f3b1e5dc1e09900a92ea76ad3f5b4'}
+APPROVED_PROMPT_HASHES = {'review': 'd2b13e107390b04788470061d5b8bfe661b75463ea9217d0f21ac06c6b2b46f2', 'assessment': 'b4625b8eceae3dd3cab5f8ac9ae0a9b0963cb2aed5c24c93799d245e74e24ed4', 'assignment': 'd65eb6c8a6fd83fce8d7e25848a5b7285153f302c5cd48aeda9c94dfcf9420a2'}
 PIN = 'notebook-prompt-v4.schema.json'
 PIN_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'
 READER_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'
@@ -88,7 +88,7 @@ class PromptSchemaTests(unittest.TestCase):
         self.assertEqual(prompt.count(VISUAL_REVIEW), 1)
         self.assertEqual(prompt.count(COMPANION_VISUAL), 1)
         self.assertNotIn(OLD_VISUAL, prompt)
-        self.assertIn('notebook-instructions-beta-33', prompt)
+        self.assertIn('notebook-instructions-beta-34', prompt)
         self.assertIn('- `EC-GROUPED-GUIDE`:', prompt)
         if goal == 'review':
             self.assertIn('Practice belongs exclusively in Practice.', prompt)
@@ -117,7 +117,7 @@ class PromptSchemaTests(unittest.TestCase):
             self.assertNotIn('one or two original, self-contained exam-style', prompt)
             self.assertNotIn('at least one cue per objective', prompt)
         self.assertEqual(sha(prompt.encode()), APPROVED_PROMPT_HASHES[goal],
-                         'Template differs from the approved beta33 teach-first scope')
+                         'Template differs from the approved beta34 scope')
 
     def test_default_pin_and_bounded_prose_schema_scope(self):
         self.assertEqual(sha((self.out/PIN).read_bytes()), PIN_HASH)
