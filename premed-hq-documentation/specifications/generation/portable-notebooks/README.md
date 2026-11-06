@@ -1,3 +1,7 @@
+# Difficulty ladder and precision — beta34
+
+Assessment practice was mostly one-cue "scenario, then which term?" items whose stems over-supplied: they defined the tested term or restated the theory. Canonical 20 now says register is not difficulty. Quick in-class checks set vocabulary, tone and topics. The course's exam-like questions (past exams, practice papers, question sets) set the `EC-DIFFICULTY-LADDER` tier mix: recall, apply (one principle to a bare scene, or one principle plus one step), and stretch, which is optional and appears only as a labeled minority when the student opts in. `EC-PRECISION` applies at every tier: one defensible answer tied to a named class rule, no hedged or partly-true options, one nameable flaw per distractor, parallel options, and minimum information (no stem defines the tested term, restates a theory or hints at the principle), with length, keyword, re-solve and strike-a-sentence self-checks. Short "Correct; …" / "Incorrect; …" reasons replace the blanket "because" ban. `EC-MOCK-EXAM` offers stretch items and a one-question-at-a-time chat drill; the JSON stays the deliverable. No schema, token or reader changes.
+
 # Course exam profile and mock exams — beta23
 
 Assessment prompts now include EC-EXAM-PROFILE and EC-MOCK-EXAM in new and update mode. The approved wording is in canonical workflow 20. Beta22 teaching rules and the package schema are unchanged.
