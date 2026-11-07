@@ -26,7 +26,7 @@ describe('beta33 teach-first guide instructions', () => {
   for (const goal of ['review', 'assessment', 'assignment'] as const) {
     it.each(['new', 'update'] as const)(`${goal} %s keeps structure, explanation and delivery requirements together`, mode => {
       const prompt = composeNotebookPrompt(goal, values, mode)
-      expect(prompt).toContain('notebook-instructions-beta-35')
+      expect(prompt).toContain('notebook-instructions-beta-36')
       expect(prompt.indexOf('Governing notebook philosophy')).toBeLessThan(prompt.indexOf('## Applicable canonical learning rules'))
       expect(prompt.replace(/\s+/g, ' ')).toContain('simple means easier words, never fewer ideas')
       for (const [content, shape] of contentShapes) expect(prompt).toContain(`| ${content} | ${shape} |`)
@@ -65,7 +65,7 @@ describe('beta33 teach-first guide instructions', () => {
       expect(prompt).toContain('detail="core" or detail="extra"')
       expect(prompt).toContain('absent means core')
       expect(prompt).toContain('Preserve every stored more value on updates')
-      expect(prompt).toContain('premedOS/Lesson N - Title')
+      expect(prompt).toContain('named under EC-FOLDER-NAME')
       expect(prompt).not.toContain('This is a draft instruction workflow')
       expect(prompt).not.toContain('Transport instructionsVersion:')
       expect(prompt).toContain('"instructionsVersion"')

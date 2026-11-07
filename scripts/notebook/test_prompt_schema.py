@@ -11,7 +11,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS = Path('premed-hq-documentation/specifications/generation/portable-notebooks')
 APP = Path('src/lib/academics/notebook')
-# Approved beta-35: beta-34 scope plus the original, objective-centered Review practice set. Frozen full-template hashes
+# Approved beta-36: beta-35 scope plus the EC-FOLDER-NAME folder and file naming rule. Frozen full-template hashes
 # detect unreviewed rule/schema changes; generated assets separately require parity.
 APPROVED_PROMPT_HASHES = {'review': '6d746310aa68f67a6fea52f2e75bb2014226d8f3fa08ebf9be906dddb3c386ba', 'assessment': '0d019c108fd8ba753bc2479c3b7e429a8075ac807d0054a3c55ce6ceb01fc25c', 'assignment': '6165778817cbd6a60a8b53eac319f351791c5f0bcfb1c05e36ccbab6b7d5b183'}
 PIN = 'notebook-prompt-v4.schema.json'
@@ -88,7 +88,7 @@ class PromptSchemaTests(unittest.TestCase):
         self.assertEqual(prompt.count(VISUAL_REVIEW), 1)
         self.assertEqual(prompt.count(COMPANION_VISUAL), 1)
         self.assertNotIn(OLD_VISUAL, prompt)
-        self.assertIn('notebook-instructions-beta-35', prompt)
+        self.assertIn('notebook-instructions-beta-36', prompt)
         self.assertIn('- `EC-GROUPED-GUIDE`:', prompt)
         if goal == 'review':
             self.assertIn('Practice belongs exclusively in Practice.', prompt)
@@ -100,7 +100,7 @@ class PromptSchemaTests(unittest.TestCase):
         self.assertIn('- `EC-IMPORT-CHECK`:', prompt)
         self.assertNotIn('Why it works), 2–3 sentences in EVERY teaching section', prompt)
         self.assertIn('no prose block or walkthrough paragraph exceeds 3 sentences or about 60 words', prompt)
-        self.assertIn('premedOS/Lesson N - Title', prompt)
+        self.assertIn('named under EC-FOLDER-NAME', prompt)
         self.assertNotIn('This is a draft instruction workflow', prompt)
         self.assertNotIn('Transport instructionsVersion:', prompt)
         self.assertNotIn('Nevirapine', prompt)
@@ -117,7 +117,7 @@ class PromptSchemaTests(unittest.TestCase):
             self.assertNotIn('one or two original, self-contained exam-style', prompt)
             self.assertNotIn('at least one cue per objective', prompt)
         self.assertEqual(sha(prompt.encode()), APPROVED_PROMPT_HASHES[goal],
-                         'Template differs from the approved beta35 scope')
+                         'Template differs from the approved beta36 scope')
 
     def test_default_pin_and_bounded_prose_schema_scope(self):
         self.assertEqual(sha((self.out/PIN).read_bytes()), PIN_HASH)
