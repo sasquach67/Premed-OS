@@ -88,7 +88,7 @@ class PromptSchemaTests(unittest.TestCase):
         self.assertEqual(prompt.count(VISUAL_REVIEW), 1)
         self.assertEqual(prompt.count(COMPANION_VISUAL), 1)
         self.assertNotIn(OLD_VISUAL, prompt)
-        self.assertIn('notebook-instructions-beta-34', prompt)
+        self.assertIn('notebook-instructions-beta-35', prompt)
         self.assertIn('- `EC-GROUPED-GUIDE`:', prompt)
         if goal == 'review':
             self.assertIn('Practice belongs exclusively in Practice.', prompt)
@@ -117,7 +117,7 @@ class PromptSchemaTests(unittest.TestCase):
             self.assertNotIn('one or two original, self-contained exam-style', prompt)
             self.assertNotIn('at least one cue per objective', prompt)
         self.assertEqual(sha(prompt.encode()), APPROVED_PROMPT_HASHES[goal],
-                         'Template differs from the approved beta34 scope')
+                         'Template differs from the approved beta35 scope')
 
     def test_default_pin_and_bounded_prose_schema_scope(self):
         self.assertEqual(sha((self.out/PIN).read_bytes()), PIN_HASH)
