@@ -1,8 +1,8 @@
 {
   "instructionsVersion": "notebook-workflows-draft-4",
-  "promptBuild": "notebook-instructions-beta-34",
-  "canonicalHeadAtBuild": "fa286d2fc2036630dee60dd7d2945399e6db7b61",
-  "canonicalRootAtBuild": "/Users/andyquach/Documents/premed-os-assessment-ladder",
+  "promptBuild": "notebook-instructions-beta-35",
+  "canonicalHeadAtBuild": "9f646ab0bd47b92ec466627ae8c6f356f4d80e62",
+  "canonicalRootAtBuild": "/Users/andyquach/Documents/premed-os-practice-set",
   "sources": {
     "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
       "sha256": "710c9dac30f03fa6cb34e0ab3f7d6b3e6e8b6407909e95c95a50194bd09ecf24",
@@ -28,9 +28,9 @@
       }
     },
     "premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md": {
-      "sha256": "41cf186cf1fb43f80dada50c9e10856031bcd7f4801dd56729d1c5c6fc2b2a6e",
+      "sha256": "d1496e24ff41747122e00720098cc75c875537b810dc3d2e5a5e13618633fbc4",
       "sections": {
-        "full": "41cf186cf1fb43f80dada50c9e10856031bcd7f4801dd56729d1c5c6fc2b2a6e"
+        "full": "d1496e24ff41747122e00720098cc75c875537b810dc3d2e5a5e13618633fbc4"
       }
     },
     "premed-hq-documentation/specifications/generation/03-study-guide-v1.md": {
@@ -89,7 +89,7 @@
     "premed-hq-documentation/specifications/generation/portable-notebooks/FIXTURE-CORRECTIONS.md": "11d749acb5140fd1a743a9fe0e93231b89c3a858ecb4e1e1fa55696c5e0e5621",
     "premed-hq-documentation/specifications/generation/portable-notebooks/METHODOLOGY-AUDIT.md": "21b823e2cc304b8d0681da9f9f8c324e39be77cb963b0bc1cbd4f0d514b3c265",
     "premed-hq-documentation/specifications/generation/portable-notebooks/ORDINARY-CHAT-MATERIALS.md": "b36020e6361a7a3885294e42dfa137ab7a2ef22958fecdc6181e65de7e03df56",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "d47c139a69ab4703ac8da518683f8af0c5fa8a2314bf0881f4ab3b75bcc0dce8"
+    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "a6170932578d06e80ee7c9f769c520375ee36d8c9183d12a87619e1dd542b7e0"
   },
   "testAssets": {
     "premed-hq-documentation/specifications/generation/portable-notebooks/cross-provider-assets/question-new-detail.png": "03f9199ec4dff474e7cb2df62c119c04140cedf432a38ca79ea3d0b030087846",
@@ -100,7 +100,7 @@
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_conversation_examples.py": "bc0c36b25bb604056a5e2342957887aed7be86987271e86fe2cee6aeb667cb81",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_feasibility_case.py": "61ea50db75f7901d6b7f733d02db1204ea7e8dde7a8165b9715e1d5dff88efcc",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_fixtures.py": "31d262db6aafa9788e30e20be0f2b3d4af3c80eba634990984d25a2d623ff169",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "35ebef160ebc0478775aa6796f6e28b20fec217cebe116377876786ae692d16e",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "c6b8eb9c9256fbec5fbb90ec127df6710eecef9b3e643e4dad6ec22ce3d93f56",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_revision_cases.py": "1532a4cec4e1333b3c63c877cc34d8913e0c034a0c220aa090d020532ce201a1",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_schema.py": "86cee42747b37f0dc735f28e21a1aa586f77015454b6fcfd593eb8178684085d",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_standardization.py": "65276c633874b1821335d2774f8543bae3a1293312582cd6ffb25fbdbd368c56",
@@ -116,40 +116,40 @@
   },
   "outputs": {
     "copy-prompt-review.md": {
-      "sha256": "6f0fa9569f87ff19945c314d93cb3f1089277f44e92a3659480d26781975382e",
-      "bytes": 240363,
-      "words": 28727,
+      "sha256": "6d746310aa68f67a6fea52f2e75bb2014226d8f3fa08ebf9be906dddb3c386ba",
+      "bytes": 246454,
+      "words": 29726,
       "componentBytes": {
         "request": 7061,
         "commonLearningRules": 18175,
         "goalLearningRules": 33309,
-        "externalWorkflow": 136532,
+        "externalWorkflow": 142623,
         "schema": 44176,
         "assembly": 1110
       }
     },
     "copy-prompt-assessment.md": {
-      "sha256": "ce63e2e77d56d1f878c7d596d563f2f9a2631ec799f7e7a4da27a1e15d3ae8ef",
-      "bytes": 223117,
-      "words": 25931,
+      "sha256": "0d019c108fd8ba753bc2479c3b7e429a8075ac807d0054a3c55ce6ceb01fc25c",
+      "bytes": 229208,
+      "words": 26930,
       "componentBytes": {
         "request": 7069,
         "commonLearningRules": 18175,
         "goalLearningRules": 16047,
-        "externalWorkflow": 136532,
+        "externalWorkflow": 142623,
         "schema": 44176,
         "assembly": 1118
       }
     },
     "copy-prompt-assignment.md": {
-      "sha256": "a4c10b462695d0d49356153c6f1df9d1e1fea1e2c63b28779d7630191c4db1e4",
-      "bytes": 215460,
-      "words": 24894,
+      "sha256": "6165778817cbd6a60a8b53eac319f351791c5f0bcfb1c05e36ccbab6b7d5b183",
+      "bytes": 221551,
+      "words": 25893,
       "componentBytes": {
         "request": 7069,
         "commonLearningRules": 18175,
         "goalLearningRules": 8390,
-        "externalWorkflow": 136532,
+        "externalWorkflow": 142623,
         "schema": 44176,
         "assembly": 1118
       }
@@ -187,6 +187,7 @@
   "directLanguageIncrement": "Beta31 permits empty legacy mastery arrays in v4, teaches direct claims with evidenced cautions, limits authored sentences to one idea with a short entry summary, integrates figure purpose into ordinary captions, and organizes Review sections around the governing course argument. v2/v3, stored content, flashcards and reader UI remain unchanged.",
   "linesFirstIncrement": "Beta32 puts shape before format, requires short core/extra explanations, uses additive detail, role, reason, lookFor, argumentChain, claim and multiple-choice fields, aligns create/update premedOS lesson-folder delivery, and removes student-facing draft transport narration. Prior source, direct-language and legacy-data guarantees remain.",
   "teachFirstIncrement": "Beta33 teaches first through a walkthrough block (point sentence, short paragraphs, cards, the figure inside its point) followed by a Keep it straight reference, fixes coverage, states each fact once, takes the section spine from the instructor, labels only tinted boxes, adds an import self-check, builds a 16-feature exam profile with examples and the instructor voice rule for practice sets and mocks, and turns How it may be tested into an exam forecast with structured class questions in Practice. Additive v4 fields only: walkthrough, paragraph role lede, howTested forecast and basis, practice parts, matching, table and src.",
+  "objectivePracticeIncrement": "Beta35 makes the Review Practice set original exam-style items, one lesson objective per item with every objective covered and no objective label shown. Supplied course questions (real exams, in-class assessments, past exams, live responses, outlines and worksheets, GRQs, then Pearson) calibrate format, difficulty and traps and stay as howTested evidence, never as Practice text. Items follow EC-PRECISION and minimum information, rotate the real exam formats, put an importer-accepted stimulus (tables, study-diagrams, answer-neutral supplied figures) in about half of science-course items with controls read, and give option-by-option feedback. Assessment and Assignment practice are unchanged.",
   "difficultyLadderIncrement": "Beta34 separates register from difficulty in Assessment practice: quick in-class checks set vocabulary, tone and topics only, while the course exam-like questions set the EC-DIFFICULTY-LADDER tier mix (recall, apply to a bare scene or apply plus one step, and optional stretch that the student opts into as a labeled minority). EC-PRECISION keeps every tier crisp and minimal: one defensible answer tied to a named class rule, no hedged or partly-true options, one nameable flaw per distractor, parallel options, stems that never define the tested term, restate a theory or hint at the principle, and length/keyword/re-solve/strike-a-sentence self-checks. Short claim-evaluation reasons replace the blanket because ban, and EC-MOCK-EXAM offers stretch items and a one-question-at-a-time chat drill beside the JSON deliverable. No schema, token or reader changes.",
   "masteryAndSaveIncrement": "Beta30 authors source-quoted three-part mastery objectives and saves notebook folders in the class folder, falling back to Downloads only when inaccessible and reporting the actual location. Old objective fields and schemas remain accepted.",
   "groupedTermGuideIncrement": "Beta29 adds the approved grouped-term Review order, formal exam vocabulary, explained figures, structured definitions, semantic callouts, linked toned maps, objective chips and combined-lesson synthesis. Practice stays separate. Existing notebook schemas remain accepted; no flashcard prompt changes.",
