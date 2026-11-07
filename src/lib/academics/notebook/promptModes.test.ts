@@ -14,7 +14,43 @@ it.each(['new', 'update'] as const)('includes the Assessment exam profile and pr
   expect(assessmentRules).toContain('Without real exams, use the course blueprint and say so.')
   expect(assessmentRules).toContain('Unless the request already says, ask once, in the first reply')
   expect(assessmentRules).toContain('If the student doesn\'t choose, use (a).')
-  expect(prompt).toContain('Prompt build: notebook-instructions-beta-33.')
+  expect(prompt).toContain('Prompt build: notebook-instructions-beta-34.')
+})
+it.each(['new', 'update'] as const)('separates register from difficulty, keeps stretch opt-in and every tier precise and minimal in %s Assessment prompts', mode => {
+  const prompt = composeNotebookPrompt('assessment', values, mode)
+  const rules = prompt.split('## Assessment exam profile and practice style\n')[1]?.split('## Portable representation')[0]
+  for (const clause of [
+    '**Register is not difficulty.**',
+    'whose tier mix is set by the course\'s exam-like questions',
+    '- `EC-DIFFICULTY-LADDER`:',
+    'Harder means more reasoning steps, never vaguer wording',
+    "The course's own exam-like questions (past exams, practice exams, practice papers, quizzes, assigned question sets) set the tier mix; match it.",
+    '**Recall and identify (one step).**',
+    '**Apply (one principle to a bare scene, or one principle plus one more step).**',
+    '**Stretch (three or more steps), optional.**',
+    'Stretch items are never the default.',
+    'Want a few harder-than-the-exam items added, clearly labeled?',
+    'Without a yes, add no stretch items.',
+    '**Minimum information.**',
+    'No stem defines or paraphrases the term being tested.',
+    "No stem restates a theory's claim",
+    'No stem hints at which principle applies',
+    'strike every stem sentence the item stays solvable without',
+    'Tag each with src "Harder than the exam"',
+    '- `EC-PRECISION`:',
+    'The explanation names that rule in its first sentence.',
+    'Never write "most accurate" or "best describes" stems where two options are each partly true.',
+    'Each wrong option fails for one reason you could name',
+    'Options have similar length and the same grammatical form.',
+    '"Correct; …" or "Incorrect; …"',
+    'Keyword matching alone can\'t find the answer',
+    'Re-solve every item from the stem alone, without the key',
+    'the correct option is the longest in no more items than chance predicts',
+    'I can also quiz you here one question at a time.',
+    'The notebook JSON stays the deliverable either way.',
+  ]) expect(rules, clause).toContain(clause)
+  expect(rules).not.toContain('Never put "because" in an option.')
+  expect(rules).not.toContain('as the profile and say so')
 })
 it.each(['new', 'update'] as const)('preserves mock fidelity and cumulative scope boundaries in %s Assessment prompts', mode => {
   const prompt = composeNotebookPrompt('assessment', values, mode)
