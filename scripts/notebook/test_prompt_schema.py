@@ -11,9 +11,9 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS = Path('premed-hq-documentation/specifications/generation/portable-notebooks')
 APP = Path('src/lib/academics/notebook')
-# Approved beta-34: beta-33 teach-first scope plus the Assessment difficulty ladder and precision rules. Frozen full-template hashes
+# Approved beta-35: beta-34 scope plus the original, objective-centered Review practice set. Frozen full-template hashes
 # detect unreviewed rule/schema changes; generated assets separately require parity.
-APPROVED_PROMPT_HASHES = {'review': '6f0fa9569f87ff19945c314d93cb3f1089277f44e92a3659480d26781975382e', 'assessment': 'ce63e2e77d56d1f878c7d596d563f2f9a2631ec799f7e7a4da27a1e15d3ae8ef', 'assignment': 'a4c10b462695d0d49356153c6f1df9d1e1fea1e2c63b28779d7630191c4db1e4'}
+APPROVED_PROMPT_HASHES = {'review': '6d746310aa68f67a6fea52f2e75bb2014226d8f3fa08ebf9be906dddb3c386ba', 'assessment': '0d019c108fd8ba753bc2479c3b7e429a8075ac807d0054a3c55ce6ceb01fc25c', 'assignment': '6165778817cbd6a60a8b53eac319f351791c5f0bcfb1c05e36ccbab6b7d5b183'}
 PIN = 'notebook-prompt-v4.schema.json'
 PIN_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'
 READER_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'

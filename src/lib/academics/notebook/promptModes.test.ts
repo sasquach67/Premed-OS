@@ -137,3 +137,38 @@ it('carries the show-don\'t-tell, pertinent-only and student-work rules and the 
     expect(template, goal).not.toContain('Briefly disclose the use of general subject knowledge once in the companion summary')
   }
 })
+it.each(['new', 'update'] as const)('makes the %s Review practice set original, objective-centered and exam-style', mode => {
+  const prompt = composeNotebookPrompt('review', values, mode)
+  const rule = prompt.split('- `EC-REVIEW-PRACTICE`:')[1]?.split('\n\n## ')[0]
+  for (const clause of [
+    'original, exam-style items, each centered on one of this lesson\'s objectives',
+    "this term's real exams, in-class learning assessments, past exams from the same course, live responses, outline and worksheet questions, guided reading questions (GRQs), then publisher items such as Pearson, lowest",
+    'These sources set format, difficulty and traps.',
+    'Do not copy, lightly reword, renumber',
+    'it does not appear in active Practice',
+    'Every objective gets at least one item',
+    'Keep the mapping in practiceBlockIds only: no objective ID, title or paraphrase',
+    'Every item meets `EC-PRECISION`',
+    '"template" means the strand a polymerase copies',
+    'no definitions, no name of the theory or principle',
+    'as in an introductory psychology course, most items apply one principle to a bare scene',
+    'Roman-numeral combinations',
+    'select-all for only some items, never several in a row',
+    'write a select-all as combination options, because one correctIndex marks the answer',
+    'about half the items need a stimulus',
+    'a band in PCR without reverse transcription, a faint housekeeping band',
+    '(paragraph, table, figure, study-diagram or annotated-figure)',
+    'never use an illustration block as a stimulus',
+    'says in one line per option why that option is right or wrong',
+    'a (+)ssRNA virus has no DNA stage',
+  ]) expect(rule, clause).toContain(clause)
+  expect(prompt).not.toContain('Preserve every relevant usable SUPPLIED question')
+  expect(prompt).not.toContain('The same class questions appear in Practice under EC-REVIEW-PRACTICE')
+  expect(prompt).toContain('These class questions calibrate the Practice set under EC-REVIEW-PRACTICE; they are not copied into it.')
+  expect(prompt).toContain('For Review, inventory the supplied questions this way and keep them as howTested.questions evidence and calibration')
+  expect(prompt).toContain('One exception: a Review Practice set also follows `EC-PRECISION`')
+})
+it('keeps Assessment source-question inclusion unchanged', () => {
+  const prompt = composeNotebookPrompt('assessment', values, 'new')
+  expect(prompt).toContain('so the inclusion rules below apply to Assessment and Assignment. Within the requested study/practice scope, include all relevant usable questions')
+})
