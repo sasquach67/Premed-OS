@@ -40,6 +40,8 @@
 .nbr-practice-stimulus .en-table-wrap { max-width: 100%; overflow-x: auto; }
 .nbr-practice-stimulus table { border-collapse: collapse; width: 100%; }
 .nbr-practice-stimulus th, .nbr-practice-stimulus td { border: 1px solid var(--border); padding: .65rem; text-align: left; vertical-align: top; }
+/* Break table text only between words; a long table scrolls inside its wrap instead of splitting headers mid-word. */
+.nbr-practice-stimulus th, .nbr-practice-stimulus td { overflow-wrap: normal; word-break: normal; hyphens: manual; }
 .nbr-visual-review { margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: .5rem; font-size: .88rem; }
 .nbr-visual-review section { margin: 1rem 0; }
 .nbr-diagram { container-type: inline-size; min-width: 0; margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: .65rem; background: color-mix(in srgb, var(--card) 97%, var(--primary) 3%); }

@@ -23,7 +23,7 @@ export function NotebookPracticeCard({ number, origin, prompt, stimulus, hasStim
   return <div className={`np-card${options ? ' wt-fr lf-multiple-choice' : ''}`} data-has-stimulus={hasStimulus || undefined}>
     <span className="np-number" aria-label={`Question ${number}`}>{String(number).padStart(2, '0')}</span>
     <div className="np-content">
-      <p className="np-origin">{origin}</p>
+      {origin && <p className="np-origin">{origin}</p>}
       <div className="np-question-layout">
         {hasStimulus && <div className="np-stimulus">{stimulus}</div>}
         <div className="np-question">{prompt}{structure}</div>

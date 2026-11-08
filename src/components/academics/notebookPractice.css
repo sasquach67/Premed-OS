@@ -27,7 +27,8 @@
 .np-secondary summary{cursor:pointer;color:var(--muted-foreground)}
 .np-original .en-text{white-space:pre-wrap}
 .np-set-cue{font-size:.875rem;line-height:1.5;color:var(--muted-foreground);margin:.4rem 0 1rem}
-@media(min-width:62rem){.np-card[data-has-stimulus] .np-question-layout{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:1.25rem}}
+/* The stimulus spans the full width above its question so tables and figures are never squeezed into a side column. */
+.np-card[data-has-stimulus] .np-question-layout{gap:1rem}
 @media(max-width:40rem){.np-card{grid-template-columns:1.9rem minmax(0,1fr);gap:.5rem}.np-number{font-size:1.3rem}.np-answer,.np-why{grid-template-columns:1fr;gap:.25rem}}
 
 /* Match the saved reader's typography specificity as well as import previews. */

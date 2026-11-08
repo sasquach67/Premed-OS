@@ -76,7 +76,10 @@ it('keeps unrelated practice sections out of filtered contents and preserves non
   const pkg = revisionFixture(), ids = pkg.entries[0].sections.flatMap(section => section.blocks).filter(block => block.type === 'practice').map(block => block.id)
   await show(pkg, { mode: 'practice', practiceFilter: [ids[0]] })
   const excluded = pkg.entries[0].sections.find(section => section.blocks.some(block => block.type === 'practice' && block.id === ids[1]))!
-  expect(container.querySelector('.reading-contents-list')?.textContent).not.toContain(excluded.title)
+  expect(excluded.title).toBeTruthy()
+  // Practice reads as one column: no side contents list that could list the excluded section.
+  expect(container.querySelector('.nbr-aside')).toBeNull()
+  expect(container.textContent).not.toContain(excluded.title)
   const guide = fixture(), map = guide.entries[0].sections[0].blocks[1]
   if (map.type !== 'study-diagram') throw new Error('Fixture changed')
   map.kind = 'concept-map'; map.edges.push({ ...map.edges[0], id: 'return', from: 'cyclin', to: 'root', label: 'feeds back', relation: 'association' })
