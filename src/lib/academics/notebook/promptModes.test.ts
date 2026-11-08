@@ -14,7 +14,7 @@ it.each(['new', 'update'] as const)('includes the Assessment exam profile and pr
   expect(assessmentRules).toContain('Without real exams, use the course blueprint and say so.')
   expect(assessmentRules).toContain('Unless the request already says, ask once, in the first reply')
   expect(assessmentRules).toContain('If the student doesn\'t choose, use (a).')
-  expect(prompt).toContain('Prompt build: notebook-instructions-beta-35.')
+  expect(prompt).toContain('Prompt build: notebook-instructions-beta-36.')
 })
 it.each(['new', 'update'] as const)('separates register from difficulty, keeps stretch opt-in and every tier precise and minimal in %s Assessment prompts', mode => {
   const prompt = composeNotebookPrompt('assessment', values, mode)
@@ -111,11 +111,11 @@ it.each(['review', 'assessment', 'assignment'] as const)('delivers a complete fo
     const prompt = composeNotebookPrompt(goal, values, mode)
     expect(prompt).toContain('Default to one real folder named after the notebook')
     expect(prompt).toContain('Create a ZIP only when the student explicitly requests one or a web chat needs a ZIP')
-    expect(prompt).toContain('premedOS/Lesson N - Title')
+    expect(prompt).toContain('named under EC-FOLDER-NAME')
     expect(prompt).not.toContain('This is a draft instruction workflow')
     expect(prompt).not.toContain('Transport instructionsVersion:')
     if (mode === 'update') {
-      expect(modes.update.intro).toContain('premedOS/Lesson N - Title')
+      expect(modes.update.intro).toContain('named under EC-FOLDER-NAME')
       expect(modes.update.intro).toContain('Downloads is a fallback only when that class folder cannot be reached')
     }
     expect(prompt).toContain('saves the complete titled folder in my actual class folder')
@@ -171,4 +171,17 @@ it.each(['new', 'update'] as const)('makes the %s Review practice set original, 
 it('keeps Assessment source-question inclusion unchanged', () => {
   const prompt = composeNotebookPrompt('assessment', values, 'new')
   expect(prompt).toContain('so the inclusion rules below apply to Assessment and Assignment. Within the requested study/practice scope, include all relevant usable questions')
+})
+it.each(['review', 'assessment', 'assignment'] as const)('names %s notebook folders and files under EC-FOLDER-NAME', goal => {
+  const prompt = composeNotebookPrompt(goal, values, 'new')
+  const rule = prompt.split('- `EC-FOLDER-NAME`:')[1]?.split('\n- `')[0]
+  for (const clause of [
+    'the folder is `Lesson N - Title`, the JSON inside it is `Lesson N - Title.json`',
+    'Title is the notebook\'s topic without any lesson label',
+    'Use a plain hyphen with one space on each side, never an en or em dash',
+    '`Lessons A-B - Title`',
+    'Save the folder inside that lesson\'s `premedOS files` folder within the class folder',
+    'add ` (2)`, ` (3)` and so on to the new folder\'s name only; the JSON inside keeps the base name',
+  ]) expect(rule, clause).toContain(clause)
+  expect(prompt).not.toContain('premedOS/Lesson N - Title')
 })
