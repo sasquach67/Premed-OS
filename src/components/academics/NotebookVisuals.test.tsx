@@ -25,10 +25,10 @@ afterEach(async () => {
   if (closeDescriptor) Object.defineProperty(HTMLDialogElement.prototype, 'close', closeDescriptor); else delete (HTMLDialogElement.prototype as Partial<HTMLDialogElement>).close
   vi.restoreAllMocks(); vi.unstubAllGlobals()
 })
-async function renderFigure(context = 'A meaningful source explanation.') {
+async function renderFigure(context = 'A meaningful source explanation.', bare = false) {
   const pkg = visualFixture(), block = pkg.entries[0].sections.flatMap(s => s.blocks).find(b => b.type === 'figure') as NotebookFigureBlock
   block.context = context
-  await act(async () => root.render(<NotebookAssetsProvider pkg={pkg} bindings={[fixture.binding]}><NotebookFigure block={block} /></NotebookAssetsProvider>))
+  await act(async () => root.render(<NotebookAssetsProvider pkg={pkg} bindings={[fixture.binding]}><NotebookFigure block={block} bare={bare} /></NotebookAssetsProvider>))
   await vi.waitFor(async () => { await act(async () => {}); expect(host.querySelector('.nbr-figure-open')).toBeTruthy() })
   return { block, opener: host.querySelector<HTMLButtonElement>('.nbr-figure-open')!, modal: host.querySelector<HTMLDialogElement>('dialog')! }
 }
@@ -70,4 +70,12 @@ it('leaves ordinary forward Tab from the first control to native keyboard naviga
   const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
   await act(async () => modal.querySelector('button')!.dispatchEvent(event))
   expect(event.defaultPrevented).toBe(false)
+})
+it('shows a practice figure as image and caption only, without context, source line or look-for hints', async () => {
+  const { block } = await renderFigure('Hypothetical data drawn for this practice question.', true)
+  expect(host.querySelector('figcaption strong')?.textContent).toBe(block.caption)
+  expect(host.querySelector('figcaption small')).toBeNull()
+  expect(host.querySelector('.nbr-figure-context')).toBeNull()
+  expect(host.querySelector('.lf-look')).toBeNull()
+  expect(host.querySelector('.nbr-figure-open img')?.getAttribute('alt')).toBe(block.alt)
 })

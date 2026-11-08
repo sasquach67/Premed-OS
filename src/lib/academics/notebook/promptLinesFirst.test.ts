@@ -26,7 +26,7 @@ describe('beta33 teach-first guide instructions', () => {
   for (const goal of ['review', 'assessment', 'assignment'] as const) {
     it.each(['new', 'update'] as const)(`${goal} %s keeps structure, explanation and delivery requirements together`, mode => {
       const prompt = composeNotebookPrompt(goal, values, mode)
-      expect(prompt).toContain('notebook-instructions-beta-36')
+      expect(prompt).toContain('notebook-instructions-beta-37')
       expect(prompt.indexOf('Governing notebook philosophy')).toBeLessThan(prompt.indexOf('## Applicable canonical learning rules'))
       expect(prompt.replace(/\s+/g, ' ')).toContain('simple means easier words, never fewer ideas')
       for (const [content, shape] of contentShapes) expect(prompt).toContain(`| ${content} | ${shape} |`)

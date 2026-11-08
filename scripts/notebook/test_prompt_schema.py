@@ -11,9 +11,9 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS = Path('premed-hq-documentation/specifications/generation/portable-notebooks')
 APP = Path('src/lib/academics/notebook')
-# Approved beta-36: beta-35 scope plus the EC-FOLDER-NAME folder and file naming rule. Frozen full-template hashes
+# Approved beta-37: beta-36 scope plus drawn practice figures and per-objective forecasts. Frozen full-template hashes
 # detect unreviewed rule/schema changes; generated assets separately require parity.
-APPROVED_PROMPT_HASHES = {'review': '7bdec356d3caee17786bd2b2609977f1e178c8f63a0043265ab4c92abb00a96f', 'assessment': 'b7f7f3ba880be104139dd4db2363e4534ac62d300c2c4c56c1b88c95430b2ca9', 'assignment': '0b0ab000bc08d9e54abebf8ce8a32bb22dde6e3928853b699cfb0b4e3d564ff4'}
+APPROVED_PROMPT_HASHES = {'review': 'f127b24a12822d23ea0ccc7367ed7448f8c9c89aaec3e1202b2ffd88d9b57cd7', 'assessment': '4de506e820e5e717117f50c4bc5a9989fed0aefeebd7ad598b23e3667c42eb97', 'assignment': 'dceacead0100451e05a9081394f6d6a48b4f08315019efb6f922cfebb1c90443'}
 PIN = 'notebook-prompt-v4.schema.json'
 PIN_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'
 READER_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'
@@ -23,7 +23,7 @@ DETAIL = '- `EC-READING-DETAIL`: For guide teaching in new and update notebooks,
 DETAIL_CHECK = '- `EC-DETAIL-CHECK`: Before delivery, read the guide once with extra blocks and legacy more hidden and once with everything visible. Condensed must make sense by itself; Full detail must retain complete relevant explanation without duplicated sentences, source narration or unsupported additions. Check every teaching section for its question, 1–2 sentence lede, 3–6 point walkthrough with 1–2 short paragraphs per point, key idea, justified step reasons, and 2–4 Look for lines for its actual main figure. No prose block exceeds 3 sentences or about 60 words. Check an argument guide\'s linked 4–6 item argumentChain and claim/evidence/soWhat in each argument section. Apply EC-PERTINENT-ONLY to both layers, including phrases such as "the lecture reports" and "the outline says". Keep genuine evidence limits in the existing limitations/gap records, and keep scientific uncertainty when it changes the claim. Check the declared schema and every detail/role field without deleting stored more; successful JSON validation alone does not establish teaching completeness.'
 OLD_VISUAL = 'Use a visual in the main guide only when it clarifies a difficult relationship or materially replaces text; otherwise use the clearer shorter explanation. Place necessary neutral source-question stimuli in Practice. A figure used there need not receive a second walkthrough in the guide.'
 GUIDE_VISUAL = 'Show source visuals where they are taught. When a guide section teaches something that a supplied slide, figure, graph, diagram or image depicts, place that figure in that section beside its explanation, using the supplied pixels and a faithful caption; use the answer-neutral version when the original would reveal a practice answer. Practice may reuse the same asset: a figure used in Practice still appears in the guide section that teaches it. Decorative, title, administrative and duplicate slides stay out.'
-VISUAL_GAPS = "- `EC-VISUAL-GAPS`: For every guide section, check whether the idea is visual: a structure, process, pathway, comparison, map, data reading or before-and-after. If it is and no supplied image depicts it, build a native visual from supported facts with the existing block types (study-diagram, sequence-strip, timeline, venn, continuum, table, illustration, worked-example). If the materials refer to a figure that was not supplied or could not be extracted, name it in the plain-titled gap section with exactly what to supply, and still teach the idea with a native visual where the facts support one. Never generate a synthetic image file for a missing visual; extracting or faithfully cropping supplied source pixels under EC-FIGURES stays allowed. Never present a native visual as the instructor's figure, and never reconstruct an unavailable question stimulus."
+VISUAL_GAPS = "- `EC-VISUAL-GAPS`: For every guide section, check whether the idea is visual: a structure, process, pathway, comparison, map, data reading or before-and-after. If it is and no supplied image depicts it, build a native visual from supported facts with the existing block types (study-diagram, sequence-strip, timeline, venn, continuum, table, illustration, worked-example). If the materials refer to a figure that was not supplied or could not be extracted, name it in the plain-titled gap section with exactly what to supply, and still teach the idea with a native visual where the facts support one. Never generate a synthetic image file for a missing visual; extracting or faithfully cropping supplied source pixels under EC-FIGURES stays allowed. The one exception is a hypothetical Practice stimulus drawn under EC-REVIEW-PRACTICE. Never present a native visual as the instructor's figure, and never reconstruct an unavailable question stimulus."
 VISUAL_REVIEW = 'A candidate that depicts content taught in the guide may not be skipped as overlapping or unnecessary; record the guide section it was placed in.'
 COMPANION_VISUAL = 'List each guide section with the figure or native visual it uses, or the reason none is needed.'
 GOALS = ('review', 'assessment', 'assignment')
@@ -88,7 +88,7 @@ class PromptSchemaTests(unittest.TestCase):
         self.assertEqual(prompt.count(VISUAL_REVIEW), 1)
         self.assertEqual(prompt.count(COMPANION_VISUAL), 1)
         self.assertNotIn(OLD_VISUAL, prompt)
-        self.assertIn('notebook-instructions-beta-36', prompt)
+        self.assertIn('notebook-instructions-beta-37', prompt)
         self.assertIn('- `EC-GROUPED-GUIDE`:', prompt)
         if goal == 'review':
             self.assertIn('Practice belongs exclusively in Practice.', prompt)
@@ -117,7 +117,7 @@ class PromptSchemaTests(unittest.TestCase):
             self.assertNotIn('one or two original, self-contained exam-style', prompt)
             self.assertNotIn('at least one cue per objective', prompt)
         self.assertEqual(sha(prompt.encode()), APPROVED_PROMPT_HASHES[goal],
-                         'Template differs from the approved beta36 scope')
+                         'Template differs from the approved beta37 scope')
 
     def test_default_pin_and_bounded_prose_schema_scope(self):
         self.assertEqual(sha((self.out/PIN).read_bytes()), PIN_HASH)
