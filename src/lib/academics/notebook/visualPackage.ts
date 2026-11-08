@@ -104,8 +104,11 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
         for (const id of visualAssetReferences(b)) referenced.add(id)
         if (b.type === 'practice' && (!['source', 'generated-practice'].includes(b.provenance) || !b.sourceIds.length || (!b.excerptIds.length && !visualAssetReferences(b).length))) fail(path, 'Practice requires source or generated-practice provenance and precise evidence.')
         if (b.type === 'practice') {
-          if ((b.options === undefined) !== (b.correctIndex === undefined)) fail(path, 'Multiple-choice practice needs both options and correctIndex.')
-          if (b.options && (b.correctIndex! < 0 || b.correctIndex! >= b.options.length)) fail(path, 'correctIndex must identify an existing option.')
+          if (b.correctIndex !== undefined && b.correctIndices !== undefined) fail(path, 'Use correctIndex for one answer or correctIndices for select-all, not both.')
+          const keyed = b.correctIndex !== undefined || b.correctIndices !== undefined
+          if ((b.options === undefined) !== !keyed) fail(path, 'Multiple-choice practice needs both options and correctIndex (or correctIndices for select-all).')
+          if (b.options && b.correctIndex !== undefined && (b.correctIndex < 0 || b.correctIndex >= b.options.length)) fail(path, 'correctIndex must identify an existing option.')
+          if (b.options && b.correctIndices !== undefined && (!b.correctIndices.length || new Set(b.correctIndices).size !== b.correctIndices.length || b.correctIndices.some(i => !Number.isInteger(i) || i < 0 || i >= b.options!.length))) fail(path, 'correctIndices must list distinct existing options.')
         }
         if (b.type === 'table' && b.rows.some(r => r.length !== b.columns.length)) fail(path, 'Table rows must match the column count.')
         validateLearningVisual(b)

@@ -42,7 +42,7 @@ export function NotebookComparison({ before, after, entryId, separate = false }:
   </section>
 }
 
-const NON_TEXT_KEYS = new Set(['id', 'type', 'sourceIds', 'excerptIds', 'practiceBlockIds', 'stimulusBlockIds', 'assetId', 'requirementId', 'sectionId', 'order', 'provenance', 'detail', 'tone', 'role', 'correctIndex'])
+const NON_TEXT_KEYS = new Set(['id', 'type', 'sourceIds', 'excerptIds', 'practiceBlockIds', 'stimulusBlockIds', 'assetId', 'requirementId', 'sectionId', 'order', 'provenance', 'detail', 'tone', 'role', 'correctIndex', 'correctIndices'])
 function plainText(value: unknown): string {
   if (typeof value === 'string') return value
   if (Array.isArray(value)) return value.map(plainText).filter(Boolean).join(' ')

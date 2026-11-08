@@ -150,7 +150,7 @@ function BlockView({ block, path, change, pkg, progress, onProgress, reader = fa
       number={pkg.entries[Number(path[1])].sections.flatMap(section => section.blocks).filter(item => item.type === 'practice').findIndex(item => item.id === block.id) + 1}
       origin={practiceDisplay?.label ?? (block.provenance === 'source' ? 'Question from supplied course material' : '')}
       prompt={text(practiceDisplay?.body ?? block.prompt, 'prompt', 'Practice prompt')} stimulus={<NotebookPracticeStimulus block={block} />} hasStimulus={Boolean(block.stimulusBlockIds?.length)}
-      answer={text(block.answer, 'answer', 'Answer')} rationale={text(block.rationale, 'rationale', 'Explanation')} original={block.prompt} missing={missing} options={block.options} correctIndex={block.correctIndex} structure={<NotebookPracticeStructure block={block} />}
+      answer={text(block.answer, 'answer', 'Answer')} rationale={text(block.rationale, 'rationale', 'Explanation')} original={block.prompt} missing={missing} options={block.options} correctIndex={block.correctIndex} correctIndices={block.correctIndices} structure={<NotebookPracticeStructure block={block} />}
       sources={reader ? <ReaderSources blocks={[block]} pkg={pkg} scope="item" inlineSources={practiceSources} onInlineSources={() => setPracticeSources(previous => !previous)} /> : <EvidenceView evidence={block} pkg={pkg} />}
       earlierWork={onProgress && <details className="nbr-earlier-work"><summary>Your earlier work on this item</summary><p className="en-text">{work.response || 'No saved response.'}</p><p>{work.complete ? 'Previously marked explainable without looking.' : 'Not previously marked explainable.'}</p></details>}
     />)}

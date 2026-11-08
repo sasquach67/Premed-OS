@@ -74,6 +74,14 @@
 .wt-opt.right i { background: var(--success); border-color: var(--success); color: var(--primary-foreground); }
 .wt-opt.wrong { border-color: var(--destructive); background: color-mix(in srgb,var(--destructive) 10%,var(--card)); }
 .wt-opt.wrong i { background: var(--destructive); border-color: var(--destructive); color: var(--primary-foreground); }
+.wt-check i { border-radius: 6px; }
+.wt-check[aria-pressed="true"]:not(:disabled) { border-color: var(--primary); background: color-mix(in srgb,var(--primary) 8%,var(--card)); }
+.wt-check[aria-pressed="true"]:not(:disabled) i { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+.wt-opt.missed { border-color: var(--success); border-style: dashed; }
+.wt-opt.missed i { border-color: var(--success); color: var(--success); }
+.wt-missed { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--success); }
+.wt-check-submit { margin-top: 10px; border: 1px solid var(--primary); background: var(--primary); color: var(--primary-foreground); border-radius: 10px; padding: 8px 16px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.wt-check-submit:disabled { opacity: .45; cursor: default; }
 .wt-fb { margin-top: 10px; padding: 10px 14px; border-radius: 10px; font-size: 14px; border: 1px solid var(--border); background: var(--muted); }
 .wt-fb.ok { border-color: color-mix(in srgb,var(--success) 40%,transparent); }
 .wt-fb.no { border-color: color-mix(in srgb,var(--destructive) 40%,transparent); }
