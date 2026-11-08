@@ -73,6 +73,13 @@ it('scopes square, baseline-aligned theme tabs and equal mobile columns to reade
   expect(mobile).toContain('white-space:normal')
 })
 
+it('keeps the compact header tabs free of a tinted box around the label', () => {
+  const header = readFileSync(new NodeURL('./notebookLessonHeader.css', import.meta.url), 'utf8')
+  expect(header).toContain('.nbr .nbr-tab-buttons .nbr-view-button { min-width: 0; min-height: 48px; padding: 10px 0; }')
+  expect(header).toContain('.nbr .nbr-tab-buttons .nbr-view-button[aria-pressed], .nbr .nbr-tab-buttons .nbr-view-button[aria-pressed]:hover { background: transparent; }')
+  expect(header).toContain('.nbr .nbr-tab-buttons .nbr-view-button:focus-visible { outline-offset: 2px; }')
+})
+
 it('clears 4.5:1 for the reported light active background without changing the dark-theme color', () => {
   const primary = [75, 156, 211], foreground = [58, 53, 48]
   const background = [.950588, .954588, .933216].map(channel => channel * 255)
