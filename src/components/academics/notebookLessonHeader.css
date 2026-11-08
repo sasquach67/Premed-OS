@@ -7,6 +7,9 @@
 .nbr .nbr-views { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 20px 0; }
 .nbr .nbr-tab-buttons { display: flex; min-width: 0; flex-wrap: wrap; gap: 18px; }
 .nbr .nbr-tab-buttons .nbr-view-button { min-width: 0; min-height: 48px; padding: 10px 0; }
+/* Text tabs have no side padding, so a tinted box would hug the label; mark the active tab with its color and underline only. */
+.nbr .nbr-tab-buttons .nbr-view-button[aria-pressed], .nbr .nbr-tab-buttons .nbr-view-button[aria-pressed]:hover { background: transparent; }
+.nbr .nbr-tab-buttons .nbr-view-button:focus-visible { outline-offset: 2px; }
 .nbr .nbr-header-detail { margin-left: auto; padding: 3px; display: flex; border-radius: 999px; background: var(--muted); }
 .nbr .nbr-header-detail button { min-width: 0; min-height: 30px; padding: 4px 12px; border: 0; border-radius: 999px; background: transparent; font-size: 13px; color: var(--muted-foreground); }
 .nbr .nbr-header-detail button[aria-pressed='true'] { background: var(--card); color: var(--foreground); }

@@ -47,7 +47,7 @@ describe('figures in guide source contract through the app composer', () => {
   for (const goal of ['review', 'assessment', 'assignment'] as const) {
     it.each(['new', 'update'] as const)(`${goal} %s includes the approved visual instructions`, mode => {
       const prompt = composeNotebookPrompt(goal, values, mode)
-      expect(prompt).toContain('notebook-instructions-beta-36')
+      expect(prompt).toContain('notebook-instructions-beta-37')
       expect(prompt).toContain('Show source visuals where they are taught.')
       expect(prompt).toContain('using the supplied pixels and a faithful caption; use the answer-neutral version when the original would reveal a practice answer.')
       expect(prompt).toContain('Practice may reuse the same asset: a figure used in Practice still appears in the guide section that teaches it.')
@@ -55,7 +55,7 @@ describe('figures in guide source contract through the app composer', () => {
       expect(prompt).toContain('`EC-VISUAL-GAPS`')
       expect(prompt).toContain('build a native visual from supported facts with the existing block types (study-diagram, sequence-strip, timeline, venn, continuum, table, illustration, worked-example).')
       expect(prompt).toContain('name it in the plain-titled gap section with exactly what to supply, and still teach the idea with a native visual where the facts support one.')
-      expect(prompt).toContain("Never generate a synthetic image file for a missing visual; extracting or faithfully cropping supplied source pixels under EC-FIGURES stays allowed. Never present a native visual as the instructor's figure, and never reconstruct an unavailable question stimulus.")
+      expect(prompt).toContain("Never generate a synthetic image file for a missing visual; extracting or faithfully cropping supplied source pixels under EC-FIGURES stays allowed. The one exception is a hypothetical Practice stimulus drawn under EC-REVIEW-PRACTICE. Never present a native visual as the instructor's figure, and never reconstruct an unavailable question stimulus.")
       expect(prompt).toContain('A candidate that depicts content taught in the guide may not be skipped as overlapping or unnecessary; record the guide section it was placed in.')
       expect(prompt).toContain('List each guide section with the figure or native visual it uses, or the reason none is needed.')
       expect(prompt).not.toContain('need not receive a second walkthrough')

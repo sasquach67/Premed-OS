@@ -17,16 +17,21 @@ export function NotebookMasteryObjectives({ entry, entryIndex = 0, headingId, re
   // Beta-33: How it may be tested is an exam forecast, shown as the exemplar's mq-* cards (brief §2.9).
   if (!renderText && entry.objectives.some(objective => objective.howTested?.forecast?.length)) return <section className="nbr-objectives nmo-objectives sg" aria-label="Mastery objectives">
     <h2 id={headingId} tabIndex={headingId ? -1 : undefined} className="sr-only">Mastery objectives</h2>
+    {/* Each distinct basis note is shown once for the page instead of under every objective. */}
+    {forecastBases(entry.objectives).map(basis => <p key={basis} className="mq-basis mq-basis-page">{basis}</p>)}
     <div className="mq-pane">{entry.objectives.map((objective, index) => {
       const title = objective.origin === 'derived' ? objective.title.replace(/^Study objective:\s*/, '') || objective.title : objective.title
       const tested = objective.howTested
+      const sameAs = entry.objectives.slice(0, index).findIndex(earlier => forecastKey(earlier) === forecastKey(objective) && forecastKey(objective) !== '')
       return <article key={objective.id} className="mq-card" aria-label={title}>
         <p className="mq-kick">Objective {index + 1} · {objective.origin === 'official' ? 'Course objective' : 'Study objective'}</p>
         <h3 className="mq-title">{title}</h3>
         <section className="mq-box" aria-label="How it may be tested"><p className="mq-boxkick">How it may be tested</p>
-          {tested && <p className="mq-setup"><NotebookInlineText text={tested.setup} /></p>}
-          {tested?.forecast?.length ? <ul className="mq-fcl">{tested.forecast.map((row, ri) => <li key={ri}><span className="mq-fmt">{row.format}</span><span className="mq-fc"><NotebookInlineText text={row.text} /></span></li>)}</ul> : <p className="en-text">This objective has no forecast yet. Its class questions are in Practice.</p>}
-          <div className="mq-foot"><span className="mq-basis">{tested?.basis ?? 'Based on the class questions for this objective.'}</span>{onPractice && objective.practiceBlockIds.length > 0 && <button type="button" className="mq-go" onClick={() => onPractice(objective.practiceBlockIds)}>Practice these</button>}</div>
+          {sameAs >= 0 ? <p className="mq-same">Same question shapes as Objective {sameAs + 1}.</p> : <>
+            {tested && <p className="mq-setup"><NotebookInlineText text={tested.setup} /></p>}
+            {tested?.forecast?.length ? <ul className="mq-fcl">{tested.forecast.map((row, ri) => <li key={ri}><span className="mq-fmt">{row.format}</span><span className="mq-fc"><NotebookInlineText text={row.text} /></span></li>)}</ul> : <p className="en-text">This objective has no forecast yet. Its class questions are in Practice.</p>}
+          </>}
+          {onPractice && objective.practiceBlockIds.length > 0 && <div className="mq-foot"><button type="button" className="mq-go" onClick={() => onPractice(objective.practiceBlockIds)}>Practice these</button></div>}
         </section>
         <div className="mq-cols"><section className="mq-col" aria-label="Be able to do"><p className="mq-colkick">Be able to do</p><ul>{(objective.applicationSkills?.map(skill => skill.text) ?? objective.beAbleToDo).map((skill, si) => <li key={si}><NotebookInlineText text={skill} /></li>)}</ul></section>
           <section className="mq-col" aria-label="Understand"><p className="mq-colkick">Understand</p><ul>{objective.understand.map((fact, fi) => <li key={fi}><NotebookInlineText text={fact} /></li>)}</ul></section></div>
@@ -61,4 +66,14 @@ export function NotebookMasteryObjectives({ entry, entryIndex = 0, headingId, re
       </li>
     })}</ol>
   </section>
+}
+
+type ForecastObjective = NotebookObjective
+/** Setup plus forecast rows; two objectives with the same key would show identical boxes. */
+function forecastKey(objective: ForecastObjective): string {
+  const tested = objective.howTested
+  return tested?.forecast?.length ? JSON.stringify([tested.setup, tested.forecast.map(row => [row.format, row.text])]) : ''
+}
+function forecastBases(objectives: ForecastObjective[]): string[] {
+  return [...new Set(objectives.flatMap(objective => objective.howTested?.basis?.trim() || []))]
 }

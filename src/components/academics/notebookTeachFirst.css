@@ -96,6 +96,9 @@
 .sg .mq-fmt { font-size: .72rem; font-weight: 800; letter-spacing: .04em; color: var(--primary); background: color-mix(in oklab, var(--primary) 14%, transparent); border-radius: 999px; padding: .15rem .6rem; justify-self: start; line-height: 1.4; }
 .sg .mq-foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 1.1rem; padding-top: .9rem; border-top: 1px solid color-mix(in oklab, var(--primary) 22%, transparent); }
 .sg .mq-basis { font-size: .82rem; color: var(--muted-foreground); line-height: 1.4; }
+.sg .mq-basis-page { display: block; margin: 0 0 1rem; }
+.sg .mq-same { margin: .4rem 0 0; color: var(--muted-foreground); font-size: .95rem; }
+.sg .mq-box .mq-foot { justify-content: flex-start; }
 .sg .mq-go { font-size: .85rem; font-weight: 700; border-radius: 999px; padding: .4rem .95rem; background: var(--primary); color: var(--primary-foreground); border: 0; cursor: pointer; }
 .sg .mq-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .sg .mq-col { background: var(--muted); border-radius: 1rem; padding: 1.1rem 1.25rem; }

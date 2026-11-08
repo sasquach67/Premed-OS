@@ -304,6 +304,7 @@
 .nbr-doc .en-sources>section{border-top:1px solid var(--border);padding-top:1rem}
 @container(min-width:56rem){
   .nbr-layout{grid-template-columns:16rem minmax(0,1fr);gap:2rem}
+  .nbr-layout.nbr-layout-single{grid-template-columns:minmax(0,1fr)}
   .nbr-aside{top:1rem;z-index:1;background:transparent}
   .nbr-aside .reading-contents{padding:14px 10px 10px}
   .nbr-aside .reading-contents-picker{display:none}

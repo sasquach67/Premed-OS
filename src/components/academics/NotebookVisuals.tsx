@@ -41,7 +41,7 @@ export function NotebookAssetsProvider({ pkg, bindings, prepared, children }: { 
   const context = useMemo<VisualContext>(() => inherit ? { ...inherited, pkg } : { pkg, images, fail: id => setImages(previous => new Map(previous).set(id, { status: 'missing', error: 'This browser could not display the saved image.' })) }, [inherit, inherited, pkg, images])
   return <NotebookImages.Provider value={context}>{children}</NotebookImages.Provider>
 }
-export function NotebookFigure({ block, onChange, annotations }: { block: NotebookFigureBlock; onChange?: (block: NotebookFigureBlock) => void; annotations?: LearningAnnotation[] }) {
+export function NotebookFigure({ block, onChange, annotations, bare = false }: { block: NotebookFigureBlock; onChange?: (block: NotebookFigureBlock) => void; annotations?: LearningAnnotation[]; bare?: boolean }) {
   const { pkg, images, fail } = useContext(NotebookImages), state = images.get(block.assetId), dialog = useRef<HTMLDialogElement>(null)
   const restoreView = useRef<(() => void) | null>(null), [zoomError, setZoomError] = useState('')
   const asset = pkg && pkg.version !== 2 ? pkg.assets.find(a => a.id === block.assetId) : undefined
@@ -66,9 +66,9 @@ export function NotebookFigure({ block, onChange, annotations }: { block: Notebo
   return <figure className="nbr-figure" data-asset-id={block.assetId}>
     {state?.status === 'ready' ? <button type="button" className="nbr-figure-open" aria-label={`Enlarge figure: ${block.caption ?? block.alt}`} onClick={event => openZoom(event.currentTarget)}>{image()}<span>Enlarge figure</span></button> : <div className="en-notice" role="status"><b>{state?.status === 'loading' ? 'Loading figure' : 'Figure unavailable on this device'}</b><p>{state?.error ?? 'Select and validate this notebook image before saving.'}</p><p>{block.alt}</p></div>}
     {zoomError && <p role="status">{zoomError}</p>}
-    <figcaption>{block.caption && <strong><NotebookInlineText text={block.caption} /></strong>}{asset && <small>{asset.sourceId} / {asset.location}</small>}</figcaption>
-    <p className="nbr-figure-context"><NotebookInlineText text={block.context} /></p>
-    {block.lookFor?.length ? <section className="lf-look" aria-label="Look for"><h4>Look for</h4><ul>{block.lookFor.map((line, index) => <li key={index}><NotebookInlineText text={line} /></li>)}</ul></section> : null}
+    <figcaption>{block.caption && <strong><NotebookInlineText text={block.caption} /></strong>}{asset && !bare && <small>{asset.sourceId} / {asset.location}</small>}</figcaption>
+    {!bare && <p className="nbr-figure-context"><NotebookInlineText text={block.context} /></p>}
+    {!bare && block.lookFor?.length ? <section className="lf-look" aria-label="Look for"><h4>Look for</h4><ul>{block.lookFor.map((line, index) => <li key={index}><NotebookInlineText text={line} /></li>)}</ul></section> : null}
     {onChange && <div className="nbr-figure-edit"><label>Figure caption<input value={block.caption ?? ''} onChange={e => onChange({ ...block, caption: e.target.value || null })} /></label><label>Figure alternative text<textarea value={block.alt} onChange={e => onChange({ ...block, alt: e.target.value })} /></label><label>Figure context<textarea value={block.context} onChange={e => onChange({ ...block, context: e.target.value })} /></label><p>Image identity and original bytes stay protected. Use an update with a new asset ID to replace an image.</p></div>}
     <dialog className="nbr-figure-dialog" ref={dialog} aria-label="Enlarged source figure" onClose={finishZoom} onKeyDown={event => {
       if (event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey) return
@@ -114,7 +114,9 @@ export function NotebookPracticeStimulus({ block }: { block: Extract<VisualNoteb
     if (!item) return <p role="alert" key={id}>Required question setup is missing.</p>
     if (item.type === 'paragraph') return <p className="en-text" key={id}>{item.text}</p>
     if (item.type === 'table') return <div className="en-table-wrap" key={id} tabIndex={0} aria-label="Question data table"><table><thead><tr>{item.columns.map((c, i) => <th key={i}>{c}</th>)}</tr></thead><tbody>{item.rows.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>)}</tbody></table></div>
-    if (item.type === 'figure' || item.type === 'study-diagram' || item.type === 'annotated-figure') return <NotebookVisualBlock key={id} block={item} />
+    // A question figure shows only the image and its caption: context and look-for lines would add text and can hint at the answer.
+    if (item.type === 'figure') return <NotebookFigure key={id} block={item} bare />
+    if (item.type === 'study-diagram' || item.type === 'annotated-figure') return <NotebookVisualBlock key={id} block={item} />
     return <p role="alert" key={id}>Unsupported question setup. This item cannot be attempted.</p>
   })}</div>
 }

@@ -14,7 +14,7 @@ it.each(['new', 'update'] as const)('includes the Assessment exam profile and pr
   expect(assessmentRules).toContain('Without real exams, use the course blueprint and say so.')
   expect(assessmentRules).toContain('Unless the request already says, ask once, in the first reply')
   expect(assessmentRules).toContain('If the student doesn\'t choose, use (a).')
-  expect(prompt).toContain('Prompt build: notebook-instructions-beta-36.')
+  expect(prompt).toContain('Prompt build: notebook-instructions-beta-37.')
 })
 it.each(['new', 'update'] as const)('separates register from difficulty, keeps stretch opt-in and every tier precise and minimal in %s Assessment prompts', mode => {
   const prompt = composeNotebookPrompt('assessment', values, mode)
@@ -184,4 +184,29 @@ it.each(['review', 'assessment', 'assignment'] as const)('names %s notebook fold
     'add ` (2)`, ` (3)` and so on to the new folder\'s name only; the JSON inside keeps the base name',
   ]) expect(rule, clause).toContain(clause)
   expect(prompt).not.toContain('premedOS/Lesson N - Title')
+})
+it('draws Review practice figures as hypothetical PNG assets and keeps tables as the fallback', () => {
+  const prompt = composeNotebookPrompt('review', values, 'new')
+  const rule = prompt.split('- `EC-REVIEW-PRACTICE`:')[1]?.split('\n- `')[0]
+  for (const clause of [
+    'Draw the stimulus as a real figure whenever you can run code to make an image file',
+    'one strip per probe with its label on the left (including the loading control)',
+    'one symbol per solute particle when the count matters',
+    'a flat-ended line for inhibition at the exact step a drug acts',
+    'qRT-PCR Ct values and a DNA sequence stay tables',
+    'location "Practice figure drawn for this notebook (hypothetical data)"',
+    'a selected, inspected visualReview candidate with that assetId',
+    'a caption that ends "(hypothetical)", alt text listing every value',
+    'omit lookFor, because a practice figure must not hint at the answer',
+    'When you cannot make image files, fall back to the matching table',
+    'never present a drawn figure as a course figure or a real result',
+    'Look at every drawn figure before delivery',
+  ]) expect(rule, clause).toContain(clause)
+  expect(prompt).not.toContain('never fabricate a raster image')
+  expect(prompt).toContain('The one exception is a hypothetical Practice stimulus drawn under EC-REVIEW-PRACTICE.')
+})
+it.each(['review', 'assessment', 'assignment'] as const)('writes a separate %s forecast for each objective with one basis line', goal => {
+  const prompt = composeNotebookPrompt(goal, values, 'new')
+  expect(prompt).toContain("Each objective's setup and forecast rows are written for that objective alone: never copy one objective's setup or rows to another")
+  expect(prompt).toContain('using the same wording on every objective of the entry because the reader shows it once for the page')
 })

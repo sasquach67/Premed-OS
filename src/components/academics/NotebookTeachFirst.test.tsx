@@ -97,6 +97,21 @@ it('renders structured class questions in Practice',async()=>{
  expect(host.querySelectorAll('.mq-parts>p')).toHaveLength(2)
 })
 
+it('shows a repeated forecast and basis once instead of under every objective',async()=>{
+ const tested={setup:'You are given results and asked to predict the outcome.',questions:[],forecast:[{format:'Prediction',text:'Predict the effect of a changed gradient.'}],basis:'Plausible shapes from the class questions.'}
+ const objective=(id:string,title:string,howTested:unknown)=>({id,requirementId:'r',title,origin:'official',sourceIds:[],excerptIds:[],freeRecallCues:[],watchFor:[],practiceBlockIds:[],evidenceLimit:null,understand:[],beAbleToDo:[],howTested})
+ const own={...tested,forecast:[{format:'Count',text:'How many ORFs are on the bottom strand?'}]}
+ const entry={id:'e',revision:1,baseRevision:null,title:'Lesson 17',goal:'review',scope:'x',request:{helpStage:null,classPreferences:'',assessmentFormat:null},sections:[],requirements:[],limitations:[],objectives:[objective('o1','Transport',tested),objective('o2','Osmosis',tested),objective('o3','ORFs',own)]} as unknown as NotebookEntry
+ await act(async()=>root.render(<NotebookMasteryObjectives entry={entry} renderEvidence={()=>null}/>))
+ const cards=[...host.querySelectorAll('.sg .mq-card')]
+ expect(cards[0].querySelectorAll('.mq-fcl li')).toHaveLength(1)
+ expect(cards[1].querySelector('.mq-fcl')).toBeNull()
+ expect(cards[1].querySelector('.mq-same')?.textContent).toBe('Same question shapes as Objective 1.')
+ expect(cards[2].querySelector('.mq-fc')?.textContent).toBe('How many ORFs are on the bottom strand?')
+ expect(host.querySelectorAll('.mq-basis-page')).toHaveLength(1)
+ expect(host.textContent?.split('Plausible shapes from the class questions.').length).toBe(2)
+})
+
 it('shows How it may be tested as an exam forecast with its basis and a Practice these hand-off',async()=>{
  const onPractice=vi.fn()
  const entry={id:'e',revision:1,baseRevision:null,title:'Lesson 14',goal:'review',scope:'x',request:{helpStage:null,classPreferences:'',assessmentFormat:null},sections:[],requirements:[],limitations:[],objectives:[{id:'o1',requirementId:'r',title:'Study objective: Compare cell types',origin:'derived',sourceIds:[],excerptIds:[],freeRecallCues:[],watchFor:[],practiceBlockIds:['p1'],evidenceLimit:null,understand:['Cancer cells express telomerase.'],beAbleToDo:[],applicationSkills:[{text:'Given data, classify the cell.',questionIds:['q1']}],howTested:{setup:'Most of these questions hand you data.',questions:[{id:'q1',text:'Compare the phenotype of a cancer cell and a stem cell.',sourceIds:[],excerptIds:[]}],forecast:[{format:'Data set',text:'Which cell is more likely a cancer cell?'},{format:'Trap',text:'Does a skin cell have the telomerase gene?'},{format:'Category grid',text:'In which cell(s) is telomerase high?'}],basis:'Based on your past Exam 2 papers.'}}]} as unknown as NotebookEntry
@@ -104,7 +119,8 @@ it('shows How it may be tested as an exam forecast with its basis and a Practice
  const card=host.querySelector('.sg .mq-card')!
  expect(card.querySelector('.mq-title')?.textContent).toBe('Compare cell types')
  expect([...card.querySelectorAll('.mq-fcl .mq-fmt')].map(x=>x.textContent)).toEqual(['Data set','Trap','Category grid'])
- expect(card.querySelector('.mq-basis')?.textContent).toBe('Based on your past Exam 2 papers.')
+ expect(card.querySelector('.mq-basis')).toBeNull()
+ expect([...host.querySelectorAll('.mq-basis-page')].map(x=>x.textContent)).toEqual(['Based on your past Exam 2 papers.'])
  expect(card.textContent).not.toContain('Compare the phenotype of a cancer cell')
  await act(async()=>card.querySelector<HTMLButtonElement>('.mq-go')!.click())
  expect(onPractice).toHaveBeenCalledWith(['p1'])
