@@ -18,7 +18,7 @@ describe('beta33 notebook authoring language', () => {
     it.each(modes)(`${goal} %s carries the shared direct-language and correction rules`, mode => {
       const prompt = composeNotebookPrompt(goal, values, mode)
       const language = rule(prompt, 'EC-LEARNING-LANGUAGE')
-      expect(prompt).toContain('notebook-instructions-beta-37')
+      expect(prompt).toContain('notebook-instructions-beta-38')
       expect(language).toMatch(/state (?:the |a )?claim directly/i)
       expect(language).toMatch(/parallel statements|parallel facts/i)
       for (const guard of ['X, not Y', 'does not mean', 'should not be confused with', 'is different from']) {

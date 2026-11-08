@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { expect, it } from 'vitest'
 import legacy from './revision-fixtures/baseline-current.json'
+import repertoire from './visual-fixtures/valid-v4-repertoire.json'
 import { parseLegacyNotebookPackage, parseNotebookPackage } from './package'
 import { parsePortableNotebook } from './visualPackage'
 import { missingPracticeImages, notebookVisualPracticeKey, projectNotebookEntry } from './visualProjection'
@@ -90,4 +91,20 @@ it('tracks stimulus figure/caption/alt/context and diagram relationships, withou
   diagram(before).edges[0].label = 'May be associated with'
   expect(notebookVisualPracticeKey(before, id, question)).not.toBe(diagramKey)
   expect(missingPracticeImages(after, id, question, new Set())).toEqual([after.assets[0].id])
+})
+it('accepts select-all practice with correctIndices and rejects malformed keys', () => {
+  const withPractice = (patch: Record<string, unknown>) => {
+    const p = structuredClone(repertoire) as unknown as VisualNotebookPackage
+    const block = p.entries[0].sections.flatMap(s => s.blocks).find(b => b.type === 'practice')!
+    delete (block as { correctIndex?: number }).correctIndex
+    Object.assign(block, { options: ['First', 'Second', 'Third', 'Fourth'] }, patch)
+    return JSON.stringify(p)
+  }
+  expect(() => parsePortableNotebook(withPractice({ correctIndices: [0, 2] }))).not.toThrow()
+  expect(() => parsePortableNotebook(withPractice({ correctIndices: [3] }))).not.toThrow()
+  expect(() => parsePortableNotebook(withPractice({ correctIndices: [0, 2], correctIndex: 0 }))).toThrow('not both')
+  expect(() => parsePortableNotebook(withPractice({ correctIndices: [] }))).toThrow()
+  expect(() => parsePortableNotebook(withPractice({ correctIndices: [1, 1] }))).toThrow()
+  expect(() => parsePortableNotebook(withPractice({ correctIndices: [4] }))).toThrow('distinct existing options')
+  expect(() => parsePortableNotebook(withPractice({}))).toThrow('needs both options')
 })

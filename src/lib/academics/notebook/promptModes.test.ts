@@ -14,7 +14,7 @@ it.each(['new', 'update'] as const)('includes the Assessment exam profile and pr
   expect(assessmentRules).toContain('Without real exams, use the course blueprint and say so.')
   expect(assessmentRules).toContain('Unless the request already says, ask once, in the first reply')
   expect(assessmentRules).toContain('If the student doesn\'t choose, use (a).')
-  expect(prompt).toContain('Prompt build: notebook-instructions-beta-37.')
+  expect(prompt).toContain('Prompt build: notebook-instructions-beta-38.')
 })
 it.each(['new', 'update'] as const)('separates register from difficulty, keeps stretch opt-in and every tier precise and minimal in %s Assessment prompts', mode => {
   const prompt = composeNotebookPrompt('assessment', values, mode)
@@ -154,7 +154,7 @@ it.each(['new', 'update'] as const)('makes the %s Review practice set original, 
     'as in an introductory psychology course, most items apply one principle to a bare scene',
     'Roman-numeral combinations',
     'select-all for only some items, never several in a row',
-    'write a select-all as combination options, because one correctIndex marks the answer',
+    'A select-all item lists each statement as its own option and marks every true one in correctIndices',
     'about half the items need a stimulus',
     'a band in PCR without reverse transcription, a faint housekeeping band',
     '(paragraph, table, figure, study-diagram or annotated-figure)',
@@ -209,4 +209,21 @@ it.each(['review', 'assessment', 'assignment'] as const)('writes a separate %s f
   const prompt = composeNotebookPrompt(goal, values, 'new')
   expect(prompt).toContain("Each objective's setup and forecast rows are written for that objective alone: never copy one objective's setup or rows to another")
   expect(prompt).toContain('using the same wording on every objective of the entry because the reader shows it once for the page')
+})
+it('writes real select-all items with correctIndices and keeps combinations for some items (beta-38)', () => {
+  for (const goal of ['review', 'assessment', 'assignment'] as const) {
+    const prompt = composeNotebookPrompt(goal, values, 'new')
+    const options = prompt.split('- `EC-PRACTICE-OPTIONS`:')[1]?.split('\n- `')[0]
+    expect(options, goal).toContain('for a select-all item, correctIndices as the distinct zero-based indices of every correct option')
+    expect(options, goal).toContain('Include options with exactly one of correctIndex or correctIndices')
+    expect(prompt, goal).toContain('exactly one of correctIndex or correctIndices come together')
+  }
+  const review = composeNotebookPrompt('review', values, 'new')
+  for (const clause of [
+    'A select-all item lists each statement as its own option and marks every true one in correctIndices',
+    'its prompt ends "Select all that apply" with the credit rule the course states',
+    'its rationale gives a line for each statement saying why it is true or false',
+    'Roman-numeral combinations only for some items',
+  ]) expect(review, clause).toContain(clause)
+  expect(review).not.toContain('write a select-all as combination options')
 })

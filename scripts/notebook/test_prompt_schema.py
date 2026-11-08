@@ -11,12 +11,12 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS = Path('premed-hq-documentation/specifications/generation/portable-notebooks')
 APP = Path('src/lib/academics/notebook')
-# Approved beta-37: beta-36 scope plus drawn practice figures and per-objective forecasts. Frozen full-template hashes
+# Approved beta-38: beta-38 scope plus real select-all items (correctIndices). Frozen full-template hashes
 # detect unreviewed rule/schema changes; generated assets separately require parity.
-APPROVED_PROMPT_HASHES = {'review': 'f127b24a12822d23ea0ccc7367ed7448f8c9c89aaec3e1202b2ffd88d9b57cd7', 'assessment': '4de506e820e5e717117f50c4bc5a9989fed0aefeebd7ad598b23e3667c42eb97', 'assignment': 'dceacead0100451e05a9081394f6d6a48b4f08315019efb6f922cfebb1c90443'}
+APPROVED_PROMPT_HASHES = {'review': 'c32fb6108bc132975a32bdd06326f5523242acaeaf780cb5578bc78cb79f5562', 'assessment': '113357ee56efc09f23575862d27f0ac8f424dc6336c943794ab535204256ed3d', 'assignment': '2b6daf098c3f64c1309f1ee76e6151f2af889f7cec6ff5bfc918bee629955fd4'}
 PIN = 'notebook-prompt-v4.schema.json'
-PIN_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'
-READER_HASH = 'b0e586678ad308a2cd922259518c5a2083961de17b86cd4722a06ba14985eb77'
+PIN_HASH = '78186f32457cf24794be40cd0e707d5501180a4631192fda672a2f469d3ade00'
+READER_HASH = '78186f32457cf24794be40cd0e707d5501180a4631192fda672a2f469d3ade00'
 PREFIX = 'The prefix belongs only on mastery-objective labels. Section titles and every other heading are plain, concrete titles with no numbers, objective numbers, Review or Practice prefixes or other labels.'
 GAP = 'A gap or source-limit section gets a plain student-facing title such as "Figures not supplied" or "Not covered yet", never "unfinished tasks"; administrative narration stays in the companion message.'
 DETAIL = '- `EC-READING-DETAIL`: For guide teaching in new and update notebooks, mark each block detail="core" or detail="extra". The optional field is accepted on every v4 block type; absent means core. Full detail is the default and shows all blocks. Condensed hides extra blocks and legacy more text. Keep the question, lede, walkthrough, map, terms, content-matched structure, claim blocks, main figure/Look for and key idea core; Condensed shows only the point sentence of each walkthrough item. Put Lecture example, permitted comparison extras and note corrections in extra blocks. Core must make sense by itself; Full detail must retain the complete relevant explanation without duplication. Do not remove substantive teaching to meet a word count or percentage. New authoring does not require more; paragraphs and bullets may omit it, and an illustration retains more:null where required by the schema. Preserve every stored more value on updates; the reader still reads legacy more in Full. Do not put practice answers or worked solutions in explanation blocks or more; retain reveal behavior and the requested assignment help stage. The app supplies the guide-wide switch; do not write duplicate Full detail/Condensed sections or interface instructions into the notebook. Both layers remove fluff and repetition; source narration belongs in neither layer.'
@@ -88,7 +88,7 @@ class PromptSchemaTests(unittest.TestCase):
         self.assertEqual(prompt.count(VISUAL_REVIEW), 1)
         self.assertEqual(prompt.count(COMPANION_VISUAL), 1)
         self.assertNotIn(OLD_VISUAL, prompt)
-        self.assertIn('notebook-instructions-beta-37', prompt)
+        self.assertIn('notebook-instructions-beta-38', prompt)
         self.assertIn('- `EC-GROUPED-GUIDE`:', prompt)
         if goal == 'review':
             self.assertIn('Practice belongs exclusively in Practice.', prompt)
