@@ -198,6 +198,52 @@ def clarity_warnings(card, targets, notebook_titles=None):
         warnings.append(f'{card["id"]}: breadcrumb reads like an objective verb phrase; choose a short topic noun label.')
     return warnings
 
+CLOZE_SPAN = r'\{\{c([1-9][0-9]*)::([^{}]+)\}\}'
+
+def answer_words(value):
+    return ' '.join(re.sub(r"[^\w′’+-]+", ' ', value.casefold()).split())
+
+def answer_leaks(card):
+    """A required answer that stays visible on its own card (elsewhere in the
+    sentence, in a hint, or in the Front of a Q&A card) is a give-away."""
+    leaks = []
+    if card['clozePattern']:
+        spans = list(re.finditer(CLOZE_SPAN, card['cloze']))
+        for index in sorted({int(m[1]) for m in spans}):
+            own = [m for m in spans if int(m[1]) == index]
+            hints = ' '.join(m[2].split('::')[1] for m in own if '::' in m[2])
+            visible = re.sub(CLOZE_SPAN, lambda m: ' ' if int(m[1]) == index else m[2].split('::')[0], card['cloze'])
+            shown = f' {answer_words(visible + " " + hints)} '
+            for m in own:
+                answer = answer_words(m[2].split('::')[0])
+                if len(answer) >= 4 and f' {answer} ' in shown:
+                    leaks.append(f'c{index} answer "{m[2].split("::")[0]}" is still visible on the card')
+    elif card['back'] and card['type'] != 'rebuild':
+        back = card['back'].split(':', 1)[0] if card['type'] == 'predict' else card['back']
+        answer = answer_words(back)
+        if len(answer) >= 4 and f' {answer} ' in f' {answer_words(card["front"])} ':
+            leaks.append(f'the Back "{back.strip()[:60]}" already appears in the Front')
+    return leaks
+
+def repeated_answers(cards):
+    """Deck-wide: two list cards with the same items, or two cards whose
+    multi-word required answer is identical, ask the same question twice."""
+    seen = defaultdict(list)
+    for card in cards:
+        if card['type'] in ('application', 'exemplar'): continue  # their scenario is the distinct cue
+        if card['clozePattern']:
+            spans = list(re.finditer(CLOZE_SPAN, card['cloze']))
+            if card['clozePattern'] == 'enumerated-list':
+                seen[('list', frozenset(answer_words(m[2].split('::')[0]) for m in spans))].append(card['id'])
+                continue
+            for index in sorted({int(m[1]) for m in spans}):
+                answer = answer_words(' '.join(m[2].split('::')[0] for m in spans if int(m[1]) == index))
+                if len(answer.split()) >= 4: seen[('answer', answer)].append(f'{card["id"]} c{index}')
+        elif card['back'] and card['type'] not in ('predict', 'rebuild'):
+            answer = answer_words(card['back'])
+            if len(answer.split()) >= 4: seen[('answer', answer)].append(card['id'])
+    return {key: owners for key, owners in seen.items() if len(owners) > 1}
+
 def names_instructor_emphasis(reason):
     # Detect a named emphasis cue, not whether the course evidence is true.
     return bool(re.search(r'\b(?:objective|review[- ]sheet|guide)\b\s*\S', reason, re.IGNORECASE)
@@ -453,6 +499,12 @@ def validate(data, updating=False):
                 answers.append(c['back'] or '\n'.join(c['recallItems']))
         normalized_answers = [' '.join(answer.casefold().split()).rstrip('.') for answer in answers]
         require(len(set(normalized_answers)) == len(normalized_answers), f'{concept}: exact repeated required answer; trim redundant review cards.')
+    for c in data['cards']:
+        for leak in answer_leaks(c):
+            require(False, f'{c["id"]}: {leak}; the question gives away its own answer. Reword the visible text or blank every occurrence under the same index.')
+    for (kind, _), owners in repeated_answers(data['cards']).items():
+        what = 'the same list items' if kind == 'list' else 'the same required answer'
+        require(False, f'{", ".join(owners)}: these cards ask for {what}; no question asked twice. Keep one, or make it a genuinely different demand.')
     openers = Counter(m[1].casefold() for c in data['cards'] for m in [re.match(r'\s*(In [^,{}]{3,40}),', c['cloze'] or c['front'])] if m)
     for opener, count in openers.items():
         if count >= 5:

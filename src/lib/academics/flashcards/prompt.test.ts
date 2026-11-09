@@ -13,9 +13,12 @@ function lecture(): LectureRecord {
 }
 
 describe('flashcard prompt handoff', () => {
-  it('copies the October 28a prompt revision and preserves source access rules', () => {
+  it('copies the November 8a prompt revision and preserves source access rules', () => {
     const prompt = buildFlashcardPrompt({ courseLabel: 'DEMO', lecture: lecture() })
-    expect(prompt).toContain('Prompt revision: 2026-10-28a — required example pass with an example inventory; no meta wording on any card.')
+    expect(prompt).toContain('Prompt revision: 2026-11-08a — instructor\'s version is the course fact; term inventory from the slides too; review sections and cross-deck scope; the builder now fails answer give-aways and repeated answers.')
+    expect(prompt).toContain('The builder FAILS a card whose answer text stays visible on it')
+    expect(prompt).toContain('A claim the instructor teaches or tests is not disputed merely because')
+    expect(prompt).toContain('def answer_leaks(card):')
     expect(prompt).toContain('A standalone headline term or theory whose meaning needs learning gets a two-blank note')
     expect(prompt).not.toContain('There is no universal pedagogical deck maximum or per-concept cap')
     expect(prompt).not.toContain('Keep BOTH example directions')
